@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Sun, Moon, Shield, ShieldOff } from 'lucide-react';
 import { PrivacyPolicyModal } from './PrivacyPolicyModal';

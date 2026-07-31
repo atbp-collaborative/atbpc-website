@@ -1,8 +1,12 @@
+'use client';
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, X, Play, ArrowUpRight, Plus, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Project } from '../types';
-import { MEMBERS_DATA, Member } from '../membersData';
+import { useRouter } from 'next/navigation';
+import { Project, Member } from '../types';
+import { useTheme } from '../lib/theme-context';
+import { ROUTES, memberRoute } from '../lib/routes';
 import { Button } from './Button';
 
 function getYouTubeEmbedUrl(url: string): string | null {
@@ -17,19 +21,15 @@ function getYouTubeEmbedUrl(url: string): string | null {
 
 interface ProjectDetailProps {
   project: Project;
-  isDarkMode: boolean;
-  onBack: () => void;
-  onStartConsultation: () => void;
-  onMemberSelect?: (member: Member) => void;
+  members: Member[];
 }
 
 export const ProjectDetail: React.FC<ProjectDetailProps> = ({
   project,
-  isDarkMode,
-  onBack,
-  onStartConsultation,
-  onMemberSelect,
+  members,
 }) => {
+  const { isDarkMode } = useTheme();
+  const router = useRouter();
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
   const [isOverviewOpen, setIsOverviewOpen] = useState<boolean>(false);
 
@@ -38,10 +38,10 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
   }, [project.id]);
 
   const contributors = useMemo(() => {
-    return MEMBERS_DATA.filter((member) =>
+    return members.filter((member) =>
       member.involvement.some((inv) => inv.projectId === project.id)
     );
-  }, [project.id]);
+  }, [project.id, members]);
 
   const mediaItems = useMemo(() => {
     const items: Array<{ type: 'image' | 'video'; url: string; duration?: string }> = [];
@@ -184,8 +184,8 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
     >
       {/* Breadcrumb & Close */}
       <div className="flex items-center justify-between mb-2 shrink-0">
-        <button 
-          onClick={onBack}
+        <button
+          onClick={() => router.push(ROUTES.works)}
           className="flex items-center space-x-2 text-xs uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
         >
           <ChevronLeft size={16} />
@@ -337,10 +337,10 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
               <span className="text-[10px] uppercase tracking-widest opacity-50 block">Inspired by this build?</span>
               <span className="text-xs font-semibold">Qualify your project with us today</span>
             </div>
-            <Button 
+            <Button
               type="filled"
               label="Start Consultation"
-              onClick={onStartConsultation}
+              onClick={() => router.push(ROUTES.intake)}
               fullWidth={true}
               className="sm:w-auto font-medium py-1.5 text-xs"
             />
@@ -438,7 +438,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
                                 <li key={member.id} className="flex items-start space-x-2 font-light opacity-90">
                                   <span className="text-space-sparkle font-semibold mt-0.5">•</span>
                                   <button
-                                    onClick={() => onMemberSelect?.(member)}
+                                    onClick={() => router.push(memberRoute(member.id))}
                                     className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
                                       isDarkMode ? "text-bright-gray/90" : "text-slate-700"
                                     }`}

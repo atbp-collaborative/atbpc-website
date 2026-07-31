@@ -1,9 +1,12 @@
+'use client';
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { ROUTES } from '../lib/routes';
 
 interface StudioDropdownProps {
-  activeTab: string;
   isDarkMode: boolean;
   onNavClick: (tab: string) => void;
   onClose: () => void;
@@ -12,12 +15,14 @@ interface StudioDropdownProps {
 export interface StudioNavItem {
   name: string;
   tab: string;
+  href: string;
 }
 
 export interface StudioNavSection {
   mainSection: string;
   translation: string;
   tab: string;
+  href: string;
   items: StudioNavItem[];
 }
 
@@ -26,40 +31,43 @@ export const STUDIO_NAV_STRUCTURE: StudioNavSection[] = [
     mainSection: 'Services',
     translation: 'Kaya',
     tab: 'our-services',
+    href: ROUTES.ourServices,
     items: [
-      { name: 'Comprehensive Services', tab: 'comprehensive-services' },
-      { name: 'Piecework Services', tab: 'piecework-services' },
+      { name: 'Comprehensive Services', tab: 'comprehensive-services', href: ROUTES.comprehensiveServices },
+      { name: 'Piecework Services', tab: 'piecework-services', href: ROUTES.pieceworkServices },
     ],
   },
   {
     mainSection: 'Process',
     translation: 'Paraán',
     tab: 'services',
+    href: ROUTES.services,
     items: [
-      { name: 'Designing with Values', tab: 'designing-with-values' },
-      { name: 'Managing with Integrity', tab: 'managing-with-integrity' },
-      { name: 'Building with Culture', tab: 'building-with-culture' },
+      { name: 'Designing with Values', tab: 'designing-with-values', href: ROUTES.designingWithValues },
+      { name: 'Managing with Integrity', tab: 'managing-with-integrity', href: ROUTES.managingWithIntegrity },
+      { name: 'Building with Culture', tab: 'building-with-culture', href: ROUTES.buildingWithCulture },
     ],
   },
   {
     mainSection: 'People',
     translation: 'Haligi',
     tab: 'our-people',
+    href: ROUTES.ourPeople,
     items: [
-      { name: 'Designers', tab: 'our-people-designers' },
-      { name: 'Managers', tab: 'our-people-managers' },
-      { name: 'Builders', tab: 'our-people-builders' },
+      { name: 'Designers', tab: 'our-people-designers', href: `${ROUTES.ourPeople}?filter=designers` },
+      { name: 'Managers', tab: 'our-people-managers', href: `${ROUTES.ourPeople}?filter=managers` },
+      { name: 'Builders', tab: 'our-people-builders', href: `${ROUTES.ourPeople}?filter=builders` },
     ],
   },
 ];
 
 export const StudioDropdown: React.FC<StudioDropdownProps> = ({
-  activeTab,
   isDarkMode,
   onNavClick,
   onClose,
 }) => {
-  const activeSectionObj = STUDIO_NAV_STRUCTURE.find((s) => s.tab === activeTab);
+  const pathname = usePathname();
+  const activeSectionObj = STUDIO_NAV_STRUCTURE.find((s) => pathname.startsWith(s.href));
   const activeSectionName = activeSectionObj ? activeSectionObj.mainSection : 'Services';
 
   const [expandedSection, setExpandedSection] = useState<string>(activeSectionName);
@@ -81,7 +89,7 @@ export const StudioDropdown: React.FC<StudioDropdownProps> = ({
       <div className="space-y-0.5">
         {STUDIO_NAV_STRUCTURE.map((section) => {
           const isExpanded = expandedSection === section.mainSection;
-          const isPageActive = activeTab === section.tab;
+          const isPageActive = pathname.startsWith(section.href);
           const isSectionActive = isPageActive;
 
           return (
@@ -150,7 +158,7 @@ export const StudioDropdown: React.FC<StudioDropdownProps> = ({
                             onClose();
                           }}
                           className={`w-full text-left py-1.5 text-mini tracking-wider transition-all rounded-none cursor-pointer block normal-case ${
-                            activeTab === item.tab
+                            pathname === item.href.split('?')[0]
                               ? isDarkMode
                                 ? 'text-white font-bold'
                                 : 'text-vintage-charcoal font-bold'

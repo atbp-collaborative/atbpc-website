@@ -1,23 +1,24 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Plus, Minus, ArrowUpRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Member } from '../membersData';
-import { Project } from '../types';
-import { PROJECTS_DATA } from '../data';
+import { useRouter } from 'next/navigation';
+import { Member, Project } from '../types';
+import { useTheme } from '../lib/theme-context';
+import { ROUTES, projectRoute } from '../lib/routes';
 
 interface MemberDetailProps {
   member: Member;
-  isDarkMode: boolean;
-  onBack: () => void;
-  onProjectSelect: (project: Project) => void;
+  projects: Project[];
 }
 
 export const MemberDetail: React.FC<MemberDetailProps> = ({
   member,
-  isDarkMode,
-  onBack,
-  onProjectSelect,
+  projects,
 }) => {
+  const { isDarkMode } = useTheme();
+  const router = useRouter();
   const [isAccreditationsOpen, setIsAccreditationsOpen] = useState<boolean>(false);
   const [isInvolvementOpen, setIsInvolvementOpen] = useState<boolean>(false);
 
@@ -38,8 +39,8 @@ export const MemberDetail: React.FC<MemberDetailProps> = ({
     >
       {/* Breadcrumb & Close */}
       <div className="flex items-center justify-start gap-4 mb-8">
-        <button 
-          onClick={onBack}
+        <button
+          onClick={() => router.push(ROUTES.ourPeople)}
           className="flex items-center space-x-2 text-caption uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
         >
           <ChevronLeft size={16} />
@@ -151,13 +152,13 @@ export const MemberDetail: React.FC<MemberDetailProps> = ({
                   <div className="pb-4 pt-1 text-caption space-y-4 pl-[30px]">
                     <ul className="space-y-2">
                       {member.involvement.map((inv) => {
-                        const project = PROJECTS_DATA.find(p => p.id === inv.projectId);
+                        const project = projects.find(p => p.id === inv.projectId);
                         return (
                           <li key={inv.projectId} className="flex items-start space-x-2 font-light opacity-90">
                             <span className="text-space-sparkle font-semibold mt-0.5">•</span>
                             {project ? (
                               <button
-                                onClick={() => onProjectSelect(project)}
+                                onClick={() => router.push(projectRoute(project.id))}
                                 className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
                                   isDarkMode ? "text-bright-gray/90" : "text-slate-700"
                                 }`}
