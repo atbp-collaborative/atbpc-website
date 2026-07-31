@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ShieldCheck, Lock, FileText, UserCheck, Scale, Globe } from 'lucide-react';

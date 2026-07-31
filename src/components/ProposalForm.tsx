@@ -1,19 +1,17 @@
+'use client';
+
 import React, { useState, FormEvent } from 'react';
 import { ArrowRight, Check, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useRouter } from 'next/navigation';
 import { SurveyResponse } from '../types';
 import { MS_FORMS_CONFIG, submitLead } from '../lib/data/leads';
+import { useTheme } from '../lib/theme-context';
+import { ROUTES } from '../lib/routes';
 
-interface ProposalFormProps {
-  isDarkMode: boolean;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-}
-
-export const ProposalForm: React.FC<ProposalFormProps> = ({
-  isDarkMode,
-  setActiveTab,
-}) => {
+export const ProposalForm: React.FC = () => {
+  const { isDarkMode } = useTheme();
+  const router = useRouter();
   // Support toggling between our custom interactive front-end or embedding the direct MS Forms iframe
   const [formIntegrationType, setFormIntegrationType] = useState<'custom' | 'direct'>(
     MS_FORMS_CONFIG.microsoftFormsUrl ? 'direct' : 'custom'
@@ -166,8 +164,8 @@ export const ProposalForm: React.FC<ProposalFormProps> = ({
               >
                 Open in New Tab
               </a>
-              <button 
-                onClick={() => setActiveTab('studio')}
+              <button
+                onClick={() => router.push(ROUTES.home)}
                 className="px-6 py-2.5 text-caption uppercase tracking-widest font-semibold rounded-none border border-space-sparkle/30 hover:bg-space-sparkle/10 text-center w-full sm:w-auto"
               >
                 Back to Home
@@ -220,8 +218,8 @@ export const ProposalForm: React.FC<ProposalFormProps> = ({
               </p>
 
               <div className="pt-4 flex justify-center space-x-4">
-                <button 
-                  onClick={() => { setActiveTab('studio'); resetSurvey(); }}
+                <button
+                  onClick={() => { router.push(ROUTES.home); resetSurvey(); }}
                   className="px-6 py-2.5 text-caption uppercase tracking-widest font-semibold rounded-none bg-space-sparkle text-white hover:bg-space-sparkle/80"
                 >
                   Back to Home

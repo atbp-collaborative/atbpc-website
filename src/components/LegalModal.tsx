@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Scale, FileText, Award, Building2, CheckCircle2 } from 'lucide-react';

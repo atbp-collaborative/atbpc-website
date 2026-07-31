@@ -1,8 +1,11 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { X, ArrowRight, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Project, Member } from '../types';
-import { Button } from './Button';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTheme } from '../lib/theme-context';
+import { ROUTES, TAB_TO_ROUTE } from '../lib/routes';
 import { AtbpLogo } from './AtbpLogo';
 
 import { WORKS_NAV_STRUCTURE } from './WorksDropdown';
@@ -10,54 +13,30 @@ import { STUDIO_NAV_STRUCTURE } from './StudioDropdown';
 import { CONTACT_NAV_STRUCTURE } from './ContactDropdown';
 
 interface MobileDrawerProps {
-  isDarkMode: boolean;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  selectedProject: Project | null;
-  selectedMember: Member | null;
-  setSelectedProject: (proj: Project | null) => void;
-  setSelectedMember: (mem: Member | null) => void;
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
-  projectFilter?: string;
-  setProjectFilter: (filter: string) => void;
 }
 
 export const MobileDrawer: React.FC<MobileDrawerProps> = ({
-  isDarkMode,
-  activeTab,
-  setActiveTab,
-  selectedProject,
-  selectedMember,
-  setSelectedProject,
-  setSelectedMember,
   isMobileMenuOpen,
   setIsMobileMenuOpen,
-  projectFilter = 'All',
-  setProjectFilter,
 }) => {
-  let isStudioLandingActive = activeTab === 'home';
-  let isWorksActive = activeTab === 'works';
-  let isStudioActive = activeTab === 'our-services' || activeTab === 'our-people' || activeTab === 'services';
-  let isContactActive = activeTab === 'contact' || activeTab === 'career' || activeTab === 'supplier' || activeTab === 'suppliers' || activeTab === 'builder' || activeTab === 'builders';
+  const { isDarkMode } = useTheme();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const projectFilter = searchParams.get('category') ?? 'All';
 
-  if (selectedProject) {
-    isStudioLandingActive = false;
-    isWorksActive = true;
-    isStudioActive = false;
-    isContactActive = false;
-  } else if (selectedMember) {
-    isStudioLandingActive = false;
-    isWorksActive = false;
-    isStudioActive = true;
-    isContactActive = false;
-  }
+  const isStudioLandingActive = pathname === '/';
+  const isWorksActive = pathname.startsWith('/works');
+  const isStudioActive = pathname.startsWith('/our-services') || pathname.startsWith('/our-people') || pathname.startsWith('/services');
+  const isContactActive = pathname.startsWith('/contact') || pathname === '/career' || pathname === '/supplier' || pathname === '/builder';
 
   // Accordion expansion state: only one category expanded at a time
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [expandedWorksCategory, setExpandedWorksCategory] = useState<string | null>(null);
 
-  // Sync expanded section with active category when menu is opened or activeTab changes
+  // Sync expanded section with active category when menu is opened or pathname changes
   useEffect(() => {
     if (isMobileMenuOpen) {
       if (isStudioActive) {
@@ -78,12 +57,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
         setExpandedWorksCategory(activeGroup.mainCategory);
       }
     }
-  }, [isMobileMenuOpen, activeTab, isStudioActive, isContactActive, isWorksActive, projectFilter]);
+  }, [isMobileMenuOpen, pathname, isStudioActive, isContactActive, isWorksActive, projectFilter]);
 
   const handleNavClick = (tabId: string) => {
-    setActiveTab(tabId);
-    setSelectedProject(null);
-    setSelectedMember(null);
+    router.push(TAB_TO_ROUTE[tabId] ?? ROUTES.home);
     setIsMobileMenuOpen(false);
   };
 
@@ -108,8 +85,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             exit={{ x: '100%' }}
             transition={{ type: 'tween', duration: 0.35, ease: 'easeInOut' }}
             className={`fixed top-0 right-0 bottom-0 w-[280px] sm:w-[320px] z-50 h-full p-6 shadow-2xl flex flex-col justify-between ${
-              isDarkMode 
-                ? 'bg-vintage-charcoal text-bright-gray border-l border-space-sparkle/20' 
+              isDarkMode
+                ? 'bg-vintage-charcoal text-bright-gray border-l border-space-sparkle/20'
                 : 'bg-bright-gray text-vintage-charcoal border-l border-space-sparkle/10'
             }`}
           >
@@ -117,7 +94,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               {/* Drawer Header */}
               <div className="flex items-center justify-between pb-4 border-b border-space-sparkle/10">
                 <AtbpLogo isDarkMode={isDarkMode} className="h-6 w-auto" />
-                <button 
+                <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="p-2 rounded-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                 >
@@ -127,7 +104,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
               {/* Navigation Links */}
               <nav className="flex flex-col space-y-3">
-                <button 
+                <button
                   onClick={() => handleNavClick('home')}
                   className={`text-left text-caption tracking-widest uppercase py-3 px-4 rounded-none transition-all cursor-pointer ${
                     isStudioLandingActive
@@ -140,9 +117,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
                 {/* Sub-item 2-level dropdown section for Works */}
                 <div className="space-y-1">
-                  <button 
+                  <button
                     onClick={() => {
-                      setProjectFilter('All');
                       handleNavClick('works');
                       setExpandedSection(prev => prev === 'works' ? null : 'works');
                     }}
@@ -206,8 +182,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                                           <button
                                             key={sub.id}
                                             onClick={() => {
-                                              setProjectFilter(sub.id);
-                                              handleNavClick('works');
+                                              router.push(`${ROUTES.works}?category=${encodeURIComponent(sub.id)}`);
+                                              setIsMobileMenuOpen(false);
                                             }}
                                             className="text-left text-mini tracking-wider py-1.5 px-2.5 rounded-none transition-all cursor-pointer opacity-85 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5"
                                           >
@@ -229,7 +205,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
                 {/* Sub-item dropdown section for Studio */}
                 <div className="space-y-1">
-                  <button 
+                  <button
                     onClick={() => setExpandedSection(prev => prev === 'studio' ? null : 'studio')}
                     className={`w-full flex items-center justify-between text-left text-caption tracking-widest uppercase py-3 px-4 rounded-none transition-all cursor-pointer ${
                       isStudioActive
@@ -259,11 +235,11 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                         <div className="pl-4 flex flex-col space-y-2 border-l border-space-sparkle/15 ml-4 pt-1 pb-2">
                           {STUDIO_NAV_STRUCTURE.map((sec) => (
                             <div key={sec.mainSection} className="space-y-1">
-                              <button 
+                              <button
                                 onClick={() => handleNavClick(sec.tab)}
                                 className="text-left text-caption font-bold tracking-widest py-1 px-2 block w-full hover:bg-black/5 dark:hover:bg-white/5"
                               >
-                                {activeTab === sec.tab ? sec.translation : sec.mainSection}
+                                {pathname.startsWith(sec.href) ? sec.translation : sec.mainSection}
                               </button>
                               <div className="pl-3 flex flex-col space-y-1 border-l border-space-sparkle/10 ml-2">
                                 {sec.items.map((item) => (
@@ -271,7 +247,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                                     key={item.tab}
                                     onClick={() => handleNavClick(item.tab)}
                                     className={`text-left text-mini py-0.5 px-2 block cursor-pointer transition-opacity ${
-                                      activeTab === item.tab
+                                      pathname === item.href.split('?')[0]
                                         ? 'font-bold opacity-100'
                                         : 'opacity-80 hover:opacity-100'
                                     }`}
@@ -290,7 +266,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
                 {/* Sub-item dropdown section for Contact */}
                 <div className="space-y-1">
-                  <button 
+                  <button
                     onClick={() => setExpandedSection(prev => prev === 'contact' ? null : 'contact')}
                     className={`w-full flex items-center justify-between text-left text-caption tracking-widest uppercase py-3 px-4 rounded-none transition-all cursor-pointer ${
                       isContactActive
@@ -323,7 +299,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                               <button
                                 onClick={() => handleNavClick(grp.tab)}
                                 className={`text-left text-caption font-bold tracking-widest block py-1 px-2 w-full transition-opacity cursor-pointer ${
-                                  activeTab === grp.tab ? 'opacity-100 text-space-sparkle' : 'opacity-90 hover:opacity-100'
+                                  pathname === grp.href ? 'opacity-100 text-space-sparkle' : 'opacity-90 hover:opacity-100'
                                 }`}
                               >
                                 {grp.mainCategory}
@@ -351,7 +327,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
             {/* Drawer Footer / CTA Area */}
             <div className="space-y-2.5 pt-6 border-t border-space-sparkle/10">
-              <button 
+              <button
                 onClick={() => handleNavClick('intake')}
                 className="w-full flex flex-col items-center justify-center py-2 px-4 rounded-none font-sans font-semibold text-caption uppercase tracking-wider leading-tight transition-all cursor-pointer text-center bg-space-sparkle text-bright-gray hover:bg-space-sparkle/90 shadow-sm"
               >
@@ -359,7 +335,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 <span>Discovery Meeting</span>
               </button>
 
-              <button 
+              <button
                 onClick={() => handleNavClick('intake')}
                 className={`w-full flex flex-col items-center justify-center py-2 px-4 rounded-none font-sans font-semibold text-caption uppercase tracking-wider leading-tight transition-all cursor-pointer text-center border ${
                   isDarkMode

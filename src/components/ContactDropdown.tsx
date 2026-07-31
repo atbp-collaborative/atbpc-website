@@ -1,9 +1,12 @@
+'use client';
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { ROUTES, TAB_TO_ROUTE } from '../lib/routes';
 
 interface ContactDropdownProps {
-  activeTab: string;
   isDarkMode: boolean;
   onNavClick: (tab: string) => void;
   onClose: () => void;
@@ -17,6 +20,7 @@ interface ContactSubitem {
 interface ContactGroup {
   mainCategory: string;
   tab: string;
+  href: string;
   subitems: ContactSubitem[];
 }
 
@@ -24,6 +28,7 @@ export const CONTACT_NAV_STRUCTURE: ContactGroup[] = [
   {
     mainCategory: 'Case Study House',
     tab: 'case-study-house',
+    href: ROUTES.caseStudyHouse,
     subitems: [
       { name: 'Schedule a Discovery Meeting', tab: 'intake' },
       { name: 'Locate & Communicate', tab: 'contact-info' },
@@ -32,6 +37,7 @@ export const CONTACT_NAV_STRUCTURE: ContactGroup[] = [
   {
     mainCategory: 'Grow With Us',
     tab: 'grow-with-us',
+    href: ROUTES.growWithUs,
     subitems: [
       { name: 'Internship Program', tab: 'career' },
       { name: 'Apprenticeship Program', tab: 'career' },
@@ -41,6 +47,7 @@ export const CONTACT_NAV_STRUCTURE: ContactGroup[] = [
   {
     mainCategory: 'Partner With Us',
     tab: 'partner-with-us',
+    href: ROUTES.partnerWithUs,
     subitems: [
       { name: 'Suppliers', tab: 'supplier' },
       { name: 'Consultants', tab: 'consultant' },
@@ -50,13 +57,13 @@ export const CONTACT_NAV_STRUCTURE: ContactGroup[] = [
 ];
 
 export const ContactDropdown: React.FC<ContactDropdownProps> = ({
-  activeTab,
   isDarkMode,
   onNavClick,
   onClose,
 }) => {
+  const pathname = usePathname();
   const activeContactObj = CONTACT_NAV_STRUCTURE.find((group) =>
-    group.subitems.some((sub) => sub.tab === activeTab)
+    group.subitems.some((sub) => TAB_TO_ROUTE[sub.tab] === pathname)
   );
   const activeCategoryName = activeContactObj ? activeContactObj.mainCategory : 'Case Study House';
 

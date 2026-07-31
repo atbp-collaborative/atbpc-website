@@ -1,109 +1,71 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Menu, X, Calendar, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Project, Member } from '../types';
-import { Button } from './Button';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTheme } from '../lib/theme-context';
+import { ROUTES, TAB_TO_ROUTE } from '../lib/routes';
 import { StudioDropdown } from './StudioDropdown';
 import { ContactDropdown } from './ContactDropdown';
 import { WorksDropdown } from './WorksDropdown';
 import { AtbpLogo } from './AtbpLogo';
 
 interface HeaderProps {
-  isDarkMode: boolean;
-  setIsDarkMode?: (val: boolean) => void;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  selectedProject: Project | null;
-  setSelectedProject: (proj: Project | null) => void;
-  selectedMember: Member | null;
-  setSelectedMember: (mem: Member | null) => void;
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
-  projectFilter: string;
-  setProjectFilter: (filter: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  isDarkMode,
-  activeTab,
-  setActiveTab,
-  selectedProject,
-  setSelectedProject,
-  selectedMember,
-  setSelectedMember,
   isMobileMenuOpen,
   setIsMobileMenuOpen,
-  projectFilter,
-  setProjectFilter,
 }) => {
+  const { isDarkMode } = useTheme();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentCategoryFilter = searchParams.get('category') ?? 'All';
+
   const [isWorksHovered, setIsWorksHovered] = useState<boolean>(false);
   const [isAboutHovered, setIsAboutHovered] = useState<boolean>(false);
   const [isContactHovered, setIsContactHovered] = useState<boolean>(false);
 
-  const isWorksLanding = activeTab === 'works' && projectFilter === 'All' && !selectedProject && !selectedMember;
-  const isStudioLanding = (activeTab === 'home' || activeTab === 'studio') && !selectedProject && !selectedMember;
-  const isContactLanding = [
-    'contact',
-    'case-study-house',
-    'grow-with-us',
-    'partner-with-us',
-  ].includes(activeTab) && !selectedProject && !selectedMember;
+  const isWorksLanding = pathname === '/works';
+  const isStudioLanding = pathname === '/';
+  const isContactLanding = ['/contact', '/contact/case-study-house', '/contact/grow-with-us', '/contact/partner-with-us'].includes(pathname);
 
-  const isHeaderTransparent = (isStudioLanding || isWorksLanding || isContactLanding) && !selectedProject;
-  
-  const isStudioSubpage = [
-    'comprehensive-services',
-    'piecework-services',
-    'designing-with-values',
-    'managing-with-integrity',
-    'building-with-culture',
-  ].includes(activeTab);
+  const isHeaderTransparent = isStudioLanding || isWorksLanding || isContactLanding;
 
-  let isWorksActive = activeTab === 'works';
-  let isStudioActive = activeTab === 'our-services' || activeTab === 'our-people' || activeTab.startsWith('our-people-') || activeTab === 'services' || isStudioSubpage;
-  let isContactActive = [
-    'contact',
-    'case-study-house',
-    'grow-with-us',
-    'partner-with-us',
-    'contact-info',
-    'career',
-    'supplier',
-    'builder',
-    'consultant',
-  ].includes(activeTab);
-
-  if (selectedProject) {
-    isWorksActive = true;
-    isStudioActive = false;
-    isContactActive = false;
-  } else if (selectedMember) {
-    isWorksActive = false;
-    isStudioActive = true;
-    isContactActive = false;
-  }
+  const isWorksActive = pathname.startsWith('/works');
+  const isStudioActive =
+    pathname.startsWith('/our-services') ||
+    pathname.startsWith('/our-people') ||
+    pathname.startsWith('/services') ||
+    pathname.startsWith('/studio/');
+  const isContactActive =
+    pathname.startsWith('/contact') ||
+    pathname === '/career' ||
+    pathname === '/supplier' ||
+    pathname === '/builder' ||
+    pathname === '/consultant';
 
   const handleLogoClick = () => {
-    setActiveTab('home');
-    setSelectedProject(null);
-    setSelectedMember(null);
+    router.push(ROUTES.home);
   };
 
   const handleNavClick = (tab: string) => {
-    setActiveTab(tab);
-    setSelectedProject(null);
-    setSelectedMember(null);
+    router.push(TAB_TO_ROUTE[tab] ?? ROUTES.home);
   };
 
   return (
-    <header 
+    <header
       id="main-header"
       className={`${
         isHeaderTransparent
           ? 'absolute top-0 left-0 w-full z-40 bg-transparent border-none text-white'
           : `sticky top-0 z-40 backdrop-blur-md transition-colors border-b ${
-              isDarkMode 
-                ? 'bg-vintage-charcoal/90 border-space-sparkle/20 text-bright-gray' 
+              isDarkMode
+                ? 'bg-vintage-charcoal/90 border-space-sparkle/20 text-bright-gray'
                 : 'bg-bright-gray/90 border-space-sparkle/10 text-vintage-charcoal'
             }`
       }`}
@@ -111,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between">
         <div className="flex items-center space-x-12 lg:space-x-16">
           <div className="flex items-center cursor-pointer select-none" onClick={handleLogoClick}>
-            <AtbpLogo 
+            <AtbpLogo
               isDarkMode={isDarkMode}
               isHeaderTransparent={isHeaderTransparent}
               className="h-7 w-auto transition-opacity hover:opacity-90"
@@ -120,25 +82,22 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-8 text-caption font-light tracking-widest uppercase relative">
-            <div 
+            <div
               onMouseEnter={() => setIsWorksHovered(true)}
               onMouseLeave={() => setIsWorksHovered(false)}
             >
-              <div 
+              <div
                 onClick={() => {
-                  setProjectFilter('All');
-                  setActiveTab('works');
-                  setSelectedProject(null);
-                  setSelectedMember(null);
                   setIsWorksHovered(false);
+                  router.push(ROUTES.works);
                 }}
                 className={`transition-all duration-300 relative py-1 min-w-[70px] text-center cursor-pointer select-none ${
                   isHeaderTransparent
-                    ? isWorksActive 
-                      ? 'text-white font-medium' 
+                    ? isWorksActive
+                      ? 'text-white font-medium'
                       : 'text-white/70 hover:text-white'
-                    : isWorksActive 
-                      ? 'text-space-sparkle font-medium' 
+                    : isWorksActive
+                      ? 'text-space-sparkle font-medium'
                       : 'text-inherit hover:text-vintage-charcoal dark:hover:text-bright-gray'
                 }`}
               >
@@ -168,32 +127,29 @@ export const Header: React.FC<HeaderProps> = ({
                 {isWorksHovered && (
                   <WorksDropdown
                     isDarkMode={isDarkMode}
-                    currentFilter={projectFilter}
+                    currentFilter={currentCategoryFilter}
                     onFilterSelect={(filter) => {
-                      setProjectFilter(filter);
-                      setActiveTab('works');
-                      setSelectedProject(null);
-                      setSelectedMember(null);
                       setIsWorksHovered(false);
+                      router.push(`${ROUTES.works}?category=${encodeURIComponent(filter)}`);
                     }}
                     onClose={() => setIsWorksHovered(false)}
                   />
                 )}
               </AnimatePresence>
             </div>
-            <div 
+            <div
               onMouseEnter={() => setIsAboutHovered(true)}
               onMouseLeave={() => setIsAboutHovered(false)}
             >
-              <div 
+              <div
                 onClick={() => handleNavClick('our-services')}
                 className={`transition-all duration-300 relative py-1 text-center cursor-pointer normal-case ${
                   isHeaderTransparent
-                    ? isStudioActive 
-                      ? 'text-white font-medium' 
+                    ? isStudioActive
+                      ? 'text-white font-medium'
                       : 'text-white/70'
-                    : isStudioActive 
-                      ? 'text-space-sparkle font-medium' 
+                    : isStudioActive
+                      ? 'text-space-sparkle font-medium'
                       : 'text-inherit hover:text-vintage-charcoal dark:hover:text-bright-gray'
                 }`}
               >
@@ -222,7 +178,6 @@ export const Header: React.FC<HeaderProps> = ({
               <AnimatePresence>
                 {isAboutHovered && (
                   <StudioDropdown
-                    activeTab={activeTab}
                     isDarkMode={isDarkMode}
                     onNavClick={handleNavClick}
                     onClose={() => setIsAboutHovered(false)}
@@ -230,19 +185,19 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </AnimatePresence>
             </div>
-            <div 
+            <div
               onMouseEnter={() => setIsContactHovered(true)}
               onMouseLeave={() => setIsContactHovered(false)}
             >
-              <div 
+              <div
                 onClick={() => handleNavClick('contact')}
                 className={`transition-all duration-300 relative py-1 text-center cursor-pointer normal-case min-w-[80px] ${
                   isHeaderTransparent
-                    ? isContactActive 
-                      ? 'text-white font-medium' 
+                    ? isContactActive
+                      ? 'text-white font-medium'
                       : 'text-white/70'
-                    : isContactActive 
-                      ? 'text-space-sparkle font-medium' 
+                    : isContactActive
+                      ? 'text-space-sparkle font-medium'
                       : 'text-inherit hover:text-vintage-charcoal dark:hover:text-bright-gray'
                 }`}
               >
@@ -271,7 +226,6 @@ export const Header: React.FC<HeaderProps> = ({
               <AnimatePresence>
                 {isContactHovered && (
                   <ContactDropdown
-                    activeTab={activeTab}
                     isDarkMode={isDarkMode}
                     onNavClick={handleNavClick}
                     onClose={() => setIsContactHovered(false)}
@@ -285,8 +239,8 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Action Area */}
         <div className="flex items-center space-x-2 sm:space-x-2.5 mr-0 pr-0">
           {/* CTA Button 1: Schedule a Discovery Meeting */}
-          <button 
-            onClick={() => handleNavClick('intake')}
+          <button
+            onClick={() => router.push(ROUTES.intake)}
             title="Schedule a Discovery Meeting"
             className={`group hidden md:flex items-center justify-center w-9 sm:w-10 h-9 sm:h-10 rounded-full transition-all duration-300 ease-in-out cursor-pointer select-none shrink-0 overflow-hidden shadow-sm hover:w-auto hover:px-3.5 ${
               isHeaderTransparent
@@ -304,8 +258,8 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {/* CTA Button 2: Request a Proposal */}
-          <button 
-            onClick={() => handleNavClick('intake')}
+          <button
+            onClick={() => router.push(ROUTES.intake)}
             title="Request a Proposal"
             className={`group hidden md:flex items-center justify-center w-9 sm:w-10 h-9 sm:h-10 rounded-full transition-all duration-300 ease-in-out cursor-pointer select-none shrink-0 overflow-hidden hover:w-auto hover:px-3.5 ${
               isHeaderTransparent
@@ -325,7 +279,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {/* Mobile Menu Toggle */}
-          <button 
+          <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className={`lg:hidden p-2 cursor-pointer ${isHeaderTransparent ? 'text-white' : 'text-inherit'}`}
           >
