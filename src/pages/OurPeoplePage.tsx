@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { MEMBERS_DATA, Member } from '../membersData';
+import { Member } from '../types';
+import { getMembers } from '../lib/data/members';
 
 interface OurPeoplePageProps {
   isDarkMode: boolean;
@@ -25,6 +26,11 @@ export const OurPeoplePage: React.FC<OurPeoplePageProps> = ({
 }) => {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>(initialFilter);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [members, setMembers] = useState<Member[]>([]);
+
+  useEffect(() => {
+    getMembers().then(setMembers);
+  }, []);
 
   React.useEffect(() => {
     setActiveFilter(initialFilter);
@@ -33,8 +39,8 @@ export const OurPeoplePage: React.FC<OurPeoplePageProps> = ({
 
   // Filter members based on category
   const filteredMembers = useMemo(() => {
-    if (activeFilter === 'all') return MEMBERS_DATA;
-    return MEMBERS_DATA.filter((member) => {
+    if (activeFilter === 'all') return members;
+    return members.filter((member) => {
       const roleLower = member.role.toLowerCase();
       const bioLower = (member.bio + ' ' + member.fullBio).toLowerCase();
       
@@ -69,7 +75,7 @@ export const OurPeoplePage: React.FC<OurPeoplePageProps> = ({
       }
       return true;
     });
-  }, [activeFilter]);
+  }, [activeFilter, members]);
 
   // Handle Carousel Prev / Next
   const handlePrev = () => {

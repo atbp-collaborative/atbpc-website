@@ -1,19 +1,4 @@
-export interface Member {
-  id: string;
-  name: string;
-  role: string;
-  license: string;
-  image: string;
-  bio: string;
-  fullBio: string;
-  education: string[];
-  involvement: {
-    projectId: string;
-    projectTitle: string;
-    roleInProject: string;
-    description: string;
-  }[];
-}
+import { Member } from '../types';
 
 export const MEMBERS_DATA: Member[] = [
   {

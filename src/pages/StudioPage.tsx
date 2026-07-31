@@ -10,23 +10,23 @@ interface StudioPageProps {
 
 const CAROUSEL_IMAGES = [
   {
-    url: '/src/assets/images/hero_modern_villa_1783495183350.jpg',
+    url: '/images/hero_modern_villa_1783495183350.jpg',
     title: 'Your Home',
   },
   {
-    url: '/src/assets/images/condo_fitout_interior_1783495200802.jpg',
+    url: '/images/condo_fitout_interior_1783495200802.jpg',
     title: 'Your Business',
   },
   {
-    url: '/src/assets/images/production_drawings_1783495233053.jpg',
+    url: '/images/production_drawings_1783495233053.jpg',
     title: 'Your Office',
   },
   {
-    url: '/src/assets/images/retail_boutique_1783495217375.jpg',
+    url: '/images/retail_boutique_1783495217375.jpg',
     title: 'Your Home',
   },
   {
-    url: '/src/assets/images/kiosk_coffee_bar_1783495252161.jpg',
+    url: '/images/kiosk_coffee_bar_1783495252161.jpg',
     title: 'Your Business',
   },
 ];

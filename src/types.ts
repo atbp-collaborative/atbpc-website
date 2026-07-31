@@ -44,3 +44,22 @@ export interface Service {
   desc: string;
 }
 
+export interface MemberInvolvement {
+  projectId: string;
+  projectTitle: string;
+  roleInProject: string;
+  description: string;
+}
+
+export interface Member {
+  id: string;
+  name: string;
+  role: string;
+  license: string;
+  image: string;
+  bio: string;
+  fullBio: string;
+  education: string[];
+  involvement: MemberInvolvement[];
+}
+

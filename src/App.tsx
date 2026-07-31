@@ -5,8 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { Project } from './types';
-import { Member } from './membersData';
+import { Project, Member } from './types';
 import { useContentProtection } from './hooks/useContentProtection';
 
 // Components

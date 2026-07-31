@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, X, Play, ArrowUpRight, Plus, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Project } from '../types';
-import { MEMBERS_DATA, Member } from '../membersData';
+import { Project, Member } from '../types';
+import { getMembers } from '../lib/data/members';
 import { Button } from './Button';
 
 function getYouTubeEmbedUrl(url: string): string | null {
@@ -32,16 +32,21 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
 }) => {
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
   const [isOverviewOpen, setIsOverviewOpen] = useState<boolean>(false);
+  const [members, setMembers] = useState<Member[]>([]);
+
+  useEffect(() => {
+    getMembers().then(setMembers);
+  }, []);
 
   useEffect(() => {
     setIsOverviewOpen(false);
   }, [project.id]);
 
   const contributors = useMemo(() => {
-    return MEMBERS_DATA.filter((member) =>
+    return members.filter((member) =>
       member.involvement.some((inv) => inv.projectId === project.id)
     );
-  }, [project.id]);
+  }, [project.id, members]);
 
   const mediaItems = useMemo(() => {
     const items: Array<{ type: 'image' | 'video'; url: string; duration?: string }> = [];

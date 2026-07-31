@@ -1,5 +1,6 @@
 import React from 'react';
-import processDiagramImg from '../assets/images/process_diagram_1784685228956.jpg';
+
+const processDiagramImg = '/images/process_diagram_1784685228956.jpg';
 
 interface DoubleDiamondProps {
   isDarkMode: boolean;

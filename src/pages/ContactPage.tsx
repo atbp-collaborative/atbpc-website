@@ -26,7 +26,7 @@ const MAIN_CONTACT_CARDS = [
     tagline: 'locate & communicate ◦ parañaque city',
     description: 'Our studio headquarters, address, interactive map, and contact coordinates.',
     tags: ['Discovery Meeting', 'Locate & Communicate'],
-    image: '/src/assets/images/contact_headquarters_img_1785470005846.jpg',
+    image: '/images/contact_headquarters_img_1785470005846.jpg',
   },
   {
     id: 'careers',
@@ -35,7 +35,7 @@ const MAIN_CONTACT_CARDS = [
     tagline: 'careers ◦ internship, apprenticeship & licensing',
     description: 'Join our collaborative ecosystem. Opportunities for emerging architects and design leaders.',
     tags: ['Internship Program', 'Apprenticeship Program', 'Licensed Programs'],
-    image: '/src/assets/images/contact_careers_img_1785470018782.jpg',
+    image: '/images/contact_careers_img_1785470018782.jpg',
   },
   {
     id: 'partners',
@@ -44,7 +44,7 @@ const MAIN_CONTACT_CARDS = [
     tagline: 'collaborations ◦ suppliers, consultants & builders',
     description: 'Collaborate with ATBP as a material supplier, engineering consultant, or trade builder.',
     tags: ['Suppliers', 'Consultants', 'Builders'],
-    image: '/src/assets/images/contact_partners_img_1785470031164.jpg',
+    image: '/images/contact_partners_img_1785470031164.jpg',
   },
 ];
 
@@ -56,7 +56,7 @@ const CASE_STUDY_HOUSE_CARDS = [
     tagline: 'intake, spatial goals & consultation',
     description: 'Start a dialogue with ATBP Collaborative for project planning, site feasibility, and design inquiries.',
     tags: ['Project Intake', 'Design Brief', 'Spatial Requirements'],
-    image: '/src/assets/images/studio_services_img_1785469964556.jpg',
+    image: '/images/studio_services_img_1785469964556.jpg',
   },
   {
     id: 'locate-map',
@@ -65,7 +65,7 @@ const CASE_STUDY_HOUSE_CARDS = [
     tagline: 'headquarters, address & contact channels',
     description: 'Interactive office map, physical address in Parañaque City, landline, mobile, Viber & social channels.',
     tags: ['Parañaque City', 'Interactive Map', 'Viber & Email'],
-    image: '/src/assets/images/contact_headquarters_img_1785470005846.jpg',
+    image: '/images/contact_headquarters_img_1785470005846.jpg',
   },
 ];
 
@@ -77,7 +77,7 @@ const GROW_WITH_US_CARDS = [
     tagline: 'student fellowship & studio immersion',
     description: 'Immersion program for architecture and design students to engage in active project workflows and research.',
     tags: ['Student Fellowship', 'Spatial Practice', 'Research'],
-    image: '/src/assets/images/contact_careers_img_1785470018782.jpg',
+    image: '/images/contact_careers_img_1785470018782.jpg',
   },
   {
     id: 'apprenticeship',
@@ -86,7 +86,7 @@ const GROW_WITH_US_CARDS = [
     tagline: 'junior architect & graduate mentorship',
     description: 'Comprehensive mentorship path for architecture graduates preparing for professional licensure and site management.',
     tags: ['Junior Architect', 'Licensure Support', 'Site Experience'],
-    image: '/src/assets/images/studio_people_img_1785469993286.jpg',
+    image: '/images/studio_people_img_1785469993286.jpg',
   },
   {
     id: 'licensed',
@@ -95,7 +95,7 @@ const GROW_WITH_US_CARDS = [
     tagline: 'full-time practice & project leads',
     description: 'Leadership roles for registered architects, spatial strategists, and project directors driving studio commissions.',
     tags: ['Registered Architect', 'Project Director', 'Design Lead'],
-    image: '/src/assets/images/production_drawings_1783495233053.jpg',
+    image: '/images/production_drawings_1783495233053.jpg',
   },
 ];
 
@@ -107,7 +107,7 @@ const PARTNER_WITH_US_CARDS = [
     tagline: 'materials, finishes & architectural hardware',
     description: 'Register material samples, architectural fixtures, sustainable building assemblies, and trade products with ATBP.',
     tags: ['Material Specification', 'Bespoke Finishes', 'Hardware'],
-    image: '/src/assets/images/contact_partners_img_1785470031164.jpg',
+    image: '/images/contact_partners_img_1785470031164.jpg',
   },
   {
     id: 'consultants',
@@ -116,7 +116,7 @@ const PARTNER_WITH_US_CARDS = [
     tagline: 'engineering, mepfs & specialist review',
     description: 'Collaborate as a structural engineer, MEPFS specialist, environmental analyst, or technical peer reviewer.',
     tags: ['Structural', 'MEPFS', 'Environmental Review'],
-    image: '/src/assets/images/studio_process_img_1785469980353.jpg',
+    image: '/images/studio_process_img_1785469980353.jpg',
   },
   {
     id: 'builders',
@@ -125,7 +125,7 @@ const PARTNER_WITH_US_CARDS = [
     tagline: 'master contractors & specialized trade guilds',
     description: 'Partner as a general contractor, specialized mason, steel fabricator, or custom joinery artisan on studio builds.',
     tags: ['General Contractors', 'Masonry & Steel', 'Joinery Artisans'],
-    image: '/src/assets/images/retail_boutique_1783495217375.jpg',
+    image: '/images/retail_boutique_1783495217375.jpg',
   },
 ];
 

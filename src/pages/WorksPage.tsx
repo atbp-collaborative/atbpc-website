@@ -18,11 +18,12 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { PROJECTS_DATA } from '../data';
+import { getProjects } from '../lib/data/projects';
 import { Project } from '../types';
-import shelterImg from '../assets/images/hero_modern_villa_1783495183350.jpg';
-import livelihoodImg from '../assets/images/retail_boutique_1783495217375.jpg';
-import communityImg from '../assets/images/production_drawings_1783495233053.jpg';
+
+const shelterImg = '/images/hero_modern_villa_1783495183350.jpg';
+const livelihoodImg = '/images/retail_boutique_1783495217375.jpg';
+const communityImg = '/images/production_drawings_1783495233053.jpg';
 
 interface WorksPageProps {
   isDarkMode: boolean;
@@ -81,12 +82,18 @@ export const WorksPage: React.FC<WorksPageProps> = ({
     },
   ];
 
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  useEffect(() => {
+    getProjects().then(setProjects);
+  }, []);
+
   // Filtered projects
-  const filteredProjects = projectFilter === 'All' 
-    ? PROJECTS_DATA 
-    : PROJECTS_DATA.filter(p => 
-        p.category === projectFilter || 
-        p.mainCategory === projectFilter || 
+  const filteredProjects = projectFilter === 'All'
+    ? projects
+    : projects.filter(p =>
+        p.category === projectFilter ||
+        p.mainCategory === projectFilter ||
         p.subcategory === projectFilter
       );
 

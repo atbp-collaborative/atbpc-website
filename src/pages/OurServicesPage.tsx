@@ -1,22 +1,23 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { SERVICES_DATA } from '../data';
+import { getServices } from '../lib/data/services';
+import { Service } from '../types';
 
 const getServiceImage = (title: string) => {
   const t = title.toLowerCase();
   if (t.includes('comprehensive')) {
-    return '/src/assets/images/hero_modern_villa_1783495183350.jpg';
+    return '/images/hero_modern_villa_1783495183350.jpg';
   }
   if (t.includes('piecework')) {
-    return '/src/assets/images/kiosk_coffee_bar_1783495252161.jpg';
+    return '/images/kiosk_coffee_bar_1783495252161.jpg';
   }
   if (t.includes('general construction')) {
-    return '/src/assets/images/condo_fitout_interior_1783495200802.jpg';
+    return '/images/condo_fitout_interior_1783495200802.jpg';
   }
   if (t.includes('retainer')) {
-    return '/src/assets/images/production_drawings_1783495233053.jpg';
+    return '/images/production_drawings_1783495233053.jpg';
   }
-  return '/src/assets/images/hero_modern_villa_1783495183350.jpg';
+  return '/images/hero_modern_villa_1783495183350.jpg';
 };
 
 interface OurServicesPageProps {
@@ -24,6 +25,12 @@ interface OurServicesPageProps {
 }
 
 export const OurServicesPage: React.FC<OurServicesPageProps> = ({ isDarkMode }) => {
+  const [services, setServices] = useState<Service[]>([]);
+
+  useEffect(() => {
+    getServices().then(setServices);
+  }, []);
+
   return (
     <motion.div 
       key="our-services"
@@ -36,7 +43,7 @@ export const OurServicesPage: React.FC<OurServicesPageProps> = ({ isDarkMode }) 
       {/* Contract Types Cards Grid / Carousel */}
       <div className="flex-1 flex items-center justify-center min-h-0 w-full my-auto overflow-hidden">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[2px] w-full max-w-7xl mx-auto items-stretch">
-          {SERVICES_DATA.map((service) => {
+          {services.map((service) => {
             const imageUrl = getServiceImage(service.title);
             return (
               <div

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Menu, X, Calendar, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Project } from '../types';
-import { Member } from '../membersData';
+import { Project, Member } from '../types';
 import { Button } from './Button';
 import { StudioDropdown } from './StudioDropdown';
 import { ContactDropdown } from './ContactDropdown';

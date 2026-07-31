@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Plus, Minus, ArrowUpRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Member } from '../membersData';
-import { Project } from '../types';
-import { PROJECTS_DATA } from '../data';
+import { Member, Project } from '../types';
+import { getProjects } from '../lib/data/projects';
 
 interface MemberDetailProps {
   member: Member;
@@ -20,6 +19,11 @@ export const MemberDetail: React.FC<MemberDetailProps> = ({
 }) => {
   const [isAccreditationsOpen, setIsAccreditationsOpen] = useState<boolean>(false);
   const [isInvolvementOpen, setIsInvolvementOpen] = useState<boolean>(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  useEffect(() => {
+    getProjects().then(setProjects);
+  }, []);
 
   // Close accordion panels when member changes
   useEffect(() => {
@@ -151,7 +155,7 @@ export const MemberDetail: React.FC<MemberDetailProps> = ({
                   <div className="pb-4 pt-1 text-caption space-y-4 pl-[30px]">
                     <ul className="space-y-2">
                       {member.involvement.map((inv) => {
-                        const project = PROJECTS_DATA.find(p => p.id === inv.projectId);
+                        const project = projects.find(p => p.id === inv.projectId);
                         return (
                           <li key={inv.projectId} className="flex items-start space-x-2 font-light opacity-90">
                             <span className="text-space-sparkle font-semibold mt-0.5">•</span>

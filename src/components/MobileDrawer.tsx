@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ArrowRight, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Project } from '../types';
-import { Member } from '../membersData';
+import { Project, Member } from '../types';
 import { Button } from './Button';
 import { AtbpLogo } from './AtbpLogo';
 
