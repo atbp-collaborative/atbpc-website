@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,300..800;1,300..800&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Source+Sans+3:ital,wght@0,300..900;1,300..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Source+Sans+3:ital,wght@0,300..900;1,300..900&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -21,13 +21,13 @@ html.dark {
   --color-bright-gray: #EDEFEF;
   --color-vintage-charcoal: #333436;
   
-  --font-sans: "Plus Jakarta Sans", sans-serif;
-  --font-major: "Plus Jakarta Sans", sans-serif;
-  --font-minor: "Source Sans 3", sans-serif;
-  --font-small-minor: "Archivo", sans-serif;
-  --font-archivo: "Archivo", sans-serif;
+  --font-sans: "Poppins", sans-serif;
+  --font-major: "Poppins", sans-serif;
+  --font-minor: "Inter", sans-serif;
+  --font-small-minor: "Source Sans 3", sans-serif;
+  --font-archivo: "Source Sans 3", sans-serif;
 
-  --text-main: 64px;
+  --text-main: 52px;
   --text-hero: 48px;
   --text-h1: 32px;
   --text-h2: 24px;
@@ -37,7 +37,7 @@ html.dark {
 }
 
 @utility text-main {
-  font-size: 64px;
+  font-size: 52px;
 }
 @utility text-hero {
   font-size: 48px;

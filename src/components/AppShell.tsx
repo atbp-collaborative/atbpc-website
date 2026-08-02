@@ -10,7 +10,7 @@ import { MobileDrawer } from './MobileDrawer';
 
 // Paths that keep the ordinary scrollable min-h-screen layout instead of the
 // locked full-viewport h-screen treatment used by the marketing/landing pages.
-const SCROLLABLE_PATHS = ['/our-services', '/intake'];
+const SCROLLABLE_PATHS = ['/our-services', '/contact/discovery-meeting'];
 
 function isMemberDetailPath(pathname: string): boolean {
   return /^\/our-people\/[^/]+$/.test(pathname);
