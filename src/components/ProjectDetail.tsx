@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ChevronLeft, ChevronRight, MapPin, X, Play, ArrowUpRight, Plus, Minus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, X, Play, ArrowUpRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { Project, Member } from '../types';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, memberRoute } from '../lib/routes';
 import { Button } from './Button';
+import { Accordion } from './Accordion';
 
 function getYouTubeEmbedUrl(url: string): string | null {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -31,11 +32,6 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
   const { isDarkMode } = useTheme();
   const router = useRouter();
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
-  const [isOverviewOpen, setIsOverviewOpen] = useState<boolean>(false);
-
-  useEffect(() => {
-    setIsOverviewOpen(false);
-  }, [project.id]);
 
   const contributors = useMemo(() => {
     return members.filter((member) =>
@@ -381,82 +377,58 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
               </p>
             </div>
 
-            {/* Project Overview Accordion (Patterned after MemberDetail.tsx) */}
-            <div className="overflow-hidden border-t border-space-sparkle/10 pt-2 shrink-0">
-              <button
-                onClick={() => setIsOverviewOpen(!isOverviewOpen)}
-                className="w-full py-1.5 flex items-center text-left focus:outline-none group cursor-pointer"
-              >
-                <span className={`${isDarkMode ? 'text-white' : 'text-slate-900'} mr-3.5 shrink-0 flex items-center justify-center`}>
-                  {isOverviewOpen ? <Minus size={16} /> : <Plus size={16} />}
-                </span>
-                <h4 className={`font-sans text-xs font-semibold tracking-wide uppercase ${isDarkMode ? 'text-white' : 'text-slate-900'} group-hover:opacity-80 transition-opacity`}>
-                  Project Overview
-                </h4>
-              </button>
-
-              <AnimatePresence initial={false}>
-                {isOverviewOpen && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="overflow-hidden"
-                  >
-                    <div className="pb-2 pt-1 text-xs pl-[30px] max-h-[220px] overflow-y-auto">
-                      <div className="flex flex-col space-y-4">
-                        {project.specs.area && (
-                          <div>
-                            <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Floor Area</span>
-                            <span className="font-medium text-xs">{project.specs.area}</span>
-                          </div>
-                        )}
-                        <div>
-                          <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Contract Type</span>
-                          <span className="font-medium text-xs block capitalize">{project.specs.scope}</span>
-                        </div>
-                        {project.specs.materials && (
-                          <div>
-                            <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Featured Materials</span>
-                            <div className="flex flex-wrap gap-1.5 mt-1">
-                              {project.specs.materials.map((m, i) => (
-                                <span key={i} className={`px-2 py-0.5 rounded-none text-[11px] font-sans ${
-                                  isDarkMode ? 'bg-space-sparkle/10 text-bright-gray' : 'bg-space-sparkle/5 text-vintage-charcoal'
-                                }`}>
-                                  {m}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {contributors.length > 0 && (
-                          <div className="pt-0.5">
-                            <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1.5">Project Contributors</span>
-                            <ul className="space-y-1.5">
-                              {contributors.map((member) => (
-                                <li key={member.id} className="flex items-start space-x-2 font-light opacity-90">
-                                  <span className="text-space-sparkle font-semibold mt-0.5">•</span>
-                                  <button
-                                    onClick={() => router.push(memberRoute(member.id))}
-                                    className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
-                                      isDarkMode ? "text-bright-gray/90" : "text-slate-700"
-                                    }`}
-                                  >
-                                    <span>{member.name.replace(/,\s*$/, '')}</span>
-                                    <ArrowUpRight size={12} className="opacity-65 text-space-sparkle shrink-0" />
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+            {/* Project Overview Accordion */}
+            <Accordion key={`overview-${project.id}`} title="Project Overview" isDarkMode={isDarkMode} size="sm" className="shrink-0">
+              <div className="pb-2 pt-1 text-xs pl-[30px] max-h-[220px] overflow-y-auto">
+                <div className="flex flex-col space-y-4">
+                  {project.specs.area && (
+                    <div>
+                      <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Floor Area</span>
+                      <span className="font-medium text-xs">{project.specs.area}</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Contract Type</span>
+                    <span className="font-medium text-xs block capitalize">{project.specs.scope}</span>
+                  </div>
+                  {project.specs.materials && (
+                    <div>
+                      <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Featured Materials</span>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {project.specs.materials.map((m, i) => (
+                          <span key={i} className={`px-2 py-0.5 rounded-none text-[11px] font-sans ${
+                            isDarkMode ? 'bg-space-sparkle/10 text-bright-gray' : 'bg-space-sparkle/5 text-vintage-charcoal'
+                          }`}>
+                            {m}
+                          </span>
+                        ))}
                       </div>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                  )}
+                  {contributors.length > 0 && (
+                    <div className="pt-0.5">
+                      <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1.5">Project Contributors</span>
+                      <ul className="space-y-1.5">
+                        {contributors.map((member) => (
+                          <li key={member.id} className="flex items-start space-x-2 font-light opacity-90">
+                            <span className="text-space-sparkle font-semibold mt-0.5">•</span>
+                            <button
+                              onClick={() => router.push(memberRoute(member.id))}
+                              className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
+                                isDarkMode ? "text-bright-gray/90" : "text-slate-700"
+                              }`}
+                            >
+                              <span>{member.name.replace(/,\s*$/, '')}</span>
+                              <ArrowUpRight size={12} className="opacity-65 text-space-sparkle shrink-0" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Accordion>
           </div>
         </div>
 

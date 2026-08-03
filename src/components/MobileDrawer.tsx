@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, ArrowRight, ChevronDown } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, TAB_TO_ROUTE } from '../lib/routes';
 import { AtbpLogo } from './AtbpLogo';
+import { CtaButton } from './CtaButton';
+import { useActiveNav } from '../hooks/useActiveNav';
 
 import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '../lib/navData';
 
@@ -15,6 +17,44 @@ interface MobileDrawerProps {
   setIsMobileMenuOpen: (open: boolean) => void;
 }
 
+interface SectionTriggerProps {
+  label: string;
+  isActive: boolean;
+  isExpanded: boolean;
+  isDarkMode: boolean;
+  uppercase?: boolean;
+  onClick: () => void;
+}
+
+const SectionTrigger: React.FC<SectionTriggerProps> = ({
+  label,
+  isActive,
+  isExpanded,
+  isDarkMode,
+  uppercase = true,
+  onClick,
+}) => (
+  <button
+    onClick={onClick}
+    className={`w-full flex items-center justify-between text-left text-caption tracking-widest ${
+      uppercase ? 'uppercase' : 'normal-case'
+    } py-3 px-4 rounded-none transition-all cursor-pointer ${
+      isActive
+        ? isDarkMode ? 'bg-space-sparkle/20 text-white font-bold' : 'bg-space-sparkle/10 text-space-sparkle font-bold'
+        : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-80'
+    }`}
+  >
+    <span>{label}</span>
+    <motion.span
+      animate={{ rotate: isExpanded ? 180 : 0 }}
+      transition={{ duration: 0.6 }}
+      className="ml-2 flex items-center"
+    >
+      <ChevronDown size={16} />
+    </motion.span>
+  </button>
+);
+
 export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   isMobileMenuOpen,
   setIsMobileMenuOpen,
@@ -22,14 +62,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   const { isDarkMode } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const worksSlug = pathname.startsWith('/works/') ? pathname.split('/')[2] : null;
-  const projectFilter = worksSlug ? decodeURIComponent(worksSlug) : 'All';
-
-  const isStudioLandingActive = pathname === '/';
-  const isWorksActive = pathname.startsWith('/works');
-  const isStudioActive = pathname.startsWith('/our-services') || pathname.startsWith('/our-people') || pathname.startsWith('/services');
-  const isContactActive = pathname.startsWith('/contact') || pathname === '/career' || pathname === '/supplier' || pathname === '/builder';
+  const { isWorksActive, isStudioActive, isContactActive, currentCategoryFilter: projectFilter } = useActiveNav();
+  const isHomeActive = pathname === '/';
 
   // Accordion expansion state: only one category expanded at a time
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
@@ -56,7 +90,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
         setExpandedWorksCategory(activeGroup.label);
       }
     }
-  }, [isMobileMenuOpen, pathname, isStudioActive, isContactActive, isWorksActive, projectFilter]);
+  }, [isMobileMenuOpen, isStudioActive, isContactActive, isWorksActive, projectFilter]);
 
   const handleNavClick = (tabId: string) => {
     router.push(TAB_TO_ROUTE[tabId] ?? ROUTES.home);
@@ -106,7 +140,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 <button
                   onClick={() => handleNavClick('home')}
                   className={`text-left text-caption tracking-widest uppercase py-3 px-4 rounded-none transition-all cursor-pointer ${
-                    isStudioLandingActive
+                    isHomeActive
                       ? isDarkMode ? 'bg-space-sparkle/20 text-white font-bold' : 'bg-space-sparkle/10 text-space-sparkle font-bold'
                       : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-80'
                   }`}
@@ -116,26 +150,17 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
                 {/* Sub-item 2-level dropdown section for Works */}
                 <div className="space-y-1">
-                  <button
+                  <SectionTrigger
+                    label="Works | Gawâ"
+                    isActive={isWorksActive}
+                    isExpanded={expandedSection === 'works'}
+                    isDarkMode={isDarkMode}
+                    uppercase={false}
                     onClick={() => {
                       handleNavClick('works');
                       setExpandedSection(prev => prev === 'works' ? null : 'works');
                     }}
-                    className={`w-full flex items-center justify-between text-left text-caption tracking-widest normal-case py-3 px-4 rounded-none transition-all cursor-pointer ${
-                      isWorksActive
-                        ? isDarkMode ? 'bg-space-sparkle/20 text-white font-bold' : 'bg-space-sparkle/10 text-space-sparkle font-bold'
-                        : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-80'
-                    }`}
-                  >
-                    <span>Works | Gawâ</span>
-                    <motion.span
-                      animate={{ rotate: expandedSection === 'works' ? 180 : 0 }}
-                      transition={{ duration: 0.6 }}
-                      className="ml-2 flex items-center"
-                    >
-                      <ChevronDown size={16} />
-                    </motion.span>
-                  </button>
+                  />
 
                   <AnimatePresence initial={false}>
                     {expandedSection === 'works' && (
@@ -204,26 +229,16 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
                 {/* Sub-item dropdown section for Studio */}
                 <div className="space-y-1">
-                  <button
+                  <SectionTrigger
+                    label="Studio | Kamí"
+                    isActive={isStudioActive}
+                    isExpanded={expandedSection === 'studio'}
+                    isDarkMode={isDarkMode}
                     onClick={() => {
                       handleNavClick('studio');
                       setExpandedSection(prev => prev === 'studio' ? null : 'studio');
                     }}
-                    className={`w-full flex items-center justify-between text-left text-caption tracking-widest uppercase py-3 px-4 rounded-none transition-all cursor-pointer ${
-                      isStudioActive
-                        ? isDarkMode ? 'bg-space-sparkle/20 text-white font-bold' : 'bg-space-sparkle/10 text-space-sparkle font-bold'
-                        : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-80'
-                    }`}
-                  >
-                    <span>Studio | Kamí</span>
-                    <motion.span
-                      animate={{ rotate: expandedSection === 'studio' ? 180 : 0 }}
-                      transition={{ duration: 0.6 }}
-                      className="ml-2 flex items-center"
-                    >
-                      <ChevronDown size={16} />
-                    </motion.span>
-                  </button>
+                  />
 
                   <AnimatePresence initial={false}>
                     {expandedSection === 'studio' && (
@@ -268,26 +283,16 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
                 {/* Sub-item dropdown section for Contact */}
                 <div className="space-y-1">
-                  <button
+                  <SectionTrigger
+                    label="Contact | Kumustá"
+                    isActive={isContactActive}
+                    isExpanded={expandedSection === 'contact'}
+                    isDarkMode={isDarkMode}
                     onClick={() => {
                       handleNavClick('contact');
                       setExpandedSection(prev => prev === 'contact' ? null : 'contact');
                     }}
-                    className={`w-full flex items-center justify-between text-left text-caption tracking-widest uppercase py-3 px-4 rounded-none transition-all cursor-pointer ${
-                      isContactActive
-                        ? isDarkMode ? 'bg-space-sparkle/20 text-white font-bold' : 'bg-space-sparkle/10 text-space-sparkle font-bold'
-                        : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-80'
-                    }`}
-                  >
-                    <span>Contact | Kumustá</span>
-                    <motion.span
-                      animate={{ rotate: expandedSection === 'contact' ? 180 : 0 }}
-                      transition={{ duration: 0.6 }}
-                      className="ml-2 flex items-center"
-                    >
-                      <ChevronDown size={16} />
-                    </motion.span>
-                  </button>
+                  />
 
                   <AnimatePresence initial={false}>
                     {expandedSection === 'contact' && (
@@ -332,25 +337,21 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
             {/* Drawer Footer / CTA Area */}
             <div className="space-y-2.5 pt-6 border-t border-space-sparkle/10">
-              <button
+              <CtaButton
+                layout="full"
+                variant="solid"
+                lines={['Schedule a', 'Discovery Meeting']}
+                isDarkMode={isDarkMode}
                 onClick={() => handleNavClick('discovery-meeting')}
-                className="w-full flex flex-col items-center justify-center py-2 px-4 rounded-none font-sans font-semibold text-caption uppercase tracking-wider leading-tight transition-all cursor-pointer text-center bg-space-sparkle text-bright-gray hover:bg-space-sparkle/90 shadow-sm"
-              >
-                <span>Schedule a</span>
-                <span>Discovery Meeting</span>
-              </button>
+              />
 
-              <button
+              <CtaButton
+                layout="full"
+                variant="outline"
+                lines={['Request a', 'Proposal']}
+                isDarkMode={isDarkMode}
                 onClick={() => handleNavClick('discovery-meeting')}
-                className={`w-full flex flex-col items-center justify-center py-2 px-4 rounded-none font-sans font-semibold text-caption uppercase tracking-wider leading-tight transition-all cursor-pointer text-center border ${
-                  isDarkMode
-                    ? 'border-bright-gray/30 text-bright-gray hover:bg-white/10'
-                    : 'border-space-sparkle/30 text-space-sparkle hover:bg-space-sparkle/10'
-                }`}
-              >
-                <span>Request a</span>
-                <span>Proposal</span>
-              </button>
+              />
 
               <div className="text-caption text-center font-sans opacity-40 pt-2">
                 © 2026 ATBP Collaborative

@@ -1,137 +1,51 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle, FileText, Upload, Shield, X } from 'lucide-react';
+import { CheckCircle, Shield, X } from 'lucide-react';
 import { useTheme } from '../lib/theme-context';
-
-interface FileState {
-  name: string;
-  size: string;
-}
+import { FormFieldRenderer, getFieldThemeStyles } from './form-fields';
+import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CareerFormData, CareerFormType } from './CareerForm.config';
+import { submitCareerApplication } from '../lib/data/careerApplications';
 
 export interface CareerFormProps {
   initialStructure?: string;
+  formType?: CareerFormType;
 }
 
-export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '' }) => {
+export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', formType = 'internship' }) => {
   const { isDarkMode } = useTheme();
-  const [formData, setFormData] = useState({
-    department: '',
-    structure: initialStructure,
-    jobDescription: '',
-    firstName: '',
-    pseudonym: '',
-    middleName: '',
-    lastName: '',
-    pronoun: '',
-    titles: '',
-    location: '',
-    contactNumber: '',
-    email: '',
-    facebook: '',
-    instagram: '',
-    portfolioLink: '',
-    coverVideoLink: '',
-  });
+  const fields = CAREER_FORM_FIELDS[formType];
 
-  const [resumeFile, setResumeFile] = useState<FileState | null>(null);
-  const [resumeDragOver, setResumeDragOver] = useState(false);
+  const [formData, setFormData] = useState<CareerFormData>({
+    ...CAREER_FORM_INITIAL_DATA,
+    structure: initialStructure,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
-  const resumeInputRef = useRef<HTMLInputElement>(null);
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
+  const handleChange = (name: string, value: any) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleResumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      if (file.type !== 'application/pdf') {
-        alert('Please upload a PDF file for your resume.');
-        return;
-      }
-      setResumeFile({ name: file.name, size: formatFileSize(file.size) });
-    }
-  };
-
-  const handleResumeDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setResumeDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      if (file.type !== 'application/pdf') {
-        alert('Please upload a PDF file for your resume.');
-        return;
-      }
-      setResumeFile({ name: file.name, size: formatFileSize(file.size) });
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      await submitCareerApplication(formData);
+    } finally {
       setIsSubmitting(false);
       setIsSubmitted(true);
-    }, 1200);
+    }
   };
 
   const resetForm = () => {
-    setFormData({
-      department: '',
-      structure: '',
-      jobDescription: '',
-      firstName: '',
-      pseudonym: '',
-      middleName: '',
-      lastName: '',
-      pronoun: '',
-      titles: '',
-      location: '',
-      contactNumber: '',
-      email: '',
-      facebook: '',
-      instagram: '',
-      portfolioLink: '',
-      coverVideoLink: '',
-    });
-    setResumeFile(null);
+    setFormData({ ...CAREER_FORM_INITIAL_DATA, structure: initialStructure });
     setIsSubmitted(false);
   };
 
-  const departments = [
-    'Architectural Design & Research',
-    'Interior & Spatial Design',
-    'Engineering & Construction Support',
-    'Modular & F&B Practice',
-    'Studio Operations & Administration',
-  ];
-
-  const structures = [
-    'Full-Time Practice',
-    'Apprenticeship / Junior Architect',
-    'Project-Based Consultancy',
-    'Internship Fellowship',
-  ];
-
-  const inputBorderClass = isDarkMode
-    ? 'border-bright-gray/30 focus:border-bright-gray bg-vintage-charcoal/50 text-white placeholder-bright-gray/40'
-    : 'border-vintage-charcoal/30 focus:border-vintage-charcoal bg-white/60 text-vintage-charcoal placeholder-vintage-charcoal/40';
+  const inputBorderClass = getFieldThemeStyles('neutral', isDarkMode).borderColor;
 
   return (
     <motion.div
@@ -164,288 +78,56 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '' })
           >
             {/* LEFT COLUMN */}
             <div className="w-full lg:w-1/2 flex flex-col space-y-3 justify-between">
-              {/* Department */}
-              <div className="space-y-1">
-                <label className="text-caption font-semibold block opacity-90">
-                  Department
-                </label>
-                <select
-                  name="department"
-                  value={formData.department}
-                  onChange={handleInputChange}
-                  className={`w-full text-caption py-2 px-3 rounded-lg border outline-none transition-all cursor-pointer ${inputBorderClass}`}
-                >
-                  <option value="" disabled>
-                    In which department do you see your growth?
-                  </option>
-                  {departments.map((dep) => (
-                    <option key={dep} value={dep} className="bg-vintage-charcoal text-white">
-                      {dep}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Structure */}
-              <div className="space-y-1">
-                <label className="text-caption font-semibold block opacity-90">
-                  Structure
-                </label>
-                <select
-                  name="structure"
-                  value={formData.structure}
-                  onChange={handleInputChange}
-                  className={`w-full text-caption py-2 px-3 rounded-lg border outline-none transition-all cursor-pointer ${inputBorderClass}`}
-                >
-                  <option value="" disabled>
-                    What kind of role are you exploring?
-                  </option>
-                  {structures.map((st) => (
-                    <option key={st} value={st} className="bg-vintage-charcoal text-white">
-                      {st}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Job Description Box */}
-              <div className="flex-1 flex flex-col min-h-[120px] space-y-1">
-                <textarea
-                  name="jobDescription"
-                  value={formData.jobDescription}
-                  onChange={handleInputChange}
-                  placeholder="Job Description Here"
-                  className={`w-full flex-1 p-3 rounded-lg border outline-none resize-none text-caption transition-all ${inputBorderClass}`}
+              {fields.leftColumnTop.map((field) => (
+                <FormFieldRenderer
+                  key={field.name}
+                  config={field}
+                  value={(formData as any)[field.name]}
+                  onChange={handleChange}
+                  isDarkMode={isDarkMode}
+                  theme="neutral"
                 />
-              </div>
+              ))}
+
+              <FormFieldRenderer
+                config={fields.jobDescriptionField}
+                value={(formData as any)[fields.jobDescriptionField.name]}
+                onChange={handleChange}
+                isDarkMode={isDarkMode}
+                theme="neutral"
+              />
 
               {/* Bottom Row: Resume, Portfolio, Cover Video */}
               <div className="grid grid-cols-3 gap-3 pt-1">
-                {/* Resume Upload */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold block opacity-90 truncate">
-                    Resume <span className="text-space-sparkle font-normal">(!)</span>
-                  </label>
-                  <input
-                    type="file"
-                    ref={resumeInputRef}
-                    onChange={handleResumeChange}
-                    accept=".pdf"
-                    className="hidden"
+                {fields.uploadRow.map((field) => (
+                  <FormFieldRenderer
+                    key={field.name}
+                    config={field}
+                    value={(formData as any)[field.name]}
+                    onChange={handleChange}
+                    isDarkMode={isDarkMode}
+                    theme="neutral"
                   />
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setResumeDragOver(true);
-                    }}
-                    onDragLeave={() => setResumeDragOver(false)}
-                    onDrop={handleResumeDrop}
-                    onClick={() => resumeInputRef.current?.click()}
-                    className={`h-20 p-2 border rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
-                      resumeDragOver
-                        ? 'border-space-sparkle bg-space-sparkle/10'
-                        : inputBorderClass
-                    }`}
-                  >
-                    {resumeFile ? (
-                      <div className="space-y-0.5 max-w-full px-1">
-                        <FileText size={16} className="mx-auto text-space-sparkle" />
-                        <p className="text-[10px] font-medium truncate opacity-90">{resumeFile.name}</p>
-                        <p className="text-[9px] opacity-60">{resumeFile.size}</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        <Upload size={14} className="mx-auto opacity-70" />
-                        <p className="text-[10px] leading-tight font-medium opacity-80">
-                          Click / Drag to Upload Resume <span className="block opacity-60 text-[9px]">(PDF Only)</span>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Portfolio Link */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold block opacity-90 truncate">
-                    Portfolio <span className="text-space-sparkle font-normal">(!)</span>
-                  </label>
-                  <div className={`h-20 p-2 border rounded-xl flex flex-col justify-center ${inputBorderClass}`}>
-                    <textarea
-                      name="portfolioLink"
-                      value={formData.portfolioLink}
-                      onChange={handleInputChange}
-                      placeholder="Paste Here Link to Flipbook. (Sorry No PDF)"
-                      className="w-full h-full bg-transparent text-[10px] leading-tight outline-none resize-none placeholder-inherit"
-                    />
-                  </div>
-                </div>
-
-                {/* Cover Video Link */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold block opacity-90 truncate">
-                    Cover Video <span className="text-space-sparkle font-normal">(!)</span>
-                  </label>
-                  <div className={`h-20 p-2 border rounded-xl flex flex-col justify-center ${inputBorderClass}`}>
-                    <textarea
-                      name="coverVideoLink"
-                      value={formData.coverVideoLink}
-                      onChange={handleInputChange}
-                      placeholder="Paste Here Link to Cover Video"
-                      className="w-full h-full bg-transparent text-[10px] leading-tight outline-none resize-none placeholder-inherit"
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
             {/* RIGHT COLUMN */}
             <div className="w-full lg:w-1/2 flex flex-col space-y-2.5 justify-between">
-              {/* Row 1: First Name & Pseudonym */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">First Name</label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    placeholder="-"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
+              {fields.rightColumnRows.map((row, idx) => (
+                <div key={idx} className={row.length > 1 ? 'grid grid-cols-2 gap-3' : ''}>
+                  {row.map((field) => (
+                    <FormFieldRenderer
+                      key={field.name}
+                      config={field}
+                      value={(formData as any)[field.name]}
+                      onChange={handleChange}
+                      isDarkMode={isDarkMode}
+                      theme="neutral"
+                    />
+                  ))}
                 </div>
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">
-                    Pseudonym <span className="text-space-sparkle font-normal">(!)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="pseudonym"
-                    value={formData.pseudonym}
-                    onChange={handleInputChange}
-                    placeholder="-"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
-              </div>
-
-              {/* Row 2: Middle Name & Last Name */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90 truncate">
-                    Middle Name <span className="text-[10px] font-normal opacity-70">(Mother's Maiden Last Name)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="middleName"
-                    value={formData.middleName}
-                    onChange={handleInputChange}
-                    placeholder="-"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">Last Name</label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    placeholder="-"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
-              </div>
-
-              {/* Row 3: Pronoun & Titles */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">Pronoun</label>
-                  <input
-                    type="text"
-                    name="pronoun"
-                    value={formData.pronoun}
-                    onChange={handleInputChange}
-                    placeholder="-"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">Titles</label>
-                  <input
-                    type="text"
-                    name="titles"
-                    value={formData.titles}
-                    onChange={handleInputChange}
-                    placeholder="-"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
-              </div>
-
-              {/* Row 4: Location */}
-              <div className="space-y-0.5">
-                <label className="text-caption font-semibold block opacity-90">Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  placeholder="Complete Address"
-                  className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                />
-              </div>
-
-              {/* Row 5: Contact Number */}
-              <div className="space-y-0.5">
-                <label className="text-caption font-semibold block opacity-90">Contact Number</label>
-                <input
-                  type="text"
-                  name="contactNumber"
-                  value={formData.contactNumber}
-                  onChange={handleInputChange}
-                  placeholder="Must be Viber & Whatsapp Ready"
-                  className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                />
-              </div>
-
-              {/* Row 6: Email Address */}
-              <div className="space-y-0.5">
-                <label className="text-caption font-semibold block opacity-90">Email Address</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="-"
-                  className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                />
-              </div>
-
-              {/* Row 7: Facebook & Instagram */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">Facebook</label>
-                  <input
-                    type="text"
-                    name="facebook"
-                    value={formData.facebook}
-                    onChange={handleInputChange}
-                    placeholder="Paste URL / Link / Handle"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">Instagram</label>
-                  <input
-                    type="text"
-                    name="instagram"
-                    value={formData.instagram}
-                    onChange={handleInputChange}
-                    placeholder="Paste URL / Link / Handle"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
-              </div>
+              ))}
 
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-4 pt-2">

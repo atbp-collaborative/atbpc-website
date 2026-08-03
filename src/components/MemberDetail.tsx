@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Plus, Minus, ArrowUpRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import React from 'react';
+import { ChevronLeft, ArrowUpRight } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { Member, Project } from '../types';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, projectRoute } from '../lib/routes';
+import { Accordion } from './Accordion';
 
 interface MemberDetailProps {
   member: Member;
@@ -19,14 +20,6 @@ export const MemberDetail: React.FC<MemberDetailProps> = ({
 }) => {
   const { isDarkMode } = useTheme();
   const router = useRouter();
-  const [isAccreditationsOpen, setIsAccreditationsOpen] = useState<boolean>(false);
-  const [isInvolvementOpen, setIsInvolvementOpen] = useState<boolean>(false);
-
-  // Close accordion panels when member changes
-  useEffect(() => {
-    setIsAccreditationsOpen(false);
-    setIsInvolvementOpen(false);
-  }, [member.id]);
 
   return (
     <motion.div 
@@ -89,97 +82,49 @@ export const MemberDetail: React.FC<MemberDetailProps> = ({
           </div>
 
           {/* Accreditations / Credentials Block */}
-          <div className="overflow-hidden border-t border-space-sparkle/10 pt-2">
-            <button 
-              onClick={() => setIsAccreditationsOpen(!isAccreditationsOpen)}
-              className="w-full py-2 flex items-center text-left focus:outline-none group cursor-pointer"
-            >
-              <span className={`${isDarkMode ? 'text-white' : 'text-slate-900'} mr-3.5 shrink-0 flex items-center justify-center`}>
-                {isAccreditationsOpen ? <Minus size={16} /> : <Plus size={16} />}
-              </span>
-              <h4 className={`font-sans text-body font-semibold tracking-wide uppercase ${isDarkMode ? 'text-white' : 'text-slate-900'} group-hover:opacity-80 transition-opacity`}>
-                Credentials
-              </h4>
-            </button>
-            
-            <AnimatePresence initial={false}>
-              {isAccreditationsOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="overflow-hidden"
-                >
-                  <div className="pb-4 pt-1 text-caption space-y-4 pl-[30px]">
-                    <ul className="space-y-2">
-                      {member.education.map((item, idx) => (
-                        <li key={idx} className="flex items-start space-x-2 font-light opacity-90">
-                          <span className="text-space-sparkle font-semibold mt-0.5">•</span>
-                          <span className={isDarkMode ? "text-bright-gray/90" : "text-slate-700"}>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <Accordion key={`credentials-${member.id}`} title="Credentials" isDarkMode={isDarkMode}>
+            <div className="pb-4 pt-1 text-caption space-y-4 pl-[30px]">
+              <ul className="space-y-2">
+                {member.education.map((item, idx) => (
+                  <li key={idx} className="flex items-start space-x-2 font-light opacity-90">
+                    <span className="text-space-sparkle font-semibold mt-0.5">•</span>
+                    <span className={isDarkMode ? "text-bright-gray/90" : "text-slate-700"}>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Accordion>
 
           {/* Dynamic Project Involvement Block */}
-          <div className="overflow-hidden border-t border-space-sparkle/10 pt-2">
-            <button 
-              onClick={() => setIsInvolvementOpen(!isInvolvementOpen)}
-              className="w-full py-2 flex items-center text-left focus:outline-none group cursor-pointer"
-            >
-              <span className={`${isDarkMode ? 'text-white' : 'text-slate-900'} mr-3.5 shrink-0 flex items-center justify-center`}>
-                {isInvolvementOpen ? <Minus size={16} /> : <Plus size={16} />}
-              </span>
-              <h4 className={`font-sans text-body font-semibold tracking-wide uppercase ${isDarkMode ? 'text-white' : 'text-slate-900'} group-hover:opacity-80 transition-opacity`}>
-                Project Involvement
-              </h4>
-            </button>
-
-            <AnimatePresence initial={false}>
-              {isInvolvementOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="overflow-hidden"
-                >
-                  <div className="pb-4 pt-1 text-caption space-y-4 pl-[30px]">
-                    <ul className="space-y-2">
-                      {member.involvement.map((inv) => {
-                        const project = projects.find(p => p.id === inv.projectId);
-                        return (
-                          <li key={inv.projectId} className="flex items-start space-x-2 font-light opacity-90">
-                            <span className="text-space-sparkle font-semibold mt-0.5">•</span>
-                            {project ? (
-                              <button
-                                onClick={() => router.push(projectRoute(project.id))}
-                                className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
-                                  isDarkMode ? "text-bright-gray/90" : "text-slate-700"
-                                }`}
-                              >
-                                <span>{inv.projectTitle}</span>
-                                <ArrowUpRight size={12} className="opacity-65 text-space-sparkle" />
-                              </button>
-                            ) : (
-                              <span className={isDarkMode ? "text-bright-gray/90" : "text-slate-700"}>
-                                {inv.projectTitle}
-                              </span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <Accordion key={`involvement-${member.id}`} title="Project Involvement" isDarkMode={isDarkMode}>
+            <div className="pb-4 pt-1 text-caption space-y-4 pl-[30px]">
+              <ul className="space-y-2">
+                {member.involvement.map((inv) => {
+                  const project = projects.find(p => p.id === inv.projectId);
+                  return (
+                    <li key={inv.projectId} className="flex items-start space-x-2 font-light opacity-90">
+                      <span className="text-space-sparkle font-semibold mt-0.5">•</span>
+                      {project ? (
+                        <button
+                          onClick={() => router.push(projectRoute(project.id))}
+                          className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
+                            isDarkMode ? "text-bright-gray/90" : "text-slate-700"
+                          }`}
+                        >
+                          <span>{inv.projectTitle}</span>
+                          <ArrowUpRight size={12} className="opacity-65 text-space-sparkle" />
+                        </button>
+                      ) : (
+                        <span className={isDarkMode ? "text-bright-gray/90" : "text-slate-700"}>
+                          {inv.projectTitle}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </Accordion>
 
         </div>
       </div>
