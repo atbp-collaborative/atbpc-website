@@ -9,6 +9,7 @@ import { MS_FORMS_CONFIG, submitLead } from '../lib/data/leads';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES } from '../lib/routes';
 import { Button } from './Button';
+import { MsFormsEmbed } from './form-fields';
 import { ProposalFormStep1 } from './ProposalFormStep1';
 import { ProposalFormStep2 } from './ProposalFormStep2';
 import { ProposalFormStep3 } from './ProposalFormStep3';
@@ -16,10 +17,6 @@ import { ProposalFormStep3 } from './ProposalFormStep3';
 export const ProposalForm: React.FC = () => {
   const { isDarkMode } = useTheme();
   const router = useRouter();
-  // Support toggling between our custom interactive front-end or embedding the direct MS Forms iframe
-  const [formIntegrationType, setFormIntegrationType] = useState<'custom' | 'direct'>(
-    MS_FORMS_CONFIG.microsoftFormsUrl ? 'direct' : 'custom'
-  );
 
   const [surveyStep, setSurveyStep] = useState<number>(1);
   const [surveyData, setSurveyData] = useState<SurveyResponse>({
@@ -37,23 +34,14 @@ export const ProposalForm: React.FC = () => {
   const [surveySubmitted, setSurveySubmitted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Handle survey inputs
-  const handleSurveyChange = (field: keyof SurveyResponse, value: any) => {
+  // Handle survey inputs. Typed as a plain string (not `keyof SurveyResponse`)
+  // since it's passed to FormFieldRenderer-driven steps, which only know
+  // field names as strings from config data.
+  const handleSurveyChange = (field: string, value: any) => {
     setSurveyData(prev => ({
       ...prev,
       [field]: value
     }));
-  };
-
-  const handleScopeToggle = (scope: string) => {
-    const currentScopes = [...surveyData.scopeNeeded];
-    const index = currentScopes.indexOf(scope);
-    if (index > -1) {
-      currentScopes.splice(index, 1);
-    } else {
-      currentScopes.push(scope);
-    }
-    handleSurveyChange('scopeNeeded', currentScopes);
   };
 
   const submitSurvey = async (e: FormEvent) => {
@@ -106,79 +94,13 @@ export const ProposalForm: React.FC = () => {
         </p>
       </div>
 
-      {/* Integration Mode Switcher (Tab Controls) */}
-      {MS_FORMS_CONFIG.microsoftFormsUrl && (
-        <div className="flex justify-center mb-8">
-          <div className={`p-1 rounded-none border flex space-x-2 ${
-            isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-slate-50 border-slate-200'
-          }`}>
-            <button
-              onClick={() => setFormIntegrationType('direct')}
-              className={`px-4 py-1.5 rounded-none text-caption uppercase tracking-wider font-semibold transition-all ${
-                formIntegrationType === 'direct'
-                  ? 'bg-space-sparkle text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              Direct MS Forms
-            </button>
-            <button
-              onClick={() => setFormIntegrationType('custom')}
-              className={`px-4 py-1.5 rounded-none text-caption uppercase tracking-wider font-semibold transition-all ${
-                formIntegrationType === 'custom'
-                  ? 'bg-space-sparkle text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              Custom Front-End
-            </button>
-          </div>
-        </div>
-      )}
-
-      {formIntegrationType === 'direct' ? (
-        /* DIRECT MICROSOFT FORMS MODE */
-        <div className="space-y-6">
-          <div className={`p-6 rounded-none border text-center space-y-6 ${
-            isDarkMode ? 'bg-vintage-charcoal/40 border-space-sparkle/20' : 'bg-white border-space-sparkle/10'
-          }`}>
-            <div className="space-y-2">
-              <h3 className="font-sans text-h2 font-bold">Open via Microsoft Forms</h3>
-              <p className="text-body font-light opacity-80 max-w-xl mx-auto leading-relaxed">
-                We have integrated our official <strong>Microsoft Forms</strong> questionnaire to let you input details securely within the Microsoft ecosystem.
-              </p>
-            </div>
-
-            {/* Embedded Microsoft Forms iFrame Container */}
-            <div className="w-full h-[600px] overflow-hidden rounded-none border border-space-sparkle/10 shadow-inner bg-white">
-              <iframe
-                src={MS_FORMS_CONFIG.microsoftFormsUrl}
-                className="w-full h-full border-0"
-                allowFullScreen
-                title="Microsoft Forms Project Proposal"
-              />
-            </div>
-
-            <div className="pt-4 flex flex-col sm:flex-row justify-center items-center gap-4">
-              <a
-                href={MS_FORMS_CONFIG.microsoftFormsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-2.5 text-caption uppercase tracking-widest font-semibold rounded-none bg-space-sparkle text-white hover:bg-space-sparkle/80 text-center w-full sm:w-auto"
-              >
-                Open in New Tab
-              </a>
-              <button
-                onClick={() => router.push(ROUTES.home)}
-                className="px-6 py-2.5 text-caption uppercase tracking-widest font-semibold rounded-none border border-space-sparkle/30 hover:bg-space-sparkle/10 text-center w-full sm:w-auto"
-              >
-                Back to Home
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* CUSTOM INTERACTIVE FRONT-END MODE */
+      <MsFormsEmbed
+        formsUrl={MS_FORMS_CONFIG.microsoftFormsUrl}
+        isDarkMode={isDarkMode}
+        onBackToHome={() => router.push(ROUTES.home)}
+        embedTitle="Microsoft Forms Project Proposal"
+      >
+        {/* CUSTOM INTERACTIVE FRONT-END MODE */}
         <div className="space-y-6">
           {/* Progress Bar */}
           <div className="relative h-1 bg-space-sparkle/10 rounded-none mb-6 overflow-hidden">
@@ -244,6 +166,7 @@ export const ProposalForm: React.FC = () => {
                   surveyData={surveyData}
                   onChange={handleSurveyChange}
                   onNext={() => setSurveyStep(2)}
+                  isDarkMode={isDarkMode}
                 />
               )}
 
@@ -251,9 +174,9 @@ export const ProposalForm: React.FC = () => {
                 <ProposalFormStep2
                   surveyData={surveyData}
                   onChange={handleSurveyChange}
-                  onScopeToggle={handleScopeToggle}
                   onBack={() => setSurveyStep(1)}
                   onNext={() => setSurveyStep(3)}
+                  isDarkMode={isDarkMode}
                 />
               )}
 
@@ -269,7 +192,7 @@ export const ProposalForm: React.FC = () => {
             </form>
           )}
         </div>
-      )}
+      </MsFormsEmbed>
     </motion.div>
   );
 };

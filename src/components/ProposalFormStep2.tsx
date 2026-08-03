@@ -4,33 +4,23 @@ import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { SurveyResponse } from '../types';
 import { Button } from './Button';
+import { FormFieldRenderer } from './form-fields';
+import { STEP2_INCOME_CATEGORY_FIELD, STEP2_SCOPE_FIELD } from './ProposalForm.config';
 
 interface ProposalFormStep2Props {
   surveyData: SurveyResponse;
-  onChange: (field: keyof SurveyResponse, value: any) => void;
-  onScopeToggle: (scope: string) => void;
+  onChange: (field: string, value: any) => void;
   onBack: () => void;
   onNext: () => void;
+  isDarkMode: boolean;
 }
-
-const INCOME_CATEGORIES = [
-  { id: 'Mid-Income', label: 'Mid-Income Project', range: '₱350k - ₱1.5M', desc: 'Suited for boutiques, F&B kiosks, and premium modular condo layouts.' },
-  { id: 'Mid-High-Income', label: 'Mid-High-Income Project', range: '₱1.5M - ₱5M', desc: 'Suited for complete residential overhauls, high-end retail, and larger suites.' },
-  { id: 'High-Income', label: 'High-Income Project', range: '₱5M - ₱15M+', desc: 'Suited for ground-up concrete villas, mansions, or global outsourcing contracts.' },
-];
-
-const SCOPE_OPTIONS = [
-  'Architecture Design', 'Interior Fit-Out', 'Project Management',
-  'Structural Engineering', 'Plumbing & Sanitary Design',
-  'BIM Modeling / Rendering', 'General Construction / Contracting', 'Outsourced Drafting'
-];
 
 export const ProposalFormStep2: React.FC<ProposalFormStep2Props> = ({
   surveyData,
   onChange,
-  onScopeToggle,
   onBack,
   onNext,
+  isDarkMode,
 }) => {
   return (
     <div className="space-y-6">
@@ -40,49 +30,24 @@ export const ProposalFormStep2: React.FC<ProposalFormStep2Props> = ({
         <p className="text-caption opacity-60">We structure our builds honestly with absolute cost transparency. Select your segment.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {INCOME_CATEGORIES.map(opt => (
-          <div
-            key={opt.id}
-            onClick={() => {
-              onChange('incomeCategory', opt.id);
-              onChange('budgetRange', opt.range);
-            }}
-            className={`p-4 rounded-none border cursor-pointer transition-all flex flex-col justify-between ${
-              surveyData.incomeCategory === opt.id
-                ? 'border-space-sparkle bg-space-sparkle/10 ring-1 ring-space-sparkle'
-                : 'border-space-sparkle/15 hover:bg-space-sparkle/5'
-            }`}
-          >
-            <div>
-              <span className="text-body font-bold block">{opt.label}</span>
-              <span className="text-h2 font-sans font-bold text-space-sparkle block mt-1">{opt.range}</span>
-            </div>
-            <span className="text-caption opacity-70 block mt-3 leading-normal">{opt.desc}</span>
-          </div>
-        ))}
-      </div>
+      <FormFieldRenderer
+        config={STEP2_INCOME_CATEGORY_FIELD}
+        value={surveyData.incomeCategory}
+        onChange={(name, value, option) => {
+          onChange(name, value);
+          if (option?.highlight) onChange('budgetRange', option.highlight);
+        }}
+        isDarkMode={isDarkMode}
+        theme="accent"
+      />
 
-      {/* Required Scope Checklist */}
-      <div className="space-y-3 pt-2">
-        <label className="text-body font-bold block">What architectural services do you require? (Select all that apply)</label>
-        <div className="flex flex-wrap gap-2">
-          {SCOPE_OPTIONS.map(scope => (
-            <button
-              type="button"
-              key={scope}
-              onClick={() => onScopeToggle(scope)}
-              className={`px-3 py-1.5 rounded-none text-caption font-medium border transition-all cursor-pointer ${
-                surveyData.scopeNeeded.includes(scope)
-                  ? 'bg-space-sparkle text-white border-space-sparkle'
-                  : 'bg-transparent border-space-sparkle/20 hover:border-space-sparkle/60'
-              }`}
-            >
-              {scope}
-            </button>
-          ))}
-        </div>
-      </div>
+      <FormFieldRenderer
+        config={STEP2_SCOPE_FIELD}
+        value={surveyData.scopeNeeded}
+        onChange={onChange}
+        isDarkMode={isDarkMode}
+        theme="accent"
+      />
 
       <div className="pt-4 flex justify-between">
         <button

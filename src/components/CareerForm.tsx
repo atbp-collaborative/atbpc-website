@@ -1,136 +1,51 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle, FileText, Upload, Shield, X } from 'lucide-react';
+import { CheckCircle, Shield, X } from 'lucide-react';
 import { useTheme } from '../lib/theme-context';
-import { TextField, SelectField, neutralFieldClass } from './FormField';
-
-interface FileState {
-  name: string;
-  size: string;
-}
+import { FormFieldRenderer, getFieldThemeStyles } from './form-fields';
+import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CareerFormData, CareerFormType } from './CareerForm.config';
+import { submitCareerApplication } from '../lib/data/careerApplications';
 
 export interface CareerFormProps {
   initialStructure?: string;
+  formType?: CareerFormType;
 }
 
-export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '' }) => {
+export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', formType = 'internship' }) => {
   const { isDarkMode } = useTheme();
-  const [formData, setFormData] = useState({
-    department: '',
-    structure: initialStructure,
-    jobDescription: '',
-    firstName: '',
-    pseudonym: '',
-    middleName: '',
-    lastName: '',
-    pronoun: '',
-    titles: '',
-    location: '',
-    contactNumber: '',
-    email: '',
-    facebook: '',
-    instagram: '',
-    portfolioLink: '',
-    coverVideoLink: '',
-  });
+  const fields = CAREER_FORM_FIELDS[formType];
 
-  const [resumeFile, setResumeFile] = useState<FileState | null>(null);
-  const [resumeDragOver, setResumeDragOver] = useState(false);
+  const [formData, setFormData] = useState<CareerFormData>({
+    ...CAREER_FORM_INITIAL_DATA,
+    structure: initialStructure,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
-  const resumeInputRef = useRef<HTMLInputElement>(null);
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
+  const handleChange = (name: string, value: any) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleResumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      if (file.type !== 'application/pdf') {
-        alert('Please upload a PDF file for your resume.');
-        return;
-      }
-      setResumeFile({ name: file.name, size: formatFileSize(file.size) });
-    }
-  };
-
-  const handleResumeDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setResumeDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      if (file.type !== 'application/pdf') {
-        alert('Please upload a PDF file for your resume.');
-        return;
-      }
-      setResumeFile({ name: file.name, size: formatFileSize(file.size) });
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      await submitCareerApplication(formData);
+    } finally {
       setIsSubmitting(false);
       setIsSubmitted(true);
-    }, 1200);
+    }
   };
 
   const resetForm = () => {
-    setFormData({
-      department: '',
-      structure: '',
-      jobDescription: '',
-      firstName: '',
-      pseudonym: '',
-      middleName: '',
-      lastName: '',
-      pronoun: '',
-      titles: '',
-      location: '',
-      contactNumber: '',
-      email: '',
-      facebook: '',
-      instagram: '',
-      portfolioLink: '',
-      coverVideoLink: '',
-    });
-    setResumeFile(null);
+    setFormData({ ...CAREER_FORM_INITIAL_DATA, structure: initialStructure });
     setIsSubmitted(false);
   };
 
-  const departments = [
-    'Architectural Design & Research',
-    'Interior & Spatial Design',
-    'Engineering & Construction Support',
-    'Modular & F&B Practice',
-    'Studio Operations & Administration',
-  ];
-
-  const structures = [
-    'Full-Time Practice',
-    'Apprenticeship / Junior Architect',
-    'Project-Based Consultancy',
-    'Internship Fellowship',
-  ];
-
-  const inputBorderClass = neutralFieldClass(isDarkMode);
+  const inputBorderClass = getFieldThemeStyles('neutral', isDarkMode).borderColor;
 
   return (
     <motion.div
@@ -163,200 +78,56 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '' })
           >
             {/* LEFT COLUMN */}
             <div className="w-full lg:w-1/2 flex flex-col space-y-3 justify-between">
-              {/* Department */}
-              <SelectField
-                label="Department"
-                name="department"
-                value={formData.department}
-                onChange={handleInputChange}
-                options={departments}
-                placeholder="In which department do you see your growth?"
-                isDarkMode={isDarkMode}
-              />
-
-              {/* Structure */}
-              <SelectField
-                label="Structure"
-                name="structure"
-                value={formData.structure}
-                onChange={handleInputChange}
-                options={structures}
-                placeholder="What kind of role are you exploring?"
-                isDarkMode={isDarkMode}
-              />
-
-              {/* Job Description Box */}
-              <div className="flex-1 flex flex-col min-h-[120px] space-y-1">
-                <textarea
-                  name="jobDescription"
-                  value={formData.jobDescription}
-                  onChange={handleInputChange}
-                  placeholder="Job Description Here"
-                  className={`w-full flex-1 p-3 rounded-lg border outline-none resize-none text-caption transition-all ${inputBorderClass}`}
+              {fields.leftColumnTop.map((field) => (
+                <FormFieldRenderer
+                  key={field.name}
+                  config={field}
+                  value={(formData as any)[field.name]}
+                  onChange={handleChange}
+                  isDarkMode={isDarkMode}
+                  theme="neutral"
                 />
-              </div>
+              ))}
+
+              <FormFieldRenderer
+                config={fields.jobDescriptionField}
+                value={(formData as any)[fields.jobDescriptionField.name]}
+                onChange={handleChange}
+                isDarkMode={isDarkMode}
+                theme="neutral"
+              />
 
               {/* Bottom Row: Resume, Portfolio, Cover Video */}
               <div className="grid grid-cols-3 gap-3 pt-1">
-                {/* Resume Upload */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold block opacity-90 truncate">
-                    Resume <span className="text-space-sparkle font-normal">(!)</span>
-                  </label>
-                  <input
-                    type="file"
-                    ref={resumeInputRef}
-                    onChange={handleResumeChange}
-                    accept=".pdf"
-                    className="hidden"
+                {fields.uploadRow.map((field) => (
+                  <FormFieldRenderer
+                    key={field.name}
+                    config={field}
+                    value={(formData as any)[field.name]}
+                    onChange={handleChange}
+                    isDarkMode={isDarkMode}
+                    theme="neutral"
                   />
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setResumeDragOver(true);
-                    }}
-                    onDragLeave={() => setResumeDragOver(false)}
-                    onDrop={handleResumeDrop}
-                    onClick={() => resumeInputRef.current?.click()}
-                    className={`h-20 p-2 border rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
-                      resumeDragOver
-                        ? 'border-space-sparkle bg-space-sparkle/10'
-                        : inputBorderClass
-                    }`}
-                  >
-                    {resumeFile ? (
-                      <div className="space-y-0.5 max-w-full px-1">
-                        <FileText size={16} className="mx-auto text-space-sparkle" />
-                        <p className="text-[10px] font-medium truncate opacity-90">{resumeFile.name}</p>
-                        <p className="text-[9px] opacity-60">{resumeFile.size}</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        <Upload size={14} className="mx-auto opacity-70" />
-                        <p className="text-[10px] leading-tight font-medium opacity-80">
-                          Click / Drag to Upload Resume <span className="block opacity-60 text-[9px]">(PDF Only)</span>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Portfolio Link */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold block opacity-90 truncate">
-                    Portfolio <span className="text-space-sparkle font-normal">(!)</span>
-                  </label>
-                  <div className={`h-20 p-2 border rounded-xl flex flex-col justify-center ${inputBorderClass}`}>
-                    <textarea
-                      name="portfolioLink"
-                      value={formData.portfolioLink}
-                      onChange={handleInputChange}
-                      placeholder="Paste Here Link to Flipbook. (Sorry No PDF)"
-                      className="w-full h-full bg-transparent text-[10px] leading-tight outline-none resize-none placeholder-inherit"
-                    />
-                  </div>
-                </div>
-
-                {/* Cover Video Link */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold block opacity-90 truncate">
-                    Cover Video <span className="text-space-sparkle font-normal">(!)</span>
-                  </label>
-                  <div className={`h-20 p-2 border rounded-xl flex flex-col justify-center ${inputBorderClass}`}>
-                    <textarea
-                      name="coverVideoLink"
-                      value={formData.coverVideoLink}
-                      onChange={handleInputChange}
-                      placeholder="Paste Here Link to Cover Video"
-                      className="w-full h-full bg-transparent text-[10px] leading-tight outline-none resize-none placeholder-inherit"
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
             {/* RIGHT COLUMN */}
             <div className="w-full lg:w-1/2 flex flex-col space-y-2.5 justify-between">
-              {/* Row 1: First Name & Pseudonym */}
-              <div className="grid grid-cols-2 gap-3">
-                <TextField label="First Name" name="firstName" value={formData.firstName} onChange={handleInputChange} isDarkMode={isDarkMode} />
-                <TextField
-                  label={<>Pseudonym <span className="text-space-sparkle font-normal">(!)</span></>}
-                  name="pseudonym"
-                  value={formData.pseudonym}
-                  onChange={handleInputChange}
-                  isDarkMode={isDarkMode}
-                />
-              </div>
-
-              {/* Row 2: Middle Name & Last Name */}
-              <div className="grid grid-cols-2 gap-3">
-                <TextField
-                  label={<>Middle Name <span className="text-[10px] font-normal opacity-70">(Mother's Maiden Last Name)</span></>}
-                  labelClassName="truncate"
-                  name="middleName"
-                  value={formData.middleName}
-                  onChange={handleInputChange}
-                  isDarkMode={isDarkMode}
-                />
-                <TextField label="Last Name" name="lastName" value={formData.lastName} onChange={handleInputChange} isDarkMode={isDarkMode} />
-              </div>
-
-              {/* Row 3: Pronoun & Titles */}
-              <div className="grid grid-cols-2 gap-3">
-                <TextField label="Pronoun" name="pronoun" value={formData.pronoun} onChange={handleInputChange} isDarkMode={isDarkMode} />
-                <TextField label="Titles" name="titles" value={formData.titles} onChange={handleInputChange} isDarkMode={isDarkMode} />
-              </div>
-
-              {/* Row 4: Location */}
-              <TextField
-                label="Location"
-                name="location"
-                value={formData.location}
-                onChange={handleInputChange}
-                isDarkMode={isDarkMode}
-                placeholder="Complete Address"
-              />
-
-              {/* Row 5: Contact Number */}
-              <TextField
-                label="Contact Number"
-                name="contactNumber"
-                value={formData.contactNumber}
-                onChange={handleInputChange}
-                isDarkMode={isDarkMode}
-                placeholder="Must be Viber & Whatsapp Ready"
-              />
-
-              {/* Row 6: Email Address */}
-              <TextField
-                label="Email Address"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                isDarkMode={isDarkMode}
-              />
-
-              {/* Row 7: Facebook & Instagram */}
-              <div className="grid grid-cols-2 gap-3">
-                <TextField
-                  label="Facebook"
-                  name="facebook"
-                  value={formData.facebook}
-                  onChange={handleInputChange}
-                  isDarkMode={isDarkMode}
-                  placeholder="Paste URL / Link / Handle"
-                />
-                <TextField
-                  label="Instagram"
-                  name="instagram"
-                  value={formData.instagram}
-                  onChange={handleInputChange}
-                  isDarkMode={isDarkMode}
-                  placeholder="Paste URL / Link / Handle"
-                />
-              </div>
+              {fields.rightColumnRows.map((row, idx) => (
+                <div key={idx} className={row.length > 1 ? 'grid grid-cols-2 gap-3' : ''}>
+                  {row.map((field) => (
+                    <FormFieldRenderer
+                      key={field.name}
+                      config={field}
+                      value={(formData as any)[field.name]}
+                      onChange={handleChange}
+                      isDarkMode={isDarkMode}
+                      theme="neutral"
+                    />
+                  ))}
+                </div>
+              ))}
 
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-4 pt-2">
