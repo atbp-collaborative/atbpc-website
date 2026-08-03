@@ -1,14 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, Calendar, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, TAB_TO_ROUTE } from '../lib/routes';
-import { StudioDropdown } from './StudioDropdown';
-import { ContactDropdown } from './ContactDropdown';
-import { WorksDropdown } from './WorksDropdown';
+import { Dropdown } from './Dropdown';
+import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '../lib/navData';
 import { AtbpLogo } from './AtbpLogo';
 
 interface HeaderProps {
@@ -24,15 +23,55 @@ export const Header: React.FC<HeaderProps> = ({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentCategoryFilter = searchParams.get('category') ?? 'All';
+  const worksSlug = pathname.startsWith('/works/') ? pathname.split('/')[2] : null;
+  const currentCategoryFilter = worksSlug ? decodeURIComponent(worksSlug) : 'All';
 
   const [isWorksHovered, setIsWorksHovered] = useState<boolean>(false);
   const [isAboutHovered, setIsAboutHovered] = useState<boolean>(false);
   const [isContactHovered, setIsContactHovered] = useState<boolean>(false);
 
+  const worksTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const aboutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const contactTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleWorksEnter = () => {
+    if (worksTimeoutRef.current) clearTimeout(worksTimeoutRef.current);
+    setIsWorksHovered(true);
+  };
+
+  const handleWorksLeave = () => {
+    worksTimeoutRef.current = setTimeout(() => {
+      setIsWorksHovered(false);
+    }, 200);
+  };
+
+  const handleAboutEnter = () => {
+    if (aboutTimeoutRef.current) clearTimeout(aboutTimeoutRef.current);
+    setIsAboutHovered(true);
+  };
+
+  const handleAboutLeave = () => {
+    aboutTimeoutRef.current = setTimeout(() => {
+      setIsAboutHovered(false);
+    }, 200);
+  };
+
+  const handleContactEnter = () => {
+    if (contactTimeoutRef.current) clearTimeout(contactTimeoutRef.current);
+    setIsContactHovered(true);
+  };
+
+  const handleContactLeave = () => {
+    contactTimeoutRef.current = setTimeout(() => {
+      setIsContactHovered(false);
+    }, 200);
+  };
+
   const isWorksLanding = pathname === '/works';
-  const isStudioLanding = pathname === '/';
+  const isStudioLanding = pathname === '/' || pathname === '/studio';
   const isContactLanding = ['/contact', '/contact/case-study-house', '/contact/grow-with-us', '/contact/partner-with-us'].includes(pathname);
+  
+  const activeTab = Object.keys(TAB_TO_ROUTE).find((key) => TAB_TO_ROUTE[key] === pathname) || null;
 
   const isHeaderTransparent = isStudioLanding || isWorksLanding || isContactLanding;
 
@@ -83,8 +122,8 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-8 text-caption font-light tracking-widest uppercase relative">
             <div
-              onMouseEnter={() => setIsWorksHovered(true)}
-              onMouseLeave={() => setIsWorksHovered(false)}
+              onMouseEnter={handleWorksEnter}
+              onMouseLeave={handleWorksLeave}
             >
               <div
                 onClick={() => {
@@ -125,12 +164,13 @@ export const Header: React.FC<HeaderProps> = ({
               {/* WORKS DROPDOWN MENU */}
               <AnimatePresence>
                 {isWorksHovered && (
-                  <WorksDropdown
+                  <Dropdown
                     isDarkMode={isDarkMode}
-                    currentFilter={currentCategoryFilter}
-                    onFilterSelect={(filter) => {
+                    groups={WORKS_NAV_STRUCTURE}
+                    activeId={currentCategoryFilter}
+                    onItemClick={(id) => {
                       setIsWorksHovered(false);
-                      router.push(`${ROUTES.works}?category=${encodeURIComponent(filter)}`);
+                      router.push(`${ROUTES.works}/${encodeURIComponent(id)}`);
                     }}
                     onClose={() => setIsWorksHovered(false)}
                   />
@@ -138,11 +178,11 @@ export const Header: React.FC<HeaderProps> = ({
               </AnimatePresence>
             </div>
             <div
-              onMouseEnter={() => setIsAboutHovered(true)}
-              onMouseLeave={() => setIsAboutHovered(false)}
+              onMouseEnter={handleAboutEnter}
+              onMouseLeave={handleAboutLeave}
             >
               <div
-                onClick={() => handleNavClick('our-services')}
+                onClick={() => handleNavClick('studio')}
                 className={`transition-all duration-300 relative py-1 text-center cursor-pointer normal-case ${
                   isHeaderTransparent
                     ? isStudioActive
@@ -177,17 +217,19 @@ export const Header: React.FC<HeaderProps> = ({
               {/* DROPDOWN MENU */}
               <AnimatePresence>
                 {isAboutHovered && (
-                  <StudioDropdown
+                  <Dropdown
                     isDarkMode={isDarkMode}
-                    onNavClick={handleNavClick}
+                    groups={STUDIO_NAV_STRUCTURE}
+                    activeId={activeTab}
+                    onItemClick={(id) => handleNavClick(id as any)}
                     onClose={() => setIsAboutHovered(false)}
                   />
                 )}
               </AnimatePresence>
             </div>
             <div
-              onMouseEnter={() => setIsContactHovered(true)}
-              onMouseLeave={() => setIsContactHovered(false)}
+              onMouseEnter={handleContactEnter}
+              onMouseLeave={handleContactLeave}
             >
               <div
                 onClick={() => handleNavClick('contact')}
@@ -225,9 +267,11 @@ export const Header: React.FC<HeaderProps> = ({
               {/* CONTACT DROPDOWN MENU */}
               <AnimatePresence>
                 {isContactHovered && (
-                  <ContactDropdown
+                  <Dropdown
                     isDarkMode={isDarkMode}
-                    onNavClick={handleNavClick}
+                    groups={CONTACT_NAV_STRUCTURE}
+                    activeId={activeTab}
+                    onItemClick={(id) => handleNavClick(id as any)}
                     onClose={() => setIsContactHovered(false)}
                   />
                 )}
@@ -240,7 +284,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center space-x-2 sm:space-x-2.5 mr-0 pr-0">
           {/* CTA Button 1: Schedule a Discovery Meeting */}
           <button
-            onClick={() => router.push(ROUTES.intake)}
+            onClick={() => router.push(ROUTES.discoveryMeeting)}
             title="Schedule a Discovery Meeting"
             className={`group hidden md:flex items-center justify-center w-9 sm:w-10 h-9 sm:h-10 rounded-full transition-all duration-300 ease-in-out cursor-pointer select-none shrink-0 overflow-hidden shadow-sm hover:w-auto hover:px-3.5 ${
               isHeaderTransparent
@@ -259,7 +303,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* CTA Button 2: Request a Proposal */}
           <button
-            onClick={() => router.push(ROUTES.intake)}
+            onClick={() => router.push(ROUTES.discoveryMeeting)}
             title="Request a Proposal"
             className={`group hidden md:flex items-center justify-center w-9 sm:w-10 h-9 sm:h-10 rounded-full transition-all duration-300 ease-in-out cursor-pointer select-none shrink-0 overflow-hidden hover:w-auto hover:px-3.5 ${
               isHeaderTransparent

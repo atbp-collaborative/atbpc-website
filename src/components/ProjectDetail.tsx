@@ -340,7 +340,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
             <Button
               type="filled"
               label="Start Consultation"
-              onClick={() => router.push(ROUTES.intake)}
+              onClick={() => router.push(ROUTES.discoveryMeeting)}
               fullWidth={true}
               className="sm:w-auto font-medium py-1.5 text-xs"
             />

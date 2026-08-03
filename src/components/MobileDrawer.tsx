@@ -8,9 +8,7 @@ import { useTheme } from '../lib/theme-context';
 import { ROUTES, TAB_TO_ROUTE } from '../lib/routes';
 import { AtbpLogo } from './AtbpLogo';
 
-import { WORKS_NAV_STRUCTURE } from './WorksDropdown';
-import { STUDIO_NAV_STRUCTURE } from './StudioDropdown';
-import { CONTACT_NAV_STRUCTURE } from './ContactDropdown';
+import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '../lib/navData';
 
 interface MobileDrawerProps {
   isMobileMenuOpen: boolean;
@@ -25,7 +23,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const projectFilter = searchParams.get('category') ?? 'All';
+  const worksSlug = pathname.startsWith('/works/') ? pathname.split('/')[2] : null;
+  const projectFilter = worksSlug ? decodeURIComponent(worksSlug) : 'All';
 
   const isStudioLandingActive = pathname === '/';
   const isWorksActive = pathname.startsWith('/works');
@@ -51,10 +50,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
       // Auto expand the Works category that contains the active link
       const activeGroup = WORKS_NAV_STRUCTURE.find((group) =>
-        group.subcategories.some((sub) => sub.id === projectFilter) || group.mainCategory === projectFilter
+        group.subItems.some((sub) => sub.id === projectFilter) || group.label === projectFilter
       );
       if (activeGroup) {
-        setExpandedWorksCategory(activeGroup.mainCategory);
+        setExpandedWorksCategory(activeGroup.label);
       }
     }
   }, [isMobileMenuOpen, pathname, isStudioActive, isContactActive, isWorksActive, projectFilter]);
@@ -149,16 +148,16 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                       >
                         <div className="pl-3 flex flex-col space-y-1.5 border-l border-space-sparkle/15 ml-3 pt-1 pb-2">
                           {WORKS_NAV_STRUCTURE.map((group) => {
-                            const isGroupExpanded = expandedWorksCategory === group.mainCategory;
+                            const isGroupExpanded = expandedWorksCategory === group.label;
 
                             return (
-                              <div key={group.mainCategory} className="space-y-1">
+                              <div key={group.id} className="space-y-1">
                                 <div
-                                  onClick={() => setExpandedWorksCategory(prev => prev === group.mainCategory ? null : group.mainCategory)}
+                                  onClick={() => setExpandedWorksCategory(prev => prev === group.label ? null : group.label)}
                                   className="flex items-center justify-between py-1.5 px-3 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 select-none"
                                 >
                                   <span className="text-caption font-bold tracking-widest normal-case text-left">
-                                    {group.mainCategory}
+                                    {group.label}
                                   </span>
                                   <motion.span
                                     animate={{ rotate: isGroupExpanded ? 180 : 0 }}
@@ -178,16 +177,16 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                                       className="overflow-hidden"
                                     >
                                       <div className="pl-3 flex flex-col space-y-1 border-l border-space-sparkle/20 ml-3 py-1">
-                                        {group.subcategories.map((sub) => (
+                                        {group.subItems.map((sub) => (
                                           <button
                                             key={sub.id}
                                             onClick={() => {
-                                              router.push(`${ROUTES.works}?category=${encodeURIComponent(sub.id)}`);
+                                              router.push(`${ROUTES.works}/${encodeURIComponent(sub.id)}`);
                                               setIsMobileMenuOpen(false);
                                             }}
                                             className="text-left text-mini tracking-wider py-1.5 px-2.5 rounded-none transition-all cursor-pointer opacity-85 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5"
                                           >
-                                            {sub.name}
+                                            {sub.label}
                                           </button>
                                         ))}
                                       </div>
@@ -206,7 +205,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 {/* Sub-item dropdown section for Studio */}
                 <div className="space-y-1">
                   <button
-                    onClick={() => setExpandedSection(prev => prev === 'studio' ? null : 'studio')}
+                    onClick={() => {
+                      handleNavClick('studio');
+                      setExpandedSection(prev => prev === 'studio' ? null : 'studio');
+                    }}
                     className={`w-full flex items-center justify-between text-left text-caption tracking-widest uppercase py-3 px-4 rounded-none transition-all cursor-pointer ${
                       isStudioActive
                         ? isDarkMode ? 'bg-space-sparkle/20 text-white font-bold' : 'bg-space-sparkle/10 text-space-sparkle font-bold'
@@ -234,25 +236,25 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                       >
                         <div className="pl-4 flex flex-col space-y-2 border-l border-space-sparkle/15 ml-4 pt-1 pb-2">
                           {STUDIO_NAV_STRUCTURE.map((sec) => (
-                            <div key={sec.mainSection} className="space-y-1">
+                            <div key={sec.id} className="space-y-1">
                               <button
-                                onClick={() => handleNavClick(sec.tab)}
+                                onClick={() => handleNavClick(sec.id as any)}
                                 className="text-left text-caption font-bold tracking-widest py-1 px-2 block w-full hover:bg-black/5 dark:hover:bg-white/5"
                               >
-                                {pathname.startsWith(sec.href) ? sec.translation : sec.mainSection}
+                                {pathname.startsWith(TAB_TO_ROUTE[sec.id as keyof typeof TAB_TO_ROUTE]) ? sec.translation : sec.label}
                               </button>
                               <div className="pl-3 flex flex-col space-y-1 border-l border-space-sparkle/10 ml-2">
-                                {sec.items.map((item) => (
+                                {sec.subItems.map((item) => (
                                   <button
-                                    key={item.tab}
-                                    onClick={() => handleNavClick(item.tab)}
+                                    key={item.id}
+                                    onClick={() => handleNavClick(item.id as any)}
                                     className={`text-left text-mini py-0.5 px-2 block cursor-pointer transition-opacity ${
-                                      pathname === item.href.split('?')[0]
+                                      pathname === TAB_TO_ROUTE[item.id as keyof typeof TAB_TO_ROUTE]?.split('?')[0]
                                         ? 'font-bold opacity-100'
                                         : 'opacity-80 hover:opacity-100'
                                     }`}
                                   >
-                                    {item.name}
+                                    {item.label}
                                   </button>
                                 ))}
                               </div>
@@ -267,7 +269,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 {/* Sub-item dropdown section for Contact */}
                 <div className="space-y-1">
                   <button
-                    onClick={() => setExpandedSection(prev => prev === 'contact' ? null : 'contact')}
+                    onClick={() => {
+                      handleNavClick('contact');
+                      setExpandedSection(prev => prev === 'contact' ? null : 'contact');
+                    }}
                     className={`w-full flex items-center justify-between text-left text-caption tracking-widest uppercase py-3 px-4 rounded-none transition-all cursor-pointer ${
                       isContactActive
                         ? isDarkMode ? 'bg-space-sparkle/20 text-white font-bold' : 'bg-space-sparkle/10 text-space-sparkle font-bold'
@@ -295,23 +300,23 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                       >
                         <div className="pl-4 flex flex-col space-y-2 border-l border-space-sparkle/15 ml-4 pt-1 pb-2">
                           {CONTACT_NAV_STRUCTURE.map((grp) => (
-                            <div key={grp.mainCategory} className="space-y-1">
+                            <div key={grp.id} className="space-y-1">
                               <button
-                                onClick={() => handleNavClick(grp.tab)}
+                                onClick={() => handleNavClick(grp.id as any)}
                                 className={`text-left text-caption font-bold tracking-widest block py-1 px-2 w-full transition-opacity cursor-pointer ${
-                                  pathname === grp.href ? 'opacity-100 text-space-sparkle' : 'opacity-90 hover:opacity-100'
+                                  pathname === TAB_TO_ROUTE[grp.id as keyof typeof TAB_TO_ROUTE] ? 'opacity-100 text-space-sparkle' : 'opacity-90 hover:opacity-100'
                                 }`}
                               >
-                                {grp.mainCategory}
+                                {grp.label}
                               </button>
                               <div className="pl-3 flex flex-col space-y-1 border-l border-space-sparkle/10 ml-2">
-                                {grp.subitems.map((sub) => (
+                                {grp.subItems.map((sub) => (
                                   <button
-                                    key={sub.name}
-                                    onClick={() => handleNavClick(sub.tab)}
+                                    key={sub.id}
+                                    onClick={() => handleNavClick(sub.id as any)}
                                     className="text-left text-mini opacity-80 hover:opacity-100 py-0.5 px-2 block"
                                   >
-                                    {sub.name}
+                                    {sub.label}
                                   </button>
                                 ))}
                               </div>
@@ -328,7 +333,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             {/* Drawer Footer / CTA Area */}
             <div className="space-y-2.5 pt-6 border-t border-space-sparkle/10">
               <button
-                onClick={() => handleNavClick('intake')}
+                onClick={() => handleNavClick('discovery-meeting')}
                 className="w-full flex flex-col items-center justify-center py-2 px-4 rounded-none font-sans font-semibold text-caption uppercase tracking-wider leading-tight transition-all cursor-pointer text-center bg-space-sparkle text-bright-gray hover:bg-space-sparkle/90 shadow-sm"
               >
                 <span>Schedule a</span>
@@ -336,7 +341,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               </button>
 
               <button
-                onClick={() => handleNavClick('intake')}
+                onClick={() => handleNavClick('discovery-meeting')}
                 className={`w-full flex flex-col items-center justify-center py-2 px-4 rounded-none font-sans font-semibold text-caption uppercase tracking-wider leading-tight transition-all cursor-pointer text-center border ${
                   isDarkMode
                     ? 'border-bright-gray/30 text-bright-gray hover:bg-white/10'
