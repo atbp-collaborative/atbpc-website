@@ -1,13 +1,17 @@
 'use client';
 
 import React, { useState, FormEvent } from 'react';
-import { ArrowRight, Check, RefreshCw } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { SurveyResponse } from '../types';
 import { MS_FORMS_CONFIG, submitLead } from '../lib/data/leads';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES } from '../lib/routes';
+import { Button } from './Button';
+import { ProposalFormStep1 } from './ProposalFormStep1';
+import { ProposalFormStep2 } from './ProposalFormStep2';
+import { ProposalFormStep3 } from './ProposalFormStep3';
 
 export const ProposalForm: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -86,7 +90,7 @@ export const ProposalForm: React.FC = () => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       id="proposal-form-container"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -156,7 +160,7 @@ export const ProposalForm: React.FC = () => {
             </div>
 
             <div className="pt-4 flex flex-col sm:flex-row justify-center items-center gap-4">
-              <a 
+              <a
                 href={MS_FORMS_CONFIG.microsoftFormsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -178,7 +182,7 @@ export const ProposalForm: React.FC = () => {
         <div className="space-y-6">
           {/* Progress Bar */}
           <div className="relative h-1 bg-space-sparkle/10 rounded-none mb-6 overflow-hidden">
-            <div 
+            <div
               className="absolute left-0 top-0 h-full bg-space-sparkle transition-all duration-500"
               style={{ width: `${(surveyStep / 3) * 100}%` }}
             ></div>
@@ -218,13 +222,12 @@ export const ProposalForm: React.FC = () => {
               </p>
 
               <div className="pt-4 flex justify-center space-x-4">
-                <button
+                <Button
+                  type="filled"
                   onClick={() => { router.push(ROUTES.home); resetSurvey(); }}
-                  className="px-6 py-2.5 text-caption uppercase tracking-widest font-semibold rounded-none bg-space-sparkle text-white hover:bg-space-sparkle/80"
-                >
-                  Back to Home
-                </button>
-                <button 
+                  label="Back to Home"
+                />
+                <button
                   onClick={resetSurvey}
                   className="px-6 py-2.5 text-caption uppercase tracking-widest font-semibold rounded-none border border-space-sparkle/30 hover:bg-space-sparkle/10"
                 >
@@ -236,271 +239,33 @@ export const ProposalForm: React.FC = () => {
             <form onSubmit={submitSurvey} className={`p-8 rounded-none border space-y-8 ${
               isDarkMode ? 'bg-vintage-charcoal/40 border-space-sparkle/20' : 'bg-white border-space-sparkle/10'
             }`}>
-              
-              {/* STEP 1: TYPOLOGY */}
               {surveyStep === 1 && (
-                <div className="space-y-6">
-                  <div className="space-y-1">
-                    <span className="text-caption font-sans text-space-sparkle block">Step 1 of 3</span>
-                    <h3 className="font-sans text-h2 font-bold">What type of build project are you proposing?</h3>
-                    <p className="text-caption opacity-60">Select the option that matches your construction envelope.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {[
-                      { id: 'Residential', label: 'Residential Dwelling', desc: 'Custom ground-up houses or massive full-scale renovations.' },
-                      { id: 'Condo Fit-out', label: 'Condominium Interior Fit-out', desc: 'Sleek modular built-ins and custom space layouts.' },
-                      { id: 'Kiosk', label: 'Specialty Retail Kiosk', desc: 'F&B units or mall-based commercial express counters.' },
-                      { id: 'Retail Fit-out', label: 'Commercial / Retail Store Fit-out', desc: 'Fashion boutiques, modern offices, or restaurant spots.' },
-                      { id: 'Production Outsourcing', label: 'B2B Production Drawings', desc: 'Detailed CAD Permitting & shop drawing outsourcing.' },
-                    ].map(opt => (
-                      <div 
-                        key={opt.id}
-                        onClick={() => handleSurveyChange('projectType', opt.id)}
-                        className={`p-4 rounded-none border cursor-pointer transition-all ${
-                          surveyData.projectType === opt.id 
-                            ? 'border-space-sparkle bg-space-sparkle/10 ring-1 ring-space-sparkle' 
-                            : 'border-space-sparkle/15 hover:bg-space-sparkle/5'
-                        }`}
-                      >
-                        <span className="text-body font-bold block">{opt.label}</span>
-                        <span className="text-caption opacity-70 block mt-1 leading-normal">{opt.desc}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="pt-4 flex justify-end">
-                    <button
-                      type="button"
-                      disabled={!surveyData.projectType}
-                      onClick={() => setSurveyStep(2)}
-                      className={`flex items-center space-x-2 py-2.5 px-6 rounded-none text-caption uppercase tracking-widest font-semibold transition-all cursor-pointer ${
-                        surveyData.projectType 
-                          ? 'bg-space-sparkle text-white hover:bg-space-sparkle/80' 
-                          : 'bg-gray-400/20 text-gray-400 cursor-not-allowed'
-                      }`}
-                    >
-                      <span>Next: Budget Category</span>
-                      <ArrowRight size={12} />
-                    </button>
-                  </div>
-                </div>
+                <ProposalFormStep1
+                  surveyData={surveyData}
+                  onChange={handleSurveyChange}
+                  onNext={() => setSurveyStep(2)}
+                />
               )}
 
-              {/* STEP 2: BUDGET & FINANCIAL MAPPING */}
               {surveyStep === 2 && (
-                <div className="space-y-6">
-                  <div className="space-y-1">
-                    <span className="text-caption font-sans text-space-sparkle block">Step 2 of 3</span>
-                    <h3 className="font-sans text-h2 font-bold">Estimate your budget scale & income segment</h3>
-                    <p className="text-caption opacity-60">We structure our builds honestly with absolute cost transparency. Select your segment.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {[
-                      { id: 'Mid-Income', label: 'Mid-Income Project', range: '₱350k - ₱1.5M', desc: 'Suited for boutiques, F&B kiosks, and premium modular condo layouts.' },
-                      { id: 'Mid-High-Income', label: 'Mid-High-Income Project', range: '₱1.5M - ₱5M', desc: 'Suited for complete residential overhauls, high-end retail, and larger suites.' },
-                      { id: 'High-Income', label: 'High-Income Project', range: '₱5M - ₱15M+', desc: 'Suited for ground-up concrete villas, mansions, or global outsourcing contracts.' },
-                    ].map(opt => (
-                      <div 
-                        key={opt.id}
-                        onClick={() => {
-                          handleSurveyChange('incomeCategory', opt.id);
-                          handleSurveyChange('budgetRange', opt.range);
-                        }}
-                        className={`p-4 rounded-none border cursor-pointer transition-all flex flex-col justify-between ${
-                          surveyData.incomeCategory === opt.id 
-                            ? 'border-space-sparkle bg-space-sparkle/10 ring-1 ring-space-sparkle' 
-                            : 'border-space-sparkle/15 hover:bg-space-sparkle/5'
-                        }`}
-                      >
-                        <div>
-                          <span className="text-body font-bold block">{opt.label}</span>
-                          <span className="text-h2 font-sans font-bold text-space-sparkle block mt-1">{opt.range}</span>
-                        </div>
-                        <span className="text-caption opacity-70 block mt-3 leading-normal">{opt.desc}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Required Scope Checklist */}
-                  <div className="space-y-3 pt-2">
-                    <label className="text-body font-bold block">What architectural services do you require? (Select all that apply)</label>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        'Architecture Design', 'Interior Fit-Out', 'Project Management', 
-                        'Structural Engineering', 'Plumbing & Sanitary Design', 
-                        'BIM Modeling / Rendering', 'General Construction / Contracting', 'Outsourced Drafting'
-                      ].map(scope => (
-                        <button
-                          type="button"
-                          key={scope}
-                          onClick={() => handleScopeToggle(scope)}
-                          className={`px-3 py-1.5 rounded-none text-caption font-medium border transition-all cursor-pointer ${
-                            surveyData.scopeNeeded.includes(scope)
-                              ? 'bg-space-sparkle text-white border-space-sparkle'
-                              : 'bg-transparent border-space-sparkle/20 hover:border-space-sparkle/60'
-                          }`}
-                        >
-                          {scope}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 flex justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setSurveyStep(1)}
-                      className="py-2.5 px-6 rounded-none text-caption uppercase tracking-widest font-semibold border border-space-sparkle/30 hover:bg-space-sparkle/10 cursor-pointer"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!surveyData.incomeCategory}
-                      onClick={() => setSurveyStep(3)}
-                      className={`flex items-center space-x-2 py-2.5 px-6 rounded-none text-caption uppercase tracking-widest font-semibold transition-all cursor-pointer ${
-                        surveyData.incomeCategory 
-                          ? 'bg-space-sparkle text-white hover:bg-space-sparkle/80' 
-                          : 'bg-gray-400/20 text-gray-400 cursor-not-allowed'
-                      }`}
-                    >
-                      <span>Next: Contact Details</span>
-                      <ArrowRight size={12} />
-                    </button>
-                  </div>
-                </div>
+                <ProposalFormStep2
+                  surveyData={surveyData}
+                  onChange={handleSurveyChange}
+                  onScopeToggle={handleScopeToggle}
+                  onBack={() => setSurveyStep(1)}
+                  onNext={() => setSurveyStep(3)}
+                />
               )}
 
-              {/* STEP 3: CONTACT COORDINATION */}
               {surveyStep === 3 && (
-                <div className="space-y-6">
-                  <div className="space-y-1">
-                    <span className="text-caption font-sans text-space-sparkle block">Step 3 of 3</span>
-                    <h3 className="font-sans text-h2 font-bold">Onboarding & Contact Coordination</h3>
-                    <p className="text-caption opacity-60">We usually communicate through Viber or Mobile. Provide valid coordinates.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-caption uppercase tracking-wider block opacity-70">Your Complete Name *</label>
-                      <input 
-                        type="text"
-                        required
-                        value={surveyData.name}
-                        onChange={(e) => handleSurveyChange('name', e.target.value)}
-                        className={`w-full p-2.5 text-body rounded-none border outline-none ${
-                          isDarkMode ? 'bg-vintage-charcoal border-space-sparkle/30 text-white' : 'bg-white border-space-sparkle/25 text-slate-800'
-                        }`}
-                        placeholder="e.g., Adrian Mores"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-caption uppercase tracking-wider block opacity-70">Email Address *</label>
-                      <input 
-                        type="email"
-                        required
-                        value={surveyData.email}
-                        onChange={(e) => handleSurveyChange('email', e.target.value)}
-                        className={`w-full p-2.5 text-body rounded-none border outline-none ${
-                          isDarkMode ? 'bg-vintage-charcoal border-space-sparkle/30 text-white' : 'bg-white border-space-sparkle/25 text-slate-800'
-                        }`}
-                        placeholder="e.g., adrian@domain.com"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-caption uppercase tracking-wider block opacity-70">Mobile Contact Number *</label>
-                      <input 
-                        type="tel"
-                        required
-                        value={surveyData.phone}
-                        onChange={(e) => handleSurveyChange('phone', e.target.value)}
-                        className={`w-full p-2.5 text-body rounded-none border outline-none ${
-                          isDarkMode ? 'bg-vintage-charcoal border-space-sparkle/30 text-white' : 'bg-white border-space-sparkle/25 text-slate-800'
-                        }`}
-                        placeholder="e.g., +63 917 123 4567"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-caption uppercase tracking-wider block opacity-70">Viber Number (If different)</label>
-                      <input 
-                        type="tel"
-                        value={surveyData.viber}
-                        onChange={(e) => handleSurveyChange('viber', e.target.value)}
-                        className={`w-full p-2.5 text-body rounded-none border outline-none ${
-                          isDarkMode ? 'bg-vintage-charcoal border-space-sparkle/30 text-white' : 'bg-white border-space-sparkle/25 text-slate-800'
-                        }`}
-                        placeholder="e.g., Same as Mobile"
-                      />
-                    </div>
-
-                    <div className="col-span-1 sm:col-span-2 space-y-1.5">
-                      <label className="text-caption uppercase tracking-wider block opacity-70">Onboarding Timeline</label>
-                      <select
-                        value={surveyData.timeline}
-                        onChange={(e) => handleSurveyChange('timeline', e.target.value)}
-                        className={`w-full p-2.5 text-body rounded-none border outline-none ${
-                          isDarkMode ? 'bg-vintage-charcoal border-space-sparkle/30 text-white' : 'bg-white border-space-sparkle/25 text-slate-800'
-                        }`}
-                      >
-                        <option value="">-- Select Timeline Preference --</option>
-                        <option value="Immediate">Immediate / Within 30 days</option>
-                        <option value="Quarterly">This Quarter / 2-3 months</option>
-                        <option value="Planning">Just planning / 6+ months</option>
-                      </select>
-                    </div>
-
-                    <div className="col-span-1 sm:col-span-2 space-y-1.5">
-                      <label className="text-caption uppercase tracking-wider block opacity-70">Briefly Outline Site Location & Requirements</label>
-                      <textarea
-                        rows={3}
-                        value={surveyData.additionalDetails}
-                        onChange={(e) => handleSurveyChange('additionalDetails', e.target.value)}
-                        className={`w-full p-2.5 text-body rounded-none border outline-none ${
-                          isDarkMode ? 'bg-vintage-charcoal border-space-sparkle/30 text-white' : 'bg-white border-space-sparkle/25 text-slate-800'
-                        }`}
-                        placeholder="Describe lot dimension, specific subdivision regulations, structural parameters..."
-                      ></textarea>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 flex justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setSurveyStep(2)}
-                      className="py-2.5 px-6 rounded-none text-caption uppercase tracking-widest font-semibold border border-space-sparkle/30 hover:bg-space-sparkle/10 cursor-pointer"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={!surveyData.name || !surveyData.email || !surveyData.phone || isSubmitting}
-                      className={`flex items-center space-x-2 py-2.5 px-8 rounded-none text-caption uppercase tracking-widest font-semibold transition-all cursor-pointer ${
-                        surveyData.name && surveyData.email && surveyData.phone && !isSubmitting
-                          ? 'bg-space-sparkle text-white hover:bg-space-sparkle/80' 
-                          : 'bg-gray-400/20 text-gray-400 cursor-not-allowed'
-                      }`}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <span>Transmitting...</span>
-                          <RefreshCw size={12} className="animate-spin" />
-                        </>
-                      ) : (
-                        <>
-                          <span>Transmit Profile Survey</span>
-                          <Check size={12} />
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                <ProposalFormStep3
+                  surveyData={surveyData}
+                  onChange={handleSurveyChange}
+                  isDarkMode={isDarkMode}
+                  isSubmitting={isSubmitting}
+                  onBack={() => setSurveyStep(2)}
+                />
               )}
-
             </form>
           )}
         </div>

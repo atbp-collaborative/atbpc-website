@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, FileText, Upload, Shield, X } from 'lucide-react';
 import { useTheme } from '../lib/theme-context';
+import { TextField, SelectField, neutralFieldClass } from './FormField';
 
 interface FileState {
   name: string;
@@ -129,9 +130,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '' })
     'Internship Fellowship',
   ];
 
-  const inputBorderClass = isDarkMode
-    ? 'border-bright-gray/30 focus:border-bright-gray bg-vintage-charcoal/50 text-white placeholder-bright-gray/40'
-    : 'border-vintage-charcoal/30 focus:border-vintage-charcoal bg-white/60 text-vintage-charcoal placeholder-vintage-charcoal/40';
+  const inputBorderClass = neutralFieldClass(isDarkMode);
 
   return (
     <motion.div
@@ -165,48 +164,26 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '' })
             {/* LEFT COLUMN */}
             <div className="w-full lg:w-1/2 flex flex-col space-y-3 justify-between">
               {/* Department */}
-              <div className="space-y-1">
-                <label className="text-caption font-semibold block opacity-90">
-                  Department
-                </label>
-                <select
-                  name="department"
-                  value={formData.department}
-                  onChange={handleInputChange}
-                  className={`w-full text-caption py-2 px-3 rounded-lg border outline-none transition-all cursor-pointer ${inputBorderClass}`}
-                >
-                  <option value="" disabled>
-                    In which department do you see your growth?
-                  </option>
-                  {departments.map((dep) => (
-                    <option key={dep} value={dep} className="bg-vintage-charcoal text-white">
-                      {dep}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <SelectField
+                label="Department"
+                name="department"
+                value={formData.department}
+                onChange={handleInputChange}
+                options={departments}
+                placeholder="In which department do you see your growth?"
+                isDarkMode={isDarkMode}
+              />
 
               {/* Structure */}
-              <div className="space-y-1">
-                <label className="text-caption font-semibold block opacity-90">
-                  Structure
-                </label>
-                <select
-                  name="structure"
-                  value={formData.structure}
-                  onChange={handleInputChange}
-                  className={`w-full text-caption py-2 px-3 rounded-lg border outline-none transition-all cursor-pointer ${inputBorderClass}`}
-                >
-                  <option value="" disabled>
-                    What kind of role are you exploring?
-                  </option>
-                  {structures.map((st) => (
-                    <option key={st} value={st} className="bg-vintage-charcoal text-white">
-                      {st}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <SelectField
+                label="Structure"
+                name="structure"
+                value={formData.structure}
+                onChange={handleInputChange}
+                options={structures}
+                placeholder="What kind of role are you exploring?"
+                isDarkMode={isDarkMode}
+              />
 
               {/* Job Description Box */}
               <div className="flex-1 flex flex-col min-h-[120px] space-y-1">
@@ -302,149 +279,83 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '' })
             <div className="w-full lg:w-1/2 flex flex-col space-y-2.5 justify-between">
               {/* Row 1: First Name & Pseudonym */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">First Name</label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    placeholder="-"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">
-                    Pseudonym <span className="text-space-sparkle font-normal">(!)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="pseudonym"
-                    value={formData.pseudonym}
-                    onChange={handleInputChange}
-                    placeholder="-"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
+                <TextField label="First Name" name="firstName" value={formData.firstName} onChange={handleInputChange} isDarkMode={isDarkMode} />
+                <TextField
+                  label={<>Pseudonym <span className="text-space-sparkle font-normal">(!)</span></>}
+                  name="pseudonym"
+                  value={formData.pseudonym}
+                  onChange={handleInputChange}
+                  isDarkMode={isDarkMode}
+                />
               </div>
 
               {/* Row 2: Middle Name & Last Name */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90 truncate">
-                    Middle Name <span className="text-[10px] font-normal opacity-70">(Mother's Maiden Last Name)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="middleName"
-                    value={formData.middleName}
-                    onChange={handleInputChange}
-                    placeholder="-"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">Last Name</label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    placeholder="-"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
+                <TextField
+                  label={<>Middle Name <span className="text-[10px] font-normal opacity-70">(Mother's Maiden Last Name)</span></>}
+                  labelClassName="truncate"
+                  name="middleName"
+                  value={formData.middleName}
+                  onChange={handleInputChange}
+                  isDarkMode={isDarkMode}
+                />
+                <TextField label="Last Name" name="lastName" value={formData.lastName} onChange={handleInputChange} isDarkMode={isDarkMode} />
               </div>
 
               {/* Row 3: Pronoun & Titles */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">Pronoun</label>
-                  <input
-                    type="text"
-                    name="pronoun"
-                    value={formData.pronoun}
-                    onChange={handleInputChange}
-                    placeholder="-"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">Titles</label>
-                  <input
-                    type="text"
-                    name="titles"
-                    value={formData.titles}
-                    onChange={handleInputChange}
-                    placeholder="-"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
+                <TextField label="Pronoun" name="pronoun" value={formData.pronoun} onChange={handleInputChange} isDarkMode={isDarkMode} />
+                <TextField label="Titles" name="titles" value={formData.titles} onChange={handleInputChange} isDarkMode={isDarkMode} />
               </div>
 
               {/* Row 4: Location */}
-              <div className="space-y-0.5">
-                <label className="text-caption font-semibold block opacity-90">Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  placeholder="Complete Address"
-                  className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                />
-              </div>
+              <TextField
+                label="Location"
+                name="location"
+                value={formData.location}
+                onChange={handleInputChange}
+                isDarkMode={isDarkMode}
+                placeholder="Complete Address"
+              />
 
               {/* Row 5: Contact Number */}
-              <div className="space-y-0.5">
-                <label className="text-caption font-semibold block opacity-90">Contact Number</label>
-                <input
-                  type="text"
-                  name="contactNumber"
-                  value={formData.contactNumber}
-                  onChange={handleInputChange}
-                  placeholder="Must be Viber & Whatsapp Ready"
-                  className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                />
-              </div>
+              <TextField
+                label="Contact Number"
+                name="contactNumber"
+                value={formData.contactNumber}
+                onChange={handleInputChange}
+                isDarkMode={isDarkMode}
+                placeholder="Must be Viber & Whatsapp Ready"
+              />
 
               {/* Row 6: Email Address */}
-              <div className="space-y-0.5">
-                <label className="text-caption font-semibold block opacity-90">Email Address</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="-"
-                  className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                />
-              </div>
+              <TextField
+                label="Email Address"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                isDarkMode={isDarkMode}
+              />
 
               {/* Row 7: Facebook & Instagram */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">Facebook</label>
-                  <input
-                    type="text"
-                    name="facebook"
-                    value={formData.facebook}
-                    onChange={handleInputChange}
-                    placeholder="Paste URL / Link / Handle"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
-                <div className="space-y-0.5">
-                  <label className="text-caption font-semibold block opacity-90">Instagram</label>
-                  <input
-                    type="text"
-                    name="instagram"
-                    value={formData.instagram}
-                    onChange={handleInputChange}
-                    placeholder="Paste URL / Link / Handle"
-                    className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                  />
-                </div>
+                <TextField
+                  label="Facebook"
+                  name="facebook"
+                  value={formData.facebook}
+                  onChange={handleInputChange}
+                  isDarkMode={isDarkMode}
+                  placeholder="Paste URL / Link / Handle"
+                />
+                <TextField
+                  label="Instagram"
+                  name="instagram"
+                  value={formData.instagram}
+                  onChange={handleInputChange}
+                  isDarkMode={isDarkMode}
+                  placeholder="Paste URL / Link / Handle"
+                />
               </div>
 
               {/* Action Buttons */}
