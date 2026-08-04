@@ -4,22 +4,14 @@ export const SERVICES_DATA: Service[] = [
   {
     title: 'comprehensive design',
     iconName: 'Layers',
-    desc: 'Full-envelope design solutions encompassing conceptual planning, structural, MEPFS documents, BIM modeling, and permitting support.'
+    desc: 'Full-envelope design solutions encompassing conceptual planning, structural, MEPFS documents, BIM modeling, and permitting support.',
+    image: '/images/hero_modern_villa_1783495183350.jpg'
   },
   {
-    title: 'piecework',
+    title: 'piecework services',
     iconName: 'LayoutGrid',
-    desc: 'Targeted architectural detailing, modular kitchen/bath designs, single spaces, or individual drawing sets billed per deliverable.'
-  },
-  {
-    title: 'general construction',
-    iconName: 'Briefcase',
-    desc: 'Complete turn-key physical construction management. Ground-up masonry, civil works, architectural finishing, and site coordination.'
-  },
-  {
-    title: 'retainer services',
-    iconName: 'RefreshCw',
-    desc: 'Ongoing design, BIM outsourcing, and drafting support acting as a dedicated technical back-office for global architectural firms.'
+    desc: 'Targeted architectural detailing, modular kitchen/bath designs, single spaces, or individual drawing sets billed per deliverable.',
+    image: '/images/kiosk_coffee_bar_1783495252161.jpg'
   }
 ];
 
