@@ -42,6 +42,7 @@ export interface Service {
   title: string;
   iconName: 'Layers' | 'LayoutGrid' | 'Briefcase' | 'RefreshCw';
   desc: string;
+  image: string;
 }
 
 export interface MemberInvolvement {

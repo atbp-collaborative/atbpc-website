@@ -13,22 +13,19 @@ import { getMembers } from '../../../lib/data/members';
 import { Project, Member } from '../../../types';
 import { useTheme } from '../../../lib/theme-context';
 import { ROUTES, projectRoute } from '../../../lib/routes';
+import { WORKS_CATEGORIES } from '../../../content/works';
+import { useInfiniteCarousel } from '../../../hooks/useInfiniteCarousel';
 
-const shelterImg = '/images/hero_modern_villa_1783495183350.jpg';
-const livelihoodImg = '/images/retail_boutique_1783495217375.jpg';
-const communityImg = '/images/production_drawings_1783495233053.jpg';
-
-export default function WorksSlugPage({ params }: { params: Promise<{ slug: string }> }) {
-  const [slug, setSlug] = useState<string | null>(null);
+export default function WorksCategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const router = useRouter();
+  const { isDarkMode } = useTheme();
+  
   const [project, setProject] = useState<Project | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [slug, setSlug] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
-
-  const { isDarkMode } = useTheme();
-  const router = useRouter();
-  const carouselRef = useRef<HTMLDivElement>(null);
-
+  
   useEffect(() => {
     params.then(p => {
       const decodedSlug = decodeURIComponent(p.slug);
@@ -41,46 +38,6 @@ export default function WorksSlugPage({ params }: { params: Promise<{ slug: stri
       });
     });
   }, [params]);
-
-  // Main Category Landing Cards Data
-  const MAIN_CATEGORY_CARDS = [
-    {
-      id: 'Shelter',
-      title: 'shelter',
-      tagline: 'for the way you live',
-      image: shelterImg,
-      subcategories: [
-        { name: 'Tiny Living', id: 'Tiny Living' },
-        { name: 'Urban Living', id: 'Urban Living' },
-        { name: 'Multi-Generational', id: 'Multi-Generational' },
-        { name: 'Penthouses', id: 'Penthouses' },
-        { name: 'Vacation Homes', id: 'Vacation Homes' },
-      ],
-    },
-    {
-      id: 'Livelihood',
-      title: 'livelihood',
-      tagline: 'where passion takes form',
-      image: livelihoodImg,
-      subcategories: [
-        { name: 'Build & Sell Homes', id: 'Build & Sell Homes' },
-        { name: 'Food & Beverage', id: 'Food & Beverage' },
-        { name: 'Retail & Lifestyle', id: 'Retail & Lifestyle' },
-        { name: 'Workspaces', id: 'Workspaces' },
-      ],
-    },
-    {
-      id: 'Community',
-      title: 'community',
-      tagline: 'we share & communicate',
-      image: communityImg,
-      subcategories: [
-        { name: 'Shared Spaces', id: 'Shared Spaces' },
-        { name: 'Shared Places', id: 'Shared Places' },
-        { name: 'Sacred Structures', id: 'Sacred Structures' },
-      ],
-    },
-  ];
 
   const filterCategories = [
     'Tiny Living',
@@ -151,59 +108,10 @@ export default function WorksSlugPage({ params }: { params: Promise<{ slug: stri
     return result;
   }, [filteredProjects]);
 
-  useEffect(() => {
-    if (carouselRef.current && displayProjects.length > 0 && filteredProjects.length > 0) {
-      const container = carouselRef.current;
-      const singleSetWidth = container.scrollWidth / (displayProjects.length / filteredProjects.length);
-      container.scrollLeft = singleSetWidth;
-    }
-  }, [projectFilter, displayProjects, filteredProjects.length]);
-
-  const handleScrollLeft = () => {
-    if (carouselRef.current) {
-      const container = carouselRef.current;
-      const child = container.firstElementChild as HTMLElement;
-      const scrollAmount = child ? child.getBoundingClientRect().width + 2 : 380;
-      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-    }
-  };
-
-  const handleScrollRight = () => {
-    if (carouselRef.current) {
-      const container = carouselRef.current;
-      const child = container.firstElementChild as HTMLElement;
-      const scrollAmount = child ? child.getBoundingClientRect().width + 2 : 380;
-      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-  };
-
-  const handleCarouselScroll = () => {
-    if (!carouselRef.current || displayProjects.length === 0 || filteredProjects.length === 0) return;
-    const container = carouselRef.current;
-    const totalWidth = container.scrollWidth;
-    const singleSetWidth = totalWidth / (displayProjects.length / filteredProjects.length);
-    
-    if (container.scrollLeft < 30) {
-      container.scrollLeft += singleSetWidth;
-    } else if (container.scrollLeft >= singleSetWidth * (displayProjects.length / filteredProjects.length - 1) - 30) {
-      container.scrollLeft -= singleSetWidth;
-    }
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
-        return;
-      }
-      if (e.key === 'ArrowLeft') {
-        handleScrollLeft();
-      } else if (e.key === 'ArrowRight') {
-        handleScrollRight();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  const { carouselRef, handleScroll, handleCarouselScroll } = useInfiniteCarousel<HTMLDivElement>({
+    displayCount: displayProjects.length,
+    originalCount: filteredProjects.length,
+  });
 
   if (isLoading) return null;
 
@@ -212,12 +120,12 @@ export default function WorksSlugPage({ params }: { params: Promise<{ slug: stri
   }
 
   // Check if valid category
-  const isValidCategory = filterCategories.includes(projectFilter) || MAIN_CATEGORY_CARDS.some(c => c.id === projectFilter);
+  const isValidCategory = filterCategories.includes(projectFilter) || WORKS_CATEGORIES.some(c => c.id === projectFilter);
   if (!isValidCategory && projectFilter !== 'All') {
     notFound();
   }
 
-  const activeMainCard = MAIN_CATEGORY_CARDS.find(card => 
+  const activeMainCard = WORKS_CATEGORIES.find(card => 
     card.id === projectFilter || card.subcategories.some(sub => sub.id === projectFilter)
   );
 
@@ -232,7 +140,7 @@ export default function WorksSlugPage({ params }: { params: Promise<{ slug: stri
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-7xl w-full mx-auto px-4 sm:px-6 select-none flex flex-col flex-1 min-h-0 h-full py-2 sm:py-3 overflow-hidden justify-between space-y-3"
+      className="w-full px-4 sm:px-8 select-none flex flex-col flex-1 min-h-0 h-full py-2 sm:py-3 overflow-hidden justify-between space-y-3"
     >
       <div className="flex-1 flex flex-col min-h-0 h-full justify-between space-y-3 sm:space-y-4 w-full overflow-hidden">
         {/* Top Area: Page Title & Subtext in ONE LINE (Aligned Left) + Homepage Carousel Dots */}
@@ -250,7 +158,7 @@ export default function WorksSlugPage({ params }: { params: Promise<{ slug: stri
           {/* Two small arrow buttons for carousel navigation */}
           <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
             <button
-              onClick={handleScrollLeft}
+              onClick={() => handleScroll('left')}
               aria-label="Previous Projects"
               className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 cursor-pointer ${
                 isDarkMode 
@@ -261,7 +169,7 @@ export default function WorksSlugPage({ params }: { params: Promise<{ slug: stri
               <ChevronLeft size={16} />
             </button>
             <button
-              onClick={handleScrollRight}
+              onClick={() => handleScroll('right')}
               aria-label="Next Projects"
               className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 cursor-pointer ${
                 isDarkMode 
@@ -280,14 +188,17 @@ export default function WorksSlugPage({ params }: { params: Promise<{ slug: stri
           <div 
             ref={carouselRef}
             onScroll={handleCarouselScroll}
-            className="w-full h-full overflow-x-auto no-scrollbar scroll-smooth flex flex-row gap-[2px] items-stretch py-1 snap-x snap-mandatory"
+            className="w-full h-full overflow-x-auto no-scrollbar flex flex-row gap-[2px] items-stretch py-1"
           >
             {displayProjects.map((project, idx) => (
               <ProjectCard
                 key={`${project.id}-${idx}`}
                 project={project}
                 isDarkMode={isDarkMode}
-                onClick={() => router.push(projectRoute(project.id))}
+                onClick={() => {
+                  const fromQuery = projectFilter !== 'All' ? `?from=${encodeURIComponent(projectFilter)}` : '';
+                  router.push(`${projectRoute(project.id)}${fromQuery}`);
+                }}
               />
             ))}
           </div>

@@ -7,8 +7,10 @@ export interface LandingCard {
   id: string;
   title: string;
   tagline: string;
+  subtext?: string;
   image: string;
   onSelect: () => void;
+  tags?: string[];
 }
 
 interface LandingPageProps {
@@ -45,9 +47,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ cards }) => {
                 </h2>
 
                 {/* Subtext tagline overlay */}
-                <p className="text-mini sm:text-caption font-light text-white/90 italic mt-1 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 ease-out leading-relaxed tracking-wide">
-                  {card.tagline}
-                </p>
+                {card.tags ? (
+                  <p className="text-mini sm:text-caption font-normal text-white/80 tracking-wider leading-relaxed font-sans mt-1">
+                    {card.tags.join(' ◦ ')}
+                  </p>
+                ) : (
+                  <p className="text-mini sm:text-caption font-light text-white/90 italic mt-1 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 ease-out leading-relaxed tracking-wide">
+                    {card.tagline}
+                  </p>
+                )}
               </div>
             </div>
           ))}

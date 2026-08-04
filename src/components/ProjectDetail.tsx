@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, X, Play, ArrowUpRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Project, Member } from '../types';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, memberRoute } from '../lib/routes';
 import { Button } from './Button';
 import { Accordion } from './Accordion';
+import { BreadcrumbButton } from './BreadcrumbButton';
 
 function getYouTubeEmbedUrl(url: string): string | null {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -25,13 +26,28 @@ interface ProjectDetailProps {
   members: Member[];
 }
 
-export const ProjectDetail: React.FC<ProjectDetailProps> = ({
+function ProjectDetailContent({
   project,
   members,
-}) => {
+}: ProjectDetailProps) {
   const { isDarkMode } = useTheme();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
+  const [direction, setDirection] = useState<number>(1);
+
+  const fromParam = searchParams.get('from') || searchParams.get('filter');
+  const filterName = fromParam || project.subcategory || project.mainCategory || project.category || 'All Works';
+  const isAllWorks = filterName === 'All' || filterName === 'All Works' || filterName === 'works';
+  const backLabel = isAllWorks ? 'Back to all works' : `Back to ${filterName}`;
+
+  const handleBackClick = () => {
+    if (isAllWorks) {
+      router.push(ROUTES.works);
+    } else {
+      router.push(`${ROUTES.works}/${encodeURIComponent(filterName)}`);
+    }
+  };
 
   const contributors = useMemo(() => {
     return members.filter((member) =>
@@ -109,6 +125,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
     }
 
     const timer = setInterval(() => {
+      setDirection(1);
       setCurrentSlideIndex((prev) => {
         if (prev < lastImageIndex) {
           return prev + 1;
@@ -122,11 +139,13 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
 
   const nextSlide = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    setDirection(1);
     setCurrentSlideIndex((prev) => (prev + 1) % mediaItems.length);
   };
 
   const prevSlide = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    setDirection(-1);
     setCurrentSlideIndex((prev) => (prev - 1 + mediaItems.length) % mediaItems.length);
   };
 
@@ -146,8 +165,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
 
   const isVideoActive = mediaItems[currentSlideIndex]?.type === 'video';
 
-  const headerHeight = 72;
-  const maxAvailableHeight = Math.max(200, coords.windowHeight - headerHeight - 48);
+  const maxAvailableHeight = coords.windowHeight * 0.9;
   const maxAvailableWidth = coords.windowWidth * 0.9;
 
   const targetWidth = useMemo(() => {
@@ -165,7 +183,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
   }, [coords.windowWidth, targetWidth, coords.columnLeft]);
 
   const yRelative = useMemo(() => {
-    const targetTop = headerHeight + (coords.windowHeight - headerHeight - targetHeight) / 2;
+    const targetTop = (coords.windowHeight - targetHeight) / 2;
     return targetTop - coords.columnTop;
   }, [coords.windowHeight, targetHeight, coords.columnTop]);
 
@@ -176,25 +194,19 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-2 select-none flex flex-col flex-1 min-h-0 h-full overflow-hidden justify-between"
+      className={`w-full px-4 sm:px-8 py-2 select-none flex flex-col flex-1 min-h-0 h-full justify-between ${isVideoActive && isDesktop ? '' : 'overflow-hidden'}`}
     >
-      {/* Breadcrumb & Close */}
-      <div className="flex items-center justify-between mb-2 shrink-0">
-        <button
-          onClick={() => router.push(ROUTES.works)}
-          className="flex items-center space-x-2 text-xs uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
-        >
-          <ChevronLeft size={16} />
-          <span>Back to all works</span>
-        </button>
-      </div>
+      <BreadcrumbButton
+        label={backLabel}
+        onClick={handleBackClick}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden pb-1">
+      <div className={`grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 pb-1 ${isVideoActive && isDesktop ? '' : 'overflow-hidden'}`}>
         
         {/* Carousel & CTA Container */}
-        <div ref={columnRef} className="lg:col-span-7 lg:order-2 flex flex-col justify-between h-full min-h-0 overflow-hidden space-y-3">
+        <div ref={columnRef} className={`lg:col-span-7 lg:order-2 flex flex-col justify-between h-full min-h-0 space-y-3 ${isVideoActive && isDesktop ? '' : 'overflow-hidden'}`}>
           
-          <div className="space-y-3 w-full relative flex-1 min-h-0 flex flex-col justify-center overflow-hidden">
+          <div className={`space-y-3 w-full relative flex-1 min-h-0 flex flex-col justify-center ${isVideoActive && isDesktop ? '' : 'overflow-hidden'}`}>
             <AnimatePresence>
               {isVideoActive && isDesktop && (
                 <motion.div
@@ -202,9 +214,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className={`fixed inset-0 z-25 cursor-pointer backdrop-blur-sm ${
-                    isDarkMode ? 'bg-vintage-charcoal/95' : 'bg-bright-gray/95'
-                  }`}
+                  className="fixed inset-0 z-[100] cursor-pointer backdrop-blur-sm bg-black/85"
                   onClick={(e) => {
                     e.stopPropagation();
                     setCurrentSlideIndex(0);
@@ -221,7 +231,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
                   height: isVideoActive && isDesktop ? targetHeight : '100%',
                   x: isVideoActive && isDesktop ? xRelative : 0,
                   y: isVideoActive && isDesktop ? yRelative : 0,
-                  zIndex: isVideoActive && isDesktop ? 30 : 10,
+                  zIndex: isVideoActive && isDesktop ? 110 : 10,
                 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 120, mass: 0.9 }}
               >
@@ -259,12 +269,22 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
                     )}
                   </div>
                 ) : (
-                  <img 
-                    src={mediaItems[currentSlideIndex].url} 
-                    alt={`${project.title} slide ${currentSlideIndex + 1}`}
-                    className="w-full h-full object-cover transition-all duration-700 ease-in-out hover:scale-105"
-                    referrerPolicy="no-referrer"
-                  />
+                  <div className="relative w-full h-full overflow-hidden bg-black/5">
+                    <AnimatePresence initial={false} custom={direction}>
+                      <motion.img 
+                        key={currentSlideIndex}
+                        custom={direction}
+                        src={mediaItems[currentSlideIndex].url} 
+                        alt={`${project.title} slide ${currentSlideIndex + 1}`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                        initial={{ x: direction > 0 ? '100%' : '-100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: direction > 0 ? '-100%' : '100%' }}
+                        transition={{ duration: 0.5, ease: "easeInOut" }}
+                      />
+                    </AnimatePresence>
+                  </div>
                 )}
                 
                 {/* Left/Right Buttons */}
@@ -434,5 +454,13 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
 
       </div>
     </motion.div>
+  );
+}
+
+export const ProjectDetail: React.FC<ProjectDetailProps> = (props) => {
+  return (
+    <Suspense fallback={null}>
+      <ProjectDetailContent {...props} />
+    </Suspense>
   );
 };

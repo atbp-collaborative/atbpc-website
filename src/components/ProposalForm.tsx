@@ -84,7 +84,7 @@ export const ProposalForm: React.FC = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-4xl mx-auto px-6 py-12"
+      className="w-full px-6 py-12"
     >
       {/* Title Header */}
       <div className="text-center space-y-3 mb-8">
