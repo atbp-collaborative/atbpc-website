@@ -7,12 +7,16 @@ interface UseInfiniteCarouselProps {
 
 export function useInfiniteCarousel<T extends HTMLElement>({ displayCount, originalCount }: UseInfiniteCarouselProps) {
   const carouselRef = useRef<T>(null);
+  const isAdjustingRef = useRef(false);
 
   useEffect(() => {
     if (carouselRef.current && displayCount > 0 && originalCount > 0) {
       const container = carouselRef.current;
-      const singleSetWidth = container.scrollWidth / (displayCount / originalCount);
-      container.scrollLeft = singleSetWidth;
+      const totalWidth = container.scrollWidth;
+      const sets = Math.round(displayCount / originalCount);
+      const singleSetWidth = totalWidth / sets;
+      const middleSet = Math.floor(sets / 2);
+      container.scrollLeft = singleSetWidth * middleSet;
     }
   }, [displayCount, originalCount]);
 
@@ -26,15 +30,27 @@ export function useInfiniteCarousel<T extends HTMLElement>({ displayCount, origi
   };
 
   const handleCarouselScroll = () => {
-    if (!carouselRef.current || displayCount === 0 || originalCount === 0) return;
+    if (!carouselRef.current || displayCount === 0 || originalCount === 0 || isAdjustingRef.current) return;
     const container = carouselRef.current;
     const totalWidth = container.scrollWidth;
-    const singleSetWidth = totalWidth / (displayCount / originalCount);
-    
-    if (container.scrollLeft < 30) {
-      container.scrollLeft += singleSetWidth;
-    } else if (container.scrollLeft >= singleSetWidth * (displayCount / originalCount - 1) - 30) {
-      container.scrollLeft -= singleSetWidth;
+    const sets = Math.round(displayCount / originalCount);
+    if (sets <= 1) return;
+
+    const singleSetWidth = totalWidth / sets;
+    const threshold = 50;
+
+    if (container.scrollLeft <= threshold) {
+      isAdjustingRef.current = true;
+      container.scrollLeft += singleSetWidth * Math.floor(sets / 2);
+      requestAnimationFrame(() => {
+        isAdjustingRef.current = false;
+      });
+    } else if (container.scrollLeft >= totalWidth - container.clientWidth - threshold) {
+      isAdjustingRef.current = true;
+      container.scrollLeft -= singleSetWidth * Math.floor(sets / 2);
+      requestAnimationFrame(() => {
+        isAdjustingRef.current = false;
+      });
     }
   };
 

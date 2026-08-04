@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Sun, Moon, Shield, ShieldOff } from 'lucide-react';
 import { PrivacyPolicyModal } from './PrivacyPolicyModal';
 import { LegalModal } from './LegalModal';
+import { usePathname } from 'next/navigation';
 
 interface FooterProps {
   isDarkMode: boolean;
@@ -20,6 +21,12 @@ export const Footer: React.FC<FooterProps> = ({
 }) => {
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+  const pathname = usePathname();
+
+  const isWorksLanding = pathname === '/works';
+  const isStudioLanding = pathname === '/' || pathname === '/studio';
+  const isContactLanding = pathname === '/contact';
+  const isLandingPage = isStudioLanding || isWorksLanding || isContactLanding;
 
   return (
     <>
@@ -31,7 +38,11 @@ export const Footer: React.FC<FooterProps> = ({
             : 'bg-bright-gray border-space-sparkle/10 text-vintage-charcoal/70'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
+        <div 
+          className={`mx-auto flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] w-full ${
+            isLandingPage ? 'max-w-7xl px-4 sm:px-6' : 'max-w-[100vw] px-4 sm:px-8'
+          }`}
+        >
           {/* Subtext on the left */}
           <div className="font-sans font-light opacity-80 tracking-wide text-mini text-center md:text-left">
             designing with <span className="font-semibold">values</span>, managing with <span className="font-semibold">integrity</span>, building with <span className="font-semibold">culture</span>

@@ -1,25 +1,27 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { ChevronLeft, ArrowUpRight } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Member, Project } from '../types';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, projectRoute } from '../lib/routes';
 import { Accordion } from './Accordion';
+
+import { BreadcrumbButton } from './BreadcrumbButton';
 
 interface MemberDetailProps {
   member: Member;
   projects: Project[];
 }
 
-export const MemberDetail: React.FC<MemberDetailProps> = ({
-  member,
-  projects,
-}) => {
+function MemberDetailContent({ member, projects }: MemberDetailProps) {
   const { isDarkMode } = useTheme();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const filter = searchParams.get('filter');
+  const backRoute = filter ? `${ROUTES.ourPeople}?filter=${filter}` : ROUTES.ourPeople;
 
   return (
     <motion.div 
@@ -28,24 +30,18 @@ export const MemberDetail: React.FC<MemberDetailProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-7xl mx-auto px-6 py-12 animate-fade-in"
+      className="w-full px-4 sm:px-8 py-2 select-none flex flex-col flex-1 min-h-0 h-full overflow-hidden justify-between space-y-2"
     >
-      {/* Breadcrumb & Close */}
-      <div className="flex items-center justify-start gap-4 mb-8">
-        <button
-          onClick={() => router.push(ROUTES.ourPeople)}
-          className="flex items-center space-x-2 text-caption uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
-        >
-          <ChevronLeft size={16} />
-          <span>Back to structure</span>
-        </button>
-      </div>
+      <BreadcrumbButton
+        label="Our People"
+        onClick={() => router.push(backRoute)}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 flex-1 min-h-0 overflow-hidden pb-1">
         
         {/* LEFT: Portrait Container */}
-        <div className="lg:col-span-5">
-          <div className="relative aspect-[2/3] w-full overflow-hidden bg-black/10 rounded-none group border border-space-sparkle/20 animate-slide-up">
+        <div className="lg:col-span-5 flex flex-col items-stretch h-full min-h-0 overflow-hidden">
+          <div className="relative w-full h-[240px] sm:h-[320px] lg:h-full lg:flex-1 min-h-0 overflow-hidden bg-black/10 rounded-none group border border-space-sparkle/20 animate-slide-up">
             <img 
               src={member.image} 
               alt={member.name}
@@ -56,78 +52,95 @@ export const MemberDetail: React.FC<MemberDetailProps> = ({
         </div>
 
         {/* RIGHT: High-End Bio & Project Involvement */}
-        <div className="lg:col-span-7 space-y-8 flex flex-col justify-start">
-          <div>
-            <h1 className="font-sans text-hero font-bold tracking-tight">
-              {member.name}
-            </h1>
+        <div className="lg:col-span-7 flex flex-col justify-between h-full min-h-0 overflow-hidden space-y-2 py-0.5">
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden space-y-2">
+            <div className="shrink-0 space-y-0.5">
+              <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight">
+                {member.name}
+              </h1>
 
-            <div className="mt-2">
-              <span className={`text-mini uppercase tracking-widest font-bold opacity-80 ${
-                isDarkMode ? 'text-white/80' : 'text-space-sparkle'
-              }`}>
-                {member.role}
-              </span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                <span className={`text-caption sm:text-mini uppercase tracking-widest font-bold opacity-80 ${
+                  isDarkMode ? 'text-white/80' : 'text-space-sparkle'
+                }`}>
+                  {member.role}
+                </span>
+
+                {member.license && (
+                  <span className="text-caption font-sans opacity-60">
+                    • {member.license}
+                  </span>
+                )}
+              </div>
             </div>
 
-            {member.license && (
-              <div className="flex items-center space-x-2 mt-1 text-caption font-sans opacity-60">
-                <span>{member.license}</span>
-              </div>
+            {/* Scrollable text if bio is long */}
+            <div className="flex-1 min-h-0 overflow-y-auto pr-1.5 no-scrollbar">
+              <p className="text-caption sm:text-body leading-relaxed font-light opacity-90 whitespace-pre-line text-justify">
+                {member.fullBio}
+              </p>
+            </div>
+
+            {/* Accreditations / Credentials Block */}
+            {member.education && member.education.length > 0 && (
+              <Accordion key={`credentials-${member.id}`} title="Credentials" isDarkMode={isDarkMode} size="sm" className="shrink-0">
+                <div className="pb-2 pt-1 text-xs space-y-2 pl-[30px] max-h-[120px] overflow-y-auto">
+                  <ul className="space-y-1">
+                    {member.education.map((item, idx) => (
+                      <li key={idx} className="flex items-start space-x-2 font-light opacity-90">
+                        <span className="text-space-sparkle font-semibold mt-0.5">•</span>
+                        <span className={isDarkMode ? "text-bright-gray/90" : "text-slate-700"}>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Accordion>
             )}
 
-            <p className="text-body leading-relaxed font-light opacity-90 whitespace-pre-line text-justify mt-6">
-              {member.fullBio}
-            </p>
+            {/* Dynamic Project Involvement Block */}
+            {member.involvement && member.involvement.length > 0 && (
+              <Accordion key={`involvement-${member.id}`} title="Project Involvement" isDarkMode={isDarkMode} size="sm" className="shrink-0">
+                <div className="pb-2 pt-1 text-xs space-y-2 pl-[30px] max-h-[120px] overflow-y-auto">
+                  <ul className="space-y-1">
+                    {member.involvement.map((inv) => {
+                      const project = projects.find(p => p.id === inv.projectId);
+                      return (
+                        <li key={inv.projectId} className="flex items-start space-x-2 font-light opacity-90">
+                          <span className="text-space-sparkle font-semibold mt-0.5">•</span>
+                          {project ? (
+                            <button
+                              onClick={() => router.push(projectRoute(project.id))}
+                              className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
+                                isDarkMode ? "text-bright-gray/90" : "text-slate-700"
+                              }`}
+                            >
+                              <span>{inv.projectTitle}</span>
+                              <ArrowUpRight size={12} className="opacity-65 text-space-sparkle" />
+                            </button>
+                          ) : (
+                            <span className={isDarkMode ? "text-bright-gray/90" : "text-slate-700"}>
+                              {inv.projectTitle}
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </Accordion>
+            )}
+
           </div>
-
-          {/* Accreditations / Credentials Block */}
-          <Accordion key={`credentials-${member.id}`} title="Credentials" isDarkMode={isDarkMode}>
-            <div className="pb-4 pt-1 text-caption space-y-4 pl-[30px]">
-              <ul className="space-y-2">
-                {member.education.map((item, idx) => (
-                  <li key={idx} className="flex items-start space-x-2 font-light opacity-90">
-                    <span className="text-space-sparkle font-semibold mt-0.5">•</span>
-                    <span className={isDarkMode ? "text-bright-gray/90" : "text-slate-700"}>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Accordion>
-
-          {/* Dynamic Project Involvement Block */}
-          <Accordion key={`involvement-${member.id}`} title="Project Involvement" isDarkMode={isDarkMode}>
-            <div className="pb-4 pt-1 text-caption space-y-4 pl-[30px]">
-              <ul className="space-y-2">
-                {member.involvement.map((inv) => {
-                  const project = projects.find(p => p.id === inv.projectId);
-                  return (
-                    <li key={inv.projectId} className="flex items-start space-x-2 font-light opacity-90">
-                      <span className="text-space-sparkle font-semibold mt-0.5">•</span>
-                      {project ? (
-                        <button
-                          onClick={() => router.push(projectRoute(project.id))}
-                          className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
-                            isDarkMode ? "text-bright-gray/90" : "text-slate-700"
-                          }`}
-                        >
-                          <span>{inv.projectTitle}</span>
-                          <ArrowUpRight size={12} className="opacity-65 text-space-sparkle" />
-                        </button>
-                      ) : (
-                        <span className={isDarkMode ? "text-bright-gray/90" : "text-slate-700"}>
-                          {inv.projectTitle}
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </Accordion>
-
         </div>
       </div>
     </motion.div>
+  );
+}
+
+export const MemberDetail: React.FC<MemberDetailProps> = (props) => {
+  return (
+    <Suspense fallback={null}>
+      <MemberDetailContent {...props} />
+    </Suspense>
   );
 };

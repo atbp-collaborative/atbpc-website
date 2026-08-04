@@ -25,6 +25,7 @@ export default function PartnerWithUsPage() {
       cards={cards}
       title="partner with us"
       subtitle="collaborate with us as a supplier, builder, or consultant"
+      isHeaderSticky={true}
     />
   );
 }

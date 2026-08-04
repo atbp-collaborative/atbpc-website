@@ -25,6 +25,7 @@ export default function CaseStudyHousePage() {
       cards={cards}
       title="case study house"
       subtitle="explore case study house project types and collaborative offerings"
+      isHeaderSticky={true}
     />
   );
 }

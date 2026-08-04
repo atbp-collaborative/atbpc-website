@@ -28,10 +28,12 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members }) => {
   const initialFilter = (searchParams.get('filter') as FilterCategory) || 'all';
   const [activeFilter, setActiveFilter] = useState<FilterCategory>(initialFilter);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [direction, setDirection] = useState<number>(1);
 
   React.useEffect(() => {
     setActiveFilter(initialFilter);
     setCurrentIndex(0);
+    setDirection(1);
   }, [initialFilter]);
 
   const filteredMembers = useMemo(() => {
@@ -75,25 +77,42 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members }) => {
 
   const handlePrev = () => {
     if (filteredMembers.length === 0) return;
+    setDirection(-1);
     setCurrentIndex((prev) => (prev === 0 ? filteredMembers.length - 1 : prev - 1));
   };
 
   const handleNext = () => {
     if (filteredMembers.length === 0) return;
+    setDirection(1);
     setCurrentIndex((prev) => (prev + 1) % filteredMembers.length);
   };
 
   const visibleMembers = useMemo(() => {
-    if (filteredMembers.length === 0) return [];
+    if (!filteredMembers || filteredMembers.length === 0) return [];
     const len = filteredMembers.length;
     const count = Math.min(3, len);
+    const safeCurrentIndex = ((currentIndex % len) + len) % len;
     const result: Member[] = [];
     for (let i = 0; i < count; i++) {
-      const idx = (currentIndex + i) % len;
-      result.push(filteredMembers[idx]);
+      const idx = (safeCurrentIndex + i) % len;
+      if (filteredMembers[idx]) {
+        result.push(filteredMembers[idx]);
+      }
     }
     return result;
   }, [filteredMembers, currentIndex]);
+
+  const slideVariants = {
+    enter: (dir: number) => ({
+      x: dir > 0 ? '100%' : '-100%',
+    }),
+    center: {
+      x: '0%',
+    },
+    exit: (dir: number) => ({
+      x: dir < 0 ? '100%' : '-100%',
+    }),
+  };
 
   return (
     <div className="w-full h-full flex flex-col justify-between overflow-hidden select-none">
@@ -106,8 +125,14 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members }) => {
                 {index > 0 && <span className="opacity-30 font-light px-1 sm:px-2">|</span>}
                 <button
                   onClick={() => {
+                    setDirection(1);
                     setActiveFilter(filter.id);
                     setCurrentIndex(0);
+                    if (filter.id === 'all') {
+                      router.push('/studio/our-people');
+                    } else {
+                      router.push(`/studio/our-people?filter=${filter.id}`);
+                    }
                   }}
                   className={`transition-all duration-200 cursor-pointer ${
                     isActive
@@ -158,21 +183,24 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members }) => {
             No team members found in this category.
           </div>
         ) : (
-          <div className="relative w-full flex items-center gap-4 sm:gap-6">
-            <AnimatePresence mode="wait">
+          <div className="w-full grid grid-cols-1 grid-rows-1 items-start overflow-hidden relative">
+            <AnimatePresence custom={direction} initial={false}>
               <motion.div
                 key={`${activeFilter}-${currentIndex}`}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.35, ease: 'easeOut' }}
-                className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 items-start"
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+                className="col-start-1 row-start-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 items-start"
               >
                 {visibleMembers.map((member, idx) => (
                   <div
                     key={`${member.id}-${idx}`}
                     onClick={() => {
-                      router.push(memberRoute(member.id));
+                      const filterQuery = activeFilter !== 'all' ? `?filter=${activeFilter}` : '';
+                      router.push(`${memberRoute(member.id)}${filterQuery}`);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="group cursor-pointer flex flex-col space-y-3 transition-all duration-300"

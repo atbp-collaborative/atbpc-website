@@ -14,7 +14,7 @@ export default function ManagingWithIntegrityPage() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.4 }}
-      className="w-full h-full max-w-7xl mx-auto px-4 sm:px-8 md:px-12 py-3 flex flex-col justify-between overflow-hidden select-none min-h-0 flex-1"
+      className="w-full h-full px-4 sm:px-8 md:px-12 py-3 flex flex-col justify-between overflow-hidden select-none min-h-0 flex-1"
     >
       <div className="shrink-0 flex items-center justify-between border-b border-space-sparkle/10 pb-2 mb-2">
         <span className="text-mini font-semibold tracking-widest uppercase opacity-60">

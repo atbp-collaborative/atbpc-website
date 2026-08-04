@@ -17,7 +17,7 @@ export default function PieceworkServicesPage() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.4 }}
-      className="w-full h-full max-w-7xl mx-auto px-4 sm:px-8 md:px-12 py-3 flex flex-col justify-between overflow-hidden select-none min-h-0 flex-1"
+      className="w-full h-full px-4 sm:px-8 md:px-12 py-3 flex flex-col justify-between overflow-hidden select-none min-h-0 flex-1"
     >
       {/* Top Header */}
       <div className="shrink-0 flex items-center justify-between border-b border-space-sparkle/10 pb-2 mb-2">
@@ -28,7 +28,7 @@ export default function PieceworkServicesPage() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col justify-center min-h-0 my-auto py-1">
-        <div className="space-y-6 max-w-7xl mx-auto w-full">
+        <div className="space-y-6 w-full">
           {/* Title & Tagline */}
           <div className="space-y-1.5 text-left">
             <h1 className="font-sans text-h2 sm:text-h1 md:text-hero font-bold tracking-tight lowercase text-vintage-charcoal dark:text-white">

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Menu, X, Calendar, FileText } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, TAB_TO_ROUTE } from '../lib/routes';
 import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '../lib/navData';
@@ -22,14 +22,19 @@ export const Header: React.FC<HeaderProps> = ({
   const { isDarkMode } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const filterParam = searchParams.get('filter');
+  const fullRoute = filterParam ? `${pathname}?filter=${filterParam}` : pathname;
   const worksSlug = pathname.startsWith('/works/') ? pathname.split('/')[2] : null;
   const currentCategoryFilter = worksSlug ? decodeURIComponent(worksSlug) : 'All';
 
   const isWorksLanding = pathname === '/works';
   const isStudioLanding = pathname === '/' || pathname === '/studio';
-  const isContactLanding = ['/contact', '/contact/case-study-house', '/contact/grow-with-us', '/contact/partner-with-us'].includes(pathname);
+  const isContactLanding = pathname === '/contact';
 
-  const activeTab = Object.keys(TAB_TO_ROUTE).find((key) => TAB_TO_ROUTE[key] === pathname) || null;
+  const activeTab = Object.keys(TAB_TO_ROUTE).find(
+    (key) => TAB_TO_ROUTE[key] === fullRoute || TAB_TO_ROUTE[key] === pathname
+  ) || null;
 
   const isHeaderTransparent = isStudioLanding || isWorksLanding || isContactLanding;
 
@@ -59,15 +64,19 @@ export const Header: React.FC<HeaderProps> = ({
       id="main-header"
       className={`${
         isHeaderTransparent
-          ? 'absolute top-0 left-0 w-full z-40 bg-transparent border-none text-white'
-          : `sticky top-0 z-40 backdrop-blur-md transition-colors border-b ${
+          ? 'absolute top-0 left-0 w-full z-40 bg-transparent border-b border-transparent text-white'
+          : `sticky top-0 z-40 backdrop-blur-md transition-colors border-b duration-300 ${
               isDarkMode
                 ? 'bg-vintage-charcoal/90 border-space-sparkle/20 text-bright-gray'
                 : 'bg-bright-gray/90 border-space-sparkle/10 text-vintage-charcoal'
             }`
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between">
+      <div 
+        className={`mx-auto py-2 flex items-center justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] w-full ${
+          isHeaderTransparent ? 'max-w-7xl px-4 sm:px-6' : 'max-w-[100vw] px-4 sm:px-8'
+        }`}
+      >
         <div className="flex items-center space-x-12 lg:space-x-16">
           <div className="flex items-center cursor-pointer select-none" onClick={handleLogoClick}>
             <AtbpLogo

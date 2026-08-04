@@ -25,6 +25,7 @@ export default function GrowWithUsPage() {
       cards={cards}
       title="grow with us"
       subtitle="career and mentorship opportunities at ATBP Collaborative"
+      isHeaderSticky={true}
     />
   );
 }

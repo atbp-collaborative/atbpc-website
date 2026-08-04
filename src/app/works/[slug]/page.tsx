@@ -140,7 +140,7 @@ export default function WorksCategoryPage({ params }: { params: Promise<{ slug: 
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-7xl w-full mx-auto px-4 sm:px-6 select-none flex flex-col flex-1 min-h-0 h-full py-2 sm:py-3 overflow-hidden justify-between space-y-3"
+      className="w-full px-4 sm:px-8 select-none flex flex-col flex-1 min-h-0 h-full py-2 sm:py-3 overflow-hidden justify-between space-y-3"
     >
       <div className="flex-1 flex flex-col min-h-0 h-full justify-between space-y-3 sm:space-y-4 w-full overflow-hidden">
         {/* Top Area: Page Title & Subtext in ONE LINE (Aligned Left) + Homepage Carousel Dots */}
@@ -188,14 +188,17 @@ export default function WorksCategoryPage({ params }: { params: Promise<{ slug: 
           <div 
             ref={carouselRef}
             onScroll={handleCarouselScroll}
-            className="w-full h-full overflow-x-auto no-scrollbar scroll-smooth flex flex-row gap-[2px] items-stretch py-1 snap-x snap-mandatory"
+            className="w-full h-full overflow-x-auto no-scrollbar flex flex-row gap-[2px] items-stretch py-1"
           >
             {displayProjects.map((project, idx) => (
               <ProjectCard
                 key={`${project.id}-${idx}`}
                 project={project}
                 isDarkMode={isDarkMode}
-                onClick={() => router.push(projectRoute(project.id))}
+                onClick={() => {
+                  const fromQuery = projectFilter !== 'All' ? `?from=${encodeURIComponent(projectFilter)}` : '';
+                  router.push(`${projectRoute(project.id)}${fromQuery}`);
+                }}
               />
             ))}
           </div>

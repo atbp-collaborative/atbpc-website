@@ -13,7 +13,7 @@ import { MobileDrawer } from './MobileDrawer';
 const SCROLLABLE_PATHS = ['/our-services', '/contact/discovery-meeting'];
 
 function isMemberDetailPath(pathname: string): boolean {
-  return /^\/our-people\/[^/]+$/.test(pathname);
+  return /^\/(studio\/)?our-people\/[^/]+$/.test(pathname);
 }
 
 function AppShellInner({ children }: { children: ReactNode }) {
@@ -23,8 +23,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
   const [isProtectionEnabled, setIsProtectionEnabled] = useState(false);
   const { isShielded } = useContentProtection(isProtectionEnabled);
 
-  const isFullScreenLanding =
-    !SCROLLABLE_PATHS.includes(pathname) && !isMemberDetailPath(pathname);
+  const isFullScreenLanding = !SCROLLABLE_PATHS.includes(pathname);
   const hideFooter = pathname === '/';
 
   return (
