@@ -54,10 +54,10 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
-      className="w-full h-full max-h-[calc(100vh-80px)] overflow-hidden flex flex-col px-4 sm:px-8 py-3 select-none"
+      className="w-full flex-1 min-h-0 overflow-hidden flex flex-col px-4 sm:px-8 py-3 select-none"
     >
       {/* Title Header */}
-      <div className="mb-3 shrink-0">
+      <div className="mb-3 lg:mb-2 shrink-0">
         <h1 className="font-sans text-h1 sm:text-hero font-bold tracking-tight leading-none lowercase">
           grow with us
         </h1>
@@ -74,10 +74,10 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto lg:overflow-hidden pb-2"
+            className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto pb-2"
           >
             {/* LEFT COLUMN */}
-            <div className="w-full lg:w-1/2 flex flex-col space-y-3 justify-between">
+            <div className="w-full lg:w-1/2 flex flex-col space-y-3 lg:space-y-2">
               {fields.leftColumnTop.map((field) => (
                 <FormFieldRenderer
                   key={field.name}
@@ -98,7 +98,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
               />
 
               {/* Bottom Row: Resume, Portfolio, Cover Video */}
-              <div className="grid grid-cols-3 gap-3 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                 {fields.uploadRow.map((field) => (
                   <FormFieldRenderer
                     key={field.name}
@@ -113,9 +113,9 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className="w-full lg:w-1/2 flex flex-col space-y-2.5 justify-between">
+            <div className="w-full lg:w-1/2 flex flex-col space-y-2.5 lg:space-y-2">
               {fields.rightColumnRows.map((row, idx) => (
-                <div key={idx} className={row.length > 1 ? 'grid grid-cols-2 gap-3' : ''}>
+                <div key={idx} className={row.length > 1 ? 'grid grid-cols-1 sm:grid-cols-2 gap-3' : ''}>
                   {row.map((field) => (
                     <FormFieldRenderer
                       key={field.name}
@@ -130,7 +130,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
               ))}
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="grid grid-cols-2 gap-4 pt-2 lg:pt-1">
                 <button
                   type="button"
                   onClick={() => setShowPrivacyModal(true)}

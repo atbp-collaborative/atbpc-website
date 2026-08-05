@@ -5,10 +5,9 @@ import { SurveyResponse } from '../../types';
  * Change these values to integrate Microsoft Forms or Power Automate!
  */
 export const MS_FORMS_CONFIG = {
-  // OPTION A: Direct Microsoft Forms Link / Embed
-  // If you want to use the native MS Forms interface, paste your link here:
-  // e.g., "https://forms.office.com/r/xxxxxxxx"
-  microsoftFormsUrl: "https://forms.office.com/r/3bB1c2D3eF", // Placeholder, user can customize
+  // Direct Microsoft Forms embed links (Share > Embed > iframe src) for each contact form page.
+  discoveryMeetingFormUrl: "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAO__TREkBtUNFlYVkRWTFU4N0pYSFZWUEVZMjVFOEU2Qy4u&embed=true",
+  requestProposalFormUrl: "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAO__TREkBtUQUhFMjZQWFRNVEY0NU83NkVESzNLNEU1My4u&embed=true",
 
   // OPTION B: Use our custom front-end and POST payload to MS Power Automate / Logic Apps
   // This webhook can automatically write submissions to Excel, SharePoint, or trigger an email.

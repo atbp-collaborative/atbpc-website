@@ -271,7 +271,7 @@ function ProjectDetailContent({
                       );
                     })()}
                     {/* Premium Duration Indicator Badge */}
-                    {mediaItems[currentSlideIndex].duration && (
+                    {mediaItems[currentSlideIndex].duration && !(isVideoActive && isDesktop) && (
                       <div className="absolute top-4 left-4 bg-black/60 text-white text-micro font-sans tracking-widest uppercase py-1 px-2.5 rounded backdrop-blur-sm z-10 flex items-center space-x-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
                         <span>VIDEO • {mediaItems[currentSlideIndex].duration}</span>
@@ -316,18 +316,14 @@ function ProjectDetailContent({
 
                   if (isLastImageBeforeVideo) {
                     return (
-                      <button 
+                      <button
                         onClick={nextSlide}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all duration-300 ease-in-out shadow-lg z-10 cursor-pointer overflow-hidden hover:w-[130px] flex items-center justify-center animate-pulse hover:animate-none group/btn"
+                        className="group/btn absolute right-4 top-1/2 -translate-y-1/2 h-9 pl-3 pr-2.5 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all duration-300 ease-in-out shadow-lg z-10 cursor-pointer flex items-center animate-pulse hover:animate-none"
                       >
-                        <div className="relative w-full h-full flex items-center justify-center">
-                          <span className="absolute left-4 text-micro font-archivo uppercase tracking-widest font-bold whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200 group-hover/btn:delay-100 select-none">
-                            Watch Video
-                          </span>
-                          <div className="absolute transition-all duration-300 right-[10px] group-hover/btn:right-4">
-                            <Play size={16} fill="currentColor" className="flex-shrink-0" />
-                          </div>
-                        </div>
+                        <span className="max-w-[100px] mr-2 group-hover/btn:max-w-0 group-hover/btn:mr-0 overflow-hidden text-micro font-archivo uppercase tracking-widest font-bold whitespace-nowrap opacity-100 group-hover/btn:opacity-0 transition-all duration-300 select-none">
+                          Watch Video
+                        </span>
+                        <Play size={16} fill="currentColor" className="flex-shrink-0" />
                       </button>
                     );
                   }

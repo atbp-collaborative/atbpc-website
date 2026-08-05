@@ -138,7 +138,7 @@ export const Header: React.FC<HeaderProps> = ({
             title="Request a Proposal"
             lines={['Request a', 'Proposal']}
             icon={<FileText size={18} className="shrink-0" />}
-            onClick={() => router.push(ROUTES.discoveryMeeting)}
+            onClick={() => router.push(ROUTES.requestForProposal)}
             isHeaderTransparent={isHeaderTransparent}
             isDarkMode={isDarkMode}
             variant="outline"

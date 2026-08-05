@@ -46,7 +46,7 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = ({
     : `w-full ${grow ? 'flex-1' : ''} p-3 rounded-lg border outline-none resize-none text-caption transition-all ${styles.borderColor}`;
 
   return (
-    <div className={`space-y-1 ${grow ? 'flex-1 flex flex-col min-h-[120px]' : ''}`}>
+    <div className={`space-y-1 ${grow ? 'flex-1 flex flex-col min-h-[120px] lg:min-h-[70px] lg:max-h-[190px]' : ''}`}>
       {label && <label className={styles.label}>{label}</label>}
       <textarea
         name={name}

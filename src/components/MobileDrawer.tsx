@@ -355,7 +355,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 variant="outline"
                 lines={['Request a', 'Proposal']}
                 isDarkMode={isDarkMode}
-                onClick={() => handleNavClick('discovery-meeting')}
+                onClick={() => handleNavClick('request-for-proposal')}
               />
 
               <div className="text-caption text-center font-sans opacity-40 pt-2">
