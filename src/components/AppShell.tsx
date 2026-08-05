@@ -1,16 +1,17 @@
 'use client';
 
-import { Suspense, useState, ReactNode } from 'react';
+import { Suspense, useState, useEffect, useRef, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { ThemeProvider, useTheme } from '../lib/theme-context';
 import { useContentProtection } from '../hooks/useContentProtection';
+import { markNavigated } from '../lib/navHistory';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { MobileDrawer } from './MobileDrawer';
 
 // Paths that keep the ordinary scrollable min-h-screen layout instead of the
 // locked full-viewport h-screen treatment used by the marketing/landing pages.
-const SCROLLABLE_PATHS = ['/our-services', '/contact/discovery-meeting'];
+const SCROLLABLE_PATHS = ['/our-services'];
 
 function isMemberDetailPath(pathname: string): boolean {
   return /^\/(studio\/)?our-people\/[^/]+$/.test(pathname);
@@ -22,6 +23,17 @@ function AppShellInner({ children }: { children: ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProtectionEnabled, setIsProtectionEnabled] = useState(false);
   const { isShielded } = useContentProtection(isProtectionEnabled);
+
+  // Marks that an in-app client-side route change has happened, so
+  // MemberDetail's back button can tell a real in-app history from a
+  // direct/refreshed link and only use router.back() in the former case.
+  const prevPathnameRef = useRef(pathname);
+  useEffect(() => {
+    if (prevPathnameRef.current !== pathname) {
+      markNavigated();
+      prevPathnameRef.current = pathname;
+    }
+  }, [pathname]);
 
   const isFullScreenLanding = !SCROLLABLE_PATHS.includes(pathname);
   const hideFooter = pathname === '/';

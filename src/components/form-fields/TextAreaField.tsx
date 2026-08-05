@@ -24,7 +24,7 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = ({
     // border/theme color, the textarea inside it is just a transparent fill.
     return (
       <div className="space-y-1">
-        <label className="text-[11px] font-semibold block opacity-90 truncate">
+        <label className="text-micro font-archivo font-semibold block opacity-90 truncate">
           {label}
           {badge && <span className="text-space-sparkle font-normal"> ({badge})</span>}
         </label>
@@ -34,7 +34,7 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = ({
             value={value}
             onChange={(e) => onChange(name, e.target.value)}
             placeholder={placeholder}
-            className="w-full h-full bg-transparent text-[10px] leading-tight outline-none resize-none placeholder-inherit"
+            className="w-full h-full bg-transparent text-micro leading-tight outline-none resize-none placeholder-inherit"
           />
         </div>
       </div>
@@ -46,7 +46,7 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = ({
     : `w-full ${grow ? 'flex-1' : ''} p-3 rounded-lg border outline-none resize-none text-caption transition-all ${styles.borderColor}`;
 
   return (
-    <div className={`space-y-1 ${grow ? 'flex-1 flex flex-col min-h-[120px]' : ''}`}>
+    <div className={`space-y-1 ${grow ? 'flex-1 flex flex-col min-h-[120px] lg:min-h-[70px] lg:max-h-[190px]' : ''}`}>
       {label && <label className={styles.label}>{label}</label>}
       <textarea
         name={name}

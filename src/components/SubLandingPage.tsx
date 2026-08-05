@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { LandingCard } from './LandingPage';
 import { useTheme } from '../lib/theme-context';
+import { ImageWithFade } from './ImageWithFade';
 
 interface SubLandingPageProps {
   cards: LandingCard[];
@@ -42,32 +43,31 @@ export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, su
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: index * 0.1 }}
             onClick={card.onSelect}
-            className={`group/card relative flex-1 min-h-[260px] md:min-h-0 flex flex-col justify-between p-5 sm:p-6 rounded-none border cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] md:hover:flex-[1.25] overflow-hidden ${
+            className={`group/card relative flex-1 min-h-[260px] md:min-h-0 rounded-none border cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] md:hover:flex-[1.25] overflow-hidden ${
               isDarkMode
-                ? 'bg-vintage-charcoal/40 border-space-sparkle/40 hover:border-bright-gray/30 hover:bg-vintage-charcoal/80'
-                : 'bg-white/60 border-vintage-charcoal/15 hover:border-space-sparkle/40 hover:bg-white'
+                ? 'bg-vintage-charcoal/40 border-space-sparkle/40 hover:border-bright-gray/30'
+                : 'bg-white/60 border-vintage-charcoal/15 hover:border-space-sparkle/40'
             }`}
           >
-            {/* Header Block (Card Title & Subtext - NO chips, NO numbers, NO arrow button, NO border-radius) */}
-            <div className="shrink-0 space-y-1.5 z-10 mb-4">
-              <h2 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight lowercase leading-snug">
+            {/* Full-bleed Image (fills the whole card) */}
+            <ImageWithFade
+              src={card.image}
+              alt={card.title}
+              fill
+              sizes="(min-width: 1024px) 40vw, (min-width: 768px) 50vw, 100vw"
+              className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-500" />
+
+            {/* Title & Subtext overlaid at the bottom of the image */}
+            <div className="absolute inset-x-0 bottom-0 z-10 space-y-1.5 p-5 sm:p-6">
+              <h2 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight lowercase leading-snug text-white">
                 {card.title}
               </h2>
 
-              <p className="text-caption font-light opacity-80 lowercase leading-relaxed">
+              <p className="text-caption font-light italic opacity-90 lowercase leading-relaxed text-white">
                 {card.subtext || card.tagline}
               </p>
-            </div>
-
-            {/* Image Container (Sharp square edges - NO border radius) */}
-            <div className="relative flex-1 w-full min-h-[140px] rounded-none overflow-hidden border border-black/10 shadow-inner group-hover/card:shadow-lg transition-shadow duration-500">
-              <img
-                src={card.image}
-                alt={card.title}
-                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/card:scale-105"
-                referrerPolicy="no-referrer"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60 group-hover/card:opacity-30 transition-opacity duration-500" />
             </div>
           </motion.div>
         ))}

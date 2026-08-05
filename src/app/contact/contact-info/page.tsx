@@ -56,7 +56,7 @@ export default function ContactInfoPage() {
           </div>
 
           <div className="space-y-0.5 pl-6">
-            <span className="opacity-50 block uppercase text-[10px] tracking-widest font-semibold">Address</span>
+            <span className="opacity-50 block uppercase text-micro font-archivo tracking-widest font-semibold">Address</span>
             <span className="font-normal text-mini sm:text-caption leading-relaxed block text-justify opacity-85">
               {CONTACT_INFO.address}
             </span>
@@ -64,7 +64,7 @@ export default function ContactInfoPage() {
         </div>
 
         <div className="space-y-3 pt-3 border-t border-space-sparkle/10">
-          <span className="text-[10px] sm:text-mini font-sans uppercase text-space-sparkle font-bold block tracking-widest">CONTACT & CHANNELS</span>
+          <span className="text-micro sm:text-mini font-sans uppercase text-space-sparkle font-bold block tracking-widest">CONTACT & CHANNELS</span>
           
           <div className="space-y-2.5 text-mini sm:text-caption">
             <div className="flex items-center space-x-3">
@@ -72,7 +72,7 @@ export default function ContactInfoPage() {
                 <Phone size={14} className="text-space-sparkle" />
               </div>
               <div className="space-y-0.5">
-                <span className="opacity-50 block uppercase text-[10px] tracking-wider font-semibold">Landline</span>
+                <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Landline</span>
                 <span className="font-medium text-mini sm:text-caption">{CONTACT_INFO.landline}</span>
               </div>
             </div>
@@ -82,7 +82,7 @@ export default function ContactInfoPage() {
                 <MessageSquare size={14} className="text-space-sparkle" />
               </div>
               <div className="space-y-0.5">
-                <span className="opacity-50 block uppercase text-[10px] tracking-wider font-semibold">Mobile & Viber Contact</span>
+                <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Mobile & Viber Contact</span>
                 <span className="font-medium text-mini sm:text-caption">{CONTACT_INFO.mobile}</span>
               </div>
             </div>
@@ -92,7 +92,7 @@ export default function ContactInfoPage() {
                 <Mail size={14} className="text-space-sparkle" />
               </div>
               <div className="space-y-0.5">
-                <span className="opacity-50 block uppercase text-[10px] tracking-wider font-semibold">Official Inquiries</span>
+                <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Official Inquiries</span>
                 <span className="font-medium block text-mini sm:text-caption">{CONTACT_INFO.email}</span>
               </div>
             </div>
@@ -102,7 +102,7 @@ export default function ContactInfoPage() {
                 <Facebook size={14} className="text-space-sparkle" />
               </div>
               <div className="space-y-0.5">
-                <span className="opacity-50 block uppercase text-[10px] tracking-wider font-semibold">Facebook</span>
+                <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Facebook</span>
                 <a href={CONTACT_INFO.socials.facebook.url} className="font-medium hover:text-space-sparkle transition-colors underline block text-mini sm:text-caption">{CONTACT_INFO.socials.facebook.label}</a>
               </div>
             </div>
@@ -112,7 +112,7 @@ export default function ContactInfoPage() {
                 <AtSign size={14} className="text-space-sparkle" />
               </div>
               <div className="space-y-0.5">
-                <span className="opacity-50 block uppercase text-[10px] tracking-wider font-semibold">Threads</span>
+                <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Threads</span>
                 <a href={CONTACT_INFO.socials.threads.url} className="font-medium hover:text-space-sparkle transition-colors underline block text-mini sm:text-caption">{CONTACT_INFO.socials.threads.label}</a>
               </div>
             </div>
@@ -122,7 +122,7 @@ export default function ContactInfoPage() {
                 <Instagram size={14} className="text-space-sparkle" />
               </div>
               <div className="space-y-0.5">
-                <span className="opacity-50 block uppercase text-[10px] tracking-wider font-semibold">Instagram</span>
+                <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Instagram</span>
                 <a href={CONTACT_INFO.socials.instagram.url} className="font-medium hover:text-space-sparkle transition-colors underline block text-mini sm:text-caption">{CONTACT_INFO.socials.instagram.label}</a>
               </div>
             </div>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, TAB_TO_ROUTE } from '../lib/routes';
 import { AtbpLogo } from './AtbpLogo';
@@ -62,9 +62,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   const { isDarkMode } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const filterParam = searchParams.get('filter');
-  const fullRoute = filterParam ? `${pathname}?filter=${filterParam}` : pathname;
   const { isWorksActive, isStudioActive, isContactActive, currentCategoryFilter: projectFilter } = useActiveNav();
   const isHomeActive = pathname === '/';
 
@@ -264,11 +261,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                               <div className="pl-3 flex flex-col space-y-1 border-l border-space-sparkle/10 ml-2">
                                 {sec.subItems.map((item) => {
                                   const itemRoute = TAB_TO_ROUTE[item.id as keyof typeof TAB_TO_ROUTE];
-                                  const isSubActive = itemRoute
-                                    ? itemRoute.includes('?')
-                                      ? fullRoute === itemRoute
-                                      : pathname === itemRoute
-                                    : false;
+                                  const isSubActive = itemRoute ? pathname === itemRoute : false;
 
                                   return (
                                     <button
@@ -362,7 +355,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 variant="outline"
                 lines={['Request a', 'Proposal']}
                 isDarkMode={isDarkMode}
-                onClick={() => handleNavClick('discovery-meeting')}
+                onClick={() => handleNavClick('request-for-proposal')}
               />
 
               <div className="text-caption text-center font-sans opacity-40 pt-2">

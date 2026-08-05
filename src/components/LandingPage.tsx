@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
+import { ImageWithFade } from './ImageWithFade';
 
 export interface LandingCard {
   id: string;
@@ -29,11 +30,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ cards }) => {
               className="group/card relative flex-1 min-h-0 md:hover:flex-[1.45] w-full overflow-hidden rounded-none border-0 cursor-pointer transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/cardsContainer:opacity-75 hover:!opacity-100"
             >
               {/* Full-bleed background image occupying whole card */}
-              <img
+              <ImageWithFade
                 src={card.image}
                 alt={card.title}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1000ms] ease-out group-hover/card:scale-[1.03]"
-                referrerPolicy="no-referrer"
+                fill
+                sizes="(min-width: 768px) 34vw, 100vw"
+                className="object-cover transition-transform duration-[1000ms] ease-out group-hover/card:scale-[1.03]"
               />
 
               {/* Dark gradient overlay for visual contrast */}
@@ -42,7 +44,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ cards }) => {
               {/* Card Content Overlay */}
               <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 md:p-10 flex flex-col justify-end items-start text-left z-10">
                 {/* Card Title - Lowercase */}
-                <h2 className="font-sans text-h2 sm:text-h1 md:text-display font-semibold tracking-wider text-white lowercase drop-shadow-md">
+                <h2 className="font-sans text-h2 sm:text-h1 font-semibold tracking-wider text-white lowercase drop-shadow-md">
                   {card.title}
                 </h2>
 

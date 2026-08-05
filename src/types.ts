@@ -52,6 +52,8 @@ export interface MemberInvolvement {
   description: string;
 }
 
+export type MemberCategory = 'designers' | 'managers' | 'builders';
+
 export interface Member {
   id: string;
   name: string;
@@ -61,6 +63,7 @@ export interface Member {
   bio: string;
   fullBio: string;
   education: string[];
+  categories: MemberCategory[];
   involvement: MemberInvolvement[];
 }
 

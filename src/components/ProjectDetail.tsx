@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, X, Play, ArrowUpRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Project, Member } from '../types';
 import { useTheme } from '../lib/theme-context';
@@ -10,6 +11,12 @@ import { ROUTES, memberRoute } from '../lib/routes';
 import { Button } from './Button';
 import { Accordion } from './Accordion';
 import { BreadcrumbButton } from './BreadcrumbButton';
+import { isUnsplashUrl, unsplashLoader } from '../lib/imageLoaders';
+
+// motion needs a ref-forwarding component to animate; next/image forwards
+// its ref to the underlying <img>, so this keeps the existing slide-transform
+// animation working the same way the old motion.img did.
+const MotionImage = motion.create(Image);
 
 function getYouTubeEmbedUrl(url: string): string | null {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -110,9 +117,12 @@ function ProjectDetailContent({
     };
   }, []);
 
+  const [loadedSlides, setLoadedSlides] = useState<Set<number>>(new Set());
+
   // Reset slide index when project changes
   useEffect(() => {
     setCurrentSlideIndex(0);
+    setLoadedSlides(new Set());
   }, [project.id]);
 
   // Auto-scroll image/video carousel every 5 seconds (stops at the last image / penultimate item if there's a video)
@@ -261,8 +271,8 @@ function ProjectDetailContent({
                       );
                     })()}
                     {/* Premium Duration Indicator Badge */}
-                    {mediaItems[currentSlideIndex].duration && (
-                      <div className="absolute top-4 left-4 bg-black/60 text-white text-[10px] font-sans tracking-widest uppercase py-1 px-2.5 rounded backdrop-blur-sm z-10 flex items-center space-x-1.5">
+                    {mediaItems[currentSlideIndex].duration && !(isVideoActive && isDesktop) && (
+                      <div className="absolute top-4 left-4 bg-black/60 text-white text-micro font-sans tracking-widest uppercase py-1 px-2.5 rounded backdrop-blur-sm z-10 flex items-center space-x-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
                         <span>VIDEO • {mediaItems[currentSlideIndex].duration}</span>
                       </div>
@@ -270,14 +280,20 @@ function ProjectDetailContent({
                   </div>
                 ) : (
                   <div className="relative w-full h-full overflow-hidden bg-black/5">
+                    {!loadedSlides.has(currentSlideIndex) && (
+                      <div className="absolute inset-0 bg-neutral-400/20 animate-pulse" />
+                    )}
                     <AnimatePresence initial={false} custom={direction}>
-                      <motion.img 
+                      <MotionImage
                         key={currentSlideIndex}
                         custom={direction}
-                        src={mediaItems[currentSlideIndex].url} 
+                        src={mediaItems[currentSlideIndex].url}
                         alt={`${project.title} slide ${currentSlideIndex + 1}`}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
+                        fill
+                        sizes="(min-width: 1024px) 58vw, 100vw"
+                        loader={isUnsplashUrl(mediaItems[currentSlideIndex].url) ? unsplashLoader : undefined}
+                        className="object-cover"
+                        onLoad={() => setLoadedSlides((prev) => new Set(prev).add(currentSlideIndex))}
                         initial={{ x: direction > 0 ? '100%' : '-100%' }}
                         animate={{ x: 0 }}
                         exit={{ x: direction > 0 ? '-100%' : '100%' }}
@@ -300,18 +316,14 @@ function ProjectDetailContent({
 
                   if (isLastImageBeforeVideo) {
                     return (
-                      <button 
+                      <button
                         onClick={nextSlide}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all duration-300 ease-in-out shadow-lg z-10 cursor-pointer overflow-hidden hover:w-[130px] flex items-center justify-center animate-pulse hover:animate-none group/btn"
+                        className="group/btn absolute right-4 top-1/2 -translate-y-1/2 h-9 pl-3 pr-2.5 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all duration-300 ease-in-out shadow-lg z-10 cursor-pointer flex items-center animate-pulse hover:animate-none"
                       >
-                        <div className="relative w-full h-full flex items-center justify-center">
-                          <span className="absolute left-4 text-[10px] uppercase tracking-widest font-bold whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200 group-hover/btn:delay-100 select-none">
-                            Watch Video
-                          </span>
-                          <div className="absolute transition-all duration-300 right-[10px] group-hover/btn:right-4">
-                            <Play size={16} fill="currentColor" className="flex-shrink-0" />
-                          </div>
-                        </div>
+                        <span className="max-w-[100px] mr-2 group-hover/btn:max-w-0 group-hover/btn:mr-0 overflow-hidden text-micro font-archivo uppercase tracking-widest font-bold whitespace-nowrap opacity-100 group-hover/btn:opacity-0 transition-all duration-300 select-none">
+                          Watch Video
+                        </span>
+                        <Play size={16} fill="currentColor" className="flex-shrink-0" />
                       </button>
                     );
                   }
@@ -350,15 +362,15 @@ function ProjectDetailContent({
           {/* Specific CTA for project view */}
           <div className="pt-2 border-t border-space-sparkle/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full text-center sm:text-left shrink-0">
             <div className="w-full sm:w-auto">
-              <span className="text-[10px] uppercase tracking-widest opacity-50 block">Inspired by this build?</span>
-              <span className="text-xs font-semibold">Qualify your project with us today</span>
+              <span className="text-micro font-archivo uppercase tracking-widest opacity-50 block">Inspired by this build?</span>
+              <span className="text-mini font-semibold">Qualify your project with us today</span>
             </div>
             <Button
               type="filled"
               label="Start Consultation"
               onClick={() => router.push(ROUTES.discoveryMeeting)}
               fullWidth={true}
-              className="sm:w-auto font-medium py-1.5 text-xs"
+              className="sm:w-auto font-medium py-1.5 text-mini"
             />
           </div>
 
@@ -367,7 +379,7 @@ function ProjectDetailContent({
         {/* High-End Architectural Writeup & Specs */}
         <div className="lg:col-span-5 lg:order-1 flex flex-col justify-between h-full min-h-0 overflow-hidden space-y-2 py-0.5">
           <div className="flex flex-col flex-1 min-h-0 overflow-hidden space-y-2">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs uppercase tracking-widest font-sans text-neutral-500 dark:text-neutral-400 shrink-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-mini uppercase tracking-widest font-sans text-vintage-charcoal/60 dark:text-bright-gray/60 shrink-0">
               <span className="font-medium">
                 {project.year}
               </span>
@@ -381,11 +393,11 @@ function ProjectDetailContent({
               </span>
             </div>
 
-            <h1 className="font-sans text-2xl md:text-3xl font-bold tracking-tight shrink-0">
+            <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight shrink-0">
               {project.title}
             </h1>
 
-            <div className="flex items-center space-x-2 text-xs font-sans opacity-60 shrink-0">
+            <div className="flex items-center space-x-2 text-mini font-sans opacity-60 shrink-0">
               <MapPin size={12} />
               <span>{project.location}</span>
             </div>
@@ -399,24 +411,24 @@ function ProjectDetailContent({
 
             {/* Project Overview Accordion */}
             <Accordion key={`overview-${project.id}`} title="Project Overview" isDarkMode={isDarkMode} size="sm" className="shrink-0">
-              <div className="pb-2 pt-1 text-xs pl-[30px] max-h-[220px] overflow-y-auto">
+              <div className="pb-2 pt-1 text-mini pl-[30px] max-h-[220px] overflow-y-auto">
                 <div className="flex flex-col space-y-4">
                   {project.specs.area && (
                     <div>
                       <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Floor Area</span>
-                      <span className="font-medium text-xs">{project.specs.area}</span>
+                      <span className="font-medium text-mini">{project.specs.area}</span>
                     </div>
                   )}
                   <div>
                     <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Contract Type</span>
-                    <span className="font-medium text-xs block capitalize">{project.specs.scope}</span>
+                    <span className="font-medium text-mini block capitalize">{project.specs.scope}</span>
                   </div>
                   {project.specs.materials && (
                     <div>
                       <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Featured Materials</span>
                       <div className="flex flex-wrap gap-1.5 mt-1">
                         {project.specs.materials.map((m, i) => (
-                          <span key={i} className={`px-2 py-0.5 rounded-none text-[11px] font-sans ${
+                          <span key={i} className={`px-2 py-0.5 rounded-none text-micro font-sans ${
                             isDarkMode ? 'bg-space-sparkle/10 text-bright-gray' : 'bg-space-sparkle/5 text-vintage-charcoal'
                           }`}>
                             {m}
@@ -435,7 +447,7 @@ function ProjectDetailContent({
                             <button
                               onClick={() => router.push(memberRoute(member.id))}
                               className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
-                                isDarkMode ? "text-bright-gray/90" : "text-slate-700"
+                                isDarkMode ? "text-bright-gray/90" : "text-vintage-charcoal/90"
                               }`}
                             >
                               <span>{member.name.replace(/,\s*$/, '')}</span>

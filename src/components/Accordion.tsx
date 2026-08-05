@@ -22,7 +22,7 @@ export const Accordion: React.FC<AccordionProps> = ({
   children,
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const titleSize = size === 'sm' ? 'text-xs' : 'text-body';
+  const titleSize = size === 'sm' ? 'text-mini' : 'text-body';
   const buttonPadding = size === 'sm' ? 'py-1.5' : 'py-2';
 
   return (
@@ -31,10 +31,10 @@ export const Accordion: React.FC<AccordionProps> = ({
         onClick={() => setIsOpen((prev) => !prev)}
         className={`w-full ${buttonPadding} flex items-center text-left focus:outline-none group cursor-pointer`}
       >
-        <span className={`${isDarkMode ? 'text-white' : 'text-slate-900'} mr-3.5 shrink-0 flex items-center justify-center`}>
+        <span className={`${isDarkMode ? 'text-white' : 'text-vintage-charcoal'} mr-3.5 shrink-0 flex items-center justify-center`}>
           {isOpen ? <Minus size={16} /> : <Plus size={16} />}
         </span>
-        <h4 className={`font-sans ${titleSize} font-semibold tracking-wide uppercase ${isDarkMode ? 'text-white' : 'text-slate-900'} group-hover:opacity-80 transition-opacity`}>
+        <h4 className={`font-sans ${titleSize} font-semibold tracking-wide uppercase ${isDarkMode ? 'text-white' : 'text-vintage-charcoal'} group-hover:opacity-80 transition-opacity`}>
           {title}
         </h4>
       </button>

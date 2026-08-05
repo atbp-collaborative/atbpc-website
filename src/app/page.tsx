@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { ImageWithFade } from '../components/ImageWithFade';
 
 const CAROUSEL_IMAGES = [
   {
@@ -52,11 +53,13 @@ export default function HeroPage() {
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           className="absolute inset-0 w-full h-full"
         >
-          <img
+          <ImageWithFade
             src={currentItem.url}
             alt={currentItem.title}
-            className="w-full h-full object-cover"
-            referrerPolicy="no-referrer"
+            fill
+            sizes="100vw"
+            priority={currentIndex === 0}
+            className="object-cover"
           />
           {/* Subtle dark gradient overlay for legibility */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/30" />
@@ -75,7 +78,7 @@ export default function HeroPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -25, opacity: 0 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="font-sans text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-white capitalize drop-shadow-md"
+              className="font-sans text-display font-bold tracking-tight text-white capitalize drop-shadow-md"
             >
               {currentItem.title}
             </motion.h1>
@@ -87,7 +90,7 @@ export default function HeroPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-sm sm:text-lg md:text-xl font-medium text-white/90 tracking-wider font-sans lowercase"
+          className="text-mini sm:text-caption md:text-body font-medium text-white/90 tracking-wider font-sans lowercase"
         >
           designed with values. managed with integrity. built with culture.
         </motion.p>
@@ -97,7 +100,7 @@ export default function HeroPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="text-[11px] sm:text-xs md:text-sm font-light text-white/70 leading-relaxed tracking-wide max-w-2xl font-sans"
+          className="text-micro sm:text-mini font-light text-white/70 leading-relaxed tracking-wide max-w-2xl font-sans"
         >
           ATBP Collaborative delivers bespoke architectural design, master planning, and structural craft.
           <br className="hidden sm:inline" />

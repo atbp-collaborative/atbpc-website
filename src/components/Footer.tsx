@@ -50,7 +50,7 @@ export const Footer: React.FC<FooterProps> = ({
 
           {/* Copyright & Links moved to the right */}
           <div className="flex items-center justify-center md:justify-end gap-2 sm:gap-2.5 text-mini font-sans tracking-wider opacity-90 whitespace-nowrap">
-            <span className="uppercase tracking-widest opacity-70 text-[10px] sm:text-mini">© 2026 ATBP Collaborative</span>
+            <span className="uppercase tracking-widest opacity-70 text-micro sm:text-mini">© 2026 ATBP Collaborative</span>
             <span className="opacity-40">•</span>
             <button
               onClick={() => setIsLegalModalOpen(true)}

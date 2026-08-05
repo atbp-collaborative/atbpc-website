@@ -55,10 +55,12 @@ const RIGHT_COLUMN_ROWS: FieldConfig[][] = [
     { type: 'text', name: 'titles', label: 'Titles' },
   ],
   [{ type: 'text', name: 'location', label: 'Location', placeholder: 'Complete Address' }],
-  [{ type: 'text', name: 'contactNumber', label: 'Contact Number', placeholder: 'Must be Viber & Whatsapp Ready' }],
-  [{ type: 'email', name: 'email', label: 'Email Address' }],
   [
+    { type: 'text', name: 'contactNumber', label: 'Contact Number', placeholder: 'Must be Viber & Whatsapp Ready' },
     { type: 'text', name: 'facebook', label: 'Facebook', placeholder: 'Paste URL / Link / Handle' },
+  ],
+  [
+    { type: 'email', name: 'email', label: 'Email Address' },
     { type: 'text', name: 'instagram', label: 'Instagram', placeholder: 'Paste URL / Link / Handle' },
   ],
 ];

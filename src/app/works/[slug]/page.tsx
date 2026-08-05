@@ -232,7 +232,7 @@ export default function WorksCategoryPage({ params }: { params: Promise<{ slug: 
                   className={`group relative h-8 sm:h-9 min-w-[34px] sm:min-w-[36px] rounded-full overflow-hidden transition-all duration-300 px-2.5 sm:px-3 flex items-center justify-center shrink-0 cursor-pointer ${
                     isSelected
                       ? isDarkMode
-                        ? 'bg-rose-ebony/30 text-white font-bold border border-white/30'
+                        ? 'bg-space-sparkle/30 text-white font-bold border border-white/30'
                         : 'bg-space-sparkle/15 text-space-sparkle font-bold border border-space-sparkle/30'
                       : isDarkMode
                         ? 'text-bright-gray/60 hover:text-white hover:bg-white/5 border border-white/10'
