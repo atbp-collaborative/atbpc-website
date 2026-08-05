@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Menu, X, Calendar, FileText } from 'lucide-react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, TAB_TO_ROUTE } from '../lib/routes';
 import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '../lib/navData';
@@ -22,9 +22,6 @@ export const Header: React.FC<HeaderProps> = ({
   const { isDarkMode } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const filterParam = searchParams.get('filter');
-  const fullRoute = filterParam ? `${pathname}?filter=${filterParam}` : pathname;
   const worksSlug = pathname.startsWith('/works/') ? pathname.split('/')[2] : null;
   const currentCategoryFilter = worksSlug ? decodeURIComponent(worksSlug) : 'All';
 
@@ -32,9 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isStudioLanding = pathname === '/' || pathname === '/studio';
   const isContactLanding = pathname === '/contact';
 
-  const activeTab = Object.keys(TAB_TO_ROUTE).find(
-    (key) => TAB_TO_ROUTE[key] === fullRoute || TAB_TO_ROUTE[key] === pathname
-  ) || null;
+  const activeTab = Object.keys(TAB_TO_ROUTE).find((key) => TAB_TO_ROUTE[key] === pathname) || null;
 
   const isHeaderTransparent = isStudioLanding || isWorksLanding || isContactLanding;
 

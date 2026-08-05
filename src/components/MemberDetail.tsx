@@ -3,10 +3,11 @@
 import React, { Suspense } from 'react';
 import { ChevronLeft, ArrowUpRight } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Member, Project } from '../types';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, projectRoute } from '../lib/routes';
+import { hasNavigatedWithinApp } from '../lib/navHistory';
 import { Accordion } from './Accordion';
 
 import { BreadcrumbButton } from './BreadcrumbButton';
@@ -19,9 +20,19 @@ interface MemberDetailProps {
 function MemberDetailContent({ member, projects }: MemberDetailProps) {
   const { isDarkMode } = useTheme();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const filter = searchParams.get('filter');
-  const backRoute = filter ? `${ROUTES.ourPeople}?filter=${filter}` : ROUTES.ourPeople;
+
+  const handleBack = () => {
+    // Real browser back returns to whichever our-people tab (all/designers/
+    // managers/builders) the user came from. Only fall back to the plain
+    // list when this page was the first one loaded in the session (e.g. a
+    // direct/refreshed link) — window.history.length isn't reliable here,
+    // since a freshly opened tab's own blank starting entry still counts.
+    if (hasNavigatedWithinApp()) {
+      router.back();
+    } else {
+      router.push(ROUTES.ourPeople);
+    }
+  };
 
   return (
     <motion.div 
@@ -34,7 +45,7 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
     >
       <BreadcrumbButton
         label="Our People"
-        onClick={() => router.push(backRoute)}
+        onClick={handleBack}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 flex-1 min-h-0 overflow-hidden pb-1">

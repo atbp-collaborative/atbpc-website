@@ -1,3 +1,5 @@
+import { MemberCategory } from '../types';
+
 // Central tab-id -> route map. Single source of truth for navigation paths,
 // replacing the activeTab string comparisons that used to be duplicated
 // across App.tsx, Header.tsx and MobileDrawer.tsx.
@@ -20,11 +22,11 @@ export const ROUTES = {
   builder: '/contact/builder',
   consultant: '/contact/consultant',
   discoveryMeeting: '/contact/discovery-meeting',
-  comprehensiveServices: '/studio/comprehensive-services',
-  pieceworkServices: '/studio/piecework-services',
-  designingWithValues: '/studio/designing-with-values',
-  managingWithIntegrity: '/studio/managing-with-integrity',
-  buildingWithCulture: '/studio/building-with-culture',
+  comprehensiveServices: '/studio/our-services/comprehensive-services',
+  pieceworkServices: '/studio/our-services/piecework-services',
+  designingWithValues: '/studio/our-process/designing-with-values',
+  managingWithIntegrity: '/studio/our-process/managing-with-integrity',
+  buildingWithCulture: '/studio/our-process/building-with-culture',
 } as const;
 
 export function projectRoute(slug: string): string {
@@ -33,6 +35,10 @@ export function projectRoute(slug: string): string {
 
 export function memberRoute(slug: string): string {
   return `/studio/our-people/${slug}`;
+}
+
+export function memberCategoryRoute(category: MemberCategory): string {
+  return `${ROUTES.ourPeople}/category/${category}`;
 }
 
 // Legacy tab-id -> route lookup, for spots that used to key off the old
@@ -44,9 +50,9 @@ export const TAB_TO_ROUTE: Record<string, string> = {
   services: ROUTES.services,
   'our-services': ROUTES.ourServices,
   'our-people': ROUTES.ourPeople,
-  'our-people-designers': `${ROUTES.ourPeople}?filter=designers`,
-  'our-people-managers': `${ROUTES.ourPeople}?filter=managers`,
-  'our-people-builders': `${ROUTES.ourPeople}?filter=builders`,
+  'our-people-designers': memberCategoryRoute('designers'),
+  'our-people-managers': memberCategoryRoute('managers'),
+  'our-people-builders': memberCategoryRoute('builders'),
   contact: ROUTES.contact,
   'case-study-house': ROUTES.caseStudyHouse,
   'grow-with-us': ROUTES.growWithUs,
