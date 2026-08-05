@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Member, MemberCategory } from '../types';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, memberRoute, memberCategoryRoute } from '../lib/routes';
+import { ImageWithFade } from './ImageWithFade';
 
 type FilterCategory = 'all' | MemberCategory;
 
@@ -75,13 +76,6 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members, activeF
     if (activeFilter === 'all') return members;
     return members.filter((member) => member.categories.includes(activeFilter));
   }, [activeFilter, members]);
-
-  React.useEffect(() => {
-    filteredMembers.forEach((member) => {
-      const img = new window.Image();
-      img.src = member.image;
-    });
-  }, [filteredMembers]);
 
   const { cardsPerView, gap } = useCarouselLayout();
   const [viewportRef, containerWidth] = useElementWidth();
@@ -221,12 +215,13 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members, activeF
                     style={{ flex: `0 0 ${cardWidth}px` }}
                     className="group cursor-pointer flex flex-col space-y-3 transition-all duration-300"
                   >
-                    <div className="w-full aspect-[4/5] max-h-[46vh] overflow-hidden">
-                      <img
+                    <div className="relative w-full aspect-[4/5] max-h-[46vh] overflow-hidden">
+                      <ImageWithFade
                         src={member.image}
                         alt={member.name}
-                        className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
-                        referrerPolicy="no-referrer"
+                        fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                        className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
                       />
                     </div>
                     <div className="flex flex-col space-y-1 text-left">

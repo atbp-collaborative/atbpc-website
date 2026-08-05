@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { STUDIO_SUBPAGES_DATA } from '../../placeholder';
+import { ImageWithFade } from '../../../../components/ImageWithFade';
 
 export default function BuildingWithCulturePage() {
   const data = STUDIO_SUBPAGES_DATA['building-with-culture'];
@@ -23,11 +24,13 @@ export default function BuildingWithCulturePage() {
       </div>
 
       <div className="flex-1 flex flex-col md:flex-row gap-8 justify-center items-center min-h-0 my-auto py-1">
-        <div className="w-full md:w-1/2 aspect-[4/3] overflow-hidden rounded-sm border border-space-sparkle/20">
-          <img 
-            src="/images/studio_process_img_1785469980353.jpg" 
-            alt="Building with Culture" 
-            className="w-full h-full object-cover grayscale contrast-125 hover:grayscale-0 transition-transform duration-700 ease-in-out hover:scale-105" 
+        <div className="relative w-full md:w-1/2 aspect-[4/3] overflow-hidden rounded-sm border border-space-sparkle/20">
+          <ImageWithFade
+            src="/images/studio_process_img_1785469980353.jpg"
+            alt="Building with Culture"
+            fill
+            sizes="(min-width: 768px) 50vw, 100vw"
+            className="object-cover grayscale contrast-125 hover:grayscale-0 transition-transform duration-700 ease-in-out hover:scale-105"
           />
         </div>
         <div className="w-full md:w-1/2 space-y-4">

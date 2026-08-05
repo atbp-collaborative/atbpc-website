@@ -1,5 +1,6 @@
 import React from 'react';
 import { Project } from '../types';
+import { ImageWithFade } from './ImageWithFade';
 
 interface ProjectCardProps {
   project: Project;
@@ -15,11 +16,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, isDarkMode, o
         isDarkMode ? 'border-space-sparkle/20 bg-vintage-charcoal/40 hover:border-white/40' : 'border-space-sparkle/15 bg-white hover:border-space-sparkle/40'
       }`}
     >
-      <img
+      <ImageWithFade
         src={project.images[0]}
         alt={project.title}
-        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
-        referrerPolicy="no-referrer"
+        fill
+        sizes="(min-width: 1024px) 410px, (min-width: 768px) 370px, (min-width: 640px) 330px, 270px"
+        className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
       />
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent opacity-85 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-4 sm:p-5 z-10 text-left">

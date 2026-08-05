@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { LandingCard } from './LandingPage';
 import { useTheme } from '../lib/theme-context';
+import { ImageWithFade } from './ImageWithFade';
 
 interface SubLandingPageProps {
   cards: LandingCard[];
@@ -61,11 +62,12 @@ export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, su
 
             {/* Image Container (Sharp square edges - NO border radius) */}
             <div className="relative flex-1 w-full min-h-[140px] rounded-none overflow-hidden border border-black/10 shadow-inner group-hover/card:shadow-lg transition-shadow duration-500">
-              <img
+              <ImageWithFade
                 src={card.image}
                 alt={card.title}
-                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/card:scale-105"
-                referrerPolicy="no-referrer"
+                fill
+                sizes="(min-width: 1024px) 40vw, (min-width: 768px) 50vw, 100vw"
+                className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60 group-hover/card:opacity-30 transition-opacity duration-500" />
             </div>

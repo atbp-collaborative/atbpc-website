@@ -11,6 +11,7 @@ import { hasNavigatedWithinApp } from '../lib/navHistory';
 import { Accordion } from './Accordion';
 
 import { BreadcrumbButton } from './BreadcrumbButton';
+import { ImageWithFade } from './ImageWithFade';
 
 interface MemberDetailProps {
   member: Member;
@@ -53,11 +54,13 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
         {/* LEFT: Portrait Container */}
         <div className="lg:col-span-5 flex flex-col items-stretch h-full min-h-0 overflow-hidden">
           <div className="relative w-full h-[240px] sm:h-[320px] lg:h-full lg:flex-1 min-h-0 overflow-hidden bg-black/10 rounded-none group border border-space-sparkle/20 animate-slide-up">
-            <img 
-              src={member.image} 
+            <ImageWithFade
+              src={member.image}
               alt={member.name}
-              className="w-full h-full object-cover transition-all duration-700 ease-in-out hover:scale-105"
-              referrerPolicy="no-referrer"
+              fill
+              sizes="(min-width: 1024px) 42vw, 100vw"
+              priority
+              className="object-cover transition-all duration-700 ease-in-out hover:scale-105"
             />
           </div>
         </div>

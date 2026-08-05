@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, X, Play, ArrowUpRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Project, Member } from '../types';
 import { useTheme } from '../lib/theme-context';
@@ -10,6 +11,12 @@ import { ROUTES, memberRoute } from '../lib/routes';
 import { Button } from './Button';
 import { Accordion } from './Accordion';
 import { BreadcrumbButton } from './BreadcrumbButton';
+import { isUnsplashUrl, unsplashLoader } from '../lib/imageLoaders';
+
+// motion needs a ref-forwarding component to animate; next/image forwards
+// its ref to the underlying <img>, so this keeps the existing slide-transform
+// animation working the same way the old motion.img did.
+const MotionImage = motion.create(Image);
 
 function getYouTubeEmbedUrl(url: string): string | null {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -110,9 +117,12 @@ function ProjectDetailContent({
     };
   }, []);
 
+  const [loadedSlides, setLoadedSlides] = useState<Set<number>>(new Set());
+
   // Reset slide index when project changes
   useEffect(() => {
     setCurrentSlideIndex(0);
+    setLoadedSlides(new Set());
   }, [project.id]);
 
   // Auto-scroll image/video carousel every 5 seconds (stops at the last image / penultimate item if there's a video)
@@ -270,14 +280,20 @@ function ProjectDetailContent({
                   </div>
                 ) : (
                   <div className="relative w-full h-full overflow-hidden bg-black/5">
+                    {!loadedSlides.has(currentSlideIndex) && (
+                      <div className="absolute inset-0 bg-neutral-400/20 animate-pulse" />
+                    )}
                     <AnimatePresence initial={false} custom={direction}>
-                      <motion.img 
+                      <MotionImage
                         key={currentSlideIndex}
                         custom={direction}
-                        src={mediaItems[currentSlideIndex].url} 
+                        src={mediaItems[currentSlideIndex].url}
                         alt={`${project.title} slide ${currentSlideIndex + 1}`}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
+                        fill
+                        sizes="(min-width: 1024px) 58vw, 100vw"
+                        loader={isUnsplashUrl(mediaItems[currentSlideIndex].url) ? unsplashLoader : undefined}
+                        className="object-cover"
+                        onLoad={() => setLoadedSlides((prev) => new Set(prev).add(currentSlideIndex))}
                         initial={{ x: direction > 0 ? '100%' : '-100%' }}
                         animate={{ x: 0 }}
                         exit={{ x: direction > 0 ? '-100%' : '100%' }}

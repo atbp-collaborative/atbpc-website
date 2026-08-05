@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { ImageWithFade } from '../components/ImageWithFade';
 
 const CAROUSEL_IMAGES = [
   {
@@ -52,11 +53,13 @@ export default function HeroPage() {
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           className="absolute inset-0 w-full h-full"
         >
-          <img
+          <ImageWithFade
             src={currentItem.url}
             alt={currentItem.title}
-            className="w-full h-full object-cover"
-            referrerPolicy="no-referrer"
+            fill
+            sizes="100vw"
+            priority={currentIndex === 0}
+            className="object-cover"
           />
           {/* Subtle dark gradient overlay for legibility */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/30" />
