@@ -192,7 +192,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
 
               <div className="flex items-center space-x-2 text-space-sparkle">
                 <Shield size={20} />
-                <h3 className="text-h3 font-bold">Privacy Statement</h3>
+                <h3 className="text-h2 font-bold">Privacy Statement</h3>
               </div>
 
               <div className="text-caption space-y-2 opacity-85 leading-relaxed max-h-[60vh] overflow-y-auto pr-2">

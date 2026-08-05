@@ -208,7 +208,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
 
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold block opacity-90 truncate">
+              <label className="text-micro font-archivo font-semibold block opacity-90 truncate">
                 Catalog <span className="text-space-sparkle font-normal">(!)</span>
               </label>
               <input type="file" ref={catalogInputRef} onChange={(e) => handleFileChange(e, setCatalogFile, 'Catalog')} accept=".pdf" className="hidden" />
@@ -222,20 +222,20 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                 {catalogFile ? (
                   <div className="space-y-0.5 max-w-full px-1">
                     <FileText size={16} className="mx-auto text-space-sparkle" />
-                    <p className="text-[10px] font-medium truncate opacity-90">{catalogFile.name}</p>
-                    <p className="text-[9px] opacity-60">{catalogFile.size}</p>
+                    <p className="text-micro font-archivo font-medium truncate opacity-90">{catalogFile.name}</p>
+                    <p className="text-micro font-archivo opacity-60">{catalogFile.size}</p>
                   </div>
                 ) : (
                   <div className="space-y-1">
                     <Upload size={14} className="mx-auto opacity-70" />
-                    <p className="text-[10px] leading-tight font-medium opacity-80">Click / Drag to Upload <span className="block opacity-60 text-[9px]">(PDF Only)</span></p>
+                    <p className="text-micro font-archivo leading-tight font-medium opacity-80">Click / Drag to Upload <span className="block opacity-60 text-micro font-archivo">(PDF Only)</span></p>
                   </div>
                 )}
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold block opacity-90 truncate">
+              <label className="text-micro font-archivo font-semibold block opacity-90 truncate">
                 Website <span className="text-space-sparkle font-normal">(!)</span>
               </label>
               <div className={`h-20 p-2 border rounded-xl flex flex-col justify-center ${inputBorderClass}`}>
@@ -244,7 +244,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                   value={formData.websiteLink}
                   onChange={handleInputChange}
                   placeholder="Paste Here Link to Website"
-                  className="w-full h-full bg-transparent text-[10px] leading-tight outline-none resize-none placeholder-inherit"
+                  className="w-full h-full bg-transparent text-micro leading-tight outline-none resize-none placeholder-inherit"
                 />
               </div>
             </div>
@@ -303,20 +303,20 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
 
         <div className="grid grid-cols-3 gap-2.5 pt-1">
           <div className="space-y-0.5">
-            <label className="text-[11px] font-semibold block opacity-90 truncate">Profile <span className="text-space-sparkle font-normal">(!)</span></label>
+            <label className="text-micro font-archivo font-semibold block opacity-90 truncate">Profile <span className="text-space-sparkle font-normal">(!)</span></label>
             <div className={`h-[72px] p-2 border rounded-xl flex flex-col justify-center ${inputBorderClass}`}>
               <textarea
                 name="profileLink"
                 value={formData.profileLink}
                 onChange={handleInputChange}
                 placeholder="Paste Here Link to Flipbook. (Sorry No PDF)"
-                className="w-full h-full bg-transparent text-[10px] leading-tight outline-none resize-none placeholder-inherit"
+                className="w-full h-full bg-transparent text-micro leading-tight outline-none resize-none placeholder-inherit"
               />
             </div>
           </div>
 
           <div className="space-y-0.5">
-            <label className="text-[11px] font-semibold block opacity-90 truncate">Documents <span className="text-space-sparkle font-normal">(!)</span></label>
+            <label className="text-micro font-archivo font-semibold block opacity-90 truncate">Documents <span className="text-space-sparkle font-normal">(!)</span></label>
             <input type="file" ref={documentInputRef} onChange={(e) => handleFileChange(e, setDocumentFile, 'Sample Contract')} accept=".pdf" className="hidden" />
             <div
               onDragOver={(e) => { e.preventDefault(); setDocumentDragOver(true); }}
@@ -328,59 +328,59 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
               {documentFile ? (
                 <div className="space-y-0.5 max-w-full px-1">
                   <FileText size={14} className="mx-auto text-space-sparkle" />
-                  <p className="text-[10px] font-medium truncate opacity-90">{documentFile.name}</p>
-                  <p className="text-[9px] opacity-60">{documentFile.size}</p>
+                  <p className="text-micro font-archivo font-medium truncate opacity-90">{documentFile.name}</p>
+                  <p className="text-micro font-archivo opacity-60">{documentFile.size}</p>
                 </div>
               ) : (
                 <div className="space-y-0.5">
                   <Upload size={13} className="mx-auto opacity-70" />
-                  <p className="text-[10px] leading-tight font-medium opacity-80">Sample Contract <span className="block opacity-60 text-[9px]">(PDF)</span></p>
+                  <p className="text-micro font-archivo leading-tight font-medium opacity-80">Sample Contract <span className="block opacity-60 text-micro font-archivo">(PDF)</span></p>
                 </div>
               )}
             </div>
           </div>
 
           <div className="space-y-0.5">
-            <label className="text-[11px] font-semibold block opacity-90 truncate">Cover Video <span className="text-space-sparkle font-normal">(!)</span></label>
+            <label className="text-micro font-archivo font-semibold block opacity-90 truncate">Cover Video <span className="text-space-sparkle font-normal">(!)</span></label>
             <div className={`h-[72px] p-2 border rounded-xl flex flex-col justify-center ${inputBorderClass}`}>
               <textarea
                 name="coverVideoLink"
                 value={formData.coverVideoLink}
                 onChange={handleInputChange}
                 placeholder="Paste Here Link to Cover Video"
-                className="w-full h-full bg-transparent text-[10px] leading-tight outline-none resize-none placeholder-inherit"
+                className="w-full h-full bg-transparent text-micro leading-tight outline-none resize-none placeholder-inherit"
               />
             </div>
           </div>
 
           <div className="space-y-0.5">
-            <label className="text-[11px] font-semibold block opacity-90 truncate">Map <span className="text-space-sparkle font-normal">(!)</span></label>
+            <label className="text-micro font-archivo font-semibold block opacity-90 truncate">Map <span className="text-space-sparkle font-normal">(!)</span></label>
             <div className={`h-[72px] p-2 border rounded-xl flex flex-col justify-center ${inputBorderClass}`}>
               <textarea
                 name="mapLink"
                 value={formData.mapLink}
                 onChange={handleInputChange}
                 placeholder="Map Link to Office / HQ. (Sorry No PDF)"
-                className="w-full h-full bg-transparent text-[10px] leading-tight outline-none resize-none placeholder-inherit"
+                className="w-full h-full bg-transparent text-micro leading-tight outline-none resize-none placeholder-inherit"
               />
             </div>
           </div>
 
           <div className="space-y-0.5">
-            <label className="text-[11px] font-semibold block opacity-90 truncate">License <span className="text-space-sparkle font-normal">(!)</span></label>
+            <label className="text-micro font-archivo font-semibold block opacity-90 truncate">License <span className="text-space-sparkle font-normal">(!)</span></label>
             <div className={`h-[72px] p-2 border rounded-xl flex flex-col justify-center ${inputBorderClass}`}>
               <textarea
                 name="licenseLink"
                 value={formData.licenseLink}
                 onChange={handleInputChange}
                 placeholder={variant === 'builder' ? "PCAB License Verification (Link to PCAB)" : "PRC / PTR License Verification (Link to License)"}
-                className="w-full h-full bg-transparent text-[10px] leading-tight outline-none resize-none placeholder-inherit"
+                className="w-full h-full bg-transparent text-micro leading-tight outline-none resize-none placeholder-inherit"
               />
             </div>
           </div>
 
           <div className="space-y-0.5">
-            <label className="text-[11px] font-semibold block opacity-90 truncate">Registration <span className="text-space-sparkle font-normal">(!)</span></label>
+            <label className="text-micro font-archivo font-semibold block opacity-90 truncate">Registration <span className="text-space-sparkle font-normal">(!)</span></label>
             <input type="file" ref={registrationInputRef} onChange={(e) => handleFileChange(e, setRegistrationFile, 'Registration Verification')} accept=".pdf" className="hidden" />
             <div
               onDragOver={(e) => { e.preventDefault(); setRegistrationDragOver(true); }}
@@ -392,13 +392,13 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
               {registrationFile ? (
                 <div className="space-y-0.5 max-w-full px-1">
                   <FileText size={14} className="mx-auto text-space-sparkle" />
-                  <p className="text-[10px] font-medium truncate opacity-90">{registrationFile.name}</p>
-                  <p className="text-[9px] opacity-60">{registrationFile.size}</p>
+                  <p className="text-micro font-archivo font-medium truncate opacity-90">{registrationFile.name}</p>
+                  <p className="text-micro font-archivo opacity-60">{registrationFile.size}</p>
                 </div>
               ) : (
                 <div className="space-y-0.5">
                   <Upload size={13} className="mx-auto opacity-70" />
-                  <p className="text-[10px] leading-tight font-medium opacity-80">SEC / BIR / DTI Verification <span className="block opacity-60 text-[9px]">(Consolidated PDF)</span></p>
+                  <p className="text-micro font-archivo leading-tight font-medium opacity-80">SEC / BIR / DTI Verification <span className="block opacity-60 text-micro font-archivo">(Consolidated PDF)</span></p>
                 </div>
               )}
             </div>
@@ -469,7 +469,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-0.5">
                   <label className="text-caption font-semibold block opacity-90 truncate">
-                    Middle Name <span className="text-[10px] font-normal opacity-70">(Mother's Maiden Last Name)</span>
+                    Middle Name <span className="text-micro font-archivo font-normal opacity-70">(Mother's Maiden Last Name)</span>
                   </label>
                   <input
                     type="text"
@@ -655,7 +655,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
 
               <div className="flex items-center space-x-2 text-space-sparkle">
                 <Shield size={20} />
-                <h3 className="text-h3 font-bold">{conditionsTitle}</h3>
+                <h3 className="text-h2 font-bold">{conditionsTitle}</h3>
               </div>
 
               <div className="text-caption space-y-2 opacity-85 leading-relaxed max-h-[60vh] overflow-y-auto pr-2">

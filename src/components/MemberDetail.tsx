@@ -69,7 +69,7 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
         <div className="lg:col-span-7 flex flex-col justify-between h-full min-h-0 overflow-hidden space-y-2 py-0.5">
           <div className="flex flex-col flex-1 min-h-0 overflow-hidden space-y-2">
             <div className="shrink-0 space-y-0.5">
-              <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight">
+              <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight">
                 {member.name}
               </h1>
 
@@ -98,12 +98,12 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
             {/* Accreditations / Credentials Block */}
             {member.education && member.education.length > 0 && (
               <Accordion key={`credentials-${member.id}`} title="Credentials" isDarkMode={isDarkMode} size="sm" className="shrink-0">
-                <div className="pb-2 pt-1 text-xs space-y-2 pl-[30px] max-h-[120px] overflow-y-auto">
+                <div className="pb-2 pt-1 text-mini space-y-2 pl-[30px] max-h-[120px] overflow-y-auto">
                   <ul className="space-y-1">
                     {member.education.map((item, idx) => (
                       <li key={idx} className="flex items-start space-x-2 font-light opacity-90">
                         <span className="text-space-sparkle font-semibold mt-0.5">•</span>
-                        <span className={isDarkMode ? "text-bright-gray/90" : "text-slate-700"}>{item}</span>
+                        <span className={isDarkMode ? "text-bright-gray/90" : "text-vintage-charcoal/90"}>{item}</span>
                       </li>
                     ))}
                   </ul>
@@ -114,7 +114,7 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
             {/* Dynamic Project Involvement Block */}
             {member.involvement && member.involvement.length > 0 && (
               <Accordion key={`involvement-${member.id}`} title="Project Involvement" isDarkMode={isDarkMode} size="sm" className="shrink-0">
-                <div className="pb-2 pt-1 text-xs space-y-2 pl-[30px] max-h-[120px] overflow-y-auto">
+                <div className="pb-2 pt-1 text-mini space-y-2 pl-[30px] max-h-[120px] overflow-y-auto">
                   <ul className="space-y-1">
                     {member.involvement.map((inv) => {
                       const project = projects.find(p => p.id === inv.projectId);
@@ -125,14 +125,14 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
                             <button
                               onClick={() => router.push(projectRoute(project.id))}
                               className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
-                                isDarkMode ? "text-bright-gray/90" : "text-slate-700"
+                                isDarkMode ? "text-bright-gray/90" : "text-vintage-charcoal/90"
                               }`}
                             >
                               <span>{inv.projectTitle}</span>
                               <ArrowUpRight size={12} className="opacity-65 text-space-sparkle" />
                             </button>
                           ) : (
-                            <span className={isDarkMode ? "text-bright-gray/90" : "text-slate-700"}>
+                            <span className={isDarkMode ? "text-bright-gray/90" : "text-vintage-charcoal/90"}>
                               {inv.projectTitle}
                             </span>
                           )}

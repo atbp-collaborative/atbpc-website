@@ -43,7 +43,7 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
 
   return (
     <div className="space-y-1">
-      <label className="text-[11px] font-semibold block opacity-90 truncate">
+      <label className="text-micro font-archivo font-semibold block opacity-90 truncate">
         {label}
         {badge && <span className="text-space-sparkle font-normal"> ({badge})</span>}
       </label>
@@ -72,14 +72,14 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
         {value ? (
           <div className="space-y-0.5 max-w-full px-1">
             <FileText size={16} className="mx-auto text-space-sparkle" />
-            <p className="text-[10px] font-medium truncate opacity-90">{value.name}</p>
-            <p className="text-[9px] opacity-60">{formatFileSize(value.size)}</p>
+            <p className="text-micro font-archivo font-medium truncate opacity-90">{value.name}</p>
+            <p className="text-micro font-archivo opacity-60">{formatFileSize(value.size)}</p>
           </div>
         ) : (
           <div className="space-y-1">
             <Upload size={14} className="mx-auto opacity-70" />
-            <p className="text-[10px] leading-tight font-medium opacity-80">
-              {dropHint} {typeHint && <span className="block opacity-60 text-[9px]">{typeHint}</span>}
+            <p className="text-micro font-archivo leading-tight font-medium opacity-80">
+              {dropHint} {typeHint && <span className="block opacity-60 text-micro font-archivo">{typeHint}</span>}
             </p>
           </div>
         )}

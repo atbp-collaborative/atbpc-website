@@ -78,7 +78,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({
                   {icon}
                 </div>
                 <div>
-                  <h2 className="text-h3 font-sans font-bold tracking-tight">{title}</h2>
+                  <h2 className="text-h2 font-sans font-bold tracking-tight">{title}</h2>
                   <p className="text-mini opacity-60 font-sans uppercase tracking-wider">
                     {subtitle}
                   </p>

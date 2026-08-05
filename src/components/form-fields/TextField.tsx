@@ -25,7 +25,7 @@ export const TextField: React.FC<TextFieldProps> = ({
         {label}
         {required && ' *'}
         {badge && <span className="text-space-sparkle font-normal"> ({badge})</span>}
-        {note && <span className="text-[10px] font-normal opacity-70"> {note}</span>}
+        {note && <span className="text-micro font-archivo font-normal opacity-70"> {note}</span>}
       </label>
       <input
         type={type}

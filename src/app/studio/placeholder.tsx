@@ -185,7 +185,7 @@ export const StudioPlaceholderPage: React.FC<StudioPlaceholderPageProps> = ({
         <div className="space-y-3 max-w-5xl mx-auto w-full">
           {/* Title & Tagline */}
           <div className="space-y-1.5 text-left">
-            <h1 className="font-sans text-h2 sm:text-h1 md:text-hero font-bold tracking-tight lowercase text-vintage-charcoal dark:text-white">
+            <h1 className="font-sans text-h2 sm:text-h1 md:text-hero font-bold tracking-tight lowercase">
               {data.title}
             </h1>
             <p className="text-mini sm:text-caption font-semibold tracking-wider opacity-80 uppercase text-space-sparkle">
@@ -200,7 +200,7 @@ export const StudioPlaceholderPage: React.FC<StudioPlaceholderPageProps> = ({
 
       {/* Bottom Subtext */}
       <div className="shrink-0 text-center border-t border-space-sparkle/10 pt-2 mt-1">
-        <p className="text-[11px] sm:text-mini font-light opacity-75 leading-tight max-w-2xl mx-auto tracking-wide italic">
+        <p className="text-micro sm:text-mini font-light opacity-75 leading-tight max-w-2xl mx-auto tracking-wide italic">
           ATBP Collaborative ◦ {data.title} placeholder page
         </p>
       </div>

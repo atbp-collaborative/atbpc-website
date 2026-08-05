@@ -225,7 +225,7 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members, activeF
                       />
                     </div>
                     <div className="flex flex-col space-y-1 text-left">
-                      <h3 className="font-sans text-body sm:text-h3 font-bold tracking-tight leading-snug group-hover:underline underline-offset-4">
+                      <h3 className="font-sans text-body sm:text-h2 font-bold tracking-tight leading-snug group-hover:underline underline-offset-4">
                         {member.name}
                       </h3>
                       <p className="text-caption uppercase tracking-widest font-semibold opacity-75">

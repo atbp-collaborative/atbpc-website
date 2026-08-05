@@ -69,7 +69,7 @@ export const CASE_STUDY_HOUSE_CARDS = [
 export const GROW_WITH_US_CARDS = [
   {
     id: 'internship',
-    tab: 'career',
+    tab: 'internship-program',
     title: 'internship program',
     tagline: 'for new graduates of architecture',
     subtext: 'for new graduates of architecture',
@@ -79,7 +79,7 @@ export const GROW_WITH_US_CARDS = [
   },
   {
     id: 'apprenticeship',
-    tab: 'career',
+    tab: 'apprenticeship-program',
     title: 'apprenticeship program',
     tagline: 'for on-the-job training requirements',
     subtext: 'for on-the-job training requirements',
@@ -89,7 +89,7 @@ export const GROW_WITH_US_CARDS = [
   },
   {
     id: 'licensed',
-    tab: 'career',
+    tab: 'license-program',
     title: 'licensed programs',
     tagline: 'for professionals',
     subtext: 'for professionals',

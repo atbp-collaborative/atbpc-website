@@ -26,7 +26,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, isDarkMode, o
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent opacity-85 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-4 sm:p-5 z-10 text-left">
         <div className="transform translate-y-1 group-hover:translate-y-0 transition-transform duration-500 ease-out space-y-1 text-left">
-          <h3 className="font-sans text-h3 sm:text-h2 font-semibold text-white tracking-wide leading-tight text-left">
+          <h3 className="font-sans text-body sm:text-h2 font-semibold text-white tracking-wide leading-tight text-left">
             {project.title}
           </h3>
 

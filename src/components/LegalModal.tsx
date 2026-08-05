@@ -35,7 +35,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
       {/* Section 1 */}
       <section className="space-y-3">
-        <div className="flex items-center gap-2 text-h3 font-sans font-bold tracking-tight">
+        <div className="flex items-center gap-2 text-h2 font-sans font-bold tracking-tight">
           <Award size={18} className="opacity-70" />
           <h3>1. Professional Registration & Accreditation</h3>
         </div>
@@ -49,7 +49,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
       {/* Section 2 */}
       <section className="space-y-3">
-        <div className="flex items-center gap-2 text-h3 font-sans font-bold tracking-tight">
+        <div className="flex items-center gap-2 text-h2 font-sans font-bold tracking-tight">
           <FileText size={18} className="opacity-70" />
           <h3>2. Architectural Ownership & Copyright</h3>
         </div>
@@ -63,7 +63,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
       {/* Section 3 */}
       <section className="space-y-3">
-        <div className="flex items-center gap-2 text-h3 font-sans font-bold tracking-tight">
+        <div className="flex items-center gap-2 text-h2 font-sans font-bold tracking-tight">
           <Building2 size={18} className="opacity-70" />
           <h3>3. Honest & Transparent Construction Standard</h3>
         </div>

@@ -24,7 +24,7 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = ({
     // border/theme color, the textarea inside it is just a transparent fill.
     return (
       <div className="space-y-1">
-        <label className="text-[11px] font-semibold block opacity-90 truncate">
+        <label className="text-micro font-archivo font-semibold block opacity-90 truncate">
           {label}
           {badge && <span className="text-space-sparkle font-normal"> ({badge})</span>}
         </label>
@@ -34,7 +34,7 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = ({
             value={value}
             onChange={(e) => onChange(name, e.target.value)}
             placeholder={placeholder}
-            className="w-full h-full bg-transparent text-[10px] leading-tight outline-none resize-none placeholder-inherit"
+            className="w-full h-full bg-transparent text-micro leading-tight outline-none resize-none placeholder-inherit"
           />
         </div>
       </div>

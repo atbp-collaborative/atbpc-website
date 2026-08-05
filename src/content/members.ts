@@ -37,41 +37,6 @@ export const MEMBERS_DATA: Member[] = [
     ]
   },
   {
-    id: 'adrian-mores',
-    name: 'Adrian Ta-ay Mores, ',
-    role: 'Technical Director & Partner',
-    license: 'RLA License No. 0045492',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop',
-    bio: 'Licensed Architect and Registered Master Plumber. Technical Director and Corporate Secretary ensuring execution precision.',
-    fullBio: 'Adrian Ta-ay Mores is a multi-licensed professional specializing in complex building systems, structural coordination, and code compliance. Serving as Technical Director and Corporate Secretary of ATBP Collaborative, he bridges the gap between conceptual design and high-precision execution.\n\nHis expertise in architectural drafting standards, master plumbing design, and MEPFS system integration makes him the primary technical anchor for the studio\'s high-density fit-outs, commercial retail projects, and modular structural envelopes.',
-    education: [
-      'Licensed Architect (RLA)',
-      'Registered Master Plumber (NAMPAP)',
-      'Technical Systems Design Specialist'
-    ],
-    categories: ['managers', 'builders'],
-    involvement: [
-      {
-        projectId: 'multi-generational-8',
-        projectTitle: 'Multi-Generational Project 1',
-        roleInProject: 'Technical & Construction Director',
-        description: 'Supervised off-form concrete fabrication, board-marked textures execution, and passive cooling aerodynamic ventilation layout.'
-      },
-      {
-        projectId: 'food---beverage-24',
-        projectTitle: 'Food & Beverage Project 1',
-        roleInProject: 'Lead Engineer & Modular Specialist',
-        description: 'Designed the lightweight cast-concrete components, custom stainless steel joinery, and fully integrated electrical/plumbing systems.'
-      },
-      {
-        projectId: 'workspaces-28',
-        projectTitle: 'Workspaces Project 1',
-        roleInProject: 'Technical Director / BIM Lead',
-        description: 'Enforced Revit/CAD standards for all international drawing packages, ensuring impeccable quality assurance.'
-      }
-    ]
-  },
-  {
     id: 'jhoanna-ramos',
     name: 'Jhoanna Marie V. Ramos',
     role: 'HR & Finance Director',
@@ -103,6 +68,41 @@ export const MEMBERS_DATA: Member[] = [
         projectTitle: 'Workspaces Project 1',
         roleInProject: 'Operations & B2B Manager',
         description: 'Negotiated SLA terms, managed global agency communication timelines, and coordinated administrative deliverables.'
+      }
+    ]
+  },
+  {
+    id: 'adrian-mores',
+    name: 'Adrian Ta-ay Mores, ',
+    role: 'Technical Director & Partner',
+    license: 'RLA License No. 0045492',
+    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop',
+    bio: 'Licensed Architect and Registered Master Plumber. Technical Director and Corporate Secretary ensuring execution precision.',
+    fullBio: 'Adrian Ta-ay Mores is a multi-licensed professional specializing in complex building systems, structural coordination, and code compliance. Serving as Technical Director and Corporate Secretary of ATBP Collaborative, he bridges the gap between conceptual design and high-precision execution.\n\nHis expertise in architectural drafting standards, master plumbing design, and MEPFS system integration makes him the primary technical anchor for the studio\'s high-density fit-outs, commercial retail projects, and modular structural envelopes.',
+    education: [
+      'Licensed Architect (RLA)',
+      'Registered Master Plumber (NAMPAP)',
+      'Technical Systems Design Specialist'
+    ],
+    categories: ['managers', 'builders'],
+    involvement: [
+      {
+        projectId: 'multi-generational-8',
+        projectTitle: 'Multi-Generational Project 1',
+        roleInProject: 'Technical & Construction Director',
+        description: 'Supervised off-form concrete fabrication, board-marked textures execution, and passive cooling aerodynamic ventilation layout.'
+      },
+      {
+        projectId: 'food---beverage-24',
+        projectTitle: 'Food & Beverage Project 1',
+        roleInProject: 'Lead Engineer & Modular Specialist',
+        description: 'Designed the lightweight cast-concrete components, custom stainless steel joinery, and fully integrated electrical/plumbing systems.'
+      },
+      {
+        projectId: 'workspaces-28',
+        projectTitle: 'Workspaces Project 1',
+        roleInProject: 'Technical Director / BIM Lead',
+        description: 'Enforced Revit/CAD standards for all international drawing packages, ensuring impeccable quality assurance.'
       }
     ]
   },

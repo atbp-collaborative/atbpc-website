@@ -259,7 +259,7 @@ export const ProcessDiagram = () => {
         <div className="col-span-3 flex flex-col items-center">
           <span className={`tracking-wider transition-all duration-300 ${
             isFlattened 
-              ? 'text-[10px] sm:text-mini font-normal opacity-70' 
+              ? 'text-micro sm:text-mini font-normal opacity-70'
               : 'text-mini sm:text-caption md:text-body font-semibold opacity-90'
           }`}>
             guidance
@@ -271,7 +271,7 @@ export const ProcessDiagram = () => {
         <div className="col-span-3 flex flex-col items-center">
           <span className={`tracking-wider transition-all duration-300 ${
             isFlattened 
-              ? 'text-[10px] sm:text-mini font-normal opacity-70' 
+              ? 'text-micro sm:text-mini font-normal opacity-70'
               : 'text-mini sm:text-caption md:text-body font-semibold opacity-90'
           }`}>
             experiential
@@ -283,7 +283,7 @@ export const ProcessDiagram = () => {
         <div className="col-span-1 flex flex-col items-center">
           <span className={`tracking-wider transition-all duration-300 truncate ${
             isFlattened 
-              ? 'text-[10px] sm:text-mini font-normal opacity-70' 
+              ? 'text-micro sm:text-mini font-normal opacity-70'
               : 'text-mini sm:text-caption md:text-body font-semibold opacity-90'
           }`}>
             presence
@@ -346,7 +346,7 @@ export const ProcessDiagram = () => {
                     <motion.span 
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="absolute -top-2.5 sm:-top-3 px-2 py-0.5 text-[8px] sm:text-[9px] font-sans font-extrabold uppercase rounded-full bg-vintage-charcoal text-white dark:bg-white dark:text-vintage-charcoal shadow-md z-20 whitespace-nowrap tracking-wider"
+                      className="absolute -top-2.5 sm:-top-3 px-2 py-0.5 text-micro font-sans font-extrabold uppercase rounded-full bg-vintage-charcoal text-white dark:bg-white dark:text-vintage-charcoal shadow-md z-20 whitespace-nowrap tracking-wider"
                     >
                       Step {node.stepNumber}
                     </motion.span>
@@ -359,8 +359,8 @@ export const ProcessDiagram = () => {
                         key={i} 
                         className={`font-sans tracking-tight select-none w-full text-center ${
                           isFlattened 
-                            ? 'text-[7px] sm:text-[9px] md:text-mini font-bold line-clamp-1'
-                            : 'font-semibold text-[8px] sm:text-[10px] md:text-mini lg:text-caption'
+                            ? 'text-micro sm:text-mini font-bold line-clamp-1'
+                            : 'font-semibold text-micro md:text-mini lg:text-caption'
                         }`}
                       >
                         {line}
@@ -370,7 +370,7 @@ export const ProcessDiagram = () => {
 
                   {/* Step indicator badge on hover when unselected and non-next */}
                   {!isSelected && !isNext && !isFlattened && (
-                    <span className="absolute -top-2.5 sm:-top-3 px-1.5 py-0.5 text-[7px] sm:text-[9px] font-sans font-bold uppercase rounded-full bg-vintage-charcoal text-white dark:bg-white dark:text-vintage-charcoal shadow opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20 whitespace-nowrap">
+                    <span className="absolute -top-2.5 sm:-top-3 px-1.5 py-0.5 text-micro font-sans font-bold uppercase rounded-full bg-vintage-charcoal text-white dark:bg-white dark:text-vintage-charcoal shadow opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20 whitespace-nowrap">
                       Step {node.stepNumber}
                     </span>
                   )}
@@ -418,7 +418,7 @@ export const ProcessDiagram = () => {
               >
                 {/* Top Bar inside Detail Card - Anchored to Left per Reference Image */}
                 <div className="border-b border-space-sparkle/10 pb-2 shrink-0">
-                  <h2 className="text-body sm:text-subheading font-bold tracking-tight">
+                  <h2 className="text-body sm:text-h2 font-bold tracking-tight">
                     {currentNode.title}
                   </h2>
                 </div>
@@ -427,7 +427,7 @@ export const ProcessDiagram = () => {
                 <div className="shrink-0">
                   <h3 className="text-mini sm:text-caption font-semibold uppercase tracking-wider opacity-70 mb-1 flex items-center justify-between">
                     <span>description</span>
-                    <span className="font-normal italic text-[11px] opacity-75">{currentNode.subtitle}</span>
+                    <span className="font-normal italic text-micro opacity-75">{currentNode.subtitle}</span>
                   </h3>
                   <p className="text-caption sm:text-body font-light leading-relaxed opacity-90 border-l-2 border-space-sparkle/30 pl-3">
                     {currentNode.description}

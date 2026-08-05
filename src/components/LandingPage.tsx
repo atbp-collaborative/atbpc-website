@@ -44,7 +44,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ cards }) => {
               {/* Card Content Overlay */}
               <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 md:p-10 flex flex-col justify-end items-start text-left z-10">
                 {/* Card Title - Lowercase */}
-                <h2 className="font-sans text-h2 sm:text-h1 md:text-display font-semibold tracking-wider text-white lowercase drop-shadow-md">
+                <h2 className="font-sans text-h2 sm:text-h1 font-semibold tracking-wider text-white lowercase drop-shadow-md">
                   {card.title}
                 </h2>
 

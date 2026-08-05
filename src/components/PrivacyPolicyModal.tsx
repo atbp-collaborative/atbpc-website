@@ -37,7 +37,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
 
       {/* Section 1 */}
       <section className="space-y-3">
-        <div className="flex items-center gap-2 text-h3 font-sans font-bold tracking-tight">
+        <div className="flex items-center gap-2 text-h2 font-sans font-bold tracking-tight">
           <FileText size={18} className="opacity-70" />
           <h3>1. Information We Collect</h3>
         </div>
@@ -54,7 +54,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
 
       {/* Section 2 */}
       <section className="space-y-3">
-        <div className="flex items-center gap-2 text-h3 font-sans font-bold tracking-tight">
+        <div className="flex items-center gap-2 text-h2 font-sans font-bold tracking-tight">
           <UserCheck size={18} className="opacity-70" />
           <h3>2. How We Use Your Information</h3>
         </div>
@@ -71,7 +71,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
 
       {/* Section 3 */}
       <section className="space-y-3">
-        <div className="flex items-center gap-2 text-h3 font-sans font-bold tracking-tight">
+        <div className="flex items-center gap-2 text-h2 font-sans font-bold tracking-tight">
           <Lock size={18} className="opacity-70" />
           <h3>3. Data Security & Intellectual Property Safeguards</h3>
         </div>
@@ -87,7 +87,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
 
       {/* Section 4 */}
       <section className="space-y-3">
-        <div className="flex items-center gap-2 text-h3 font-sans font-bold tracking-tight">
+        <div className="flex items-center gap-2 text-h2 font-sans font-bold tracking-tight">
           <Globe size={18} className="opacity-70" />
           <h3>4. Third-Party Disclosures & Sub-Consultants</h3>
         </div>
@@ -103,7 +103,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
 
       {/* Section 5 */}
       <section className="space-y-3">
-        <div className="flex items-center gap-2 text-h3 font-sans font-bold tracking-tight">
+        <div className="flex items-center gap-2 text-h2 font-sans font-bold tracking-tight">
           <Scale size={18} className="opacity-70" />
           <h3>5. Your Rights & Retention</h3>
         </div>
