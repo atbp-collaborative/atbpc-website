@@ -6,8 +6,10 @@ import { LandingCard } from '../../../components/LandingPage';
 import { SubLandingPage } from '../../../components/SubLandingPage';
 import { ROUTES, TAB_TO_ROUTE } from '../../../lib/routes';
 import { GROW_WITH_US_CARDS } from '../../../content/contact';
+import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 
 export default function GrowWithUsPage() {
+  useDocumentTitle('Grow With Us');
   const router = useRouter();
 
   const cards: LandingCard[] = GROW_WITH_US_CARDS.map(card => ({

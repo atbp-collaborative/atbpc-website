@@ -1,12 +1,15 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 
 interface CtaButtonProps {
   icon?: React.ReactNode;
   lines: [string, string];
   title?: string;
-  onClick: () => void;
+  href: string;
+  /** Optional extra handler, e.g. closing the mobile drawer on navigate. Fires alongside the Link navigation. */
+  onClick?: () => void;
   isHeaderTransparent?: boolean;
   isDarkMode: boolean;
   variant: 'solid' | 'outline';
@@ -20,6 +23,7 @@ export const CtaButton: React.FC<CtaButtonProps> = ({
   icon,
   lines,
   title,
+  href,
   onClick,
   isHeaderTransparent = false,
   isDarkMode,
@@ -43,19 +47,21 @@ export const CtaButton: React.FC<CtaButtonProps> = ({
 
   if (layout === 'full') {
     return (
-      <button
+      <Link
+        href={href}
         onClick={onClick}
         title={title}
         className={`w-full flex flex-col items-center justify-center py-2 px-4 rounded-none font-sans font-semibold text-caption uppercase tracking-wider leading-tight transition-all cursor-pointer text-center ${shadowClass} ${colorClasses}`}
       >
         <span>{lines[0]}</span>
         <span>{lines[1]}</span>
-      </button>
+      </Link>
     );
   }
 
   return (
-    <button
+    <Link
+      href={href}
       onClick={onClick}
       title={title}
       className={`group hidden md:flex items-center justify-center w-9 sm:w-10 h-9 sm:h-10 rounded-full transition-all duration-300 ease-in-out cursor-pointer select-none shrink-0 overflow-hidden hover:w-auto hover:px-3.5 ${shadowClass} ${colorClasses}`}
@@ -69,6 +75,6 @@ export const CtaButton: React.FC<CtaButtonProps> = ({
         </span>
         {icon}
       </div>
-    </button>
+    </Link>
   );
 };

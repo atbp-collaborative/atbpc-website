@@ -1,14 +1,14 @@
-import { FieldConfig } from './form-fields';
+import { FieldConfig, PhAddress, EMPTY_PH_ADDRESS } from './form-fields';
 
 /**
- * license-program / internship-program / apprenticeship-program all render
+ * studio-regulars / internship-program / apprenticeship-program all render
  * CareerForm today with an identical field set — only the pre-selected
  * `structure` option differs (see CareerForm's `initialStructure` prop).
  * This is still keyed by program type so a future divergence (e.g. the
- * license program wanting a PRC-number field) is a data change here, not a
+ * studio regulars type wanting a PRC-number field) is a data change here, not a
  * new component.
  */
-export type CareerFormType = 'internship' | 'apprenticeship' | 'license';
+export type CareerFormType = 'internship' | 'apprenticeship' | 'studioRegulars';
 
 const DEPARTMENTS = [
   'Architectural Design & Research',
@@ -54,7 +54,7 @@ const RIGHT_COLUMN_ROWS: FieldConfig[][] = [
     { type: 'text', name: 'pronoun', label: 'Pronoun' },
     { type: 'text', name: 'titles', label: 'Titles' },
   ],
-  [{ type: 'text', name: 'location', label: 'Location', placeholder: 'Complete Address' }],
+  [{ type: 'address', name: 'address', label: 'Address', dense: true }],
   [
     { type: 'text', name: 'contactNumber', label: 'Contact Number', placeholder: 'Must be Viber & Whatsapp Ready' },
     { type: 'text', name: 'facebook', label: 'Facebook', placeholder: 'Paste URL / Link / Handle' },
@@ -82,7 +82,7 @@ const DEFAULT_FIELD_SET: CareerFormFieldSet = {
 export const CAREER_FORM_FIELDS: Record<CareerFormType, CareerFormFieldSet> = {
   internship: DEFAULT_FIELD_SET,
   apprenticeship: DEFAULT_FIELD_SET,
-  license: DEFAULT_FIELD_SET,
+  studioRegulars: DEFAULT_FIELD_SET,
 };
 
 export const CAREER_FORM_INITIAL_DATA = {
@@ -98,7 +98,7 @@ export const CAREER_FORM_INITIAL_DATA = {
   lastName: '',
   pronoun: '',
   titles: '',
-  location: '',
+  address: EMPTY_PH_ADDRESS as PhAddress,
   contactNumber: '',
   email: '',
   facebook: '',
@@ -106,3 +106,17 @@ export const CAREER_FORM_INITIAL_DATA = {
 };
 
 export type CareerFormData = typeof CAREER_FORM_INITIAL_DATA;
+
+/**
+ * Scalar fields that must be filled before Submit unlocks. `(!)`-badged fields
+ * (Pseudonym, Resume, Portfolio, Cover Video) stay optional — the address's
+ * Region/City/Barangay are checked separately since they're nested.
+ */
+export const CAREER_FORM_REQUIRED_FIELDS: (keyof CareerFormData)[] = [
+  'department',
+  'structure',
+  'firstName',
+  'lastName',
+  'contactNumber',
+  'email',
+];

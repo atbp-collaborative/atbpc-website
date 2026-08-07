@@ -1,11 +1,15 @@
 import React from 'react';
+import Link from 'next/link';
 
-export interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
+export interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'onClick'> {
   type?: 'filled' | 'outline';
   label: string;
   fullWidth?: boolean;
   /** Optional trailing icon rendered after the label */
   children?: React.ReactNode;
+  /** When set, renders as a real Link to this route instead of a <button> */
+  href?: string;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => void;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -14,6 +18,8 @@ export const Button: React.FC<ButtonProps> = ({
   fullWidth = false,
   className = '',
   children,
+  href,
+  onClick,
   ...props
 }) => {
   const baseStyles = "font-medium uppercase tracking-widest text-caption rounded-none transition-all flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0 select-none";
@@ -26,9 +32,23 @@ export const Button: React.FC<ButtonProps> = ({
 
   const widthStyles = fullWidth ? "w-full" : "";
 
+  if (href) {
+    return (
+      <Link
+        href={href}
+        onClick={onClick}
+        className={`${baseStyles} ${typeStyles} ${widthStyles} ${className}`}
+      >
+        <span>{label}</span>
+        {children}
+      </Link>
+    );
+  }
+
   return (
     <button
       {...props}
+      onClick={onClick}
       className={`${baseStyles} ${typeStyles} ${widthStyles} ${disabledStyles} ${className}`}
     >
       <span>{label}</span>

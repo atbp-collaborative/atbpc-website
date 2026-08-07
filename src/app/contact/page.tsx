@@ -4,8 +4,10 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { LandingPage, LandingCard } from '../../components/LandingPage';
 import { ROUTES } from '../../lib/routes';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 export default function ContactPage() {
+  useDocumentTitle('Contact');
   const router = useRouter();
 
   const contactCards: LandingCard[] = [
@@ -19,7 +21,7 @@ export default function ContactPage() {
     {
       id: 'grow-with-us',
       title: 'grow with us',
-      tagline: 'internship, apprenticeship & license programs',
+      tagline: 'internship, apprenticeship & studio regulars',
       image: '/images/contact_careers_img_1785470020165.jpg',
       onSelect: () => router.push(ROUTES.growWithUs),
     },

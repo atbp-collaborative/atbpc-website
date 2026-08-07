@@ -4,6 +4,8 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, FileText, Upload, Shield, X } from 'lucide-react';
 import { useTheme } from '../lib/theme-context';
+import { SelectField, AddressField, PhAddress, EMPTY_PH_ADDRESS } from './form-fields';
+import { SnakeBorder } from './SnakeBorder';
 
 interface FileState {
   name: string;
@@ -54,7 +56,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
     lastName: '',
     pronoun: '',
     titles: '',
-    address: '',
+    address: EMPTY_PH_ADDRESS as PhAddress,
     contactNumber: '',
     landline: '',
     email: '',
@@ -75,6 +77,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showConditionsModal, setShowConditionsModal] = useState(false);
+  const [conditionsAcknowledged, setConditionsAcknowledged] = useState(false);
 
   const catalogInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
@@ -94,6 +97,25 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const handleFieldChange = (name: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Company Name, the variant's key select(s), contact/email, and address down to Barangay are
+  // required; everything badged "(!)" (uploads, links, landline) stays optional.
+  const isFormValid = Boolean(
+    formData.companyName &&
+    (!categories || formData.category) &&
+    (!specialties || formData.specialty) &&
+    (!typologies || formData.typology) &&
+    formData.contactNumber &&
+    formData.email &&
+    formData.address.regionCode &&
+    formData.address.cityCode &&
+    formData.address.barangayCode
+  );
+  const canSubmit = isFormValid && conditionsAcknowledged;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<FileState | null>>, label: string) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -145,7 +167,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
       lastName: '',
       pronoun: '',
       titles: '',
-      address: '',
+      address: EMPTY_PH_ADDRESS as PhAddress,
       contactNumber: '',
       landline: '',
       email: '',
@@ -180,20 +202,15 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
           </div>
 
           {categories && (
-            <div className="space-y-1">
-              <label className="text-caption font-semibold block opacity-90">Brief Description</label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                className={`w-full text-caption py-2 px-3 rounded-lg border outline-none transition-all cursor-pointer ${inputBorderClass}`}
-              >
-                <option value="" disabled>What category?</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat} className="bg-vintage-charcoal text-white">{cat}</option>
-                ))}
-              </select>
-            </div>
+            <SelectField
+              name="category"
+              label="Brief Description"
+              placeholder="What category?"
+              options={categories}
+              value={formData.category}
+              onChange={handleFieldChange}
+              isDarkMode={isDarkMode}
+            />
           )}
 
           <div className="flex-1 flex flex-col min-h-[120px] space-y-1">
@@ -268,37 +285,29 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
         </div>
 
         {specialties && (
-          <div className="space-y-1">
-            <label className="text-caption font-semibold block opacity-90">Specialty</label>
-            <select
-              name="specialty"
-              value={formData.specialty}
-              onChange={handleInputChange}
-              className={`w-full text-caption py-1.5 px-3 rounded-lg border outline-none transition-all cursor-pointer ${inputBorderClass}`}
-            >
-              <option value="" disabled>What Specialty?</option>
-              {specialties.map((sp) => (
-                <option key={sp} value={sp} className="bg-vintage-charcoal text-white">{sp}</option>
-              ))}
-            </select>
-          </div>
+          <SelectField
+            name="specialty"
+            label="Specialty"
+            placeholder="What Specialty?"
+            options={specialties}
+            value={formData.specialty}
+            onChange={handleFieldChange}
+            isDarkMode={isDarkMode}
+            dense
+          />
         )}
 
         {typologies && (
-          <div className="space-y-1">
-            <label className="text-caption font-semibold block opacity-90">Specialized Typology</label>
-            <select
-              name="typology"
-              value={formData.typology}
-              onChange={handleInputChange}
-              className={`w-full text-caption py-1.5 px-3 rounded-lg border outline-none transition-all cursor-pointer ${inputBorderClass}`}
-            >
-              <option value="" disabled>What Typology?</option>
-              {typologies.map((tp) => (
-                <option key={tp} value={tp} className="bg-vintage-charcoal text-white">{tp}</option>
-              ))}
-            </select>
-          </div>
+          <SelectField
+            name="typology"
+            label="Specialized Typology"
+            placeholder="What Typology?"
+            options={typologies}
+            value={formData.typology}
+            onChange={handleFieldChange}
+            isDarkMode={isDarkMode}
+            dense
+          />
         )}
 
         <div className="grid grid-cols-3 gap-2.5 pt-1">
@@ -518,19 +527,14 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-0.5">
-                <label className="text-caption font-semibold block opacity-90">
-                  Addresses (Office / Warehouse / Facility)
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  placeholder="Complete Address"
-                  className={`w-full text-caption px-3 py-1.5 rounded-lg border outline-none ${inputBorderClass}`}
-                />
-              </div>
+              <AddressField
+                name="address"
+                label="Addresses (Office / Warehouse / Facility)"
+                value={formData.address}
+                onChange={handleFieldChange}
+                isDarkMode={isDarkMode}
+                dense
+              />
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-0.5">
@@ -602,13 +606,17 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                 >
                   General Conditions
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`py-2 px-4 rounded-xl border text-caption font-medium transition-all hover:opacity-80 cursor-pointer ${inputBorderClass}`}
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit Application'}
-                </button>
+                <div className="relative">
+                  <SnakeBorder active={!conditionsAcknowledged} />
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !canSubmit}
+                    title={!conditionsAcknowledged ? 'Acknowledge the General Conditions to continue' : !isFormValid ? 'Fill in all required fields to continue' : undefined}
+                    className={`relative z-10 w-full py-2 px-4 rounded-xl border text-caption font-medium transition-all hover:opacity-80 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:opacity-50 ${inputBorderClass}`}
+                  >
+                    {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                  </button>
+                </div>
               </div>
             </div>
           </motion.form>
@@ -661,6 +669,16 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
               <div className="text-caption space-y-2 opacity-85 leading-relaxed max-h-[60vh] overflow-y-auto pr-2">
                 {conditionsContent}
               </div>
+
+              <label className="flex items-center gap-2 pt-1 text-caption cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={conditionsAcknowledged}
+                  onChange={(e) => setConditionsAcknowledged(e.target.checked)}
+                  className="h-4 w-4 accent-space-sparkle cursor-pointer"
+                />
+                I have read and agree to the {conditionsTitle}
+              </label>
 
               <div className="pt-2 text-right">
                 <button

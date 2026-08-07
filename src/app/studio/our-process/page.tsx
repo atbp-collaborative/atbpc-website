@@ -3,8 +3,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { ProcessDiagram } from '../../../components/ProcessDiagram';
+import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 
 export default function ServicesPage() {
+  useDocumentTitle('Our Process');
   return (
     <motion.div 
       key="our-process"

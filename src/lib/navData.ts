@@ -80,7 +80,7 @@ export const CONTACT_NAV_STRUCTURE: DropdownGroup[] = [
     label: 'Case Study House',
     id: 'case-study-house',
     subItems: [
-      { label: 'Schedule a Discovery Meeting', id: 'discovery-meeting' },
+      { label: 'Schedule a Discovery Session', id: 'discovery-session' },
       { label: 'Locate & Communicate', id: 'contact-info' },
     ],
   },
@@ -90,7 +90,7 @@ export const CONTACT_NAV_STRUCTURE: DropdownGroup[] = [
     subItems: [
       { label: 'Internship Program', id: 'internship-program' },
       { label: 'Apprenticeship Program', id: 'apprenticeship-program' },
-      { label: 'Licensed Programs', id: 'license-program' },
+      { label: 'Studio Regulars', id: 'studio-regulars' },
     ],
   },
   {

@@ -3,8 +3,10 @@
 import React from 'react';
 import { ContactFormPage } from '../../../components/ContactFormPage';
 import { MS_FORMS_CONFIG } from '../../../lib/data/leads';
+import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 
 export default function RequestForProposalPage() {
+  useDocumentTitle('Request a Proposal');
   return (
     <ContactFormPage
       title="request a proposal"

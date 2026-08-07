@@ -17,12 +17,14 @@ import dynamic from 'next/dynamic';
 import { useTheme } from '../../../lib/theme-context';
 import { ROUTES } from '../../../lib/routes';
 import { CONTACT_INFO } from '../../../content/contact';
+import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 
 const OfficeMap = dynamic(() => import('../../../components/OfficeMap').then((mod) => mod.OfficeMap), {
   ssr: false,
 });
 
 export default function ContactInfoPage() {
+  useDocumentTitle('Locate & Communicate');
   const { isDarkMode } = useTheme();
   const router = useRouter();
 

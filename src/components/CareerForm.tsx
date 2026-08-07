@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, Shield, X } from 'lucide-react';
 import { useTheme } from '../lib/theme-context';
 import { FormFieldRenderer, getFieldThemeStyles } from './form-fields';
-import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CareerFormData, CareerFormType } from './CareerForm.config';
+import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CAREER_FORM_REQUIRED_FIELDS, CareerFormData, CareerFormType } from './CareerForm.config';
 import { submitCareerApplication } from '../lib/data/careerApplications';
+import { SnakeBorder } from './SnakeBorder';
 
 export interface CareerFormProps {
   initialStructure?: string;
@@ -24,10 +25,16 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
 
   const handleChange = (name: string, value: any) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const isFormValid =
+    CAREER_FORM_REQUIRED_FIELDS.every((field) => Boolean(formData[field])) &&
+    Boolean(formData.address.regionCode && formData.address.cityCode && formData.address.barangayCode);
+  const canSubmit = isFormValid && privacyAcknowledged;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,13 +145,17 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
                 >
                   Privacy Statement
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`py-2 px-4 rounded-xl border text-caption font-medium transition-all hover:opacity-80 cursor-pointer ${inputBorderClass}`}
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit Application'}
-                </button>
+                <div className="relative">
+                  <SnakeBorder active={!privacyAcknowledged} />
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !canSubmit}
+                    title={!privacyAcknowledged ? 'Acknowledge the Privacy Statement to continue' : !isFormValid ? 'Fill in all required fields to continue' : undefined}
+                    className={`relative z-10 w-full py-2 px-4 rounded-xl border text-caption font-medium transition-all hover:opacity-80 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:opacity-50 ${inputBorderClass}`}
+                  >
+                    {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                  </button>
+                </div>
               </div>
             </div>
           </motion.form>
@@ -206,6 +217,16 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
                   Your information will remain strictly confidential within our practice management and will never be disclosed to third parties without your explicit consent.
                 </p>
               </div>
+
+              <label className="flex items-center gap-2 pt-1 text-caption cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={privacyAcknowledged}
+                  onChange={(e) => setPrivacyAcknowledged(e.target.checked)}
+                  className="h-4 w-4 accent-space-sparkle cursor-pointer"
+                />
+                I have read and agree to the Privacy Statement
+              </label>
 
               <div className="pt-2 text-right">
                 <button

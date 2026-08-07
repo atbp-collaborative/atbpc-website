@@ -3,7 +3,10 @@ import { AppShell } from '../components/AppShell';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'ATBP Collaborative',
+  title: {
+    template: '%s — ATBP Collaborative',
+    default: 'ATBP Collaborative',
+  },
   description:
     'Premium design-build architectural portfolio with high-finesse photography showcase and client qualifying lead funnel.',
   icons: {

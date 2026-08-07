@@ -6,5 +6,6 @@ export { TextAreaField } from './TextAreaField';
 export { FileUploadField } from './FileUploadField';
 export { ChoiceCardField } from './ChoiceCardField';
 export { ChipMultiSelectField } from './ChipMultiSelectField';
+export { AddressField } from './AddressField';
 export { FormFieldRenderer } from './FormFieldRenderer';
 export { MsFormsEmbed } from './MsFormsEmbed';

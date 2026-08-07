@@ -192,3 +192,10 @@ button, a, [role="button"], .cursor-pointer {
   }
 }
 
+/* SnakeBorder: a chain of dots traveling an element's own border shape via offset-path. */
+@keyframes snake-move {
+  to {
+    offset-distance: 100%;
+  }
+}
+

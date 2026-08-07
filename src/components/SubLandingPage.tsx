@@ -35,7 +35,7 @@ export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, su
       )}
 
       {/* Cards Grid / Flex Container */}
-      <div className="flex-1 flex flex-col md:flex-row gap-3 sm:gap-4 h-full min-h-0 items-stretch overflow-y-auto md:overflow-hidden group/subCards">
+      <div className="flex-1 flex flex-col md:flex-row gap-[2px] h-full min-h-0 items-stretch overflow-y-auto md:overflow-hidden group/subCards">
         {cards.map((card, index) => (
           <motion.div
             key={card.id}

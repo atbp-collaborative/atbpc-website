@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aivangogh/ph-address": "^2026.2.1",
     "@tailwindcss/postcss": "^4.3.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.546.0",

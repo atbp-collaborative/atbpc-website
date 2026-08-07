@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { Menu, X, Calendar, FileText } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, TAB_TO_ROUTE } from '../lib/routes';
 import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '../lib/navData';
@@ -21,7 +22,6 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { isDarkMode } = useTheme();
   const pathname = usePathname();
-  const router = useRouter();
   const worksSlug = pathname.startsWith('/works/') ? pathname.split('/')[2] : null;
   const currentCategoryFilter = worksSlug ? decodeURIComponent(worksSlug) : 'All';
 
@@ -46,13 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
     pathname === '/builder' ||
     pathname === '/consultant';
 
-  const handleLogoClick = () => {
-    router.push(ROUTES.home);
-  };
-
-  const handleNavClick = (tab: string) => {
-    router.push(TAB_TO_ROUTE[tab] ?? ROUTES.home);
-  };
+  const getTabHref = (tab: string) => TAB_TO_ROUTE[tab] ?? ROUTES.home;
 
   return (
     <header
@@ -73,13 +67,13 @@ export const Header: React.FC<HeaderProps> = ({
         }`}
       >
         <div className="flex items-center space-x-12 lg:space-x-16">
-          <div className="flex items-center cursor-pointer select-none" onClick={handleLogoClick}>
+          <Link href={ROUTES.home} className="flex items-center cursor-pointer select-none">
             <AtbpLogo
               isDarkMode={isDarkMode}
               isHeaderTransparent={isHeaderTransparent}
               className="h-7 w-auto transition-opacity hover:opacity-90"
             />
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-8 text-caption font-light tracking-widest uppercase relative">
@@ -92,8 +86,8 @@ export const Header: React.FC<HeaderProps> = ({
               navGroups={WORKS_NAV_STRUCTURE}
               activeId={currentCategoryFilter}
               minWidthClass="min-w-[70px]"
-              onClick={() => router.push(ROUTES.works)}
-              onDropdownItemClick={(id) => router.push(`${ROUTES.works}/${encodeURIComponent(id)}`)}
+              href={ROUTES.works}
+              getDropdownItemHref={(id) => `${ROUTES.works}/${encodeURIComponent(id)}`}
             />
             <NavItem
               label="Studio"
@@ -103,8 +97,8 @@ export const Header: React.FC<HeaderProps> = ({
               isDarkMode={isDarkMode}
               navGroups={STUDIO_NAV_STRUCTURE}
               activeId={activeTab}
-              onClick={() => handleNavClick('studio')}
-              onDropdownItemClick={(id) => handleNavClick(id)}
+              href={getTabHref('studio')}
+              getDropdownItemHref={getTabHref}
             />
             <NavItem
               label="Contact"
@@ -115,8 +109,8 @@ export const Header: React.FC<HeaderProps> = ({
               navGroups={CONTACT_NAV_STRUCTURE}
               activeId={activeTab}
               minWidthClass="min-w-[80px]"
-              onClick={() => handleNavClick('contact')}
-              onDropdownItemClick={(id) => handleNavClick(id)}
+              href={getTabHref('contact')}
+              getDropdownItemHref={getTabHref}
             />
           </nav>
         </div>
@@ -124,10 +118,10 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Action Area */}
         <div className="flex items-center space-x-2 sm:space-x-2.5 mr-0 pr-0">
           <CtaButton
-            title="Schedule a Discovery Meeting"
-            lines={['Schedule a', 'Discovery Meeting']}
+            title="Schedule a Discovery Session"
+            lines={['Schedule a', 'Discovery Session']}
             icon={<Calendar size={18} className="shrink-0" />}
-            onClick={() => router.push(ROUTES.discoveryMeeting)}
+            href={ROUTES.discoverySession}
             isHeaderTransparent={isHeaderTransparent}
             isDarkMode={isDarkMode}
             variant="solid"
@@ -138,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({
             title="Request a Proposal"
             lines={['Request a', 'Proposal']}
             icon={<FileText size={18} className="shrink-0" />}
-            onClick={() => router.push(ROUTES.requestForProposal)}
+            href={ROUTES.requestForProposal}
             isHeaderTransparent={isHeaderTransparent}
             isDarkMode={isDarkMode}
             variant="outline"
