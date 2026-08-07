@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, TAB_TO_ROUTE } from '../lib/routes';
 import { AtbpLogo } from './AtbpLogo';
@@ -19,40 +20,51 @@ interface MobileDrawerProps {
 
 interface SectionTriggerProps {
   label: string;
+  href: string;
   isActive: boolean;
   isExpanded: boolean;
   isDarkMode: boolean;
   uppercase?: boolean;
-  onClick: () => void;
+  onNavigate: () => void;
+  onToggle: () => void;
 }
 
 const SectionTrigger: React.FC<SectionTriggerProps> = ({
   label,
+  href,
   isActive,
   isExpanded,
   isDarkMode,
   uppercase = true,
-  onClick,
+  onNavigate,
+  onToggle,
 }) => (
-  <button
-    onClick={onClick}
+  <div
     className={`w-full flex items-center justify-between text-left text-caption tracking-widest ${
       uppercase ? 'uppercase' : 'normal-case'
-    } py-3 px-4 rounded-none transition-all cursor-pointer ${
+    } rounded-none transition-all ${
       isActive
         ? isDarkMode ? 'bg-space-sparkle/20 text-white font-bold' : 'bg-space-sparkle/10 text-space-sparkle font-bold'
         : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-80'
     }`}
   >
-    <span>{label}</span>
-    <motion.span
-      animate={{ rotate: isExpanded ? 180 : 0 }}
-      transition={{ duration: 0.6 }}
-      className="ml-2 flex items-center"
+    <Link href={href} onClick={onNavigate} className="flex-1 py-3 pl-4 pr-2 cursor-pointer">
+      {label}
+    </Link>
+    <button
+      onClick={onToggle}
+      aria-label={`Toggle ${label} section`}
+      className="py-3 pr-4 pl-1 cursor-pointer"
     >
-      <ChevronDown size={16} />
-    </motion.span>
-  </button>
+      <motion.span
+        animate={{ rotate: isExpanded ? 180 : 0 }}
+        transition={{ duration: 0.6 }}
+        className="flex items-center"
+      >
+        <ChevronDown size={16} />
+      </motion.span>
+    </button>
+  </div>
 );
 
 export const MobileDrawer: React.FC<MobileDrawerProps> = ({
@@ -61,7 +73,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 }) => {
   const { isDarkMode } = useTheme();
   const pathname = usePathname();
-  const router = useRouter();
   const { isWorksActive, isStudioActive, isContactActive, currentCategoryFilter: projectFilter } = useActiveNav();
   const isHomeActive = pathname === '/';
 
@@ -92,10 +103,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
     }
   }, [isMobileMenuOpen, isStudioActive, isContactActive, isWorksActive, projectFilter]);
 
-  const handleNavClick = (tabId: string) => {
-    router.push(TAB_TO_ROUTE[tabId] ?? ROUTES.home);
-    setIsMobileMenuOpen(false);
-  };
+  const getTabHref = (tabId: string) => TAB_TO_ROUTE[tabId] ?? ROUTES.home;
+  const closeDrawer = () => setIsMobileMenuOpen(false);
 
   return (
     <AnimatePresence>
@@ -137,29 +146,29 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
               {/* Navigation Links */}
               <nav className="flex flex-col space-y-3">
-                <button
-                  onClick={() => handleNavClick('home')}
-                  className={`text-left text-caption tracking-widest uppercase py-3 px-4 rounded-none transition-all cursor-pointer ${
+                <Link
+                  href={ROUTES.home}
+                  onClick={closeDrawer}
+                  className={`block text-left text-caption tracking-widest uppercase py-3 px-4 rounded-none transition-all cursor-pointer ${
                     isHomeActive
                       ? isDarkMode ? 'bg-space-sparkle/20 text-white font-bold' : 'bg-space-sparkle/10 text-space-sparkle font-bold'
                       : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-80'
                   }`}
                 >
                   Homepage | Bungad
-                </button>
+                </Link>
 
                 {/* Sub-item 2-level dropdown section for Works */}
                 <div className="space-y-1">
                   <SectionTrigger
                     label="Works | Gawâ"
+                    href={ROUTES.works}
                     isActive={isWorksActive}
                     isExpanded={expandedSection === 'works'}
                     isDarkMode={isDarkMode}
                     uppercase={false}
-                    onClick={() => {
-                      handleNavClick('works');
-                      setExpandedSection(prev => prev === 'works' ? null : 'works');
-                    }}
+                    onNavigate={closeDrawer}
+                    onToggle={() => setExpandedSection(prev => prev === 'works' ? null : 'works')}
                   />
 
                   <AnimatePresence initial={false}>
@@ -203,16 +212,14 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                                     >
                                       <div className="pl-3 flex flex-col space-y-1 border-l border-space-sparkle/20 ml-3 py-1">
                                         {group.subItems.map((sub) => (
-                                          <button
+                                          <Link
                                             key={sub.id}
-                                            onClick={() => {
-                                              router.push(`${ROUTES.works}/${encodeURIComponent(sub.id)}`);
-                                              setIsMobileMenuOpen(false);
-                                            }}
-                                            className="text-left text-mini tracking-wider py-1.5 px-2.5 rounded-none transition-all cursor-pointer opacity-85 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5"
+                                            href={`${ROUTES.works}/${encodeURIComponent(sub.id)}`}
+                                            onClick={closeDrawer}
+                                            className="block text-left text-mini tracking-wider py-1.5 px-2.5 rounded-none transition-all cursor-pointer opacity-85 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5"
                                           >
                                             {sub.label}
-                                          </button>
+                                          </Link>
                                         ))}
                                       </div>
                                     </motion.div>
@@ -231,13 +238,12 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 <div className="space-y-1">
                   <SectionTrigger
                     label="Studio | Kamí"
+                    href={getTabHref('studio')}
                     isActive={isStudioActive}
                     isExpanded={expandedSection === 'studio'}
                     isDarkMode={isDarkMode}
-                    onClick={() => {
-                      handleNavClick('studio');
-                      setExpandedSection(prev => prev === 'studio' ? null : 'studio');
-                    }}
+                    onNavigate={closeDrawer}
+                    onToggle={() => setExpandedSection(prev => prev === 'studio' ? null : 'studio')}
                   />
 
                   <AnimatePresence initial={false}>
@@ -252,21 +258,23 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                         <div className="pl-4 flex flex-col space-y-2 border-l border-space-sparkle/15 ml-4 pt-1 pb-2">
                           {STUDIO_NAV_STRUCTURE.map((sec) => (
                             <div key={sec.id} className="space-y-1">
-                              <button
-                                onClick={() => handleNavClick(sec.id as any)}
+                              <Link
+                                href={getTabHref(sec.id)}
+                                onClick={closeDrawer}
                                 className="text-left text-caption font-bold tracking-widest py-1 px-2 block w-full hover:bg-black/5 dark:hover:bg-white/5"
                               >
                                 {pathname.startsWith(TAB_TO_ROUTE[sec.id as keyof typeof TAB_TO_ROUTE]) ? sec.translation : sec.label}
-                              </button>
+                              </Link>
                               <div className="pl-3 flex flex-col space-y-1 border-l border-space-sparkle/10 ml-2">
                                 {sec.subItems.map((item) => {
                                   const itemRoute = TAB_TO_ROUTE[item.id as keyof typeof TAB_TO_ROUTE];
                                   const isSubActive = itemRoute ? pathname === itemRoute : false;
 
                                   return (
-                                    <button
+                                    <Link
                                       key={item.id}
-                                      onClick={() => handleNavClick(item.id as any)}
+                                      href={getTabHref(item.id)}
+                                      onClick={closeDrawer}
                                       className={`text-left text-mini py-0.5 px-2 block cursor-pointer transition-opacity ${
                                         isSubActive
                                           ? 'font-bold opacity-100'
@@ -274,7 +282,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                                       }`}
                                     >
                                       {item.label}
-                                    </button>
+                                    </Link>
                                   );
                                 })}
                               </div>
@@ -290,13 +298,12 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 <div className="space-y-1">
                   <SectionTrigger
                     label="Contact | Kumustá"
+                    href={getTabHref('contact')}
                     isActive={isContactActive}
                     isExpanded={expandedSection === 'contact'}
                     isDarkMode={isDarkMode}
-                    onClick={() => {
-                      handleNavClick('contact');
-                      setExpandedSection(prev => prev === 'contact' ? null : 'contact');
-                    }}
+                    onNavigate={closeDrawer}
+                    onToggle={() => setExpandedSection(prev => prev === 'contact' ? null : 'contact')}
                   />
 
                   <AnimatePresence initial={false}>
@@ -311,23 +318,25 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                         <div className="pl-4 flex flex-col space-y-2 border-l border-space-sparkle/15 ml-4 pt-1 pb-2">
                           {CONTACT_NAV_STRUCTURE.map((grp) => (
                             <div key={grp.id} className="space-y-1">
-                              <button
-                                onClick={() => handleNavClick(grp.id as any)}
+                              <Link
+                                href={getTabHref(grp.id)}
+                                onClick={closeDrawer}
                                 className={`text-left text-caption font-bold tracking-widest block py-1 px-2 w-full transition-opacity cursor-pointer ${
                                   pathname === TAB_TO_ROUTE[grp.id as keyof typeof TAB_TO_ROUTE] ? 'opacity-100 text-space-sparkle' : 'opacity-90 hover:opacity-100'
                                 }`}
                               >
                                 {grp.label}
-                              </button>
+                              </Link>
                               <div className="pl-3 flex flex-col space-y-1 border-l border-space-sparkle/10 ml-2">
                                 {grp.subItems.map((sub) => (
-                                  <button
+                                  <Link
                                     key={sub.id}
-                                    onClick={() => handleNavClick(sub.id as any)}
+                                    href={getTabHref(sub.id)}
+                                    onClick={closeDrawer}
                                     className="text-left text-mini opacity-80 hover:opacity-100 py-0.5 px-2 block"
                                   >
                                     {sub.label}
-                                  </button>
+                                  </Link>
                                 ))}
                               </div>
                             </div>
@@ -345,9 +354,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               <CtaButton
                 layout="full"
                 variant="solid"
-                lines={['Schedule a', 'Discovery Meeting']}
+                lines={['Schedule a', 'Discovery Session']}
                 isDarkMode={isDarkMode}
-                onClick={() => handleNavClick('discovery-meeting')}
+                href={getTabHref('discovery-session')}
+                onClick={closeDrawer}
               />
 
               <CtaButton
@@ -355,7 +365,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 variant="outline"
                 lines={['Request a', 'Proposal']}
                 isDarkMode={isDarkMode}
-                onClick={() => handleNavClick('request-for-proposal')}
+                href={getTabHref('request-for-proposal')}
+                onClick={closeDrawer}
               />
 
               <div className="text-caption text-center font-sans opacity-40 pt-2">

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, ArrowUpRight } from 'lucide-react';
 import { DropdownGroup } from '../lib/navData';
@@ -9,7 +10,7 @@ interface DropdownProps {
   isDarkMode: boolean;
   groups: DropdownGroup[];
   activeId: string | null; // The ID of the active group or sub-item
-  onItemClick: (id: string) => void;
+  getItemHref: (id: string) => string;
   onClose: () => void;
 }
 
@@ -17,7 +18,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   isDarkMode,
   groups,
   activeId,
-  onItemClick,
+  getItemHref,
   onClose,
 }) => {
   // Find which group should be initially expanded based on activeId
@@ -60,7 +61,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
           return (
             <div key={group.id} className="space-y-0.5">
               {/* Level 1 Category Header - Expands on hover / Navigates on click */}
-              <div
+              <Link
+                href={getItemHref(group.id)}
                 className={`w-full flex items-center justify-between px-5 py-2.5 rounded-none transition-colors cursor-pointer select-none ${
                   isDarkMode
                     ? isExpanded || isMainActive
@@ -73,7 +75,6 @@ export const Dropdown: React.FC<DropdownProps> = ({
                 onMouseEnter={() => setExpandedCategory(group.id)}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onItemClick(group.id);
                   onClose();
                 }}
               >
@@ -101,7 +102,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                 >
                   <ChevronDown size={14} />
                 </motion.span>
-              </div>
+              </Link>
 
               {/* Level 2 Sub-items */}
               <AnimatePresence initial={false}>
@@ -118,11 +119,11 @@ export const Dropdown: React.FC<DropdownProps> = ({
                         const isSubActive = activeId === sub.id;
 
                         return (
-                          <button
+                          <Link
                             key={sub.id}
+                            href={getItemHref(sub.id)}
                             onClick={(e) => {
                               e.stopPropagation();
-                              onItemClick(sub.id);
                               onClose();
                             }}
                             className={`w-full flex items-center justify-between pl-8 pr-5 py-2 text-mini tracking-wider transition-all rounded-none cursor-pointer group normal-case ${
@@ -140,7 +141,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                               size={12}
                               className="opacity-50 group-hover:opacity-100 transition-opacity shrink-0 ml-2"
                             />
-                          </button>
+                          </Link>
                         );
                       })}
                     </div>

@@ -4,8 +4,10 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { LandingPage, LandingCard } from '../../components/LandingPage';
 import { ROUTES } from '../../lib/routes';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 export default function StudioPage() {
+  useDocumentTitle('Studio');
   const router = useRouter();
 
   const studioCards: LandingCard[] = [

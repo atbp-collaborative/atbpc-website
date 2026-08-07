@@ -14,7 +14,8 @@ import { Project, Member } from '../../../types';
 import { useTheme } from '../../../lib/theme-context';
 import { ROUTES, projectRoute } from '../../../lib/routes';
 import { WORKS_CATEGORIES } from '../../../content/works';
-import { useInfiniteCarousel } from '../../../hooks/useInfiniteCarousel';
+import { useCarouselScroll } from '../../../hooks/useCarouselScroll';
+import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 
 export default function WorksCategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter();
@@ -98,20 +99,11 @@ export default function WorksCategoryPage({ params }: { params: Promise<{ slug: 
         p.subcategory === projectFilter
       );
 
-  const displayProjects = React.useMemo(() => {
-    if (filteredProjects.length === 0) return [];
-    const multiplier = filteredProjects.length < 4 ? 6 : 3;
-    const result = [];
-    for (let i = 0; i < multiplier; i++) {
-      result.push(...filteredProjects);
-    }
-    return result;
-  }, [filteredProjects]);
-
-  const { carouselRef, handleScroll, handleCarouselScroll } = useInfiniteCarousel<HTMLDivElement>({
-    displayCount: displayProjects.length,
-    originalCount: filteredProjects.length,
+  const { carouselRef, canScrollPrev, canScrollNext, dragHandlers, handleScroll } = useCarouselScroll<HTMLDivElement>({
+    resetKey: projectFilter,
   });
+
+  useDocumentTitle(project ? project.title : (projectFilter === 'All' ? 'Works' : `Works / ${projectFilter}`));
 
   if (isLoading) return null;
 
@@ -159,10 +151,13 @@ export default function WorksCategoryPage({ params }: { params: Promise<{ slug: 
           <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
             <button
               onClick={() => handleScroll('left')}
+              disabled={!canScrollPrev}
               aria-label="Previous Projects"
               className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 cursor-pointer ${
-                isDarkMode 
-                  ? 'bg-white/10 text-white hover:bg-white/25 border border-white/15' 
+                !canScrollPrev ? 'opacity-30 cursor-not-allowed' : ''
+              } ${
+                isDarkMode
+                  ? 'bg-white/10 text-white hover:bg-white/25 border border-white/15'
                   : 'bg-black/5 text-vintage-charcoal hover:bg-black/15 border border-space-sparkle/15'
               }`}
             >
@@ -170,10 +165,13 @@ export default function WorksCategoryPage({ params }: { params: Promise<{ slug: 
             </button>
             <button
               onClick={() => handleScroll('right')}
+              disabled={!canScrollNext}
               aria-label="Next Projects"
               className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 cursor-pointer ${
-                isDarkMode 
-                  ? 'bg-white/10 text-white hover:bg-white/25 border border-white/15' 
+                !canScrollNext ? 'opacity-30 cursor-not-allowed' : ''
+              } ${
+                isDarkMode
+                  ? 'bg-white/10 text-white hover:bg-white/25 border border-white/15'
                   : 'bg-black/5 text-vintage-charcoal hover:bg-black/15 border border-space-sparkle/15'
               }`}
             >
@@ -185,14 +183,14 @@ export default function WorksCategoryPage({ params }: { params: Promise<{ slug: 
         {/* Middle Area: Projects Horizontal Carousel (Infinite Scroll) */}
         <div className="relative w-full flex-1 min-h-0 flex items-center group/carousel">
           {/* Carousel Container - Infinite Scrollable, Arrow & Keyboard Controlled */}
-          <div 
+          <div
             ref={carouselRef}
-            onScroll={handleCarouselScroll}
-            className="w-full h-full overflow-x-auto no-scrollbar flex flex-row gap-[2px] items-stretch py-1"
+            {...dragHandlers}
+            className="w-full h-full overflow-x-auto no-scrollbar overscroll-x-contain flex flex-row gap-[2px] items-stretch py-1 cursor-grab active:cursor-grabbing"
           >
-            {displayProjects.map((project, idx) => (
+            {filteredProjects.map((project) => (
               <ProjectCard
-                key={`${project.id}-${idx}`}
+                key={project.id}
                 project={project}
                 isDarkMode={isDarkMode}
                 onClick={() => {

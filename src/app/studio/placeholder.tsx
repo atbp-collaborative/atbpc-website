@@ -173,13 +173,6 @@ export const StudioPlaceholderPage: React.FC<StudioPlaceholderPageProps> = ({
       transition={{ duration: 0.4 }}
       className="w-full h-full px-4 sm:px-8 md:px-12 py-3 flex flex-col justify-between overflow-hidden select-none min-h-0 flex-1"
     >
-      {/* Top Header */}
-      <div className="shrink-0 flex items-center justify-between border-b border-space-sparkle/10 pb-2 mb-2">
-        <span className="text-mini font-semibold tracking-widest uppercase opacity-60">
-          {data.section}
-        </span>
-      </div>
-
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col justify-center min-h-0 my-auto py-1">
         <div className="space-y-3 max-w-5xl mx-auto w-full">
@@ -199,7 +192,7 @@ export const StudioPlaceholderPage: React.FC<StudioPlaceholderPageProps> = ({
       </div>
 
       {/* Bottom Subtext */}
-      <div className="shrink-0 text-center border-t border-space-sparkle/10 pt-2 mt-1">
+      <div className="shrink-0 text-center pt-2 mt-1">
         <p className="text-micro sm:text-mini font-light opacity-75 leading-tight max-w-2xl mx-auto tracking-wide italic">
           ATBP Collaborative ◦ {data.title} placeholder page
         </p>

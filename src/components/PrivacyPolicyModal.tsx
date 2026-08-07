@@ -63,7 +63,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
         </p>
         <ul className="list-disc pl-6 space-y-1.5 opacity-85">
           <li>Formulating custom design proposals, project scopes, cost estimations, and architectural contracts.</li>
-          <li>Managing Discovery Meetings, site inspections, design reviews, and construction phase coordination.</li>
+          <li>Managing Discovery Sessions, site inspections, design reviews, and construction phase coordination.</li>
           <li>Facilitating local government unit (LGU) building permit applications, zoning compliance, and regulatory submissions under Republic Act No. 9266 (The Architecture Act of 2004).</li>
           <li>Communicating project updates, milestone deliverables, and administrative invoices.</li>
         </ul>

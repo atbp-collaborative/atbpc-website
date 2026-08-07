@@ -29,7 +29,7 @@ function PeopleListPageContent({ activeFilter }: PeopleListPageProps) {
       <PeopleCarousel members={members} activeFilter={activeFilter} />
 
       {/* Bottom Subtext Row */}
-      <div className="shrink-0 text-center border-t border-space-sparkle/10 pt-2 mt-1">
+      <div className="shrink-0 text-center pt-2 mt-1">
         <p className="text-micro sm:text-mini font-light opacity-75 tracking-wide italic">
           we are a licensed, registered collaborative trained and experienced to provide you services ... architecture, engineering, building construction industry, nationwide.
         </p>

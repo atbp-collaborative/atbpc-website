@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { Dropdown } from './Dropdown';
 import { DropdownGroup } from '../lib/navData';
@@ -14,8 +15,8 @@ interface NavItemProps {
   navGroups: DropdownGroup[];
   activeId: string | null;
   minWidthClass?: string;
-  onClick: () => void;
-  onDropdownItemClick: (id: string) => void;
+  href: string;
+  getDropdownItemHref: (id: string) => string;
 }
 
 export const NavItem: React.FC<NavItemProps> = ({
@@ -27,8 +28,8 @@ export const NavItem: React.FC<NavItemProps> = ({
   navGroups,
   activeId,
   minWidthClass,
-  onClick,
-  onDropdownItemClick,
+  href,
+  getDropdownItemHref,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -44,12 +45,10 @@ export const NavItem: React.FC<NavItemProps> = ({
 
   return (
     <div onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
-      <div
-        onClick={() => {
-          setIsHovered(false);
-          onClick();
-        }}
-        className={`transition-all duration-300 relative py-1 text-center cursor-pointer select-none normal-case ${
+      <Link
+        href={href}
+        onClick={() => setIsHovered(false)}
+        className={`block transition-all duration-300 relative py-1 text-center cursor-pointer select-none normal-case ${
           minWidthClass ?? ''
         } ${
           isHeaderTransparent
@@ -88,7 +87,7 @@ export const NavItem: React.FC<NavItemProps> = ({
             }`}
           ></span>
         )}
-      </div>
+      </Link>
 
       <AnimatePresence>
         {isHovered && (
@@ -96,10 +95,7 @@ export const NavItem: React.FC<NavItemProps> = ({
             isDarkMode={isDarkMode}
             groups={navGroups}
             activeId={activeId}
-            onItemClick={(id) => {
-              setIsHovered(false);
-              onDropdownItemClick(id);
-            }}
+            getItemHref={getDropdownItemHref}
             onClose={() => setIsHovered(false)}
           />
         )}

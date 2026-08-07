@@ -6,7 +6,7 @@ import { SurveyResponse } from '../../types';
  */
 export const MS_FORMS_CONFIG = {
   // Direct Microsoft Forms embed links (Share > Embed > iframe src) for each contact form page.
-  discoveryMeetingFormUrl: "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAO__TREkBtUNFlYVkRWTFU4N0pYSFZWUEVZMjVFOEU2Qy4u&embed=true",
+  discoverySessionFormUrl: "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAO__TREkBtUNFlYVkRWTFU4N0pYSFZWUEVZMjVFOEU2Qy4u&embed=true",
   requestProposalFormUrl: "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAO__TREkBtUQUhFMjZQWFRNVEY0NU83NkVESzNLNEU1My4u&embed=true",
 
   // OPTION B: Use our custom front-end and POST payload to MS Power Automate / Logic Apps

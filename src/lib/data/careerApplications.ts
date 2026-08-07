@@ -25,6 +25,9 @@ export async function submitCareerApplication(payload: CareerFormData): Promise<
   Object.entries(payload).forEach(([key, value]) => {
     if (value instanceof File) {
       body.append(key, value);
+    } else if (value !== null && typeof value === 'object') {
+      // e.g. `address` — flatten so each sub-field posts as its own key instead of "[object Object]".
+      Object.entries(value).forEach(([subKey, subValue]) => body.append(`${key}.${subKey}`, String(subValue)));
     } else if (value !== null) {
       body.append(key, String(value));
     }

@@ -1,10 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Sun, Moon, Shield, ShieldOff } from 'lucide-react';
 import { PrivacyPolicyModal } from './PrivacyPolicyModal';
 import { LegalModal } from './LegalModal';
 import { usePathname } from 'next/navigation';
+import { ROUTES } from '../lib/routes';
+
+const TAGLINE_PHRASES = [
+  { verb: 'designing', noun: 'values', href: ROUTES.designingWithValues },
+  { verb: 'managing', noun: 'integrity', href: ROUTES.managingWithIntegrity },
+  { verb: 'building', noun: 'culture', href: ROUTES.buildingWithCulture },
+] as const;
+
+const TAGLINE_LOCK_ROUTES: Record<string, number> = {
+  [ROUTES.designingWithValues]: 0,
+  [ROUTES.managingWithIntegrity]: 1,
+  [ROUTES.buildingWithCulture]: 2,
+};
 
 interface FooterProps {
   isDarkMode: boolean;
@@ -28,6 +42,23 @@ export const Footer: React.FC<FooterProps> = ({
   const isContactLanding = pathname === '/contact';
   const isLandingPage = isStudioLanding || isWorksLanding || isContactLanding;
 
+  const lockedTaglineIndex = pathname !== null && pathname in TAGLINE_LOCK_ROUTES
+    ? TAGLINE_LOCK_ROUTES[pathname]
+    : null;
+  const [activeTaglineIndex, setActiveTaglineIndex] = useState(0);
+
+  useEffect(() => {
+    if (lockedTaglineIndex !== null) {
+      setActiveTaglineIndex(lockedTaglineIndex);
+      return;
+    }
+    setActiveTaglineIndex(0);
+    const interval = setInterval(() => {
+      setActiveTaglineIndex((prev) => (prev + 1) % TAGLINE_PHRASES.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [lockedTaglineIndex]);
+
   return (
     <>
       <footer 
@@ -44,8 +75,23 @@ export const Footer: React.FC<FooterProps> = ({
           }`}
         >
           {/* Subtext on the left */}
-          <div className="font-sans font-light opacity-80 tracking-wide text-mini text-center md:text-left">
-            designing with <span className="font-semibold">values</span>, managing with <span className="font-semibold">integrity</span>, building with <span className="font-semibold">culture</span>
+          <div className="font-sans font-light tracking-wide text-mini text-center md:text-left">
+            {TAGLINE_PHRASES.map((phrase, index) => {
+              const isActive = activeTaglineIndex === index;
+              return (
+                <span
+                  key={phrase.verb}
+                  className="transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  style={{ opacity: isActive ? 1 : 0.3 }}
+                >
+                  <Link href={phrase.href} className="hover:underline underline-offset-4 decoration-[#d4d4d4]">
+                    {phrase.verb} with{' '}
+                    <span className={isActive ? 'font-semibold' : 'font-light'}>{phrase.noun}</span>
+                  </Link>
+                  {index < TAGLINE_PHRASES.length - 1 ? ', ' : ''}
+                </span>
+              );
+            })}
           </div>
 
           {/* Copyright & Links moved to the right */}

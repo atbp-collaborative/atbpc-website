@@ -132,6 +132,12 @@ export const PROCESS_NODES: ProcessNode[] = [
   }
 ];
 
+const CATEGORY_GROUPS: { key: ProcessNode['category']; label: string; colStart: number; colSpan: number }[] = [
+  { key: 'guidance', label: 'guidance', colStart: 1, colSpan: 3 },
+  { key: 'experiential', label: 'experiential', colStart: 4, colSpan: 3 },
+  { key: 'presence', label: 'presence', colStart: 7, colSpan: 1 },
+];
+
 export const ProcessDiagram = () => {
   const { isDarkMode } = useTheme();
   // No active stage when visiting the page
@@ -240,7 +246,7 @@ export const ProcessDiagram = () => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       layout
       transition={{ layout: { duration: 0.45, ease: [0.25, 0.1, 0.25, 1] } }}
       className={`w-full flex flex-col relative overflow-hidden min-h-0 ${
@@ -248,48 +254,38 @@ export const ProcessDiagram = () => {
       }`}
     >
       {/* Category Headers Row */}
-      <motion.div 
+      <motion.div
         layout
         transition={{ layout: { duration: 0.45, ease: [0.25, 0.1, 0.25, 1] } }}
         className={`w-full grid grid-cols-7 gap-1 sm:gap-2 text-center tracking-widest lowercase shrink-0 ${
-          isFlattened ? 'mb-1 sm:mb-1.5' : 'mb-2 sm:mb-3'
+          isFlattened ? 'mb-2 sm:mb-2.5' : 'mb-3 sm:mb-4'
         }`}
       >
-        {/* Guidance (Spans Nodes 01-03) */}
-        <div className="col-span-3 flex flex-col items-center">
-          <span className={`tracking-wider transition-all duration-300 ${
-            isFlattened 
-              ? 'text-micro sm:text-mini font-normal opacity-70'
-              : 'text-mini sm:text-caption md:text-body font-semibold opacity-90'
-          }`}>
-            guidance
-          </span>
-          <div className={`w-3/4 h-[1px] mt-1 ${isDarkMode ? 'bg-white/20' : 'bg-vintage-charcoal/20'}`} />
-        </div>
+        {CATEGORY_GROUPS.map((group) => {
+          const isActiveGroup = currentNode?.category === group.key;
+          const isVisible = !isFlattened || isActiveGroup;
 
-        {/* Experiential (Spans Nodes 04-06) */}
-        <div className="col-span-3 flex flex-col items-center">
-          <span className={`tracking-wider transition-all duration-300 ${
-            isFlattened 
-              ? 'text-micro sm:text-mini font-normal opacity-70'
-              : 'text-mini sm:text-caption md:text-body font-semibold opacity-90'
-          }`}>
-            experiential
-          </span>
-          <div className={`w-3/4 h-[1px] mt-1 ${isDarkMode ? 'bg-white/20' : 'bg-vintage-charcoal/20'}`} />
-        </div>
+          const gridColumn = isFlattened && isActiveGroup && selectedNodeIndex !== null
+            ? `${selectedNodeIndex + 1} / span 1`
+            : `${group.colStart} / span ${group.colSpan}`;
 
-        {/* Presence (Spans Node 07) */}
-        <div className="col-span-1 flex flex-col items-center">
-          <span className={`tracking-wider transition-all duration-300 truncate ${
-            isFlattened 
-              ? 'text-micro sm:text-mini font-normal opacity-70'
-              : 'text-mini sm:text-caption md:text-body font-semibold opacity-90'
-          }`}>
-            presence
-          </span>
-          <div className={`w-3/4 h-[1px] mt-1 ${isDarkMode ? 'bg-white/20' : 'bg-vintage-charcoal/20'}`} />
-        </div>
+          return (
+            <div
+              key={group.key}
+              style={{ gridColumn, opacity: isVisible ? 1 : 0, pointerEvents: isVisible ? 'auto' : 'none' }}
+              className="flex flex-col items-center transition-opacity duration-300"
+            >
+              <span className={`tracking-wider transition-all duration-300 truncate ${
+                isFlattened
+                  ? 'text-micro sm:text-mini font-normal opacity-70'
+                  : 'text-mini sm:text-caption md:text-body font-semibold opacity-90'
+              }`}>
+                {group.label}
+              </span>
+              <div className={`w-3/4 h-[1px] mt-1 ${isDarkMode ? 'bg-white/20' : 'bg-vintage-charcoal/20'}`} />
+            </div>
+          );
+        })}
       </motion.div>
 
       {/* Timeline Line & Stage Nodes Row */}
@@ -346,7 +342,7 @@ export const ProcessDiagram = () => {
                     <motion.span 
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="absolute -top-2.5 sm:-top-3 px-2 py-0.5 text-micro font-sans font-extrabold uppercase rounded-full bg-vintage-charcoal text-white dark:bg-white dark:text-vintage-charcoal shadow-md z-20 whitespace-nowrap tracking-wider"
+                      className={`absolute -top-2.5 sm:-top-3 px-2 py-0.5 text-micro font-sans font-extrabold uppercase rounded-full shadow-md z-20 whitespace-nowrap tracking-wider ${isDarkMode ? 'bg-white text-vintage-charcoal' : 'bg-vintage-charcoal text-white'}`}
                     >
                       Step {node.stepNumber}
                     </motion.span>
@@ -370,7 +366,7 @@ export const ProcessDiagram = () => {
 
                   {/* Step indicator badge on hover when unselected and non-next */}
                   {!isSelected && !isNext && !isFlattened && (
-                    <span className="absolute -top-2.5 sm:-top-3 px-1.5 py-0.5 text-micro font-sans font-bold uppercase rounded-full bg-vintage-charcoal text-white dark:bg-white dark:text-vintage-charcoal shadow opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20 whitespace-nowrap">
+                    <span className={`absolute -top-2.5 sm:-top-3 px-1.5 py-0.5 text-micro font-sans font-bold uppercase rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20 whitespace-nowrap ${isDarkMode ? 'bg-white text-vintage-charcoal' : 'bg-vintage-charcoal text-white'}`}>
                       Step {node.stepNumber}
                     </span>
                   )}
@@ -398,10 +394,8 @@ export const ProcessDiagram = () => {
         className="w-full flex-1 min-h-0 overflow-hidden shrink"
       >
         <div
-          className={`w-full h-full flex flex-col justify-between p-4 sm:p-5 rounded-none border overflow-hidden relative ${
-            isDarkMode 
-              ? 'bg-white/[0.04] border-white/15 text-bright-gray' 
-              : 'bg-vintage-charcoal/[0.03] border-space-sparkle/15 text-vintage-charcoal'
+          className={`w-full h-full flex flex-col justify-between p-4 sm:p-5 rounded-none overflow-hidden relative ${
+            isDarkMode ? 'text-bright-gray' : 'text-vintage-charcoal'
           }`}
         >
           <AnimatePresence mode="popLayout" custom={direction} initial={false}>
@@ -425,9 +419,8 @@ export const ProcessDiagram = () => {
 
                 {/* Section 1: Description & Subtitle */}
                 <div className="shrink-0">
-                  <h3 className="text-mini sm:text-caption font-semibold uppercase tracking-wider opacity-70 mb-1 flex items-center justify-between">
-                    <span>description</span>
-                    <span className="font-normal italic text-micro opacity-75">{currentNode.subtitle}</span>
+                  <h3 className="text-mini sm:text-caption font-semibold uppercase tracking-wider opacity-70 mb-1">
+                    description
                   </h3>
                   <p className="text-caption sm:text-body font-light leading-relaxed opacity-90 border-l-2 border-space-sparkle/30 pl-3">
                     {currentNode.description}

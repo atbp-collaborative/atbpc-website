@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
+import Link from 'next/link';
 import { ChevronLeft, ChevronRight, MapPin, X, Play, ArrowUpRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Project, Member } from '../types';
 import { useTheme } from '../lib/theme-context';
 import { ROUTES, memberRoute } from '../lib/routes';
@@ -38,7 +39,6 @@ function ProjectDetailContent({
   members,
 }: ProjectDetailProps) {
   const { isDarkMode } = useTheme();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
   const [direction, setDirection] = useState<number>(1);
@@ -47,14 +47,7 @@ function ProjectDetailContent({
   const filterName = fromParam || project.subcategory || project.mainCategory || project.category || 'All Works';
   const isAllWorks = filterName === 'All' || filterName === 'All Works' || filterName === 'works';
   const backLabel = isAllWorks ? 'Back to all works' : `Back to ${filterName}`;
-
-  const handleBackClick = () => {
-    if (isAllWorks) {
-      router.push(ROUTES.works);
-    } else {
-      router.push(`${ROUTES.works}/${encodeURIComponent(filterName)}`);
-    }
-  };
+  const backHref = isAllWorks ? ROUTES.works : `${ROUTES.works}/${encodeURIComponent(filterName)}`;
 
   const contributors = useMemo(() => {
     return members.filter((member) =>
@@ -208,7 +201,7 @@ function ProjectDetailContent({
     >
       <BreadcrumbButton
         label={backLabel}
-        onClick={handleBackClick}
+        href={backHref}
       />
 
       <div className={`grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 pb-1 ${isVideoActive && isDesktop ? '' : 'overflow-hidden'}`}>
@@ -368,7 +361,7 @@ function ProjectDetailContent({
             <Button
               type="filled"
               label="Start Consultation"
-              onClick={() => router.push(ROUTES.discoveryMeeting)}
+              href={ROUTES.discoverySession}
               fullWidth={true}
               className="sm:w-auto font-medium py-1.5 text-mini"
             />
@@ -444,15 +437,15 @@ function ProjectDetailContent({
                         {contributors.map((member) => (
                           <li key={member.id} className="flex items-start space-x-2 font-light opacity-90">
                             <span className="text-space-sparkle font-semibold mt-0.5">•</span>
-                            <button
-                              onClick={() => router.push(memberRoute(member.id))}
+                            <Link
+                              href={memberRoute(member.id)}
                               className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
                                 isDarkMode ? "text-bright-gray/90" : "text-vintage-charcoal/90"
                               }`}
                             >
                               <span>{member.name.replace(/,\s*$/, '')}</span>
                               <ArrowUpRight size={12} className="opacity-65 text-space-sparkle shrink-0" />
-                            </button>
+                            </Link>
                           </li>
                         ))}
                       </ul>

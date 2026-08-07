@@ -7,6 +7,8 @@ import { TextAreaField } from './TextAreaField';
 import { FileUploadField } from './FileUploadField';
 import { ChoiceCardField } from './ChoiceCardField';
 import { ChipMultiSelectField } from './ChipMultiSelectField';
+import { AddressField } from './AddressField';
+import { EMPTY_PH_ADDRESS } from './types';
 
 interface FormFieldRendererProps {
   config: FieldConfig;
@@ -61,6 +63,10 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
     case 'chip-multiselect':
       return wrapper(
         <ChipMultiSelectField {...config} value={value ?? []} onChange={onChange} isDarkMode={isDarkMode} theme={theme} />
+      );
+    case 'address':
+      return wrapper(
+        <AddressField {...config} value={value ?? EMPTY_PH_ADDRESS} onChange={onChange} isDarkMode={isDarkMode} theme={theme} />
       );
   }
 };

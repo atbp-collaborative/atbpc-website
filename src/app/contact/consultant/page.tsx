@@ -2,8 +2,10 @@
 
 import React from 'react';
 import { PartnerApplicationForm } from '../../../components/PartnerApplicationForm';
+import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 
 export default function ConsultantPage() {
+  useDocumentTitle('Consultants');
   const specialties = [
     'Structural Engineering Practice',
     'MEPFS Engineering (Mechanical, Electrical, Plumbing, Fire)',

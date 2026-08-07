@@ -72,13 +72,44 @@ export interface ChipMultiSelectFieldConfig extends BaseFieldConfig {
   options: string[];
 }
 
+/** Structured PH address: Region -> City -> Barangay, plus a free-text unit/lot/subdivision line. */
+export interface PhAddress {
+  country: 'Philippines';
+  regionCode: string;
+  regionName: string;
+  cityCode: string;
+  cityName: string;
+  barangayCode: string;
+  barangayName: string;
+  /** Unit / Lot / Block / Subdivision — the only optional part of the address. */
+  addressLine: string;
+}
+
+export const EMPTY_PH_ADDRESS: PhAddress = {
+  country: 'Philippines',
+  regionCode: '',
+  regionName: '',
+  cityCode: '',
+  cityName: '',
+  barangayCode: '',
+  barangayName: '',
+  addressLine: '',
+};
+
+export interface AddressFieldConfig extends BaseFieldConfig {
+  type: 'address';
+  /** Tighter vertical padding on the inner selects, to match a denser surrounding layout. */
+  dense?: boolean;
+}
+
 export type FieldConfig =
   | TextFieldConfig
   | SelectFieldConfig
   | TextAreaFieldConfig
   | FileFieldConfig
   | ChoiceCardFieldConfig
-  | ChipMultiSelectFieldConfig;
+  | ChipMultiSelectFieldConfig
+  | AddressFieldConfig;
 
 /** Common props every concrete field component receives from FormFieldRenderer. */
 export interface FieldRenderProps<TValue = any> {

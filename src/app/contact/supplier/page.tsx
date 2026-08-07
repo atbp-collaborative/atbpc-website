@@ -2,8 +2,10 @@
 
 import React from 'react';
 import { PartnerApplicationForm } from '../../../components/PartnerApplicationForm';
+import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 
 export default function SupplierPage() {
+  useDocumentTitle('Suppliers');
   const categories = [
     'Architectural Hardware & Metals',
     'Millwork, Timber & Joinery',

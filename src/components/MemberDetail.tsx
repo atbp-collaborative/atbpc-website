@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Suspense } from 'react';
+import Link from 'next/link';
 import { ChevronLeft, ArrowUpRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
@@ -122,15 +123,15 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
                         <li key={inv.projectId} className="flex items-start space-x-2 font-light opacity-90">
                           <span className="text-space-sparkle font-semibold mt-0.5">•</span>
                           {project ? (
-                            <button
-                              onClick={() => router.push(projectRoute(project.id))}
+                            <Link
+                              href={projectRoute(project.id)}
                               className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
                                 isDarkMode ? "text-bright-gray/90" : "text-vintage-charcoal/90"
                               }`}
                             >
                               <span>{inv.projectTitle}</span>
                               <ArrowUpRight size={12} className="opacity-65 text-space-sparkle" />
-                            </button>
+                            </Link>
                           ) : (
                             <span className={isDarkMode ? "text-bright-gray/90" : "text-vintage-charcoal/90"}>
                               {inv.projectTitle}
