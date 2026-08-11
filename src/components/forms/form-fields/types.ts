@@ -51,6 +51,7 @@ export interface FileFieldConfig extends BaseFieldConfig {
   accept?: string;
   dropHint?: string;
   typeHint?: string;
+  variant?: 'default' | 'compact';
 }
 
 export interface ChoiceCardOption {

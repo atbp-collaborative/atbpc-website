@@ -43,25 +43,23 @@ const UPLOAD_ROW: FieldConfig[] = [
 // Each entry is one visual row — 2 fields render as a 2-col grid, 1 renders full-width.
 const RIGHT_COLUMN_ROWS: FieldConfig[][] = [
   [
-    { type: 'text', name: 'firstName', label: 'First Name' },
-    { type: 'text', name: 'pseudonym', label: 'Pseudonym', badge: '!' },
+    { type: 'text', name: 'firstName', label: 'First Name', wrapperClassName: 'sm:col-span-2' },
+    { type: 'text', name: 'pseudonym', label: 'Pseudonym', badge: '!', wrapperClassName: 'sm:col-span-2' },
   ],
   [
-    { type: 'text', name: 'middleName', label: 'Middle Name', note: "(Mother's Maiden Last Name)" },
-    { type: 'text', name: 'lastName', label: 'Last Name' },
+    { type: 'text', name: 'middleName', label: 'Middle Name', note: "(Mother's Maiden Last Name)", wrapperClassName: 'sm:col-span-2' },
+    { type: 'text', name: 'lastName', label: 'Last Name', wrapperClassName: 'sm:col-span-2' },
   ],
   [
-    { type: 'text', name: 'pronoun', label: 'Pronoun' },
-    { type: 'text', name: 'titles', label: 'Titles' },
+    { type: 'text', name: 'pronoun', label: 'Pronoun', wrapperClassName: 'sm:col-span-1' },
+    { type: 'text', name: 'titles', label: 'Titles', wrapperClassName: 'sm:col-span-1' },
+    { type: 'email', name: 'email', label: 'Email Address', wrapperClassName: 'sm:col-span-2' },
   ],
   [{ type: 'address', name: 'address', label: 'Address', dense: true }],
   [
-    { type: 'text', name: 'contactNumber', label: 'Contact Number', placeholder: 'Must be Viber & Whatsapp Ready' },
-    { type: 'text', name: 'facebook', label: 'Facebook', placeholder: 'Paste URL / Link / Handle' },
-  ],
-  [
-    { type: 'email', name: 'email', label: 'Email Address' },
-    { type: 'text', name: 'instagram', label: 'Instagram', placeholder: 'Paste URL / Link / Handle' },
+    { type: 'text', name: 'contactNumber', label: 'Contact Number', placeholder: 'Must be Viber & Whatsapp Ready', wrapperClassName: 'sm:col-span-2' },
+    { type: 'text', name: 'facebook', label: 'Facebook', placeholder: 'Paste URL / Link / Handle', wrapperClassName: 'sm:col-span-1' },
+    { type: 'text', name: 'instagram', label: 'Instagram', placeholder: 'Paste URL / Link / Handle', wrapperClassName: 'sm:col-span-1' },
   ],
 ];
 

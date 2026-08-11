@@ -18,6 +18,8 @@ interface InfoModalProps {
   title?: string;
   subtitle?: string;
   closeLabel?: string;
+  isCloseDisabled?: boolean;
+  onConfirm?: () => void;
   children?: React.ReactNode;
 }
 
@@ -30,6 +32,8 @@ export const InfoModal: React.FC<InfoModalProps> = ({
   title: legacyTitle,
   subtitle: legacySubtitle,
   closeLabel: legacyCloseLabel,
+  isCloseDisabled,
+  onConfirm,
   children,
 }) => {
   useEffect(() => {
@@ -172,7 +176,8 @@ export const InfoModal: React.FC<InfoModalProps> = ({
             }`}>
               <Button
                 label={closeLabel}
-                onClick={onClose}
+                onClick={onConfirm || onClose}
+                disabled={isCloseDisabled}
                 type={isDarkMode ? 'outline' : 'filled'}
                 className="!py-2 !px-6"
               />

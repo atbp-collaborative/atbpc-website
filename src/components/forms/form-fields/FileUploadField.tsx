@@ -26,6 +26,7 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
   onChange,
   isDarkMode,
   theme = 'neutral',
+  variant = 'default',
 }) => {
   const styles = getFieldThemeStyles(theme, isDarkMode);
   const [dragOver, setDragOver] = useState(false);
@@ -41,9 +42,11 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
     onChange(name, file);
   };
 
+  const isCompact = variant === 'compact';
+
   return (
-    <div className="space-y-1">
-      <label className="text-micro font-archivo font-semibold block opacity-90 truncate">
+    <div className={`flex flex-col justify-end h-full ${isCompact ? 'space-y-0.5' : 'space-y-1'}`}>
+      <label className={`${isCompact ? 'text-caption font-semibold' : 'text-micro font-archivo font-semibold'} block opacity-90 truncate`}>
         {label}
         {badge && <span className="text-space-sparkle font-normal"> ({badge})</span>}
       </label>
@@ -65,21 +68,27 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
           if (e.dataTransfer.files && e.dataTransfer.files.length > 0) acceptFile(e.dataTransfer.files[0]);
         }}
         onClick={() => inputRef.current?.click()}
-        className={`h-20 p-2 border rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+        className={`${
+          isCompact 
+            ? 'h-[34px] px-3 py-1.5 flex-row justify-start text-left' 
+            : 'h-20 p-2 flex-col justify-center text-center'
+        } border rounded-xl flex items-center cursor-pointer transition-all ${
           dragOver ? 'border-space-sparkle bg-space-sparkle/10' : styles.borderColor
         }`}
       >
         {value ? (
-          <div className="space-y-0.5 max-w-full px-1">
-            <FileText size={16} className="mx-auto text-space-sparkle" />
-            <p className="text-micro font-archivo font-medium truncate opacity-90">{value.name}</p>
-            <p className="text-micro font-archivo opacity-60">{formatFileSize(value.size)}</p>
+          <div className={`max-w-full overflow-hidden flex items-center ${isCompact ? 'gap-2 w-full' : 'flex-col space-y-0.5 px-1'}`}>
+            <FileText size={isCompact ? 14 : 16} className={`shrink-0 text-space-sparkle ${!isCompact && 'mx-auto'}`} />
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+              <p className={`${isCompact ? 'text-caption' : 'text-micro font-archivo'} font-medium truncate opacity-90`}>{value.name}</p>
+              {!isCompact && <p className="text-micro font-archivo opacity-60">{formatFileSize(value.size)}</p>}
+            </div>
           </div>
         ) : (
-          <div className="space-y-1">
-            <Upload size={14} className="mx-auto opacity-70" />
-            <p className="text-micro font-archivo leading-tight font-medium opacity-80">
-              {dropHint} {typeHint && <span className="block opacity-60 text-micro font-archivo">{typeHint}</span>}
+          <div className={`flex items-center ${isCompact ? 'gap-2 w-full' : 'flex-col space-y-1 w-full'}`}>
+            <Upload size={14} className={`shrink-0 opacity-70 ${!isCompact && 'mx-auto'}`} />
+            <p className={`${isCompact ? 'text-caption truncate' : 'text-micro font-archivo leading-tight'} font-medium opacity-80`}>
+              {dropHint} {typeHint && <span className={`${isCompact ? 'inline' : 'block'} opacity-60 ${isCompact ? '' : 'text-micro font-archivo'}`}>{typeHint}</span>}
             </p>
           </div>
         )}

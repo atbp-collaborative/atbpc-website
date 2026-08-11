@@ -10,6 +10,7 @@ import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-
 import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CAREER_FORM_REQUIRED_FIELDS, CareerFormData, CareerFormType } from '@/lib/forms/career';
 import { submitCareerApplication } from '@/lib/services/career-applications';
 import { RevolvingButton } from '@/components/primitives/RevolvingButton';
+import { useFormViewport } from '@/hooks/useFormViewport';
 
 export interface CareerFormProps {
   initialStructure?: string;
@@ -28,6 +29,8 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
+  const [isModalCheckboxChecked, setIsModalCheckboxChecked] = useState(false);
+  const isHeightConstrained = useFormViewport(750);
 
   const handleChange = (name: string, value: any) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -56,6 +59,32 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
 
   const inputBorderClass = getFieldThemeStyles('neutral', isDarkMode).borderColor;
 
+  const ActionButtons = () => (
+    <div className="grid grid-cols-2 gap-4 w-full md:w-[75%] md:ml-auto">
+      <div className="relative">
+        {!privacyAcknowledged && (
+          <div className="absolute inset-0 rounded-xl animate-glow-pulse" />
+        )}
+        <button
+          type="button"
+          onClick={() => setShowPrivacyModal(true)}
+          className={`relative z-10 w-full h-full py-2 px-4 rounded-xl border text-caption font-medium transition-all hover:opacity-80 cursor-pointer ${inputBorderClass}`}
+        >
+          Privacy Statement
+        </button>
+      </div>
+      <RevolvingButton
+        type="submit"
+        disabled={isSubmitting || !canSubmit}
+        active={!privacyAcknowledged}
+        title={!privacyAcknowledged ? 'Acknowledge the Privacy Statement to continue' : !isFormValid ? 'Fill in all required fields to continue' : undefined}
+        className="w-full !bg-space-sparkle !text-bright-gray border-none"
+      >
+        {isSubmitting ? 'Submitting...' : 'Submit Application'}
+      </RevolvingButton>
+    </div>
+  );
+
   return (
     <motion.div
       key="grow-with-us"
@@ -66,13 +95,20 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
       className="w-full flex-1 min-h-0 overflow-hidden flex flex-col px-4 sm:px-8 py-3 select-none"
     >
       {/* Title Header */}
-      <div className="mb-3 lg:mb-2 shrink-0">
-        <h1 className="font-sans text-h1 font-bold tracking-tight leading-none lowercase">
-          grow with us
-        </h1>
-        <p className="text-caption sm:text-body font-light opacity-80 mt-1 lowercase">
-          are you currently in search of a practice that could support your future?
-        </p>
+      <div className="mb-3 lg:mb-2 shrink-0 flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+        <div>
+          <h1 className="font-sans text-h1 font-bold tracking-tight leading-none lowercase">
+            grow with us
+          </h1>
+          <p className="text-caption sm:text-body font-light opacity-80 mt-1 lowercase">
+            are you currently in search of a practice that could support your future?
+          </p>
+        </div>
+        {isHeightConstrained && !isSubmitted && (
+          <div className="hidden md:block w-full md:w-[45%] shrink-0">
+            <ActionButtons />
+          </div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">
@@ -86,7 +122,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
             className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto pb-2"
           >
             {/* LEFT COLUMN */}
-            <div className="w-full lg:w-1/2 flex flex-col space-y-3 lg:space-y-2">
+            <div className="w-full lg:w-1/2 flex flex-col gap-3 lg:gap-2 justify-between">
               {fields.leftColumnTop.map((field) => (
                 <FormFieldRenderer
                   key={field.name}
@@ -122,9 +158,9 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className="w-full lg:w-1/2 flex flex-col space-y-2.5 lg:space-y-2">
+            <div className="w-full lg:w-1/2 flex flex-col justify-between gap-2.5 lg:gap-2">
               {fields.rightColumnRows.map((row, idx) => (
-                <div key={idx} className={row.length > 1 ? 'grid grid-cols-1 sm:grid-cols-2 gap-3' : ''}>
+                <div key={idx} className={row.length > 1 ? 'grid grid-cols-1 sm:grid-cols-4 gap-3' : ''}>
                   {row.map((field) => (
                     <FormFieldRenderer
                       key={field.name}
@@ -139,23 +175,8 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
               ))}
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-4 pt-2 lg:pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowPrivacyModal(true)}
-                  className={`py-2 px-4 rounded-xl border text-caption font-medium transition-all hover:opacity-80 cursor-pointer ${inputBorderClass}`}
-                >
-                  Privacy Statement
-                </button>
-                <RevolvingButton
-                  type="submit"
-                  disabled={isSubmitting || !canSubmit}
-                  active={!privacyAcknowledged}
-                  title={!privacyAcknowledged ? 'Acknowledge the Privacy Statement to continue' : !isFormValid ? 'Fill in all required fields to continue' : undefined}
-                  className="w-full"
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit Application'}
-                </RevolvingButton>
+              <div className={`pt-2 lg:pt-1 ${isHeightConstrained ? 'md:hidden' : ''}`}>
+                <ActionButtons />
               </div>
             </div>
           </motion.form>
@@ -186,6 +207,12 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
       <InfoModal
         isOpen={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
+        onConfirm={() => {
+          setPrivacyAcknowledged(true);
+          setShowPrivacyModal(false);
+        }}
+        isCloseDisabled={!isModalCheckboxChecked}
+        closeLabel="Confirm"
         isDarkMode={isDarkMode}
         data={careerPrivacyModalData.contents}
       >
@@ -193,8 +220,8 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
         <label className="flex items-center gap-2 pt-1 text-caption cursor-pointer select-none">
           <input
             type="checkbox"
-            checked={privacyAcknowledged}
-            onChange={(e) => setPrivacyAcknowledged(e.target.checked)}
+            checked={isModalCheckboxChecked}
+            onChange={(e) => setIsModalCheckboxChecked(e.target.checked)}
             className="h-4 w-4 accent-space-sparkle cursor-pointer"
           />
           I have read and agree to the Privacy Statement
