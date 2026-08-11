@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { PeopleListPage } from '../../../../../components/PeopleListPage';
-import { MemberCategory } from '../../../../../types';
+import { PeopleListPage } from '@/components/blocks/PeopleListPage';
+import { MemberCategory } from '@/types';
 
 const VALID_CATEGORIES: MemberCategory[] = ['designers', 'managers', 'builders'];
 

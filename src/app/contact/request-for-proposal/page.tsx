@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { ContactFormPage } from '../../../components/ContactFormPage';
-import { MS_FORMS_CONFIG } from '../../../lib/data/leads';
-import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
+import { ContactFormPage } from '@/components/blocks/ContactFormPage';
+import { MS_FORMS_CONFIG } from '@/lib/services/leads';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export default function RequestForProposalPage() {
   useDocumentTitle('Request a Proposal');

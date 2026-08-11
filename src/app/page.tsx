@@ -2,44 +2,34 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ImageWithFade } from '../components/ImageWithFade';
+import { ImageWithFade } from '@/components/primitives/ImageWithFade';
 
-const CAROUSEL_IMAGES = [
-  {
-    url: '/images/hero_modern_villa_1783495183350.jpg',
-    title: 'Your Home',
-  },
-  {
-    url: '/images/condo_fitout_interior_1783495200802.jpg',
-    title: 'Your Business',
-  },
-  {
-    url: '/images/production_drawings_1783495233053.jpg',
-    title: 'Your Office',
-  },
-  {
-    url: '/images/retail_boutique_1783495217375.jpg',
-    title: 'Your Home',
-  },
-  {
-    url: '/images/kiosk_coffee_bar_1783495252161.jpg',
-    title: 'Your Business',
-  },
-];
+import { getHomeCarouselImages } from '@/lib/services/home-carousel';
+import { HomeCarouselImage } from '@/dummy-data/home-carousel';
 
 export default function HeroPage() {
   const [heroActiveIndex, setHeroActiveIndex] = useState<number>(0);
+  const [carouselImages, setCarouselImages] = useState<HomeCarouselImage[]>([]);
+
+  useEffect(() => {
+    getHomeCarouselImages().then(setCarouselImages);
+  }, []);
 
   // Auto-play interval for carousel
   useEffect(() => {
+    if (carouselImages.length === 0) return;
     const interval = setInterval(() => {
-      setHeroActiveIndex((prev) => (prev + 1) % CAROUSEL_IMAGES.length);
+      setHeroActiveIndex((prev) => (prev + 1) % carouselImages.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [carouselImages.length]);
 
-  const currentIndex = heroActiveIndex % CAROUSEL_IMAGES.length;
-  const currentItem = CAROUSEL_IMAGES[currentIndex];
+  if (carouselImages.length === 0) {
+    return <div className="relative w-full h-full flex-1 min-h-0 bg-black" />;
+  }
+
+  const currentIndex = heroActiveIndex % carouselImages.length;
+  const currentItem = carouselImages[currentIndex];
 
   return (
     <div className="relative w-full h-full flex-1 min-h-0 overflow-hidden select-none bg-black text-white">
@@ -50,7 +40,7 @@ export default function HeroPage() {
           initial={{ opacity: 0, scale: 1.03 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="absolute inset-0 w-full h-full"
         >
           <ImageWithFade
@@ -109,7 +99,7 @@ export default function HeroPage() {
       </div>
 
       <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 flex items-center space-x-2 px-3 py-2">
-        {CAROUSEL_IMAGES.map((_, idx) => {
+        {carouselImages.map((_, idx) => {
           const isActive = idx === currentIndex;
           return (
             <button

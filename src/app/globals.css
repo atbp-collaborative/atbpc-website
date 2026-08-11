@@ -24,38 +24,48 @@ html.dark {
   --font-small-minor: "Source Sans 3", sans-serif;
   --font-archivo: "Source Sans 3", sans-serif;
 
-  /* Type scale, small to large. Each token is the single source of truth for
-     that size — components should never reach for the raw Tailwind scale
-     (text-xs, text-lg, text-2xl, etc.) or arbitrary text-[Npx] values. */
-  --text-micro: 10px;
-  --text-mini: 12px;
-  --text-caption: 15px;
-  --text-body: 20px;
-  --text-h2: 24px;
-  --text-h1: 32px;
-  --text-hero: 48px;
+  /* Custom typography properties removed from @theme to prevent 
+     overriding the responsive @utility classes */
 }
 
 @utility text-micro {
   font-size: 10px;
 }
 @utility text-mini {
-  font-size: 12px;
+  font-size: 11px;
+  @media (min-width: 640px) {
+    font-size: 12px;
+  }
 }
 @utility text-caption {
-  font-size: 15px;
+  font-size: 13px;
+  @media (min-width: 640px) {
+    font-size: 14px;
+  }
 }
 @utility text-body {
-  font-size: 20px;
+  font-size: 16px;
+  @media (min-width: 640px) {
+    font-size: 18px;
+  }
 }
 @utility text-h2 {
-  font-size: 24px;
+  font-size: 20px;
+  @media (min-width: 640px) {
+    font-size: 22px;
+  }
 }
 @utility text-h1 {
-  font-size: 32px;
+  font-size: 24px;
+  @media (min-width: 640px) {
+    font-size: 28px;
+  }
 }
 @utility text-hero {
-  font-size: 48px;
+  font-size: 32px;
+  @media (min-width: 640px) {
+    font-size: 36px;
+  }
 }
 /* Full-bleed hero display only — fluid between the same 36px/60px/72px/96px
    breakpoints the homepage hero used before consolidation. */
@@ -192,10 +202,19 @@ button, a, [role="button"], .cursor-pointer {
   }
 }
 
-/* SnakeBorder: a chain of dots traveling an element's own border shape via offset-path. */
-@keyframes snake-move {
-  to {
-    offset-distance: 100%;
+
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px 2px var(--color-space-sparkle);
   }
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 20px 6px var(--color-space-sparkle);
+  }
+}
+.animate-glow-pulse {
+  animation: glow-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 

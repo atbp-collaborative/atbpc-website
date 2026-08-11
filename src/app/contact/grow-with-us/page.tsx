@@ -2,11 +2,11 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { LandingCard } from '../../../components/LandingPage';
-import { SubLandingPage } from '../../../components/SubLandingPage';
-import { ROUTES, TAB_TO_ROUTE } from '../../../lib/routes';
-import { GROW_WITH_US_CARDS } from '../../../content/contact';
-import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
+import { LandingCard } from '@/components/blocks/LandingPage';
+import { SubLandingPage } from '@/components/blocks/SubLandingPage';
+import { ROUTES } from '@/lib/navigation/routes';
+import { GROW_WITH_US_CARDS } from '@/dummy-data/contact';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export default function GrowWithUsPage() {
   useDocumentTitle('Grow With Us');
@@ -19,7 +19,7 @@ export default function GrowWithUsPage() {
     subtext: card.subtext,
     tags: card.tags,
     image: card.image,
-    onSelect: () => router.push(TAB_TO_ROUTE[card.tab] ?? ROUTES.contact),
+    onSelect: () => router.push(card.href ?? ROUTES.contact),
   }));
 
   return (

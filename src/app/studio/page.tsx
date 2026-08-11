@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { LandingPage, LandingCard } from '../../components/LandingPage';
-import { ROUTES } from '../../lib/routes';
-import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { LandingPage, LandingCard } from '@/components/blocks/LandingPage';
+import { ROUTES } from '@/lib/navigation/routes';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export default function StudioPage() {
   useDocumentTitle('Studio');
