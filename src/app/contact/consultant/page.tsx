@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { PartnerApplicationForm } from '../../../components/PartnerApplicationForm';
-import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
+import { PartnerApplicationForm } from '@/components/forms/PartnerApplicationForm';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { consultantConditionsData } from '@/lib/modals/partner-conditions';
 
 export default function ConsultantPage() {
   useDocumentTitle('Consultants');
@@ -25,19 +26,7 @@ export default function ConsultantPage() {
     'Master Planning & Landscape Infrastructure',
   ];
 
-  const conditionsContent = (
-    <>
-      <p>
-        1. <strong>Professional Licensing:</strong> Partner consultants and specialist firms must hold active PRC/PTR professional licenses or accredited corporate engineering practice permits.
-      </p>
-      <p>
-        2. <strong>Design Integrity & Calculation Standards:</strong> All technical calculations, BIM models, and structural/MEPFS drawings must align with national codes and studio specifications.
-      </p>
-      <p>
-        3. <strong>Confidentiality & Peer Review:</strong> Information disclosed through this portal is safeguarded for studio project matching, fee estimations, and inter-practice collaboration.
-      </p>
-    </>
-  );
+  const conditionsContent = consultantConditionsData;
 
   return (
     <PartnerApplicationForm

@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { PartnerApplicationForm } from '../../../components/PartnerApplicationForm';
-import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
+import { PartnerApplicationForm } from '@/components/forms/PartnerApplicationForm';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { builderConditionsData } from '@/lib/modals/partner-conditions';
 
 export default function BuilderPage() {
   useDocumentTitle('Builders');
@@ -25,19 +26,7 @@ export default function BuilderPage() {
     'Heritage Preservation & Adaptive Reuse',
   ];
 
-  const conditionsContent = (
-    <>
-      <p>
-        1. <strong>Licensing & Integrity:</strong> Partner builders must hold valid PCAB licenses and tax registrations (BIR / SEC / DTI) matching their declared scope of work and construction category.
-      </p>
-      <p>
-        2. <strong>Workmanship Standards:</strong> All construction methods, site safety protocols, and material assemblies must adhere strictly to ATBP Collaborative architectural blueprints and specifications.
-      </p>
-      <p>
-        3. <strong>Contractual Transparency:</strong> Sample contracts and project execution methodologies are verified for cost-transparency, delay penalties, and warranty guarantees.
-      </p>
-    </>
-  );
+  const conditionsContent = builderConditionsData;
 
   return (
     <PartnerApplicationForm

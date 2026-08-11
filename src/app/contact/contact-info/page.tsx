@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Phone,
@@ -10,16 +10,18 @@ import {
   AtSign,
   Instagram,
   MapPin,
-  ArrowLeft
+  ArrowLeft,
+  Loader2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { useTheme } from '../../../lib/theme-context';
-import { ROUTES } from '../../../lib/routes';
-import { CONTACT_INFO } from '../../../content/contact';
-import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
+import { useTheme } from '@/lib/theme-context';
+import { ROUTES } from '@/lib/navigation/routes';
+import { getContactInfo } from '@/lib/services/contact-info';
+import { ContactInfo } from '@/dummy-data/contact-info';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
-const OfficeMap = dynamic(() => import('../../../components/OfficeMap').then((mod) => mod.OfficeMap), {
+const OfficeMap = dynamic(() => import('@/components/blocks/OfficeMap').then((mod) => mod.OfficeMap), {
   ssr: false,
 });
 
@@ -27,6 +29,25 @@ export default function ContactInfoPage() {
   useDocumentTitle('Locate & Communicate');
   const { isDarkMode } = useTheme();
   const router = useRouter();
+  const [CONTACT_INFO, setContactInfo] = useState<ContactInfo | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    getContactInfo().then((data) => {
+      if (mounted) setContactInfo(data);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!CONTACT_INFO) {
+    return (
+      <div className="w-full h-full flex items-center justify-center min-h-0">
+        <Loader2 className="animate-spin text-space-sparkle opacity-60" size={32} />
+      </div>
+    );
+  }
 
   return (
     <motion.div 

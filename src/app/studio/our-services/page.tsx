@@ -2,12 +2,12 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Service } from '../../../types';
-import { getServices } from '../../../lib/data/services';
-import { SubLandingPage } from '../../../components/SubLandingPage';
-import { LandingCard } from '../../../components/LandingPage';
-import { ROUTES } from '../../../lib/routes';
-import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
+import { Service } from '@/types';
+import { getServices } from '@/lib/services/design-services';
+import { SubLandingPage } from '@/components/blocks/SubLandingPage';
+import { LandingCard } from '@/components/blocks/LandingPage';
+import { ROUTES } from '@/lib/navigation/routes';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export default function OurServicesPage() {
   useDocumentTitle('Our Services');

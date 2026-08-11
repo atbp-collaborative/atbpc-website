@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { PartnerApplicationForm } from '../../../components/PartnerApplicationForm';
-import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
+import { PartnerApplicationForm } from '@/components/forms/PartnerApplicationForm';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { supplierConditionsData } from '@/lib/modals/partner-conditions';
 
 export default function SupplierPage() {
   useDocumentTitle('Suppliers');
@@ -19,19 +20,7 @@ export default function SupplierPage() {
     'Landscaping & Outdoor Materials',
   ];
 
-  const conditionsContent = (
-    <>
-      <p>
-        1. <strong>Quality Verification:</strong> All submitted material specifications, MSDS documents, and physical catalogs are pre-screened according to strict structural, aesthetic, and environmental sustainability standards prior to studio specification.
-      </p>
-      <p>
-        2. <strong>Warranty & Lead Times:</strong> Suppliers must provide verified lead times and manufacturer warranty coverage for custom millwork, finishes, and specialized hardware.
-      </p>
-      <p>
-        3. <strong>Data Confidentiality:</strong> Product documentation provided through this portal will be archived exclusively for internal procurement, mock-up schedules, and client bill-of-quantity estimations.
-      </p>
-    </>
-  );
+  const conditionsContent = supplierConditionsData;
 
   return (
     <PartnerApplicationForm

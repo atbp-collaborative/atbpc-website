@@ -1,9 +1,10 @@
 'use client';
 
-import { StudioPlaceholderPage } from '../../placeholder';
-import { useDocumentTitle } from '../../../../hooks/useDocumentTitle';
+import { StudioServicesPage } from '@/components/blocks/StudioServicesPage';
+import { OUR_SERVICES_DATA } from '@/dummy-data/our-services';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
-export default function Page() {
+export default function ComprehensiveServicesPage() {
   useDocumentTitle('Comprehensive Services');
-  return <StudioPlaceholderPage subpageId="comprehensive-services" />;
+  return <StudioServicesPage data={OUR_SERVICES_DATA['comprehensive-services']} />;
 }

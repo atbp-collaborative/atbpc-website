@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
-import { ProcessDiagram } from '../../../components/ProcessDiagram';
-import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
+import { ProcessStage } from '@/components/blocks/process-stage';
+import { PROCESS_NODES, CATEGORY_GROUPS } from '@/dummy-data/process';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export default function ServicesPage() {
   useDocumentTitle('Our Process');
@@ -16,7 +17,7 @@ export default function ServicesPage() {
       transition={{ duration: 0.4 }}
       className="w-full h-full flex flex-col justify-between overflow-hidden px-4 sm:px-8 md:px-12 py-3 sm:py-5 select-none min-h-0"
     >
-      <ProcessDiagram />
+      <ProcessStage nodes={PROCESS_NODES} categoryGroups={CATEGORY_GROUPS} />
 
       {/* Bottom Subtext Row */}
       <div className="shrink-0 text-center border-t border-space-sparkle/10 pt-2 mt-1">
