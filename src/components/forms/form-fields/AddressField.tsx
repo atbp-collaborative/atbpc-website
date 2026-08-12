@@ -6,6 +6,7 @@ import { TextField } from './TextField';
 import { getFieldThemeStyles } from './fieldStyles';
 import { PhAddress, FieldRenderProps } from './types';
 import { getRegions, getCities, getBarangays } from '@/lib/phAddress';
+import { COUNTRIES } from '@/lib/countries';
 
 type AddressFieldProps = {
   name: string;
@@ -63,14 +64,16 @@ export const AddressField: React.FC<AddressFieldProps> = ({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <span className={subLabelClass}>Country</span>
-          <TextField
+          <SelectField
             name="country"
             label=""
+            placeholder="Select country"
+            options={COUNTRIES.map(c => ({ value: c, label: c }))}
             value={value.country}
-            onChange={() => {}}
+            onChange={(_name: string, val: string) => set({ country: val })}
             isDarkMode={isDarkMode}
             theme={theme}
-            disabled
+            dense={dense}
           />
         </div>
         <div>

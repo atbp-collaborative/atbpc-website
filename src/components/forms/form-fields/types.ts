@@ -73,9 +73,8 @@ export interface ChipMultiSelectFieldConfig extends BaseFieldConfig {
   options: string[];
 }
 
-/** Structured PH address: Region -> City -> Barangay, plus a free-text unit/lot/subdivision line. */
 export interface PhAddress {
-  country: 'Philippines';
+  country: string;
   regionCode: string;
   regionName: string;
   cityCode: string;

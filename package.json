@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@aivangogh/ph-address": "^2026.2.1",
+    "@react-email/components": "^1.0.12",
     "@tailwindcss/postcss": "^4.3.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.546.0",
@@ -17,7 +18,10 @@
     "next": "^15.5.22",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
-    "sharp": "^0.35.3"
+    "react-email": "^6.9.2",
+    "resend": "^6.19.0",
+    "sharp": "^0.35.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.21",
