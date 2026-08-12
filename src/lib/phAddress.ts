@@ -23,10 +23,29 @@ function municipalities() {
 }
 
 export function getRegions(): PhAddressOption[] {
-  return getAllRegions().map((r) => ({
-    code: r.psgcCode,
-    name: r.designation && r.designation !== r.name ? `${r.name} — ${r.designation}` : r.name,
-  }));
+  const regions = getAllRegions().map((r) => {
+    let displayName = r.name;
+    if (r.designation && r.designation !== r.name) {
+      if (r.name.startsWith('Region')) {
+        displayName = `${r.name} : ${r.designation}`;
+      } else {
+        displayName = `${r.designation} : ${r.name}`;
+      }
+    }
+    return {
+      code: r.psgcCode,
+      name: displayName,
+      originalName: r.name,
+    };
+  });
+
+  const ncrIndex = regions.findIndex((r) => r.originalName === 'National Capital Region');
+  if (ncrIndex > -1) {
+    const [ncr] = regions.splice(ncrIndex, 1);
+    regions.unshift(ncr);
+  }
+
+  return regions.map((r) => ({ code: r.code, name: r.name }));
 }
 
 export function getCities(regionCode: string): PhAddressOption[] {
