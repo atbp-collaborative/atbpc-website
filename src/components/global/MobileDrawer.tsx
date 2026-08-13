@@ -58,7 +58,7 @@ const SectionTrigger: React.FC<SectionTriggerProps> = ({
     >
       <motion.span
         animate={{ rotate: isExpanded ? 180 : 0 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 1.5 }}
         className="flex items-center"
       >
         <ChevronDown size={16} />
@@ -133,7 +133,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           >
             <div className="space-y-8">
               {/* Drawer Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-space-sparkle/10">
+              <div className="flex items-center justify-between pb-4">
                 <AtbpLogo isDarkMode={isDarkMode} className="h-6 w-auto" />
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -176,10 +176,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.6, ease: 'easeInOut' }}
+                        transition={{ duration: 1.5, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
-                        <div className="pl-3 flex flex-col space-y-1.5 border-l border-space-sparkle/15 ml-3 pt-1 pb-2">
+                        <div className="flex flex-col space-y-1.5 pt-1 pb-2">
                           {WORKS_NAV_STRUCTURE.map((group) => {
                             const isGroupExpanded = expandedWorksCategory === group.label;
 
@@ -187,14 +187,14 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                               <div key={group.id} className="space-y-1">
                                 <div
                                   onClick={() => setExpandedWorksCategory(prev => prev === group.label ? null : group.label)}
-                                  className="flex items-center justify-between py-1.5 px-3 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 select-none"
+                                  className="flex items-center justify-between py-1.5 px-4 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 select-none"
                                 >
                                   <span className="text-caption font-bold tracking-widest normal-case text-left">
                                     {group.label}
                                   </span>
                                   <motion.span
                                     animate={{ rotate: isGroupExpanded ? 180 : 0 }}
-                                    transition={{ duration: 0.6 }}
+                                    transition={{ duration: 1.5 }}
                                   >
                                     <ChevronDown size={14} />
                                   </motion.span>
@@ -206,16 +206,16 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                                       initial={{ height: 0, opacity: 0 }}
                                       animate={{ height: 'auto', opacity: 1 }}
                                       exit={{ height: 0, opacity: 0 }}
-                                      transition={{ duration: 0.6, ease: 'easeInOut' }}
+                                      transition={{ duration: 1.5, ease: 'easeInOut' }}
                                       className="overflow-hidden"
                                     >
-                                      <div className="pl-3 flex flex-col space-y-1 border-l border-space-sparkle/20 ml-3 py-1">
+                                      <div className="flex flex-col space-y-1 py-1">
                                         {group.subItems.map((sub) => (
                                           <Link
                                             key={sub.id}
                                             href={`${ROUTES.works}/${encodeURIComponent(sub.id)}`}
                                             onClick={closeDrawer}
-                                            className="block text-left text-mini tracking-wider py-1.5 px-2.5 rounded-none transition-all cursor-pointer opacity-85 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5"
+                                            className="block text-left text-mini tracking-wider py-1.5 px-4 rounded-none transition-all cursor-pointer opacity-85 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5"
                                           >
                                             {sub.label}
                                           </Link>
@@ -251,20 +251,20 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.6, ease: 'easeInOut' }}
+                        transition={{ duration: 1.5, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
-                        <div className="pl-4 flex flex-col space-y-2 border-l border-space-sparkle/15 ml-4 pt-1 pb-2">
+                        <div className="flex flex-col space-y-2 pt-1 pb-2">
                           {STUDIO_NAV_STRUCTURE.map((sec) => (
                             <div key={sec.id} className="space-y-1">
                               <Link
                                 href={sec.id}
                                 onClick={closeDrawer}
-                                className="text-left text-caption font-bold tracking-widest py-1 px-2 block w-full hover:bg-black/5 dark:hover:bg-white/5"
+                                className="text-left text-caption font-bold tracking-widest py-1 px-4 block w-full hover:bg-black/5 dark:hover:bg-white/5"
                               >
                                 {pathname.startsWith(sec.id) ? sec.translation : sec.label}
                               </Link>
-                              <div className="pl-3 flex flex-col space-y-1 border-l border-space-sparkle/10 ml-2">
+                              <div className="flex flex-col space-y-1">
                                 {sec.subItems.map((item) => {
                                   const isSubActive = pathname === item.id;
 
@@ -273,7 +273,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                                       key={item.id}
                                       href={item.id}
                                       onClick={closeDrawer}
-                                      className={`text-left text-mini py-0.5 px-2 block cursor-pointer transition-opacity ${
+                                      className={`text-left text-mini py-0.5 px-4 block cursor-pointer transition-opacity ${
                                         isSubActive
                                           ? 'font-bold opacity-100'
                                           : 'opacity-80 hover:opacity-100'
@@ -310,28 +310,28 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.6, ease: 'easeInOut' }}
+                        transition={{ duration: 1.5, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
-                        <div className="pl-4 flex flex-col space-y-2 border-l border-space-sparkle/15 ml-4 pt-1 pb-2">
+                        <div className="flex flex-col space-y-2 pt-1 pb-2">
                           {CONTACT_NAV_STRUCTURE.map((grp) => (
                             <div key={grp.id} className="space-y-1">
                               <Link
                                 href={grp.id}
                                 onClick={closeDrawer}
-                                className={`text-left text-caption font-bold tracking-widest block py-1 px-2 w-full transition-opacity cursor-pointer ${
+                                className={`text-left text-caption font-bold tracking-widest block py-1 px-4 w-full transition-opacity cursor-pointer ${
                                   pathname === grp.id ? 'opacity-100 text-space-sparkle' : 'opacity-90 hover:opacity-100'
                                 }`}
                               >
                                 {grp.label}
                               </Link>
-                              <div className="pl-3 flex flex-col space-y-1 border-l border-space-sparkle/10 ml-2">
+                              <div className="flex flex-col space-y-1">
                                 {grp.subItems.map((item) => (
                                   <Link
                                     key={item.id}
                                     href={item.id}
                                     onClick={closeDrawer}
-                                    className={`text-left text-mini block py-0.5 px-2 transition-opacity cursor-pointer ${
+                                    className={`text-left text-mini block py-0.5 px-4 transition-opacity cursor-pointer ${
                                       pathname === item.id ? 'font-bold opacity-100' : 'opacity-80 hover:opacity-100'
                                     }`}
                                   >
@@ -350,7 +350,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             </div>
 
             {/* Drawer Footer / CTA Area */}
-            <div className="space-y-2.5 pt-6 border-t border-space-sparkle/10">
+            <div className="space-y-2.5 pt-6">
               <CtaButton
                 layout="full"
                 variant="solid"

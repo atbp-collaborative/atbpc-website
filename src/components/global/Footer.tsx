@@ -76,7 +76,7 @@ export const Footer: React.FC<FooterProps> = ({
           }`}
         >
           {/* Subtext on the left */}
-          <div className="font-sans font-light tracking-wide text-mini text-center md:text-left">
+          <div className="hidden md:block font-sans font-light tracking-wide text-mini text-center md:text-left">
             {TAGLINE_PHRASES.map((phrase, index) => {
               const isActive = activeTaglineIndex === index;
               return (

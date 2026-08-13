@@ -35,7 +35,7 @@ export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, su
       )}
 
       {/* Cards Grid / Flex Container */}
-      <div className="flex-1 flex flex-col md:flex-row gap-[2px] h-full min-h-0 items-stretch overflow-y-auto md:overflow-hidden group/subCards">
+      <div className="flex-1 flex flex-col xl:flex-row gap-[2px] h-full min-h-0 items-stretch overflow-y-auto xl:overflow-hidden group/subCards">
         {cards.map((card, index) => (
           <motion.div
             key={card.id}
@@ -43,7 +43,7 @@ export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, su
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: index * 0.1 }}
             onClick={card.onSelect}
-            className={`group/card relative flex-1 min-h-[260px] md:min-h-0 rounded-none border cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] md:hover:flex-[1.25] overflow-hidden ${
+            className={`group/card relative flex-1 min-h-[260px] xl:min-h-0 rounded-none border cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] xl:hover:flex-[1.25] overflow-hidden ${
               isDarkMode
                 ? 'bg-vintage-charcoal/40 border-space-sparkle/40 hover:border-bright-gray/30'
                 : 'bg-white/60 border-vintage-charcoal/15 hover:border-space-sparkle/40'

@@ -77,6 +77,8 @@ export interface PhAddress {
   country: string;
   regionCode: string;
   regionName: string;
+  provinceCode: string;
+  provinceName: string;
   cityCode: string;
   cityName: string;
   barangayCode: string;
@@ -89,6 +91,8 @@ export const EMPTY_PH_ADDRESS: PhAddress = {
   country: 'Philippines',
   regionCode: '',
   regionName: '',
+  provinceCode: '',
+  provinceName: '',
   cityCode: '',
   cityName: '',
   barangayCode: '',

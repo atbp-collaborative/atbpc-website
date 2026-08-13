@@ -47,7 +47,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isDarkMode, onClick 
   return (
     <div
       onClick={onClick}
-      className={`group relative flex-shrink-0 w-[270px] sm:w-[330px] md:w-[370px] lg:w-[410px] h-full overflow-hidden rounded-none border transition-all duration-500 cursor-pointer snap-start select-none ${
+      className={`group relative flex-shrink-0 w-full md:w-[370px] lg:w-[410px] aspect-[1.5/1] md:aspect-auto md:h-full overflow-hidden rounded-none border transition-all duration-500 cursor-pointer snap-start select-none ${
         isDarkMode ? 'border-space-sparkle/20 bg-vintage-charcoal/40 hover:border-white/40' : 'border-space-sparkle/15 bg-white hover:border-space-sparkle/40'
       }`}
     >
@@ -55,7 +55,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isDarkMode, onClick 
         src={project.images[0]}
         alt={project.title}
         fill
-        sizes="(min-width: 1024px) 410px, (min-width: 768px) 370px, (min-width: 640px) 330px, 270px"
+        sizes="(min-width: 1024px) 410px, (min-width: 768px) 370px, 100vw"
         className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
       />
 
@@ -239,7 +239,7 @@ function ProjectDetailContent({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className={`w-full px-4 sm:px-8 py-2 select-none flex flex-col flex-1 min-h-0 h-full justify-between ${isVideoActive && isDesktop ? '' : 'overflow-hidden'}`}
+      className={`w-full px-4 sm:px-8 py-2 select-none flex flex-col flex-1 min-h-0 h-full justify-start ${isVideoActive && isDesktop ? '' : 'overflow-hidden'}`}
     >
       <BreadcrumbButton
         label={backLabel}
@@ -249,9 +249,9 @@ function ProjectDetailContent({
       <div className={`grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 pb-1 ${isVideoActive && isDesktop ? '' : 'overflow-hidden'}`}>
         
         {/* Carousel & CTA Container */}
-        <div ref={columnRef} className={`lg:col-span-7 lg:order-2 flex flex-col justify-between h-full min-h-0 space-y-3 ${isVideoActive && isDesktop ? '' : 'overflow-hidden'}`}>
+        <div ref={columnRef} className={`lg:col-span-7 lg:order-2 flex flex-col justify-start h-full min-h-0 space-y-3 ${isVideoActive && isDesktop ? '' : 'overflow-hidden'}`}>
           
-          <div className={`space-y-3 w-full relative flex-1 min-h-0 flex flex-col justify-center ${isVideoActive && isDesktop ? '' : 'overflow-hidden'}`}>
+          <div className={`space-y-3 w-full relative flex-1 min-h-0 flex flex-col justify-start ${isVideoActive && isDesktop ? '' : 'overflow-hidden'}`}>
             <AnimatePresence>
               {isVideoActive && isDesktop && (
                 <motion.div
@@ -389,26 +389,10 @@ function ProjectDetailContent({
               </div>
             </div>
           </div>
-
-          {/* Specific CTA for project view */}
-          <div className="pt-2 border-t border-space-sparkle/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full text-center sm:text-left shrink-0">
-            <div className="w-full sm:w-auto">
-              <span className="text-micro font-archivo uppercase tracking-widest opacity-50 block">Inspired by this build?</span>
-              <span className="text-mini font-semibold">Qualify your project with us today</span>
-            </div>
-            <Button
-              type="filled"
-              label="Start Consultation"
-              href={ROUTES.discoverySession}
-              fullWidth={true}
-              className="sm:w-auto font-medium py-1.5 text-mini"
-            />
-          </div>
-
         </div>
 
         {/* High-End Architectural Writeup & Specs */}
-        <div className="lg:col-span-5 lg:order-1 flex flex-col justify-between h-full min-h-0 overflow-hidden space-y-2 py-0.5">
+        <div className="lg:col-span-5 lg:order-1 flex flex-col justify-start h-full min-h-0 overflow-hidden space-y-2 py-0.5">
           <div className="flex flex-col flex-1 min-h-0 overflow-hidden space-y-2">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-mini uppercase tracking-widest font-sans text-vintage-charcoal/60 dark:text-bright-gray/60 shrink-0">
               <span className="font-medium">
@@ -493,8 +477,22 @@ function ProjectDetailContent({
               </div>
             </Accordion>
           </div>
-        </div>
 
+          {/* Specific CTA for project view (Moved from carousel column) */}
+          <div className="pt-2 mt-2 border-t border-space-sparkle/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full text-center sm:text-left shrink-0">
+            <div className="w-full sm:w-auto">
+              <span className="text-micro font-archivo uppercase tracking-widest opacity-50 block">Inspired by this build?</span>
+              <span className="text-mini font-semibold">Qualify your project with us today</span>
+            </div>
+            <Button
+              type="filled"
+              label="Start Consultation"
+              href={ROUTES.discoverySession}
+              fullWidth={true}
+              className="sm:w-auto font-medium py-1.5 text-mini"
+            />
+          </div>
+        </div>
       </div>
     </motion.div>
   );
@@ -671,82 +669,115 @@ export default function WorksCategoryPage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
 
-        {/* Middle Area: Projects Horizontal Carousel (Infinite Scroll) */}
-        <div className="relative w-full flex-1 min-h-0 flex items-center group/carousel">
-          {/* Carousel Container - Infinite Scrollable, Arrow & Keyboard Controlled */}
-          <div
-            ref={carouselRef}
-            {...dragHandlers}
-            className="w-full h-full overflow-x-auto no-scrollbar overscroll-x-contain flex flex-row gap-[2px] items-stretch py-1 cursor-grab active:cursor-grabbing"
-          >
-            {filteredProjects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                isDarkMode={isDarkMode}
-                onClick={() => {
-                  const fromQuery = projectFilter !== 'All' ? `?from=${encodeURIComponent(projectFilter)}` : '';
-                  router.push(`${projectRoute(project.id)}${fromQuery}`);
-                }}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom Area: Interchanged Filter Row (Filter Icons on Left, Category Buttons on Right) */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5 pt-2 border-t border-space-sparkle/10 shrink-0">
-          {/* Left: Filter Icons array */}
-          <div className="flex flex-row flex-nowrap items-center justify-start gap-1.5 sm:gap-2 text-caption font-medium uppercase tracking-wider overflow-x-auto no-scrollbar max-w-full">
-            {displayFilterCategories.map(category => {
-              const isSelected = category === 'All'
-                ? (projectFilter === 'All' || (activeMainCard && projectFilter === activeMainCard.id))
-                : projectFilter === category;
-              return (
-                <motion.button
-                  layout
-                  key={category}
-                  onClick={() => {
-                    if (category === 'All') {
-                      if (activeMainCard && projectFilter === activeMainCard.id) {
-                        setProjectFilter('All');
-                      } else if (activeMainCard) {
-                        setProjectFilter(activeMainCard.id);
+          {/* Typology Category (Sticky on mobile) */}
+          <div className={`sticky top-[48px] md:top-auto md:relative z-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5 pt-2 pb-2 md:pb-0 shrink-0 ${
+            isDarkMode ? 'bg-vintage-charcoal md:bg-transparent' : 'bg-bright-gray md:bg-transparent'
+          }`}>
+            {/* Left: Filter Icons array */}
+            <div className="flex flex-row flex-nowrap items-center justify-start gap-1.5 sm:gap-2 text-caption font-medium uppercase tracking-wider overflow-x-auto no-scrollbar max-w-full">
+              {displayFilterCategories.map(category => {
+                const isSelected = category === 'All'
+                  ? (projectFilter === 'All' || (activeMainCard && projectFilter === activeMainCard.id))
+                  : projectFilter === category;
+                return (
+                  <motion.button
+                    layout
+                    key={category}
+                    onClick={() => {
+                      if (category === 'All') {
+                        if (activeMainCard && projectFilter === activeMainCard.id) {
+                          setProjectFilter('All');
+                        } else if (activeMainCard) {
+                          setProjectFilter(activeMainCard.id);
+                        } else {
+                          setProjectFilter('All');
+                        }
                       } else {
-                        setProjectFilter('All');
+                        setProjectFilter(category);
                       }
-                    } else {
-                      setProjectFilter(category);
-                    }
-                  }}
-                  className={`group relative h-8 sm:h-9 min-w-[34px] sm:min-w-[36px] rounded-full overflow-hidden transition-all duration-300 px-2.5 sm:px-3 flex items-center justify-center shrink-0 cursor-pointer ${
-                    isSelected
-                      ? isDarkMode
-                        ? 'bg-space-sparkle/30 text-white font-bold border border-white/30'
-                        : 'bg-space-sparkle/15 text-space-sparkle font-bold border border-space-sparkle/30'
-                      : isDarkMode
-                        ? 'text-bright-gray/60 hover:text-white hover:bg-white/5 border border-white/10'
-                        : 'text-space-sparkle/60 hover:text-space-sparkle hover:bg-black/5 border border-space-sparkle/15'
-                  }`}
-                >
-                  <div className="flex items-center justify-center">
-                    <span className="shrink-0 flex items-center justify-center">
-                      {getFilterIcon(category)}
-                    </span>
-                    <span className={`transition-all duration-300 ease-out overflow-hidden whitespace-nowrap font-sans text-mini sm:text-caption tracking-wider lowercase font-semibold ${
-                      isSelected 
-                        ? 'max-w-[200px] opacity-100 ml-1.5' 
-                        : 'max-w-0 group-hover:max-w-[200px] opacity-0 group-hover:opacity-100 group-hover:ml-1.5'
-                    }`}>
-                      {category.toLowerCase()}
-                    </span>
-                  </div>
-                </motion.button>
-              );
-            })}
+                    }}
+                    className={`group relative h-8 sm:h-9 min-w-[34px] sm:min-w-[36px] rounded-full overflow-hidden transition-all duration-300 px-2.5 sm:px-3 flex items-center justify-center shrink-0 cursor-pointer ${
+                      isSelected
+                        ? isDarkMode
+                          ? 'bg-space-sparkle/30 text-white font-bold border border-white/30'
+                          : 'bg-space-sparkle/15 text-space-sparkle font-bold border border-space-sparkle/30'
+                        : isDarkMode
+                          ? 'text-bright-gray/60 hover:text-white hover:bg-white/5 border border-white/10'
+                          : 'text-space-sparkle/60 hover:text-space-sparkle hover:bg-black/5 border border-space-sparkle/15'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center">
+                      <span className="shrink-0 flex items-center justify-center">
+                        {getFilterIcon(category)}
+                      </span>
+                      <span className={`transition-all duration-300 ease-out overflow-hidden whitespace-nowrap font-sans text-mini sm:text-caption tracking-wider lowercase font-semibold ${
+                        isSelected 
+                          ? 'max-w-[200px] opacity-100 ml-1.5' 
+                          : 'max-w-0 group-hover:max-w-[200px] opacity-0 group-hover:opacity-100 group-hover:ml-1.5'
+                      }`}>
+                        {category.toLowerCase()}
+                      </span>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            {/* Right: Category Quick-Jump Navigation Tabs (Desktop only) */}
+            <div className="hidden md:flex flex-nowrap items-center justify-start md:justify-end gap-1.5 sm:gap-2 shrink-0 self-start md:self-auto overflow-x-auto no-scrollbar max-w-full">
+              {categoryNavItems.map((cat) => {
+                const isCatActive = activeMainCard?.id === cat.id;
+                return (
+                  <motion.button
+                    layout
+                    key={cat.id}
+                    onClick={() => setProjectFilter(cat.id)}
+                    className={`group relative h-8 sm:h-9 min-w-[34px] sm:min-w-[36px] rounded-full overflow-hidden transition-all duration-300 px-2.5 sm:px-3 flex items-center justify-center shrink-0 cursor-pointer ${
+                      isCatActive
+                        ? isDarkMode ? 'bg-white text-vintage-charcoal font-bold' : 'bg-vintage-charcoal text-white font-bold'
+                        : isDarkMode ? 'text-bright-gray/60 hover:text-white hover:bg-white/10' : 'text-vintage-charcoal/60 hover:text-vintage-charcoal hover:bg-black/5'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center">
+                      <span className={`transition-all duration-300 ease-out overflow-hidden whitespace-nowrap font-sans text-mini sm:text-caption tracking-wider lowercase font-semibold ${
+                        isCatActive 
+                          ? 'max-w-[120px] opacity-100 mr-1.5' 
+                          : 'max-w-0 group-hover:max-w-[120px] opacity-0 group-hover:opacity-100 group-hover:mr-1.5'
+                      }`}>
+                        {cat.title}
+                      </span>
+                      <span className="shrink-0 flex items-center justify-center">
+                        {cat.icon}
+                      </span>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Right: Category Quick-Jump Navigation Tabs (Icons, text slides to left on hover) */}
-          <div className="flex flex-nowrap items-center justify-start md:justify-end gap-1.5 sm:gap-2 shrink-0 self-start md:self-auto overflow-x-auto no-scrollbar max-w-full">
+          <div className="relative w-full flex-1 min-h-0 flex flex-col items-center group/carousel">
+            <div
+              ref={carouselRef}
+              {...dragHandlers}
+              className="w-full h-full overflow-y-auto md:overflow-y-hidden md:overflow-x-auto no-scrollbar overscroll-x-contain flex flex-col md:flex-row gap-[2px] items-stretch py-1 cursor-grab active:cursor-grabbing"
+            >
+              {filteredProjects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  isDarkMode={isDarkMode}
+                  onClick={() => {
+                    const fromQuery = projectFilter !== 'All' ? `?from=${encodeURIComponent(projectFilter)}` : '';
+                    router.push(`${projectRoute(project.id)}${fromQuery}`);
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom Area: Category Quick-Jump Navigation Tabs (Mobile only) */}
+          <div className="flex md:hidden flex-nowrap items-center justify-start gap-1.5 pt-2 border-t border-space-sparkle/10 shrink-0 overflow-x-auto no-scrollbar max-w-full">
             {categoryNavItems.map((cat) => {
               const isCatActive = activeMainCard?.id === cat.id;
               return (
@@ -754,14 +785,14 @@ export default function WorksCategoryPage({ params }: { params: Promise<{ slug: 
                   layout
                   key={cat.id}
                   onClick={() => setProjectFilter(cat.id)}
-                  className={`group relative h-8 sm:h-9 min-w-[34px] sm:min-w-[36px] rounded-full overflow-hidden transition-all duration-300 px-2.5 sm:px-3 flex items-center justify-center shrink-0 cursor-pointer ${
+                  className={`group relative h-8 min-w-[34px] rounded-full overflow-hidden transition-all duration-300 px-2.5 flex items-center justify-center shrink-0 cursor-pointer ${
                     isCatActive
                       ? isDarkMode ? 'bg-white text-vintage-charcoal font-bold' : 'bg-vintage-charcoal text-white font-bold'
                       : isDarkMode ? 'text-bright-gray/60 hover:text-white hover:bg-white/10' : 'text-vintage-charcoal/60 hover:text-vintage-charcoal hover:bg-black/5'
                   }`}
                 >
                   <div className="flex items-center justify-center">
-                    <span className={`transition-all duration-300 ease-out overflow-hidden whitespace-nowrap font-sans text-mini sm:text-caption tracking-wider lowercase font-semibold ${
+                    <span className={`transition-all duration-300 ease-out overflow-hidden whitespace-nowrap font-sans text-mini tracking-wider lowercase font-semibold ${
                       isCatActive 
                         ? 'max-w-[120px] opacity-100 mr-1.5' 
                         : 'max-w-0 group-hover:max-w-[120px] opacity-0 group-hover:opacity-100 group-hover:mr-1.5'
@@ -777,7 +808,6 @@ export default function WorksCategoryPage({ params }: { params: Promise<{ slug: 
             })}
           </div>
         </div>
-      </div>
     </motion.div>
   );
 }

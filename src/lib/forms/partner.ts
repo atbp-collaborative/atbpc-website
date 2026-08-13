@@ -1,4 +1,5 @@
 import { FieldConfig, PhAddress, EMPTY_PH_ADDRESS } from '@/components/forms/form-fields';
+import { z } from 'zod';
 
 export type PartnerFormVariant = 'supplier' | 'builder' | 'consultant';
 
@@ -7,20 +8,20 @@ export interface PartnerFormFieldSet {
   leftColumnBottomGrid?: FieldConfig[]; // 2 cols for supplier, 3 cols for others
   rightColumnRowsTop: FieldConfig[][];
   rightColumnRowsMiddle?: FieldConfig[][];
-  rightColumnRowsBottom: FieldConfig[][];
+  rightColumnRowsBottom?: FieldConfig[][];
 }
 
 const COMMON_RIGHT_TOP_ROWS: FieldConfig[][] = [
   [
-    { type: 'text', name: 'firstName', label: 'First Name', wrapperClassName: 'sm:col-span-2' },
+    { type: 'text', name: 'firstName', label: 'First Name', badge: '!', wrapperClassName: 'sm:col-span-2' },
     { type: 'text', name: 'pseudonym', label: 'Pseudonym', badge: '!', wrapperClassName: 'sm:col-span-2' },
   ],
   [
     { type: 'text', name: 'middleName', label: 'Middle Name', note: "(Mother's Maiden Last Name)", wrapperClassName: 'sm:col-span-2' },
-    { type: 'text', name: 'lastName', label: 'Last Name', wrapperClassName: 'sm:col-span-2' },
+    { type: 'text', name: 'lastName', label: 'Last Name', badge: '!', wrapperClassName: 'sm:col-span-2' },
   ],
   [
-    { type: 'text', name: 'pronoun', label: 'Pronoun', wrapperClassName: 'sm:col-span-2' },
+    { type: 'text', name: 'pronoun', label: 'Pronoun', badge: '!', wrapperClassName: 'sm:col-span-2' },
     { type: 'text', name: 'titles', label: 'Titles', wrapperClassName: 'sm:col-span-2' },
   ],
 ];
@@ -43,7 +44,7 @@ export const getPartnerFormFields = (
   options: PartnerFormOptions = {}
 ): PartnerFormFieldSet => {
   const leftColumnTop: FieldConfig[] = [
-    { type: 'text', name: 'companyName', label: 'Company Name' }
+    { type: 'text', name: 'companyName', label: 'Company Name / Registered Name', badge: '!' }
   ];
 
   if (variant === 'supplier') {
@@ -52,6 +53,7 @@ export const getPartnerFormFields = (
         type: 'select',
         name: 'category',
         label: 'Brief Description',
+        badge: '!',
         placeholder: 'What category?',
         options: options.categories
       });
@@ -61,20 +63,21 @@ export const getPartnerFormFields = (
       type: 'textarea',
       name: 'message',
       label: '',
+      badge: '!',
       placeholder: 'Message (200 Word Count)',
       grow: true
     });
 
     const leftColumnBottomGrid: FieldConfig[] = [
       { type: 'file', name: 'catalog', label: 'Catalog', badge: '!', typeHint: '(PDF Only)' },
-      { type: 'textarea', name: 'websiteLink', label: 'Website', badge: '!', placeholder: 'Paste Here Link to Website', variant: 'compact' },
+      { type: 'textarea', name: 'websiteLink', label: 'Website', placeholder: 'Paste Here Link to Website', variant: 'compact' },
+      { type: 'file', name: 'sourceOfIncome', label: 'Source of Income' }
     ];
 
     return {
       leftColumnTop,
       leftColumnBottomGrid,
-      rightColumnRowsTop: COMMON_RIGHT_TOP_ROWS,
-      rightColumnRowsBottom: COMMON_RIGHT_BOTTOM_ROWS
+      rightColumnRowsTop: COMMON_RIGHT_TOP_ROWS
     };
   }
 
@@ -84,6 +87,7 @@ export const getPartnerFormFields = (
       type: 'select',
       name: 'specialty',
       label: 'Specialty',
+      badge: '!',
       placeholder: 'What Specialty?',
       options: options.specialties,
       // @ts-ignore
@@ -96,6 +100,7 @@ export const getPartnerFormFields = (
       type: 'select',
       name: 'typology',
       label: 'Specialized Typology',
+      badge: '!',
       placeholder: 'What Typology?',
       options: options.typologies,
       // @ts-ignore
@@ -107,6 +112,7 @@ export const getPartnerFormFields = (
     type: 'textarea',
     name: 'message',
     label: '',
+    badge: '!',
     placeholder: 'Message (200 Word Count)',
     grow: true
   });
@@ -114,26 +120,14 @@ export const getPartnerFormFields = (
   const leftColumnBottomGrid: FieldConfig[] = [
     { type: 'textarea', name: 'profileLink', label: 'Profile', badge: '!', placeholder: 'Paste Here Link to Flipbook. (Sorry No PDF)', variant: 'compact' },
     { type: 'file', name: 'document', label: 'Documents', badge: '!', dropHint: 'Sample Contract', typeHint: '(PDF)' },
-    { type: 'textarea', name: 'coverVideoLink', label: 'Cover Video', badge: '!', placeholder: 'Paste Here Link to Cover Video', variant: 'compact' },
-  ];
-
-  const rightColumnRowsMiddle: FieldConfig[][] = [
-    [
-      { type: 'text', name: 'licenseLink', label: variant === 'builder' ? 'PCAB License' : 'PRC / PTR License', badge: '!', wrapperClassName: 'sm:col-span-2' },
-      { type: 'file', name: 'secRegistration', label: 'SEC Registration', badge: '!', typeHint: '(PDF, JPG, GIF, PNG)', wrapperClassName: 'sm:col-span-2', variant: 'compact' }
-    ],
-    [
-      { type: 'file', name: 'birRegistration', label: 'BIR Registration', badge: '!', typeHint: '(PDF, JPG, GIF, PNG)', wrapperClassName: 'sm:col-span-2', variant: 'compact' },
-      { type: 'file', name: 'dtiRegistration', label: 'DTI Registration', badge: '!', typeHint: '(PDF, JPG, GIF, PNG)', wrapperClassName: 'sm:col-span-2', variant: 'compact' }
-    ]
+    { type: 'textarea', name: 'coverVideoLink', label: 'Cover Video', placeholder: 'Paste Here Link to Cover Video', variant: 'compact' },
+    { type: 'file', name: 'sourceOfIncome', label: 'Source of Income' }
   ];
 
   return {
     leftColumnTop,
     leftColumnBottomGrid,
-    rightColumnRowsTop: COMMON_RIGHT_TOP_ROWS,
-    rightColumnRowsMiddle,
-    rightColumnRowsBottom: COMMON_RIGHT_BOTTOM_ROWS
+    rightColumnRowsTop: COMMON_RIGHT_TOP_ROWS
   };
 };
 
@@ -180,6 +174,37 @@ export const PARTNER_FORM_INITIAL_DATA = {
   secRegistration: null as File | null,
   birRegistration: null as File | null,
   dtiRegistration: null as File | null,
+  sourceOfIncome: null as File | null,
 };
 
 export type PartnerFormData = typeof PARTNER_FORM_INITIAL_DATA;
+
+export const partnerSchema = z.object({
+  companyName: z.string().min(1, "Company Name is required"),
+  category: z.string().optional(), // conditionally required
+  message: z.string().min(1, "Message is required"),
+  specialty: z.string().optional(), // conditionally required
+  typology: z.string().optional(), // conditionally required
+  profileLink: z.string().min(1, "Profile Link is required"),
+  coverVideoLink: z.string().optional(),
+  mapLink: z.string().min(1, "Map Link is required"),
+  licenseLink: z.string().min(1, "License Link is required"),
+  firstName: z.string().min(1, "First Name is required"),
+  pseudonym: z.string().min(1, "Pseudonym is required"),
+  middleName: z.string().optional(),
+  lastName: z.string().min(1, "Last Name is required"),
+  pronoun: z.string().min(1, "Pronoun is required"),
+  titles: z.string().optional(),
+  addresses: z.array(z.any()).min(1, "At least one address is required"),
+  contacts: z.array(z.any()).min(1, "At least one contact is required"),
+  emails: z.array(z.any()).min(1, "At least one email is required"),
+  facebook: z.string().optional(),
+  instagram: z.string().optional(),
+  websiteLink: z.string().optional(),
+  catalog: z.any().optional(), // conditionally required for suppliers
+  document: z.any().optional(), // conditionally required
+  secRegistration: z.any().refine((file) => file !== null, "SEC Registration is required"),
+  birRegistration: z.any().refine((file) => file !== null, "BIR Registration is required"),
+  dtiRegistration: z.any().refine((file) => file !== null, "DTI Registration is required"),
+  sourceOfIncome: z.any().refine((file) => file !== null, "Source of Income is required"),
+});

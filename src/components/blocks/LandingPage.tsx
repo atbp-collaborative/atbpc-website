@@ -22,12 +22,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ cards }) => {
   return (
     <div className="w-full h-full select-none flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="flex-1 flex flex-col justify-center w-full min-h-0 h-full overflow-hidden">
-        <div className="flex flex-col md:flex-row gap-[2px] flex-1 h-full min-h-0 items-stretch group/cardsContainer">
+        <div className="flex flex-col xl:flex-row gap-[2px] flex-1 h-full min-h-0 items-stretch group/cardsContainer">
           {cards.map((card) => (
             <div
               key={card.id}
               onClick={card.onSelect}
-              className="group/card relative flex-1 min-h-0 md:hover:flex-[1.45] w-full overflow-hidden rounded-none border-0 cursor-pointer transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/cardsContainer:opacity-75 hover:!opacity-100"
+              className="group/card relative flex-1 min-h-0 xl:hover:flex-[1.45] w-full overflow-hidden rounded-none border-0 cursor-pointer transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/cardsContainer:opacity-75 hover:!opacity-100"
             >
               {/* Full-bleed background image occupying whole card */}
               <ImageWithFade

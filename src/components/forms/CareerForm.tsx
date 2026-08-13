@@ -30,7 +30,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   const [isModalCheckboxChecked, setIsModalCheckboxChecked] = useState(false);
-  const isHeightConstrained = useFormViewport(750);
+  const isHeightConstrained = useFormViewport(680);
 
   const handleChange = (name: string, value: any) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -59,8 +59,8 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
 
   const inputBorderClass = getFieldThemeStyles('neutral', isDarkMode).borderColor;
 
-  const ActionButtons = () => (
-    <div className="grid grid-cols-2 gap-4 w-full md:w-[75%] md:ml-auto">
+  const ActionButtons = ({ isTop }: { isTop?: boolean }) => (
+    <div className={`grid grid-cols-2 gap-4 w-full ${isTop ? 'md:w-[75%] md:ml-auto' : ''}`}>
       <div className="relative">
         {!privacyAcknowledged && (
           <div className="absolute inset-0 rounded-xl animate-glow-pulse" />
@@ -92,10 +92,10 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
-      className="w-full flex-1 min-h-0 overflow-hidden flex flex-col px-4 sm:px-8 py-3 select-none"
+      className="w-full flex-1 min-h-0 max-h-[calc(100vh-80px)] mx-auto overflow-hidden flex flex-col py-3 select-none"
     >
       {/* Title Header */}
-      <div className="mb-3 lg:mb-2 shrink-0 flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+      <div className="mb-3 lg:mb-2 shrink-0 flex flex-col md:flex-row md:justify-between md:items-start gap-4 px-4 sm:px-8">
         <div>
           <h1 className="font-sans text-h1 font-bold tracking-tight leading-none lowercase">
             grow with us
@@ -106,7 +106,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
         </div>
         {isHeightConstrained && !isSubmitted && (
           <div className="hidden md:block w-full md:w-[45%] shrink-0">
-            <ActionButtons />
+            <ActionButtons isTop />
           </div>
         )}
       </div>
@@ -119,7 +119,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto pb-2"
+            className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto px-4 sm:px-8 pb-2"
           >
             {/* LEFT COLUMN */}
             <div className="w-full lg:w-1/2 flex flex-col gap-3 lg:gap-2 justify-between">
@@ -175,7 +175,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
               ))}
 
               {/* Action Buttons */}
-              <div className={`pt-2 lg:pt-1 ${isHeightConstrained ? 'md:hidden' : ''}`}>
+              <div className={`sticky bottom-0 z-20 pb-4 pt-4 -mx-4 px-4 sm:-mx-8 sm:px-8 md:pb-0 md:pt-1 md:static md:bg-transparent md:dark:bg-transparent md:mx-0 md:px-0 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'} ${isHeightConstrained ? 'md:hidden' : ''}`}>
                 <ActionButtons />
               </div>
             </div>

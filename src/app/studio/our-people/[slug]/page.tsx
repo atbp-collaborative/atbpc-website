@@ -56,7 +56,7 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
         
         {/* LEFT: Portrait Container */}
         <div className="lg:col-span-5 flex flex-col items-stretch h-full min-h-0 overflow-hidden">
-          <div className="relative w-full h-[240px] sm:h-[320px] lg:h-full lg:flex-1 min-h-0 overflow-hidden bg-black/10 rounded-none group border border-space-sparkle/20 animate-slide-up">
+          <div className="relative w-full h-[50vh] lg:h-full lg:flex-1 min-h-0 overflow-hidden bg-black/10 rounded-none group border border-space-sparkle/20 animate-slide-up">
             <ImageWithFade
               src={member.image}
               alt={member.name}

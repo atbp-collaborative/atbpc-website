@@ -24,7 +24,7 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = ({
     // border/theme color, the textarea inside it is just a transparent fill.
     return (
       <div className="space-y-1">
-        <label className="text-micro font-archivo font-semibold block opacity-90 truncate">
+        <label className={`${styles.label} truncate`}>
           {label}
           {badge && <span className="text-space-sparkle font-normal"> ({badge})</span>}
         </label>
