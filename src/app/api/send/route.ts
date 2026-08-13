@@ -23,13 +23,22 @@ export async function POST(request: Request) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
+    const payloadString = JSON.stringify(validatedData, null, 2);
+    const payloadBuffer = Buffer.from(payloadString, 'utf-8');
+
     // Send the email
     const data = await resend.emails.send({
       from: 'onboarding@resend.dev', // Use default for testing, replace with verified domain later
-      to: ['subscriptions.atbpc@gmail.com'], // Send to resend testing email or company outlook
+      to: [process.env.COMPANY_EMAIL as string], // Send to resend testing email or company outlook
       subject: `New Contact Form Submission from ${name}`,
       react: React.createElement(NotificationEmailTemplate, { name, email, message }) as React.ReactNode,
       replyTo: email, // This allows the company outlook to directly reply to the user
+      attachments: [
+        {
+          filename: 'contact-form-data.json',
+          content: payloadBuffer,
+        },
+      ],
     });
 
     if (data.error) {

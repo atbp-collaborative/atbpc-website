@@ -17,13 +17,22 @@ export async function POST(request: Request) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
+    const payloadString = JSON.stringify(validatedData, null, 2);
+    const payloadBuffer = Buffer.from(payloadString, 'utf-8');
+
     // Send the email
     const data = await resend.emails.send({
       from: 'onboarding@resend.dev', // Use default for testing, replace with verified domain later
-      to: ['subscriptions.atbpc@gmail.com'], // Send to resend testing email or company outlook
+      to: [process.env.COMPANY_EMAIL as string], // Send to resend testing email or company outlook
       subject: `New Partner Application from ${companyName}`,
       react: React.createElement(PartnerEmailTemplate, validatedData) as React.ReactNode,
       replyTo: primaryEmail, 
+      attachments: [
+        {
+          filename: 'partner-form-data.json',
+          content: payloadBuffer,
+        },
+      ],
     });
 
     if (data.error) {
