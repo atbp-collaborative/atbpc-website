@@ -104,7 +104,7 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members, activeF
           <div
             ref={carouselRef}
             {...dragHandlers}
-            className="h-full overflow-x-auto no-scrollbar overscroll-x-contain relative flex gap-[2px] cursor-grab active:cursor-grabbing"
+            className="h-full overflow-y-auto md:overflow-y-hidden md:overflow-x-auto overflow-x-hidden no-scrollbar overscroll-x-contain relative flex flex-col md:flex-row gap-[2px] cursor-grab active:cursor-grabbing"
           >
             {filteredMembers.map((member) => (
               <Link
@@ -113,9 +113,9 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members, activeF
                 onClick={() => {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="group shrink-0 h-full"
+                className="group shrink-0 w-full h-auto md:w-auto md:h-full"
               >
-                <div className="relative h-full aspect-[2/3] overflow-hidden">
+                <div className="relative w-full h-full aspect-[1.5/1] md:aspect-[2/3] overflow-hidden">
                   <ImageWithFade
                     src={member.image}
                     alt={member.name}

@@ -1,4 +1,4 @@
-import { getAllRegions, getAllMunicipalities, getBarangaysByMunicipality } from '@aivangogh/ph-address';
+import { getAllRegions, getAllMunicipalities, getBarangaysByMunicipality, getProvincesByRegion, getMunicipalitiesByProvince } from '@aivangogh/ph-address';
 
 /**
  * Thin wrapper around @aivangogh/ph-address so the rest of the app deals in
@@ -48,7 +48,18 @@ export function getRegions(): PhAddressOption[] {
   return regions.map((r) => ({ code: r.code, name: r.name }));
 }
 
-export function getCities(regionCode: string): PhAddressOption[] {
+export function getProvinces(regionCode: string): PhAddressOption[] {
+  return getProvincesByRegion(regionCode)
+    .map((p) => ({ code: p.psgcCode, name: p.name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function getCities(regionCode: string, provinceCode?: string): PhAddressOption[] {
+  if (provinceCode) {
+    return getMunicipalitiesByProvince(provinceCode)
+      .map((m) => ({ code: m.psgcCode, name: m.name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
   const regionPrefix = regionCode.slice(0, 2);
   return municipalities()
     .filter((m) => m.psgcCode.slice(0, 2) === regionPrefix)

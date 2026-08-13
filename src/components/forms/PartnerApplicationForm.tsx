@@ -10,6 +10,7 @@ import { MultiEntryButton } from '@/components/primitives/MultiEntryButton';
 import { MultiAddressModal } from '@/components/modals/MultiAddressModal';
 import { MultiEmailModal } from '@/components/modals/MultiEmailModal';
 import { MultiContactModal } from '@/components/modals/MultiContactModal';
+import { MultiRegistrationModal } from '@/components/modals/MultiRegistrationModal';
 import { getPartnerFormFields, PARTNER_FORM_INITIAL_DATA, PartnerFormData, PartnerFormVariant } from '@/lib/forms/partner';
 import { useFormViewport } from '@/hooks/useFormViewport';
 
@@ -53,7 +54,8 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
-  const isHeightConstrained = useFormViewport(750);
+  const [showRegistrationsModal, setShowRegistrationsModal] = useState(false);
+  const isHeightConstrained = useFormViewport(680);
 
   const handleFieldChange = (name: string, value: any) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -97,8 +99,8 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
 
   const fields = getPartnerFormFields(variant, { categories, specialties, typologies });
 
-  const ActionButtons = () => (
-    <div className="grid grid-cols-2 gap-4 w-full md:w-[75%] md:ml-auto">
+  const ActionButtons = ({ isTop }: { isTop?: boolean }) => (
+    <div className={`grid grid-cols-2 gap-4 w-full ${isTop ? 'md:w-[75%] md:ml-auto' : ''}`}>
       <div className="relative">
         {!conditionsAcknowledged && (
           <div className="absolute inset-0 rounded-xl animate-glow-pulse" />
@@ -131,9 +133,9 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
-      className="w-full h-full max-h-[calc(100vh-80px)] overflow-hidden flex flex-col px-4 sm:px-8 py-3 select-none"
+      className="w-full h-full max-h-[calc(100vh-80px)] mx-auto overflow-hidden flex flex-col py-3 select-none"
     >
-      <div className="mb-3 shrink-0 flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+      <div className="mb-3 shrink-0 flex flex-col md:flex-row md:justify-between md:items-start gap-4 px-4 sm:px-8">
         <div>
           <h1 className="font-sans text-h1 font-bold tracking-tight leading-none lowercase">
             {title}
@@ -144,7 +146,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
         </div>
         {isHeightConstrained && !isSubmitted && (
           <div className="hidden md:block w-full md:w-[45%] shrink-0">
-            <ActionButtons />
+            <ActionButtons isTop />
           </div>
         )}
       </div>
@@ -157,7 +159,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto lg:overflow-hidden pb-2"
+            className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto lg:overflow-hidden px-4 sm:px-8 pb-2"
           >
             {/* LEFT COLUMN */}
             <div className={`w-full lg:w-1/2 flex flex-col ${variant === 'supplier' ? 'gap-3' : 'gap-2.5'} justify-between`}>
@@ -172,7 +174,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
               ))}
 
               {fields.leftColumnBottomGrid && (
-                <div className={`grid ${variant === 'supplier' ? 'grid-cols-2 gap-3' : 'grid-cols-3 gap-2.5'} pt-1`}>
+                <div className={`grid ${variant === 'supplier' ? 'grid-cols-1 sm:grid-cols-3 gap-3' : 'grid-cols-1 sm:grid-cols-4 gap-2.5'} pt-1`}>
                   {fields.leftColumnBottomGrid.map((field) => (
                     <FormFieldRenderer
                       key={field.name}
@@ -202,60 +204,110 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                 </div>
               ))}
 
-              <div className="grid grid-cols-2 gap-3">
-                <MultiEntryButton 
-                  label="Add Address/es" 
-                  count={formData.addresses[0]?.type ? formData.addresses.length : 0} 
-                  onClick={() => setShowAddressModal(true)} 
-                  isDarkMode={isDarkMode} 
-                />
-                <MultiEntryButton 
-                  label="Add Email/s" 
-                  count={formData.emails[0]?.email ? formData.emails.length : 0} 
-                  onClick={() => setShowEmailModal(true)} 
-                  isDarkMode={isDarkMode} 
-                />
-              </div>
-
-              {fields.rightColumnRowsMiddle && fields.rightColumnRowsMiddle.map((row, idx) => (
-                <div key={`middle-${idx}`} className={row.length > 1 ? 'grid grid-cols-1 sm:grid-cols-4 gap-3' : ''}>
-                  {row.map((field) => (
-                    <FormFieldRenderer
-                      key={field.name}
-                      config={field}
-                      value={(formData as any)[field.name]}
-                      onChange={handleFieldChange}
-                      isDarkMode={isDarkMode}
-                    />
-                  ))}
+              <div className="flex flex-col gap-2.5 justify-between flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <MultiEntryButton 
+                    fieldLabel="Address"
+                    label="Add Address/es" 
+                    count={formData.addresses[0]?.type ? formData.addresses.length : 0} 
+                    onClick={() => setShowAddressModal(true)} 
+                    isDarkMode={isDarkMode} 
+                  />
+                  <MultiEntryButton 
+                    fieldLabel="Email"
+                    label="Add Email/s" 
+                    count={formData.emails[0]?.email ? formData.emails.length : 0} 
+                    onClick={() => setShowEmailModal(true)} 
+                    isDarkMode={isDarkMode} 
+                  />
                 </div>
-              ))}
 
-              {fields.rightColumnRowsBottom.map((row, idx) => (
-                <div key={idx} className={row.length > 1 ? 'grid grid-cols-1 sm:grid-cols-4 gap-3' : ''}>
-                  {idx === 0 && (
-                    <div className="sm:col-span-2 flex flex-col justify-end">
-                      <MultiEntryButton 
-                        label="Add Contact Number/s" 
-                        count={formData.contacts[0]?.number ? formData.contacts.length : 0} 
-                        onClick={() => setShowContactModal(true)} 
-                        isDarkMode={isDarkMode} 
+                {variant !== 'supplier' ? (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex flex-col justify-end">
+                        <MultiEntryButton 
+                          fieldLabel="Contact Numbers"
+                          label="Add Contact Number/s" 
+                          count={formData.contacts[0]?.number ? formData.contacts.length : 0} 
+                          onClick={() => setShowContactModal(true)} 
+                          isDarkMode={isDarkMode} 
+                        />
+                      </div>
+                      <div className="flex flex-col justify-end">
+                        <MultiEntryButton
+                          fieldLabel="Documents"
+                          label="Registrations"
+                          count={(formData.secRegistration ? 1 : 0) + (formData.birRegistration ? 1 : 0) + (formData.dtiRegistration ? 1 : 0)}
+                          onClick={() => setShowRegistrationsModal(true)}
+                          isDarkMode={isDarkMode}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <FormFieldRenderer
+                        config={{ type: 'text', name: 'licenseLink', label: variant === 'builder' ? 'PCAB License' : 'PRC / PTR License', badge: '!' }}
+                        value={formData.licenseLink}
+                        onChange={handleFieldChange}
+                        isDarkMode={isDarkMode}
+                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <FormFieldRenderer
+                          config={{ type: 'text', name: 'facebook', label: 'Facebook', placeholder: 'Paste URL / Link / Handle' }}
+                          value={formData.facebook}
+                          onChange={handleFieldChange}
+                          isDarkMode={isDarkMode}
+                        />
+                        <FormFieldRenderer
+                          config={{ type: 'text', name: 'instagram', label: 'Instagram', placeholder: 'Paste URL / Link / Handle' }}
+                          value={formData.instagram}
+                          onChange={handleFieldChange}
+                          isDarkMode={isDarkMode}
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex flex-col justify-end">
+                        <MultiEntryButton 
+                          fieldLabel="Contact Numbers"
+                          label="Add Contact Number/s" 
+                          count={formData.contacts[0]?.number ? formData.contacts.length : 0} 
+                          onClick={() => setShowContactModal(true)} 
+                          isDarkMode={isDarkMode} 
+                        />
+                      </div>
+                      <div className="flex flex-col justify-end">
+                        <MultiEntryButton
+                          fieldLabel="Documents"
+                          label="Registrations"
+                          count={(formData.secRegistration ? 1 : 0) + (formData.birRegistration ? 1 : 0) + (formData.dtiRegistration ? 1 : 0)}
+                          onClick={() => setShowRegistrationsModal(true)}
+                          isDarkMode={isDarkMode}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <FormFieldRenderer
+                        config={{ type: 'text', name: 'facebook', label: 'Facebook', placeholder: 'URL/Handle' }}
+                        value={formData.facebook}
+                        onChange={handleFieldChange}
+                        isDarkMode={isDarkMode}
+                      />
+                      <FormFieldRenderer
+                        config={{ type: 'text', name: 'instagram', label: 'Instagram', placeholder: 'URL/Handle' }}
+                        value={formData.instagram}
+                        onChange={handleFieldChange}
+                        isDarkMode={isDarkMode}
                       />
                     </div>
-                  )}
-                  {row.map((field) => (
-                    <FormFieldRenderer
-                      key={field.name}
-                      config={field}
-                      value={(formData as any)[field.name]}
-                      onChange={handleFieldChange}
-                      isDarkMode={isDarkMode}
-                    />
-                  ))}
-                </div>
-              ))}
+                  </>
+                )}
+              </div>
 
-              <div className={`pt-2 ${isHeightConstrained ? 'md:hidden' : ''}`}>
+              <div className={`sticky bottom-0 z-20 pb-4 pt-4 -mx-4 px-4 sm:-mx-8 sm:px-8 md:pt-2 md:pb-0 md:static md:bg-transparent md:dark:bg-transparent md:mx-0 md:px-0 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'} ${isHeightConstrained ? 'md:hidden' : ''}`}>
                 <ActionButtons />
               </div>
             </div>
@@ -332,6 +384,18 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
         onClose={() => setShowContactModal(false)}
         initialContacts={formData.contacts}
         onSave={(contacts) => setFormData(prev => ({ ...prev, contacts }))}
+        isDarkMode={isDarkMode}
+      />
+
+      <MultiRegistrationModal
+        isOpen={showRegistrationsModal}
+        onClose={() => setShowRegistrationsModal(false)}
+        initialRegistrations={{
+          secRegistration: formData.secRegistration,
+          birRegistration: formData.birRegistration,
+          dtiRegistration: formData.dtiRegistration,
+        }}
+        onSave={(regs) => setFormData(prev => ({ ...prev, ...regs }))}
         isDarkMode={isDarkMode}
       />
     </motion.div>

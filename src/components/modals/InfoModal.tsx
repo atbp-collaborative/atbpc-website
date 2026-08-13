@@ -76,29 +76,21 @@ export const InfoModal: React.FC<InfoModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 15 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative w-full max-w-3xl max-h-[85vh] flex flex-col rounded-none shadow-2xl border z-10 overflow-hidden ${
+            className={`relative w-full max-w-3xl max-h-[85vh] flex flex-col rounded-lg shadow-2xl border z-10 overflow-hidden ${
               isDarkMode
                 ? 'bg-vintage-charcoal border-space-sparkle/30 text-bright-gray'
                 : 'bg-white border-space-sparkle/20 text-vintage-charcoal'
             }`}
           >
             {/* Header */}
-            <div className={`flex items-center justify-between px-6 py-5 border-b sticky top-0 z-20 backdrop-blur-md ${
+            <div className={`flex items-center justify-between px-6 py-5 sticky top-0 z-20 backdrop-blur-md ${
               isDarkMode
-                ? 'bg-vintage-charcoal/95 border-space-sparkle/20'
-                : 'bg-white/95 border-space-sparkle/15'
+                ? 'bg-vintage-charcoal/95'
+                : 'bg-white/95'
             }`}>
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-none ${
-                  isDarkMode ? 'bg-white/10 text-bright-gray' : 'bg-vintage-charcoal/10 text-vintage-charcoal'
-                }`}>
-                  {icon}
-                </div>
                 <div>
-                  <h2 className="text-h2 font-sans font-bold tracking-tight">{title}</h2>
-                  <p className="text-mini opacity-60 font-sans uppercase tracking-wider">
-                    {subtitle}
-                  </p>
+                  <h2 className="text-h2 font-sans font-bold tracking-tight lowercase">{title}</h2>
                 </div>
               </div>
 
@@ -116,21 +108,9 @@ export const InfoModal: React.FC<InfoModalProps> = ({
             </div>
 
             {/* Scrollable Body */}
-            <div className="p-6 sm:p-8 overflow-y-auto space-y-8 text-body font-light leading-relaxed">
+            <div className="p-6 sm:p-8 overflow-y-auto space-y-8 text-caption font-light leading-relaxed">
               {data && (
                 <>
-                  {data.intro && (
-                    <div className={`p-4 border text-mini ${
-                      isDarkMode
-                        ? 'bg-white/5 border-space-sparkle/20 text-bright-gray/80'
-                        : 'bg-space-sparkle/5 border-space-sparkle/15 text-vintage-charcoal/80'
-                    }`}>
-                      {data.intro.title && (
-                        <span className="font-semibold block uppercase tracking-wider mb-1">{data.intro.title}</span>
-                      )}
-                      <div dangerouslySetInnerHTML={{ __html: data.intro.text }} />
-                    </div>
-                  )}
 
                   {data.sections?.map((section, idx) => {
                     const SectionIcon = section.icon;
@@ -138,7 +118,6 @@ export const InfoModal: React.FC<InfoModalProps> = ({
                       <section key={idx} className="space-y-3">
                         {section.title && (
                           <div className="flex items-center gap-2 text-h2 font-sans font-bold tracking-tight">
-                            {SectionIcon && <SectionIcon size={18} className="opacity-70" />}
                             <h3>{section.title}</h3>
                           </div>
                         )}
@@ -157,7 +136,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({
                   })}
 
                   {data.items && data.items.length > 0 && (
-                    <div className="space-y-2 opacity-85 leading-relaxed text-caption">
+                    <div className="space-y-2 opacity-85 leading-relaxed text-mini">
                       {data.items.map((item, idx) => (
                         <div key={idx} dangerouslySetInnerHTML={{ __html: item }} />
                       ))}
@@ -169,10 +148,10 @@ export const InfoModal: React.FC<InfoModalProps> = ({
             </div>
 
             {/* Modal Footer */}
-            <div className={`p-4 px-6 border-t flex justify-end sticky bottom-0 z-20 backdrop-blur-md ${
+            <div className={`p-4 px-6 flex justify-end sticky bottom-0 z-20 backdrop-blur-md ${
               isDarkMode
-                ? 'bg-vintage-charcoal/95 border-space-sparkle/20'
-                : 'bg-white/95 border-space-sparkle/15'
+                ? 'bg-vintage-charcoal/95'
+                : 'bg-white/95'
             }`}>
               <Button
                 label={closeLabel}

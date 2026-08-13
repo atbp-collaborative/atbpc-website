@@ -46,7 +46,7 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
 
   return (
     <div className={`flex flex-col justify-end h-full ${isCompact ? 'space-y-0.5' : 'space-y-1'}`}>
-      <label className={`${isCompact ? 'text-caption font-semibold' : 'text-micro font-archivo font-semibold'} block opacity-90 truncate`}>
+      <label className={`${styles.label} truncate`}>
         {label}
         {badge && <span className="text-space-sparkle font-normal"> ({badge})</span>}
       </label>

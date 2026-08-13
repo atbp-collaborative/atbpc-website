@@ -84,17 +84,14 @@ export const MultiEmailModal: React.FC<MultiEmailModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 15 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border z-10 overflow-hidden ${
+            className={`relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-lg shadow-2xl border z-10 overflow-hidden ${
               isDarkMode ? 'bg-vintage-charcoal border-space-sparkle/30 text-bright-gray' : 'bg-white border-space-sparkle/20 text-vintage-charcoal'
             }`}
           >
-            <div className={`flex items-center justify-between px-6 py-5 border-b sticky top-0 z-20 backdrop-blur-md ${isDarkMode ? 'bg-vintage-charcoal/95 border-space-sparkle/20' : 'bg-white/95 border-space-sparkle/15'}`}>
+            <div className={`flex items-center justify-between px-6 py-5 sticky top-0 z-20 backdrop-blur-md ${isDarkMode ? 'bg-vintage-charcoal/95' : 'bg-white/95'}`}>
               <div className="flex items-center gap-3">
-                <div className={`p-2 ${isDarkMode ? 'bg-white/10 text-bright-gray' : 'bg-vintage-charcoal/10 text-vintage-charcoal'}`}>
-                  <Mail size={20} />
-                </div>
                 <div>
-                  <h2 className="text-h2 font-sans font-bold tracking-tight">Email Addresses</h2>
+                  <h2 className="text-h2 font-sans font-bold tracking-tight lowercase">Email Addresses</h2>
                   <p className="text-mini opacity-60 font-sans uppercase tracking-wider">Add up to 5 emails</p>
                 </div>
               </div>
@@ -149,7 +146,7 @@ export const MultiEmailModal: React.FC<MultiEmailModalProps> = ({
 
             <div className={`p-4 px-6 border-t flex justify-end sticky bottom-0 z-20 backdrop-blur-md ${isDarkMode ? 'bg-vintage-charcoal/95 border-space-sparkle/20' : 'bg-white/95 border-space-sparkle/15'}`}>
               <Button
-                label="Save Emails"
+                label={emails.length === 1 ? "Save Email" : "Save Emails"}
                 onClick={handleSave}
                 disabled={isSaveDisabled}
                 type={isDarkMode ? 'outline' : 'filled'}
