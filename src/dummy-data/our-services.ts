@@ -71,5 +71,33 @@ export const OUR_SERVICES_DATA: Record<string, StudioSubpageData> = {
     parentTab: 'our-services',
     parentTabLabel: 'Our Services Overview',
     subtext: 'Targeted architectural solutions and independent technical reviews for bespoke requirements.'
+  },
+  'consultation-retainer-services': {
+    id: 'consultation-retainer-services',
+    title: 'consultation & retainer services',
+    section: 'services | kaya',
+    tagline: 'ongoing architectural guidance, strategic advisory & long-term partnerships',
+    description: 'Continuous, expert architectural advice designed for ongoing developments, portfolio management, or phased projects that require strategic oversight and flexible, on-demand consultation.',
+    pillars: [
+      {
+        title: 'Strategic Project Advisory',
+        desc: 'High-level guidance on feasibility, site selection, and overarching architectural vision.'
+      },
+      {
+        title: 'Portfolio & Asset Management',
+        desc: 'Long-term architectural strategy for multi-property developers and institutional clients.'
+      },
+      {
+        title: 'Phased Development Planning',
+        desc: 'Masterplanning and architectural roadmapping for projects executed over extended timelines.'
+      },
+      {
+        title: 'On-Demand Technical Consultation',
+        desc: 'Flexible access to architectural expertise for troubleshooting, peer review, and continuous improvement.'
+      }
+    ],
+    parentTab: 'our-services',
+    parentTabLabel: 'Our Services Overview',
+    subtext: 'Long-term architectural guidance and strategic advisory for complex, ongoing developments.'
   }
 };

@@ -29,8 +29,8 @@ export const MEMBERS_DATA: Member[] = [
         description: 'Sculpted the sand-textured plaster arches and guided the tactile materials selection to contrast with structural steel.'
       },
       {
-        projectId: 'penthouses-6',
-        projectTitle: 'Penthouses Project 1',
+        projectId: 'Vacation Homes-6',
+        projectTitle: 'Vacation Homes Project 1',
         roleInProject: 'Design Advisor',
         description: 'Consulted on spatial layout optimization and wood panel continuity layout.'
       }
@@ -58,8 +58,8 @@ export const MEMBERS_DATA: Member[] = [
         description: 'Managed materials import procurement, local trade contractor scheduling, and progressive construction budget bounds.'
       },
       {
-        projectId: 'penthouses-6',
-        projectTitle: 'Penthouses Project 1',
+        projectId: 'Vacation Homes-6',
+        projectTitle: 'Vacation Homes Project 1',
         roleInProject: 'Contract Administrator',
         description: 'Coordinated the turn-key interior build schedules and material vendor contracts.'
       },
@@ -122,8 +122,8 @@ export const MEMBERS_DATA: Member[] = [
     categories: ['designers'],
     involvement: [
       {
-        projectId: 'penthouses-6',
-        projectTitle: 'Penthouses Project 1',
+        projectId: 'Vacation Homes-6',
+        projectTitle: 'Vacation Homes Project 1',
         roleInProject: 'Lead Drafting Architect',
         description: 'Developed the custom Rose Ebony veneer joinery details, lighting layouts, and modular cabinetry assembly drawings.'
       },
@@ -163,8 +163,8 @@ export const MEMBERS_DATA: Member[] = [
         description: 'Built the exact 3D virtual twin of the residence to run solar, aerodynamic, and structural clash-detection simulations.'
       },
       {
-        projectId: 'penthouses-6',
-        projectTitle: 'Penthouses Project 1',
+        projectId: 'Vacation Homes-6',
+        projectTitle: 'Vacation Homes Project 1',
         roleInProject: 'Senior Modeler',
         description: 'Produced the complete mechanical coordination blueprint sets.'
       }
@@ -192,8 +192,8 @@ export const MEMBERS_DATA: Member[] = [
         description: 'Curated the custom texture finishes, boutique lighting schemes, and soft velvet/steel furniture selection.'
       },
       {
-        projectId: 'penthouses-6',
-        projectTitle: 'Penthouses Project 1',
+        projectId: 'Vacation Homes-6',
+        projectTitle: 'Vacation Homes Project 1',
         roleInProject: 'Interior Design Lead',
         description: 'Orchestrated the Rose Ebony cabinetry, customized wood cladding patterns, and soft ambient light profiles.'
       }
@@ -251,7 +251,7 @@ export const MEMBERS_DATA: Member[] = [
       },
       {
         projectId: 'build---sell-homes-22',
-        projectTitle: 'Build & Sell Homes Project 1',
+        projectTitle: 'Workspaces Project 1',
         roleInProject: 'Operations Coordinator',
         description: 'Coordinated internal scheduling across design, permitting, and site teams to keep delivery on track.'
       }
@@ -332,7 +332,7 @@ export const MEMBERS_DATA: Member[] = [
     involvement: [
       {
         projectId: 'build---sell-homes-23',
-        projectTitle: 'Build & Sell Homes Project 2',
+        projectTitle: 'Workspaces Project 2',
         roleInProject: 'Site Engineer',
         description: 'Inspected formwork and concrete pours, and enforced structural quality checkpoints throughout construction.'
       },
@@ -390,13 +390,13 @@ export const MEMBERS_DATA: Member[] = [
     involvement: [
       {
         projectId: 'urban-living-1',
-        projectTitle: 'Urban Living Project 1',
+        projectTitle: 'Multi-Generational Project 1',
         roleInProject: 'Design Director',
         description: 'Reviewed concept milestones and enforced material and spatial consistency across the design phases.'
       },
       {
-        projectId: 'penthouses-7',
-        projectTitle: 'Penthouses Project 2',
+        projectId: 'Vacation Homes-7',
+        projectTitle: 'Vacation Homes Project 2',
         roleInProject: 'Creative Quality Lead',
         description: 'Guided the design team through detailing revisions to keep the finished units aligned with the original concept.'
       }

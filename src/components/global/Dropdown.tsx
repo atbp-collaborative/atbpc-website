@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, ArrowUpRight } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { DropdownGroup } from '@/lib/navigation/nav-data';
 
 interface DropdownProps {
@@ -12,6 +12,7 @@ interface DropdownProps {
   activeId: string | null; // The ID of the active group or sub-item
   getItemHref: (id: string) => string;
   onClose: () => void;
+  accordionDuration?: number;
 }
 
 export const Dropdown: React.FC<DropdownProps> = ({
@@ -20,6 +21,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   activeId,
   getItemHref,
   onClose,
+  accordionDuration = 1.2,
 }) => {
   // Find which group should be initially expanded based on activeId
   const initialActiveGroup = groups.find(
@@ -47,16 +49,21 @@ export const Dropdown: React.FC<DropdownProps> = ({
       exit={{ opacity: 0, scaleY: 0 }}
       transition={{ duration: 0.5, ease: 'easeInOut' }}
       style={{ originY: 0 }}
-      className={`absolute left-0 top-full mt-2 w-full py-2 px-0 rounded-none shadow-2xl border text-left z-50 backdrop-blur-md ${
+      className={`absolute left-0 top-full mt-2 w-full py-0 px-0 rounded-none shadow-2xl border text-left z-50 backdrop-blur-md ${
         isDarkMode
           ? 'bg-vintage-charcoal/95 border-space-sparkle/20 text-bright-gray'
           : 'bg-white/95 border-space-sparkle/10 text-vintage-charcoal'
       }`}
     >
       <div className="space-y-0.5">
-        {groups.map((group) => {
+        {groups.map((group, index) => {
           const isExpanded = expandedCategory === group.id;
           const isMainActive = group.id === activeId || group.subItems.some((sub) => sub.id === activeId);
+          const isFirstNavbar = accordionDuration === 1.8;
+          const isLastAccordion = index === groups.length - 1;
+          
+          // Use quicker opening duration for the last accordion on the first navbar, but keep closing at accordionDuration
+          const currentDuration = isFirstNavbar && isLastAccordion && isExpanded ? 0.3 : accordionDuration;
 
           return (
             <div key={group.id} className="space-y-0.5">
@@ -82,7 +89,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                   <motion.span
                     className="flex flex-col items-start"
                     animate={{ y: group.translation && (isExpanded || isMainActive) ? -20 : 0 }}
-                    transition={{ duration: 1.2, ease: 'easeInOut' }}
+                    transition={{ duration: currentDuration, ease: 'easeInOut' }}
                   >
                     <span className="block h-5 leading-5 text-caption font-bold normal-case tracking-widest text-left">
                       {group.label}
@@ -97,7 +104,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
                 <motion.span
                   animate={{ rotate: isExpanded ? 180 : 0 }}
-                  transition={{ duration: 1.2, ease: 'easeInOut' }}
+                  transition={{ duration: currentDuration, ease: 'easeInOut' }}
                   className="p-0.5 opacity-80"
                 >
                   <ChevronDown size={14} />
@@ -111,7 +118,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 1.2, ease: 'easeInOut' }}
+                    transition={{ duration: currentDuration, ease: 'easeInOut' }}
                     className="overflow-hidden"
                   >
                     <div className="flex flex-col space-y-0.5 py-1">
@@ -137,10 +144,6 @@ export const Dropdown: React.FC<DropdownProps> = ({
                             }`}
                           >
                             <span>{sub.label}</span>
-                            <ArrowUpRight
-                              size={12}
-                              className="opacity-50 group-hover:opacity-100 transition-opacity shrink-0 ml-2"
-                            />
                           </Link>
                         );
                       })}

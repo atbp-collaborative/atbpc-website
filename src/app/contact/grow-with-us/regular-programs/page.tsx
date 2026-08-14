@@ -5,6 +5,6 @@ import { CareerForm } from '@/components/forms/CareerForm';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export default function Page() {
-  useDocumentTitle('Apprenticeship Program');
-  return <CareerForm initialStructure="Apprenticeship / Junior Architect" />;
+  useDocumentTitle('Regular Programs');
+  return <CareerForm initialStructure="Full-Time Practice" />;
 }

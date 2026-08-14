@@ -6,9 +6,7 @@ export const WORKS_CATEGORIES = [
     image: '/images/hero_modern_villa_1783495183350.jpg',
     subcategories: [
       { name: 'Tiny Living', id: 'Tiny Living' },
-      { name: 'Urban Living', id: 'Urban Living' },
       { name: 'Multi-Generational', id: 'Multi-Generational' },
-      { name: 'Penthouses', id: 'Penthouses' },
       { name: 'Vacation Homes', id: 'Vacation Homes' },
     ],
   },
@@ -18,7 +16,6 @@ export const WORKS_CATEGORIES = [
     tagline: 'where passion takes form',
     image: '/images/retail_boutique_1783495217375.jpg',
     subcategories: [
-      { name: 'Build & Sell Homes', id: 'Build & Sell Homes' },
       { name: 'Food & Beverage', id: 'Food & Beverage' },
       { name: 'Retail & Lifestyle', id: 'Retail & Lifestyle' },
       { name: 'Workspaces', id: 'Workspaces' },

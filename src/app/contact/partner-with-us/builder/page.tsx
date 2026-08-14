@@ -17,14 +17,7 @@ export default function BuilderPage() {
     'Civil Works & Site Infrastructure',
   ];
 
-  const typologies = [
-    'High-End Residential & Case Study Houses',
-    'Commercial & F&B Retail Spaces',
-    'Hospitality & Resort Developments',
-    'Institutional & Cultural Buildings',
-    'Industrial & High-Density Logistics',
-    'Heritage Preservation & Adaptive Reuse',
-  ];
+
 
   const conditionsContent = builderConditionsData;
 
@@ -34,7 +27,6 @@ export default function BuilderPage() {
       title="be our partner builder"
       subtitle="we need to know if you share the same values, integrity and culture."
       specialties={specialties}
-      typologies={typologies}
       successTitle="Builder Registration Submitted"
       successMessage="Thank you for applying as a partner builder with ATBP Collaborative. Our project directorate will review your PCAB credentials, sample contract, and site capabilities."
       submitAnotherLabel="Submit Another Application"

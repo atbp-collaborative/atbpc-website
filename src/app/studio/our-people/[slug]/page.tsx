@@ -48,7 +48,7 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
       className="w-full px-4 sm:px-8 py-2 select-none flex flex-col flex-1 min-h-0 h-full overflow-hidden justify-between space-y-2"
     >
       <BreadcrumbButton
-        label="Our People"
+        label={`Back to ${member.categories && member.categories.length > 0 ? member.categories[0].charAt(0).toUpperCase() + member.categories[0].slice(1) : 'Our People'}`}
         onClick={handleBack}
       />
 

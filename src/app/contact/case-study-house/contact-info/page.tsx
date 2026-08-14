@@ -26,7 +26,7 @@ const OfficeMap = dynamic(() => import('@/components/blocks/OfficeMap').then((mo
 });
 
 export default function ContactInfoPage() {
-  useDocumentTitle('Locate & Communicate');
+  useDocumentTitle('Studio Hours & Location');
   const { isDarkMode } = useTheme();
   const router = useRouter();
   const [CONTACT_INFO, setContactInfo] = useState<ContactInfo | null>(null);

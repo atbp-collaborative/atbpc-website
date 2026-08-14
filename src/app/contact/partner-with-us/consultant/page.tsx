@@ -18,13 +18,7 @@ export default function ConsultantPage() {
     'Heritage & Urban Planning Consultancy',
   ];
 
-  const typologies = [
-    'High-End Residential & Villa Assemblies',
-    'Commercial, Hospitality & Mixed-Use',
-    'Institutional & Cultural Structures',
-    'High-Rise & Industrial Facilities',
-    'Master Planning & Landscape Infrastructure',
-  ];
+
 
   const conditionsContent = consultantConditionsData;
 
@@ -34,7 +28,6 @@ export default function ConsultantPage() {
       title="be our partner consultant"
       subtitle="we need to know if you share the same values, integrity and culture."
       specialties={specialties}
-      typologies={typologies}
       successTitle="Consultant Registration Submitted"
       successMessage="Thank you for applying as a partner consultant with ATBP Collaborative. Our engineering and design leadership will review your credentials and contact you directly."
       submitAnotherLabel="Submit Another Application"

@@ -25,7 +25,7 @@ export default function CaseStudyHousePage() {
   return (
     <SubLandingPage
       cards={cards}
-      title="case study house"
+      title="the case study house"
       subtitle="explore case study house project types and collaborative offerings"
       isHeaderSticky={true}
     />
