@@ -40,7 +40,7 @@ export interface SurveyResponse {
 
 export interface Service {
   title: string;
-  iconName: 'Layers' | 'LayoutGrid' | 'Briefcase' | 'RefreshCw';
+  iconName: 'Layers' | 'LayoutGrid' | 'Briefcase' | 'RefreshCw' | 'MapPin' | string;
   desc: string;
   image: string;
 }

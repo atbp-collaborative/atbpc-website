@@ -12,6 +12,12 @@ export const SERVICES_DATA: Service[] = [
     iconName: 'LayoutGrid',
     desc: 'Targeted architectural detailing, modular kitchen/bath designs, single spaces, or individual drawing sets billed per deliverable.',
     image: '/images/kiosk_coffee_bar_1783495252161.jpg'
+  },
+  {
+    title: 'studio hours & location',
+    iconName: 'MapPin',
+    desc: 'Interactive office map, physical address in Parañaque City, landline, mobile, Viber & social channels.',
+    image: '/images/contact_headquarters_img_1785470005846.jpg'
   }
 ];
 

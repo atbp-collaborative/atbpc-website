@@ -20,7 +20,6 @@ export interface PartnerApplicationFormProps {
   subtitle: string;
   categories?: string[];
   specialties?: string[];
-  typologies?: string[];
   successTitle: string;
   successMessage: string;
   submitAnotherLabel: string;
@@ -34,7 +33,6 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
   subtitle,
   categories,
   specialties,
-  typologies,
   successTitle,
   successMessage,
   submitAnotherLabel,
@@ -65,7 +63,6 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
     formData.companyName &&
     (!categories || formData.category) &&
     (!specialties || formData.specialty) &&
-    (!typologies || formData.typology) &&
     formData.contacts.length > 0 &&
     formData.contacts[0].number &&
     formData.addresses.length > 0 && 
@@ -97,7 +94,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
     ? 'border-bright-gray/30 focus:border-bright-gray bg-vintage-charcoal/50 text-white placeholder-bright-gray/40'
     : 'border-vintage-charcoal/30 focus:border-vintage-charcoal bg-white/60 text-vintage-charcoal placeholder-vintage-charcoal/40';
 
-  const fields = getPartnerFormFields(variant, { categories, specialties, typologies });
+  const fields = getPartnerFormFields(variant, { categories, specialties });
 
   const ActionButtons = ({ isTop }: { isTop?: boolean }) => (
     <div className={`grid grid-cols-2 gap-4 w-full ${isTop ? 'md:w-[75%] md:ml-auto' : ''}`}>

@@ -3,7 +3,7 @@ export const MAIN_CONTACT_CARDS = [
   {
     id: 'locate',
     href: ROUTES.caseStudyHouse,
-    title: 'case study house',
+    title: 'the case study house',
     tagline: 'locate & communicate ◦ parañaque city',
     subtext: 'our studio headquarters, address, interactive map, and contact coordinates.',
     description: 'Our studio headquarters, address, interactive map, and contact coordinates.',
@@ -14,10 +14,10 @@ export const MAIN_CONTACT_CARDS = [
     id: 'careers',
     href: ROUTES.growWithUs,
     title: 'grow with us',
-    tagline: 'careers ◦ internship, apprenticeship & studio regulars',
+    tagline: 'careers ◦ apprenticeship & regular programs',
     subtext: 'join our collaborative ecosystem. opportunities for emerging architects and design leaders.',
     description: 'Join our collaborative ecosystem. Opportunities for emerging architects and design leaders.',
-    tags: ['Internship Program', 'Apprenticeship Program', 'Studio Regulars'],
+    tags: ['Apprenticeship Programs', 'Regular Programs'],
     image: '/images/contact_careers_img_1785470018782.jpg',
   },
   {
@@ -56,7 +56,7 @@ export const CASE_STUDY_HOUSE_CARDS = [
   {
     id: 'locate-map',
     href: ROUTES.contactInfo,
-    title: 'locate & communicate',
+    title: 'studio hours & location',
     tagline: 'headquarters, address & contact channels',
     subtext: 'for physical visits, interactive map & contact coordinates',
     description: 'Interactive office map, physical address in Parañaque City, landline, mobile, Viber & social channels.',
@@ -67,19 +67,9 @@ export const CASE_STUDY_HOUSE_CARDS = [
 
 export const GROW_WITH_US_CARDS = [
   {
-    id: 'internship',
-    href: ROUTES.internshipProgram,
-    title: 'internship program',
-    tagline: 'for new graduates of architecture',
-    subtext: 'for new graduates of architecture',
-    description: 'Immersion program for architecture and design students to engage in active project workflows and research.',
-    tags: ['Student Fellowship', 'Spatial Practice', 'Research'],
-    image: '/images/contact_careers_img_1785470018782.jpg',
-  },
-  {
     id: 'apprenticeship',
-    href: ROUTES.apprenticeshipProgram,
-    title: 'apprenticeship program',
+    href: ROUTES.apprenticeshipPrograms,
+    title: 'apprenticeship programs',
     tagline: 'for on-the-job training requirements',
     subtext: 'for on-the-job training requirements',
     description: 'Comprehensive mentorship path for architecture graduates preparing for professional licensure and site management.',
@@ -88,8 +78,8 @@ export const GROW_WITH_US_CARDS = [
   },
   {
     id: 'studio-regulars',
-    href: ROUTES.studioRegulars,
-    title: 'studio regulars',
+    href: ROUTES.regularPrograms,
+    title: 'regular programs',
     tagline: 'for professionals',
     subtext: 'for professionals',
     description: 'Leadership roles for registered architects, spatial strategists, and project directors driving studio commissions.',

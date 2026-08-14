@@ -18,9 +18,7 @@ export const WORKS_NAV_STRUCTURE: DropdownGroup[] = [
     id: 'Shelter',
     subItems: [
       { label: 'Tiny Living', id: 'Tiny Living' },
-      { label: 'Urban Living', id: 'Urban Living' },
       { label: 'Multi-Generational', id: 'Multi-Generational' },
-      { label: 'Penthouses', id: 'Penthouses' },
       { label: 'Vacation Homes', id: 'Vacation Homes' },
     ],
   },
@@ -28,7 +26,6 @@ export const WORKS_NAV_STRUCTURE: DropdownGroup[] = [
     label: 'Livelihood',
     id: 'Livelihood',
     subItems: [
-      { label: 'Build & Sell Homes', id: 'Build & Sell Homes' },
       { label: 'Food & Beverage', id: 'Food & Beverage' },
       { label: 'Retail & Lifestyle', id: 'Retail & Lifestyle' },
       { label: 'Workspaces', id: 'Workspaces' },
@@ -53,6 +50,7 @@ export const STUDIO_NAV_STRUCTURE: DropdownGroup[] = [
     subItems: [
       { label: 'Comprehensive Services', id: ROUTES.comprehensiveServices },
       { label: 'Piecework Services', id: ROUTES.pieceworkServices },
+      { label: 'Consultation & Retainer Services', id: ROUTES.consultationRetainerServices },
     ],
   },
   {
@@ -79,21 +77,20 @@ export const STUDIO_NAV_STRUCTURE: DropdownGroup[] = [
 
 export const CONTACT_NAV_STRUCTURE: DropdownGroup[] = [
   {
-    label: 'Case Study House',
+    label: 'The Case Study House',
     id: ROUTES.caseStudyHouse,
     subItems: [
       { label: 'Schedule a Discovery Session', id: ROUTES.discoverySession },
       { label: 'Request a Proposal', id: ROUTES.requestForProposal },
-      { label: 'Locate & Communicate', id: ROUTES.contactInfo },
+      { label: 'Studio Hours & Location', id: ROUTES.contactInfo },
     ],
   },
   {
     label: 'Grow With Us',
     id: ROUTES.growWithUs,
     subItems: [
-      { label: 'Internship Program', id: ROUTES.internshipProgram },
-      { label: 'Apprenticeship Program', id: ROUTES.apprenticeshipProgram },
-      { label: 'Studio Regulars', id: ROUTES.studioRegulars },
+      { label: 'Apprenticeship Programs', id: ROUTES.apprenticeshipPrograms },
+      { label: 'Regular Programs', id: ROUTES.regularPrograms },
     ],
   },
   {

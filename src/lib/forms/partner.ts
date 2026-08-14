@@ -36,7 +36,6 @@ const COMMON_RIGHT_BOTTOM_ROWS: FieldConfig[][] = [
 export interface PartnerFormOptions {
   categories?: string[];
   specialties?: string[];
-  typologies?: string[];
 }
 
 export const getPartnerFormFields = (
@@ -95,18 +94,7 @@ export const getPartnerFormFields = (
     });
   }
 
-  if (options.typologies) {
-    leftColumnTop.push({
-      type: 'select',
-      name: 'typology',
-      label: 'Specialized Typology',
-      badge: '!',
-      placeholder: 'What Typology?',
-      options: options.typologies,
-      // @ts-ignore
-      dense: true
-    });
-  }
+
 
   leftColumnTop.push({
     type: 'textarea',
@@ -152,7 +140,6 @@ export const PARTNER_FORM_INITIAL_DATA = {
   category: '',
   message: '',
   specialty: '',
-  typology: '',
   profileLink: '',
   coverVideoLink: '',
   mapLink: '',
@@ -184,7 +171,6 @@ export const partnerSchema = z.object({
   category: z.string().optional(), // conditionally required
   message: z.string().min(1, "Message is required"),
   specialty: z.string().optional(), // conditionally required
-  typology: z.string().optional(), // conditionally required
   profileLink: z.string().min(1, "Profile Link is required"),
   coverVideoLink: z.string().optional(),
   mapLink: z.string().min(1, "Map Link is required"),

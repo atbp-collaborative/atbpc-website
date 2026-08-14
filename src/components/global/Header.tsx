@@ -10,6 +10,8 @@ import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from
 import { AtbpLogo } from '@/components/global/AtbpLogo';
 import { NavItem } from '@/components/global/NavItem';
 import { CtaButton } from '@/components/global/CtaButton';
+import { WORKS_CATEGORIES } from '@/dummy-data/works';
+import { filterCategories } from '@/lib/data/typologies';
 
 interface HeaderProps {
   isMobileMenuOpen: boolean;
@@ -29,6 +31,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isStudioLanding = pathname === '/' || pathname === '/studio';
   const isContactLanding = pathname === '/contact';
 
+  const isHeroPage = pathname === '/';
   const isHeaderTransparent = isStudioLanding || isWorksLanding || isContactLanding;
 
   const isWorksActive = pathname.startsWith('/works');
@@ -44,6 +47,9 @@ export const Header: React.FC<HeaderProps> = ({
     pathname === '/builder' ||
     pathname === '/consultant';
 
+  const isWorksCategory = filterCategories.includes(currentCategoryFilter) || WORKS_CATEGORIES.some(c => c.id === currentCategoryFilter);
+  const isSingleProjectPage = pathname.startsWith('/works/') && worksSlug && !isWorksCategory;
+
   return (
     <header
       id="main-header"
@@ -58,8 +64,8 @@ export const Header: React.FC<HeaderProps> = ({
       }`}
     >
       <div 
-        className={`mx-auto py-2 flex items-center justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] w-full ${
-          isHeaderTransparent ? 'max-w-7xl px-4 sm:px-6' : 'max-w-[100vw] px-4 sm:px-8'
+        className={`mx-auto py-2 flex items-center justify-between transition-all duration-[2400ms] ease-[cubic-bezier(0.16,1,0.3,1)] w-full ${
+          isHeroPage ? 'max-w-7xl px-4 sm:px-6' : 'max-w-[100vw] px-4 sm:px-8'
         }`}
       >
         <div className="flex items-center space-x-12 lg:space-x-16">
@@ -84,6 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
               minWidthClass="min-w-[70px]"
               href={ROUTES.works}
               getDropdownItemHref={(id) => `${ROUTES.works}/${encodeURIComponent(id)}`}
+              accordionDuration={1.8}
             />
             <NavItem
               label="Studio"
@@ -113,27 +120,31 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Action Area */}
         <div className="flex items-center space-x-2 sm:space-x-2.5 mr-0 pr-0">
-          <CtaButton
-            title="Schedule a Discovery Session"
-            lines={['Schedule a', 'Discovery Session']}
-            icon={<Calendar size={18} className="shrink-0" />}
-            href={ROUTES.discoverySession}
-            isHeaderTransparent={isHeaderTransparent}
-            isDarkMode={isDarkMode}
-            variant="solid"
-            expandedMaxWidthClass="group-hover:max-w-[140px]"
-          />
+          {!isSingleProjectPage && (
+            <>
+              <CtaButton
+                title="Schedule a Discovery Session"
+                lines={['Schedule a', 'Discovery Session']}
+                icon={<Calendar size={18} className="shrink-0" />}
+                href={ROUTES.discoverySession}
+                isHeaderTransparent={isHeaderTransparent}
+                isDarkMode={isDarkMode}
+                variant="outline"
+                expandedMaxWidthClass="group-hover:max-w-[140px]"
+              />
 
-          <CtaButton
-            title="Request a Proposal"
-            lines={['Request a', 'Proposal']}
-            icon={<FileText size={18} className="shrink-0" />}
-            href={ROUTES.requestForProposal}
-            isHeaderTransparent={isHeaderTransparent}
-            isDarkMode={isDarkMode}
-            variant="outline"
-            expandedMaxWidthClass="group-hover:max-w-[120px]"
-          />
+              <CtaButton
+                title="Request a Proposal"
+                lines={['Request a', 'Proposal']}
+                icon={<FileText size={18} className="shrink-0" />}
+                href={ROUTES.requestForProposal}
+                isHeaderTransparent={isHeaderTransparent}
+                isDarkMode={isDarkMode}
+                variant="outline"
+                expandedMaxWidthClass="group-hover:max-w-[120px]"
+              />
+            </>
+          )}
 
           {/* Mobile Menu Toggle */}
           <button

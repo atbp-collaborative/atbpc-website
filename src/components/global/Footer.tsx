@@ -56,7 +56,7 @@ export const Footer: React.FC<FooterProps> = ({
     setActiveTaglineIndex(0);
     const interval = setInterval(() => {
       setActiveTaglineIndex((prev) => (prev + 1) % TAGLINE_PHRASES.length);
-    }, 5000);
+    }, 4000);
     return () => clearInterval(interval);
   }, [lockedTaglineIndex]);
 
@@ -71,8 +71,8 @@ export const Footer: React.FC<FooterProps> = ({
         }`}
       >
         <div 
-          className={`mx-auto flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] w-full ${
-            isLandingPage ? 'max-w-7xl px-4 sm:px-6' : 'max-w-[100vw] px-4 sm:px-8'
+          className={`mx-auto flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] w-full max-w-none px-4 sm:px-8 ${
+            isLandingPage ? 'md:px-12' : ''
           }`}
         >
           {/* Subtext on the left */}
@@ -82,12 +82,16 @@ export const Footer: React.FC<FooterProps> = ({
               return (
                 <span
                   key={phrase.verb}
-                  className="transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                  style={{ opacity: isActive ? 1 : 0.3 }}
+                  className="transition-all ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  style={{ 
+                    transitionDuration: '4000ms',
+                    opacity: isActive ? 1 : 0.2,
+                    transform: isActive ? 'scale(1)' : 'scale(0.98)'
+                  }}
                 >
                   <Link href={phrase.href} className="hover:underline underline-offset-4 decoration-[#d4d4d4]">
                     {phrase.verb} with{' '}
-                    <span className={isActive ? 'font-semibold' : 'font-light'}>{phrase.noun}</span>
+                    <span className="font-semibold">{phrase.noun}</span>
                   </Link>
                   {index < TAGLINE_PHRASES.length - 1 ? ', ' : ''}
                 </span>
@@ -96,23 +100,19 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
 
           {/* Copyright & Links moved to the right */}
-          <div className="flex items-center justify-center md:justify-end gap-2 sm:gap-2.5 text-mini font-sans tracking-wider opacity-90 whitespace-nowrap">
-            <span className="uppercase tracking-widest opacity-70 text-micro sm:text-mini">© 2026 ATBP Collaborative</span>
+          <div className="flex items-center justify-center md:justify-end gap-2 sm:gap-2.5 text-[10px] font-sans tracking-wider opacity-90 whitespace-nowrap">
+            <span className="uppercase tracking-widest opacity-70 text-[10px]">© 2026 ATBP Collaborative</span>
             <span className="opacity-40">•</span>
             <button
               onClick={() => setIsLegalModalOpen(true)}
-              className={`underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer font-medium ${
-                isDarkMode ? 'text-bright-gray hover:text-white' : 'text-vintage-charcoal hover:text-black'
-              }`}
+              className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
             >
               Legal
             </button>
             <span className="opacity-40">•</span>
             <button
               onClick={() => setIsPrivacyModalOpen(true)}
-              className={`underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer font-medium ${
-                isDarkMode ? 'text-bright-gray hover:text-white' : 'text-vintage-charcoal hover:text-black'
-              }`}
+              className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
             >
               Privacy Policy
             </button>

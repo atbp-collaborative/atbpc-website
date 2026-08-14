@@ -80,9 +80,9 @@ export default function HeroPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-mini sm:text-caption md:text-body font-medium text-white/90 tracking-wider font-sans lowercase"
+          className="text-caption sm:text-body md:text-h2 font-medium text-white/90 tracking-wider font-sans lowercase"
         >
-          designed with values. managed with integrity. built with culture.
+          <span className="font-light">designed with</span> <strong>values</strong>. <span className="font-light">managed with</span> <strong>integrity</strong>. <span className="font-light">built with</span> <strong>culture</strong>.
         </motion.p>
 
         {/* PLACEHOLDER SUBTEXT (TWO LINES) */}
@@ -90,7 +90,7 @@ export default function HeroPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="text-micro sm:text-mini font-light text-white/70 leading-relaxed tracking-wide max-w-2xl font-sans"
+          className="text-mini sm:text-caption font-light text-white/70 leading-relaxed tracking-wide max-w-2xl font-sans"
         >
           ATBP Collaborative delivers bespoke architectural design, master planning, and structural craft.
           <br className="hidden sm:inline" />

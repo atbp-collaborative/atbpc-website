@@ -64,11 +64,11 @@ export const CtaButton: React.FC<CtaButtonProps> = ({
       href={href}
       onClick={onClick}
       title={title}
-      className={`group hidden md:flex items-center justify-center w-9 sm:w-10 h-9 sm:h-10 rounded-full transition-all duration-300 ease-in-out cursor-pointer select-none shrink-0 overflow-hidden hover:w-auto hover:px-3.5 ${shadowClass} ${colorClasses}`}
+      className={`group hidden md:flex items-center justify-center min-w-[36px] sm:min-w-[40px] h-9 sm:h-10 px-0 hover:px-3.5 rounded-full transition-all duration-[700ms] delay-300 hover:delay-0 ease-in-out cursor-pointer select-none shrink-0 overflow-hidden ${shadowClass} ${colorClasses}`}
     >
       <div className="flex items-center justify-center">
         <span
-          className={`max-w-0 ${expandedMaxWidthClass} opacity-0 group-hover:opacity-100 transition-all duration-500 ease-out overflow-hidden whitespace-nowrap flex flex-col items-end text-right font-sans text-micro font-semibold uppercase tracking-wider leading-tight group-hover:mr-2`}
+          className={`max-w-0 ${expandedMaxWidthClass} opacity-0 group-hover:opacity-100 transition-all duration-[700ms] delay-300 group-hover:delay-0 ease-out overflow-hidden whitespace-nowrap flex flex-col items-end text-right font-sans text-micro font-semibold uppercase tracking-wider leading-tight group-hover:mr-2`}
         >
           <span>{lines[0]}</span>
           <span>{lines[1]}</span>

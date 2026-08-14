@@ -1,5 +1,9 @@
-import { FieldConfig, PhAddress, EMPTY_PH_ADDRESS } from '@/components/forms/form-fields';
-import { z } from 'zod';
+import {
+  FieldConfig,
+  PhAddress,
+  EMPTY_PH_ADDRESS,
+} from "@/components/forms/form-fields";
+import { z } from "zod";
 
 /**
  * studio-regulars / internship-program / apprenticeship-program all render
@@ -9,58 +13,157 @@ import { z } from 'zod';
  * studio regulars type wanting a PRC-number field) is a data change here, not a
  * new component.
  */
-export type CareerFormType = 'internship' | 'apprenticeship' | 'studioRegulars';
+export type CareerFormType = "internship" | "apprenticeship" | "studioRegulars";
 
 const DEPARTMENTS = [
-  'Architectural Design & Research',
-  'Interior & Spatial Design',
-  'Engineering & Construction Support',
-  'Modular & F&B Practice',
-  'Studio Operations & Administration',
+  "Architectural Design & Research",
+  "Interior & Spatial Design",
+  "Engineering & Construction Support",
+  "Modular & F&B Practice",
+  "Studio Operations & Administration",
 ];
 
 const STRUCTURES = [
-  'Full-Time Practice',
-  'Apprenticeship / Junior Architect',
-  'Project-Based Consultancy',
-  'Internship Fellowship',
+  "Full-Time Practice",
+  "Apprenticeship / Junior Architect",
+  "Project-Based Consultancy",
+  "Internship Fellowship",
 ];
 
 const LEFT_COLUMN_TOP: FieldConfig[] = [
-  { type: 'select', name: 'department', label: 'Department', badge: '!', options: DEPARTMENTS, placeholder: 'In which department do you see your growth?' },
-  { type: 'select', name: 'structure', label: 'Structure', badge: '!', options: STRUCTURES, placeholder: 'What kind of role are you exploring?' },
+  {
+    type: "select",
+    name: "department",
+    label: "Department",
+    badge: "!",
+    options: DEPARTMENTS,
+    placeholder: "In which department do you see your growth?",
+  },
+  {
+    type: "select",
+    name: "structure",
+    label: "Structure",
+    badge: "!",
+    options: STRUCTURES,
+    placeholder: "What kind of role are you exploring?",
+  },
 ];
 
 const JOB_DESCRIPTION_FIELD: FieldConfig = {
-  type: 'textarea', name: 'jobDescription', label: '', placeholder: 'Job Description Here', grow: true,
+  type: "textarea",
+  name: "jobDescription",
+  label: "",
+  placeholder: "Job Description Here",
+  grow: true,
 };
 
 const UPLOAD_ROW: FieldConfig[] = [
-  { type: 'file', name: 'resumeFile', label: 'Resume', badge: '!', dropHint: 'Click / Drag to Upload Resume', typeHint: '(PDF Only)' },
-  { type: 'textarea', name: 'portfolioLink', label: 'Portfolio', badge: '!', variant: 'compact', placeholder: 'Paste Here Link to Flipbook. (Sorry No PDF)' },
-  { type: 'textarea', name: 'coverVideoLink', label: 'Cover Video', badge: '!', variant: 'compact', placeholder: 'Paste Here Link to Cover Video' },
+  {
+    type: "file",
+    name: "resumeFile",
+    label: "Resume",
+    badge: "!",
+    dropHint: "Click / Drag to Upload Resume",
+    typeHint: "(PDF Only)",
+  },
+  {
+    type: "textarea",
+    name: "portfolioLink",
+    label: "Portfolio",
+    badge: "!",
+    variant: "compact",
+    placeholder: "Paste Here Link to Flipbook. (Sorry No PDF)",
+  },
+  {
+    type: "textarea",
+    name: "coverVideoLink",
+    label: "Cover Video",
+    badge: "!",
+    variant: "compact",
+    placeholder: "Paste Here Link to Cover Video",
+  },
 ];
 
 // Each entry is one visual row — 2 fields render as a 2-col grid, 1 renders full-width.
 const RIGHT_COLUMN_ROWS: FieldConfig[][] = [
   [
-    { type: 'text', name: 'firstName', label: 'First Name', badge: '!', wrapperClassName: 'sm:col-span-2' },
-    { type: 'text', name: 'pseudonym', label: 'Pseudonym', badge: '!', wrapperClassName: 'sm:col-span-2' },
+    {
+      type: "text",
+      name: "firstName",
+      label: "First Name",
+      badge: "!",
+      wrapperClassName: "sm:col-span-2",
+    },
+    {
+      type: "text",
+      name: "pseudonym",
+      label: "Pseudonym",
+      badge: "!",
+      wrapperClassName: "sm:col-span-2",
+    },
   ],
   [
-    { type: 'text', name: 'middleName', label: 'Middle Name', note: "(Mother's Maiden Last Name)", wrapperClassName: 'sm:col-span-2' },
-    { type: 'text', name: 'lastName', label: 'Last Name', badge: '!', wrapperClassName: 'sm:col-span-2' },
+    {
+      type: "text",
+      name: "middleName",
+      label: "Middle Name",
+      note: "(Mother's Maiden Last Name)",
+      wrapperClassName: "sm:col-span-2",
+    },
+    {
+      type: "text",
+      name: "lastName",
+      label: "Last Name",
+      badge: "!",
+      wrapperClassName: "sm:col-span-2",
+    },
   ],
   [
-    { type: 'text', name: 'pronoun', label: 'Pronoun', badge: '!', wrapperClassName: 'sm:col-span-1' },
-    { type: 'text', name: 'titles', label: 'Titles', wrapperClassName: 'sm:col-span-1' },
-    { type: 'email', name: 'email', label: 'Email Address', badge: '!', wrapperClassName: 'sm:col-span-2' },
+    {
+      type: "text",
+      name: "pronoun",
+      label: "Pronoun",
+      badge: "!",
+      wrapperClassName: "sm:col-span-1",
+    },
+    {
+      type: "text",
+      name: "titles",
+      label: "Titles",
+      wrapperClassName: "sm:col-span-1",
+    },
+    {
+      type: "email",
+      name: "email",
+      label: "Email Address",
+      badge: "!",
+      wrapperClassName: "sm:col-span-2",
+    },
   ],
-  [{ type: 'address', name: 'address', label: '', dense: true }],
+  [{ type: "address", name: "address", label: "", dense: true }],
   [
-    { type: 'text', name: 'contactNumber', label: 'Contact Number', badge: '!', placeholder: 'Must be Viber & Whatsapp Ready', wrapperClassName: 'sm:col-span-2' },
-    { type: 'text', name: 'facebook', label: 'Facebook', placeholder: 'Paste URL / Link / Handle', wrapperClassName: 'sm:col-span-1' },
-    { type: 'text', name: 'instagram', label: 'Instagram', placeholder: 'Paste URL / Link / Handle', wrapperClassName: 'sm:col-span-1' },
+    {
+      type: "text",
+      name: "contactNumber",
+      label: "Contact Number",
+      badge: "!",
+      placeholder: "Must be Viber & Whatsapp Ready",
+      wrapperClassName: "sm:col-span-2",
+    },
+    {
+      type: "text",
+      name: "facebook",
+      label: "Facebook",
+      placeholder: "Paste URL / Link / Handle",
+      wrapperClassName: "sm:col-span-1",
+    },
+    {
+      type: "text",
+      name: "instagram",
+      label: "Instagram",
+      placeholder: "Paste URL / Link / Handle",
+      wrapperClassName: "sm:col-span-1",
+    },
   ],
 ];
 
@@ -85,23 +188,23 @@ export const CAREER_FORM_FIELDS: Record<CareerFormType, CareerFormFieldSet> = {
 };
 
 export const CAREER_FORM_INITIAL_DATA = {
-  department: '',
-  structure: '',
-  jobDescription: '',
+  department: "",
+  structure: "",
+  jobDescription: "",
   resumeFile: null as File | null,
-  portfolioLink: '',
-  coverVideoLink: '',
-  firstName: '',
-  pseudonym: '',
-  middleName: '',
-  lastName: '',
-  pronoun: '',
-  titles: '',
+  portfolioLink: "",
+  coverVideoLink: "",
+  firstName: "",
+  pseudonym: "",
+  middleName: "",
+  lastName: "",
+  pronoun: "",
+  titles: "",
   address: EMPTY_PH_ADDRESS as PhAddress,
-  contactNumber: '',
-  email: '',
-  facebook: '',
-  instagram: '',
+  contactNumber: "",
+  email: "",
+  facebook: "",
+  instagram: "",
 };
 
 export type CareerFormData = typeof CAREER_FORM_INITIAL_DATA;
@@ -112,14 +215,14 @@ export type CareerFormData = typeof CAREER_FORM_INITIAL_DATA;
  * Region/City/Barangay are checked separately since they're nested.
  */
 export const CAREER_FORM_REQUIRED_FIELDS: (keyof CareerFormData)[] = [
-  'department',
-  'structure',
-  'firstName',
-  'pseudonym',
-  'lastName',
-  'pronoun',
-  'contactNumber',
-  'email',
+  "department",
+  "structure",
+  "firstName",
+  "pseudonym",
+  "lastName",
+  "pronoun",
+  "contactNumber",
+  "email",
 ];
 
 export const careerSchema = z.object({

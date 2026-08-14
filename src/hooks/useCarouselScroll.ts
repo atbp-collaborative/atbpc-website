@@ -68,11 +68,48 @@ export function useCarouselScroll<T extends HTMLElement>({ resetKey }: UseCarous
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node, resetKey]);
 
+  const getBatchScrollAmount = () => {
+    if (!node) return 0;
+    const children = Array.from(node.children) as HTMLElement[];
+    if (children.length <= 1) return node.clientWidth * 0.9;
+    
+    // Find the distance between the first child and the second child to get the exact width + gap
+    const childWidthPlusGap = children[1].offsetLeft - children[0].offsetLeft;
+    const childWidth = children[0].getBoundingClientRect().width;
+    
+    const itemsToScroll = Math.max(1, Math.floor(node.clientWidth / childWidth));
+    return childWidthPlusGap * itemsToScroll;
+  };
+
   const handleScroll = (direction: 'left' | 'right') => {
     if (!node) return;
-    const child = node.firstElementChild as HTMLElement | null;
-    const amount = (child ? child.getBoundingClientRect().width + 2 : 380) * (direction === 'left' ? -1 : 1);
-    node.scrollBy({ left: amount, behavior: 'smooth' });
+    
+    const children = Array.from(node.children) as HTMLElement[];
+    if (children.length === 0) return;
+
+    // Determine batch size based on viewport width vs child width
+    const childWidth = children[0].getBoundingClientRect().width;
+    const itemsToScroll = Math.max(1, Math.floor(node.clientWidth / childWidth));
+
+    // Find the currently first visible child
+    const containerLeft = node.getBoundingClientRect().left;
+    let firstVisibleIndex = 0;
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].getBoundingClientRect().left >= containerLeft - 10) {
+        firstVisibleIndex = i;
+        break;
+      }
+    }
+
+    // Calculate target index by moving exactly one batch
+    let targetIndex = direction === 'left'
+      ? Math.max(0, firstVisibleIndex - itemsToScroll)
+      : Math.min(children.length - 1, firstVisibleIndex + itemsToScroll);
+
+    const targetChild = children[targetIndex];
+    if (targetChild) {
+      node.scrollTo({ left: targetChild.offsetLeft, behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
@@ -101,11 +138,6 @@ export function useCarouselScroll<T extends HTMLElement>({ resetKey }: UseCarous
     if (e.pointerType !== 'mouse' || e.button !== 0 || !node) return;
     drag.current = { active: true, startX: e.clientX, startScrollLeft: node.scrollLeft, moved: false };
     setIsDragging(true);
-    // No setPointerCapture here: capturing immediately makes the browser
-    // retarget the click event a plain click ends in (per the Pointer
-    // Events spec) to this container instead of whatever's under the
-    // cursor, silently swallowing clicks on card links. Capture is only
-    // acquired once a real drag is confirmed, below.
   };
 
   const handlePointerMove = (e: React.PointerEvent<T>) => {
@@ -115,9 +147,7 @@ export function useCarouselScroll<T extends HTMLElement>({ resetKey }: UseCarous
       drag.current.moved = true;
       try {
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-      } catch {
-        // Ignore: capture can fail if the pointer is no longer active.
-      }
+      } catch {}
     }
     if (drag.current.moved) {
       node.scrollLeft = drag.current.startScrollLeft - delta;
@@ -125,13 +155,12 @@ export function useCarouselScroll<T extends HTMLElement>({ resetKey }: UseCarous
   };
 
   const endDrag = (e: React.PointerEvent<T>) => {
+    if (!drag.current.active || !node) return;
     drag.current.active = false;
     setIsDragging(false);
     try {
       (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {
-      // Ignore: capture may already be released or was never acquired.
-    }
+    } catch {}
   };
 
   const handleClickCapture = (e: React.MouseEvent<T>) => {

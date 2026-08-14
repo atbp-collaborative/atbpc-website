@@ -29,6 +29,8 @@ export default function OurServicesPage() {
         router.push(ROUTES.comprehensiveServices);
       } else if (service.title === 'piecework services') {
         router.push(ROUTES.pieceworkServices);
+      } else if (service.title === 'studio hours & location') {
+        router.push(ROUTES.contactInfo);
       }
     },
   }));

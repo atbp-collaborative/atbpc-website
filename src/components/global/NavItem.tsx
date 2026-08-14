@@ -17,6 +17,7 @@ interface NavItemProps {
   minWidthClass?: string;
   href: string;
   getDropdownItemHref: (id: string) => string;
+  accordionDuration?: number;
 }
 
 export const NavItem: React.FC<NavItemProps> = ({
@@ -30,6 +31,7 @@ export const NavItem: React.FC<NavItemProps> = ({
   minWidthClass,
   href,
   getDropdownItemHref,
+  accordionDuration,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -97,6 +99,7 @@ export const NavItem: React.FC<NavItemProps> = ({
             activeId={activeId}
             getItemHref={getDropdownItemHref}
             onClose={() => setIsHovered(false)}
+            accordionDuration={accordionDuration}
           />
         )}
       </AnimatePresence>
