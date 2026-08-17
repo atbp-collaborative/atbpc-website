@@ -37,8 +37,8 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members, activeF
 
   return (
     <div className="w-full h-full flex flex-col justify-between overflow-hidden select-none">
-      <div className="shrink-0 flex items-center justify-center relative pb-2.5 mb-2">
-        <div className="flex items-center justify-center flex-wrap gap-1 sm:gap-2 text-mini sm:text-caption font-medium lowercase tracking-wider">
+      <div className="shrink-0 flex items-center justify-between relative pb-2.5 mb-2">
+        <div className="flex items-center justify-start flex-wrap gap-1 sm:gap-2 text-mini sm:text-caption font-medium lowercase tracking-wider">
           {FILTER_OPTIONS.map((filter, index) => {
             const isActive = activeFilter === filter.id;
             return (
@@ -63,7 +63,7 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members, activeF
           })}
         </div>
 
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center space-x-1 sm:space-x-2">
+        <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
           <button
             onClick={() => handleScroll('left')}
             disabled={!canScrollPrev}

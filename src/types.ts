@@ -54,15 +54,20 @@ export interface MemberInvolvement {
 
 export type MemberCategory = 'designers' | 'managers' | 'builders';
 
+export interface MemberAffiliation {
+  title: string;
+  description: string;
+}
+
 export interface Member {
   id: string;
   name: string;
   role: string;
-  license: string;
+  license?: string;
   image: string;
   bio: string;
   fullBio: string;
-  education: string[];
+  affiliations: MemberAffiliation[];
   categories: MemberCategory[];
   involvement: MemberInvolvement[];
 }

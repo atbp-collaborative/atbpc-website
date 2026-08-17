@@ -49,6 +49,8 @@ export const Header: React.FC<HeaderProps> = ({
 
   const isWorksCategory = filterCategories.includes(currentCategoryFilter) || WORKS_CATEGORIES.some(c => c.id === currentCategoryFilter);
   const isSingleProjectPage = pathname.startsWith('/works/') && worksSlug && !isWorksCategory;
+  const isContactInfoPage = pathname === ROUTES.contactInfo;
+  const hideHeaderCtas = isSingleProjectPage || isContactInfoPage;
 
   return (
     <header
@@ -120,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Action Area */}
         <div className="flex items-center space-x-2 sm:space-x-2.5 mr-0 pr-0">
-          {!isSingleProjectPage && (
+          {!hideHeaderCtas && (
             <>
               <CtaButton
                 title="Schedule a Discovery Session"

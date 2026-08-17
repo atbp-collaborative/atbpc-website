@@ -1,0 +1,10 @@
+<svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Building Base & Archway -->
+  <path fill="#231f20" fill-rule="evenodd" d="
+    M12,40 v25 h26 l4,-30 h-4 v-2 l2,-2 l3,-3 v-4 h34 v4 l3,3 l2,2 v2 h-4 l4,30 h26 v-25 h-22 l-2,-14 v-3 l-4,-3 h-28 l-4,3 v3 l-2,14 z 
+    M52,65 v-10 a8,8 0 0,1 16,0 v10 z
+    M48,50 v-5 h6 v-5 h12 v5 h6 v5 z
+    M48,25 v-8 h24 v8 z
+    M56,12 l4,-4 l4,4 z
+  " />
+</svg>

@@ -9,10 +9,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=600&auto=format&fit=crop',
     bio: 'Licensed Architect, UAP Makati Chapter Member, and Lecturer. Specialist in interdisciplinary design studies.',
     fullBio: 'Marchie Teodoro Borja is a registered, licensed, and recognized professional Filipino architect by the Professional Regulation Commission (PRC) - Board of Architecture. He is an active member in good standing with the Integrated and Accredited Professional Organization of Architects (IAPOA) under the United Architects of the Philippines (UAP) Makati Chapter.\n\nA proud graduate of National University-Manila with extensive specialization in Interdisciplinary Design Studies from the prestigious SoFA Design Institute. Beyond full-time practice, he serves as an Industry Professional Lecturer and Faculty Member across various CHED-recognized universities, fostering local design culture. His design philosophy fundamentally embraces structural efficiency, spatial poetry, and cultural truth.',
-    education: [
-      'National University-Manila Alumnus',
-      'SoFA Design Institute Alumnus',
-      'Active Member, United Architects of the Philippines (Makati Chapter)'
+    affiliations: [
+      {
+        title: 'National University-Manila Alumnus',
+        description: 'Earned a Bachelor of Science in Architecture, establishing foundational expertise in sustainable planning and structural tectonics.'
+      },
+      {
+        title: 'SoFA Design Institute Alumnus',
+        description: 'Completed specialized coursework in Interdisciplinary Design Studies, bridging spatial poetry and modern furniture craft.'
+      },
+      {
+        title: 'Active Member, United Architects of the Philippines (Makati Chapter)',
+        description: 'Regular contributor to continuing professional development forums and collaborative regional architectural workshops.'
+      }
     ],
     categories: ['designers', 'managers', 'builders'],
     involvement: [
@@ -44,10 +53,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop',
     bio: 'Co-Founding Partner supervising Human Resources, organizational alignment, and fiscal administration.',
     fullBio: 'Jhoanna Marie V. Ramos acts as the foundational administrative anchor of ATBP Collaborative. As the HR & Finance Director and Corporate Treasurer, she oversees the studio\'s operational workflows, contract negotiations, progressive budget pipelines, and administrative transparency.\n\nHer dedication to meticulous financial schedules and human resources ensure that client-builder relationships remain smooth, on-budget, and legally sound, safeguarding project concentration and maintaining strict professional compliance across all execution steps.',
-    education: [
-      'Financial Management & Operations Alumnus',
-      'Corporate Treasurer & Co-Founding Partner',
-      'Human Resource Management & Compliance Specialist'
+    affiliations: [
+      {
+        title: 'Financial Management & Operations Alumnus',
+        description: 'Holds a degree in Financial Management, directing progressive fiscal strategy and capital allocations for design-build operations.'
+      },
+      {
+        title: 'Corporate Treasurer & Co-Founding Partner',
+        description: 'Directs internal financial governance, compliance auditing, and stakeholder investment pipelines at ATBP Collaborative.'
+      },
+      {
+        title: 'Human Resource Management & Compliance Specialist',
+        description: 'Oversees labor law compliance, personnel development frameworks, and vendor contract negotiations studio-wide.'
+      }
     ],
     categories: ['managers'],
     involvement: [
@@ -73,16 +91,25 @@ export const MEMBERS_DATA: Member[] = [
   },
   {
     id: 'adrian-mores',
-    name: 'Adrian Ta-ay Mores, ',
+    name: 'Adrian Ta-ay Mores',
     role: 'Technical Director & Partner',
     license: 'RLA License No. 0045492',
     image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop',
     bio: 'Licensed Architect and Registered Master Plumber. Technical Director and Corporate Secretary ensuring execution precision.',
     fullBio: 'Adrian Ta-ay Mores is a multi-licensed professional specializing in complex building systems, structural coordination, and code compliance. Serving as Technical Director and Corporate Secretary of ATBP Collaborative, he bridges the gap between conceptual design and high-precision execution.\n\nHis expertise in architectural drafting standards, master plumbing design, and MEPFS system integration makes him the primary technical anchor for the studio\'s high-density fit-outs, commercial retail projects, and modular structural envelopes.',
-    education: [
-      'Licensed Architect (RLA)',
-      'Registered Master Plumber (NAMPAP)',
-      'Technical Systems Design Specialist'
+    affiliations: [
+      {
+        title: 'Licensed Architect (RLA)',
+        description: 'PRC-registered architect spearheading complex building envelopes, technical drafting, and statutory code compliance.'
+      },
+      {
+        title: 'Registered Master Plumber (NAMPAP)',
+        description: 'Accredited specialist directing sanitary engineering, water distribution networks, and integrated MEPFS coordination.'
+      },
+      {
+        title: 'Technical Systems Design Specialist',
+        description: 'Specializes in high-density commercial fit-outs, modular assembly methods, and multi-disciplinary drawing standardizations.'
+      }
     ],
     categories: ['managers', 'builders'],
     involvement: [
@@ -114,10 +141,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=600&auto=format&fit=crop',
     bio: 'Associate Architect delivering layout blueprints, design studies, and construction document sets.',
     fullBio: 'Nikka Jane Oliveros is an exceptionally detail-oriented professional architect focusing on space planning, material schedules, and precise construction documentation. As Associate Architect at ATBP Collaborative, she drives the drafting pipeline from initial schematic sketches to permit-ready contract document sets.\n\nHer research-informed approach to interior textures, tropical planning, and local zoning laws allows the studio to deliver aesthetic, high-density residential solutions and fluid retail spaces while upholding absolute regulatory standards.',
-    education: [
-      'Licensed Architect (RLA)',
-      'Digital Architecture & BIM Specialist',
-      'Space Planning & Tropical Architecture Researcher'
+    affiliations: [
+      {
+        title: 'Licensed Architect (RLA)',
+        description: 'PRC-licensed architect focusing on space planning, material schedules, and statutory construction documentation.'
+      },
+      {
+        title: 'Digital Architecture & BIM Specialist',
+        description: 'Proficient in advanced 3D modeling pipelines, parametric detailing, and coordination of permit-ready drawing packages.'
+      },
+      {
+        title: 'Space Planning & Tropical Architecture Researcher',
+        description: 'Conducts empirical research in passive cooling methodologies and locally sourced textural surface finishes.'
+      }
     ],
     categories: ['designers'],
     involvement: [
@@ -149,10 +185,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=600&auto=format&fit=crop',
     bio: 'Experienced BIM Specialist and Lead Architectural Draftsman, optimizing Revit/BIM standards.',
     fullBio: 'Mark Joseph Ramos is an expert in Building Information Modeling (BIM) and digital architecture workflows. With over eight years of experience, he leads the digital drafting division at ATBP Collaborative, ensuring precise coordination across structural, mechanical, and architectural systems.',
-    education: [
-      'Bachelor of Science in Architecture',
-      'Certified Autodesk Revit Professional',
-      'Digital Production Quality Controller'
+    affiliations: [
+      {
+        title: 'Bachelor of Science in Architecture',
+        description: 'Graduated with an emphasis on digital architectural technologies and construction documentation methodologies.'
+      },
+      {
+        title: 'Certified Autodesk Revit Professional',
+        description: 'Industry-certified modeler managing complex multi-trade clash-detection, family creation, and parametric workflows.'
+      },
+      {
+        title: 'Digital Production Quality Controller',
+        description: 'Oversees digital drafting accuracy, model integrity standards, and structural synchronization across all design packages.'
+      }
     ],
     categories: ['designers'],
     involvement: [
@@ -178,10 +223,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=600&auto=format&fit=crop',
     bio: 'Registered Interior Designer specializing in bespoke high-end residential fit-outs and materials curation.',
     fullBio: 'Maria Clara Santos is a registered and licensed interior designer in the Philippines. She heads the space curation and interior materials department, working closely with the design team to blend local craft with contemporary minimalist spatial layouts.',
-    education: [
-      'BS Interior Design, University of the Philippines',
-      'Active Member, Philippine Institute of Interior Designers (PIID)',
-      'Acoustic Design & Lighting Certification'
+    affiliations: [
+      {
+        title: 'BS Interior Design, University of the Philippines',
+        description: 'Graduated with honors, focusing on ergonomic interior planning, spatial psychology, and bespoke fixture design.'
+      },
+      {
+        title: 'Active Member, Philippine Institute of Interior Designers (PIID)',
+        description: 'Participates in national interior design symposia, sustainable material councils, and artisanal craft collaborations.'
+      },
+      {
+        title: 'Acoustic Design & Lighting Certification',
+        description: 'Certified specialist in ambient architectural lighting layouts and interior acoustic performance optimization.'
+      }
     ],
     categories: ['designers'],
     involvement: [
@@ -207,10 +261,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600&auto=format&fit=crop',
     bio: 'Registered Civil Engineer managing site execution, construction scheduling, and compliance.',
     fullBio: 'Christian Alipio is a licensed civil engineer specializing in turnkey project management and site implementation. He directs on-site operations for ATBP Collaborative, coordinating subcontractors and ensuring structural integrity, material standards, and workplace safety.',
-    education: [
-      'BS Civil Engineering, Mapúa University',
-      'Professional Project Management Specialist',
-      'OSHA Workplace Safety Certified'
+    affiliations: [
+      {
+        title: 'BS Civil Engineering, Mapúa University',
+        description: 'Earned a degree in Civil Engineering with concentration in structural analysis and reinforced concrete design.'
+      },
+      {
+        title: 'Professional Project Management Specialist',
+        description: 'Coordinates turnkey site management, subcontractor work sequencing, and critical-path milestone tracking.'
+      },
+      {
+        title: 'OSHA Workplace Safety Certified',
+        description: 'Enforces occupational health, jobsite safety regulations, and risk-mitigation protocols across active build sites.'
+      }
     ],
     categories: ['managers', 'builders'],
     involvement: [
@@ -236,10 +299,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=600&auto=format&fit=crop',
     bio: 'Manages client onboarding, contract timelines, and day-to-day studio operations across active projects.',
     fullBio: 'Hannah Zarsaga Villanueva oversees the client-facing side of ATBP Collaborative, from first-consultation scheduling through contract signing and progress reporting. She keeps every active engagement moving on a clear timeline, translating design and construction milestones into plain updates clients can act on.\n\nHer background in operations management means she also owns the studio\'s internal scheduling systems, vendor onboarding, and administrative compliance, ensuring the design and build teams can focus on execution without workflow bottlenecks.',
-    education: [
-      'BS Business Administration, Major in Operations Management',
-      'Certified Client Relationship Management Professional',
-      'Studio Operations & Scheduling Lead'
+    affiliations: [
+      {
+        title: 'BS Business Administration, Major in Operations Management',
+        description: 'Graduated with focus on supply chain integration, service delivery optimization, and corporate organizational dynamics.'
+      },
+      {
+        title: 'Certified Client Relationship Management Professional',
+        description: 'Leads client onboarding journeys, transparent communication cadences, and executive stakeholder alignment.'
+      },
+      {
+        title: 'Studio Operations & Scheduling Lead',
+        description: 'Coordinates cross-functional project schedules between design, procurement, and on-site construction divisions.'
+      }
     ],
     categories: ['managers'],
     involvement: [
@@ -265,10 +337,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?q=80&w=600&auto=format&fit=crop',
     bio: 'Licensed Architect bridging design intent and buildability through detailed construction drawings and site checks.',
     fullBio: 'Ernest Bataller Bambico is a licensed architect who works at the intersection of design and construction, developing the detailed drawings that keep concept designs buildable and code-compliant. He regularly visits active sites to verify that executed work matches design intent before sign-off.\n\nHis dual fluency in design software and construction sequencing makes him a key liaison between the studio\'s design team and its on-site contractors, catching conflicts early and resolving them without slowing down the build.',
-    education: [
-      'Licensed Architect (RLA)',
-      'BS Architecture, University of Santo Tomas',
-      'Construction Detailing & Code Compliance Specialist'
+    affiliations: [
+      {
+        title: 'Licensed Architect (RLA)',
+        description: 'PRC-accredited professional validating construction documents against local building codes and zoning laws.'
+      },
+      {
+        title: 'BS Architecture, University of Santo Tomas',
+        description: 'Completed architectural studies with focus on structural morphology, history of architecture, and construction detailing.'
+      },
+      {
+        title: 'Construction Detailing & Code Compliance Specialist',
+        description: 'Bridges schematic design intent and fabrication realities through meticulous on-site joinery and structural detailing.'
+      }
     ],
     categories: ['designers', 'builders'],
     involvement: [
@@ -294,10 +375,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1607990283143-e81e7a2c9349?q=80&w=600&auto=format&fit=crop',
     bio: 'Licensed Architect handling both schematic design and hands-on fabrication oversight for modular builds.',
     fullBio: 'John Dave Lacaba Aquino is a licensed architect specializing in design-build delivery, where the same team that designs a space also oversees its fabrication and assembly. He develops schematic concepts through to shop-ready drawings, then stays involved through fabrication and installation.\n\nThis end-to-end involvement lets him make real-time material and joinery decisions on-site, keeping design intent intact even when field conditions call for adjustments.',
-    education: [
-      'Licensed Architect (RLA)',
-      'BS Architecture, Far Eastern University',
-      'Design-Build Delivery & Modular Fabrication Specialist'
+    affiliations: [
+      {
+        title: 'Licensed Architect (RLA)',
+        description: 'PRC-registered architect managing end-to-end design-build projects and prefabrication detailing.'
+      },
+      {
+        title: 'BS Architecture, Far Eastern University',
+        description: 'Graduated with core emphasis on building science, modular framing, and architectural construction systems.'
+      },
+      {
+        title: 'Design-Build Delivery & Modular Fabrication Specialist',
+        description: 'Directs custom timber joinery, metalwork fabrication, and rapid on-site assembly strategies.'
+      }
     ],
     categories: ['designers', 'builders'],
     involvement: [
@@ -323,10 +413,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=600&auto=format&fit=crop',
     bio: 'Registered Civil Engineer overseeing structural execution, formworks, and day-to-day site safety.',
     fullBio: 'Rafael Miguel Bautista is a licensed civil engineer responsible for structural execution on active sites, from formwork inspection to concrete pour quality control. He works alongside construction managers to keep crews on schedule without compromising structural standards.\n\nHis focus on jobsite safety protocols and material testing gives the studio a consistent quality checkpoint between the engineering drawings and what actually gets built.',
-    education: [
-      'BS Civil Engineering, De La Salle University',
-      'Registered Civil Engineer (RCE)',
-      'Construction Safety & Quality Control Certified'
+    affiliations: [
+      {
+        title: 'BS Civil Engineering, De La Salle University',
+        description: 'Graduated with specialization in structural foundation engineering and advanced soil-structure interaction.'
+      },
+      {
+        title: 'Registered Civil Engineer (RCE)',
+        description: 'PRC-licensed civil engineer supervising formwork integrity, reinforced rebar inspections, and concrete pour quality.'
+      },
+      {
+        title: 'Construction Safety & Quality Control Certified',
+        description: 'Implements QA/QC checklists, non-destructive material testing, and rigorous site hazard assessments.'
+      }
     ],
     categories: ['builders'],
     involvement: [
@@ -352,10 +451,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop',
     bio: 'Licensed Architect supporting schematic design studies, material research, and presentation drawings.',
     fullBio: 'Patricia Anne Yumang supports the design team across early-stage schematic studies, material research, and client presentation drawings. She has a particular interest in passive tropical design strategies and spends much of her research time studying local material availability and craft techniques.\n\nAs a newer member of the studio, she works closely with senior architects to translate design direction into polished concept boards and preliminary layouts ready for client review.',
-    education: [
-      'Licensed Architect (RLA)',
-      'BS Architecture, University of the Philippines',
-      'Tropical & Passive Design Research Assistant'
+    affiliations: [
+      {
+        title: 'Licensed Architect (RLA)',
+        description: 'PRC-licensed architect creating schematic concept sets, spatial moodboards, and digital presentation packages.'
+      },
+      {
+        title: 'BS Architecture, University of the Philippines',
+        description: 'Completed architectural degree with distinction in sustainable design and vernacular Philippine architecture.'
+      },
+      {
+        title: 'Tropical & Passive Design Research Assistant',
+        description: 'Researches microclimatic shading solutions, passive airflow dynamics, and natural materiality.'
+      }
     ],
     categories: ['designers'],
     involvement: [
@@ -381,10 +489,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?q=80&w=600&auto=format&fit=crop',
     bio: 'Licensed Architect steering design direction and creative quality control across the studio\'s active projects.',
     fullBio: 'Andrea Nicole Fernandez sets and safeguards the design language across every active engagement at ATBP Collaborative, reviewing concept development at each major milestone before it reaches the client. She works directly with project architects to keep material choices, spatial logic, and detailing consistent with the studio\'s design philosophy.\n\nBeyond project-level review, she also mentors junior design staff and runs the internal design critique sessions that keep the studio\'s creative standards sharp across a growing project load.',
-    education: [
-      'Licensed Architect (RLA)',
-      'BS Architecture, University of the Philippines',
-      'Design Leadership & Creative Direction Specialist'
+    affiliations: [
+      {
+        title: 'Licensed Architect (RLA)',
+        description: 'PRC-registered architect providing creative direction and design quality control across all project typologies.'
+      },
+      {
+        title: 'BS Architecture, University of the Philippines',
+        description: 'Alumna specializing in contemporary urban design theory, tectonic expression, and spatial composition.'
+      },
+      {
+        title: 'Design Leadership & Creative Direction Specialist',
+        description: 'Mentors design teams, establishes studio aesthetic guidelines, and oversees milestone design crit sessions.'
+      }
     ],
     categories: ['designers', 'managers'],
     involvement: [
@@ -410,10 +527,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?q=80&w=600&auto=format&fit=crop',
     bio: 'Oversees day-to-day crew work, materials handling, and jobsite safety across active construction sites.',
     fullBio: 'Miguel Angelo Torres runs the daily rhythm of ATBP Collaborative\'s active construction sites, coordinating crew schedules, materials deliveries, and safety briefings before work begins each day. He is the first point of contact for on-site issues, escalating design conflicts to the project architects while keeping the build moving.\n\nHis hands-on experience across residential and commercial builds gives him a practical read on sequencing and labor allocation that keeps projects on schedule without sacrificing workmanship.',
-    education: [
-      'Certificate in Construction Management',
-      'OSHA Workplace Safety Certified',
-      'Site Supervision & Crew Scheduling Specialist'
+    affiliations: [
+      {
+        title: 'Certificate in Construction Management',
+        description: 'Specialized vocational training in construction trades coordination, procurement logistics, and tool management.'
+      },
+      {
+        title: 'OSHA Workplace Safety Certified',
+        description: 'Leads daily toolbox talks, hazard prevention protocols, and PPE compliance on multi-trade construction jobsites.'
+      },
+      {
+        title: 'Site Supervision & Crew Scheduling Specialist',
+        description: 'Directs daily field labor allocation, concrete cures, framing inspections, and subcontractor handover workflows.'
+      }
     ],
     categories: ['builders'],
     involvement: [
@@ -439,10 +565,19 @@ export const MEMBERS_DATA: Member[] = [
     image: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=600&auto=format&fit=crop',
     bio: 'Prepares cost estimates, material take-offs, and budget tracking across design and construction phases.',
     fullBio: 'Kristelle Anne Del Rosario translates design drawings into detailed material take-offs and cost estimates, giving both the studio and its clients a clear picture of budget exposure before ground is broken. She tracks actual spend against estimate throughout construction, flagging variances early enough for the team to adjust.\n\nHer close coordination with both the design and construction teams means cost control decisions are grounded in what is actually buildable, not just what is on paper.',
-    education: [
-      'BS Quantity Surveying / Construction Management',
-      'Registered Quantity Surveyor',
-      'Cost Estimation & Budget Control Specialist'
+    affiliations: [
+      {
+        title: 'BS Quantity Surveying / Construction Management',
+        description: 'Graduated with specialization in cost engineering, bill of quantities (BOQ) preparation, and contract valuation.'
+      },
+      {
+        title: 'Registered Quantity Surveyor',
+        description: 'Certified professional managing commercial cost auditing, budget variance tracking, and procurement tenders.'
+      },
+      {
+        title: 'Cost Estimation & Budget Control Specialist',
+        description: 'Develops comprehensive material take-offs and financial cost forecasting for residential and commercial builds.'
+      }
     ],
     categories: ['managers', 'builders'],
     involvement: [

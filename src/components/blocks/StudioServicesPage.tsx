@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'motion/react';
 import { StudioSubpageData } from '@/dummy-data/our-services';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
 
@@ -13,12 +12,7 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
   data,
 }) => {
   return (
-    <motion.div
-      key={data.id}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.4 }}
+    <div
       className="w-full h-full px-4 sm:px-8 md:px-12 py-3 flex flex-col justify-between overflow-hidden select-none min-h-0 flex-1"
     >
       {/* Top Section / Header if image is present */}
@@ -81,6 +75,6 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
           ATBP Collaborative ◦ {data.subtext}
         </p>
       </div>
-    </motion.div>
+    </div>
   );
 };

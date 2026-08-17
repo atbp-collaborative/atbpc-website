@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'motion/react';
 import { useTheme } from '@/lib/theme-context';
 
 interface ContactFormPageProps {
@@ -15,12 +14,7 @@ export const ContactFormPage: React.FC<ContactFormPageProps> = ({ title, subtitl
   const { isDarkMode } = useTheme();
 
   return (
-    <motion.div
-      key={embedTitle}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
+    <div
       className="w-full h-full select-none flex flex-col flex-1 min-h-0 overflow-hidden px-4 sm:px-8 pb-4 pt-4 sm:pt-6"
     >
       <div className="mb-4 shrink-0 pb-3 text-center">
@@ -42,6 +36,6 @@ export const ContactFormPage: React.FC<ContactFormPageProps> = ({ title, subtitl
           title={embedTitle}
         />
       </div>
-    </motion.div>
+    </div>
   );
 };

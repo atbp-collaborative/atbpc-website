@@ -21,7 +21,7 @@ export const BreadcrumbButton: React.FC<BreadcrumbButtonProps> = ({
   const innerClassName = "flex items-center space-x-2 text-caption uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity cursor-pointer";
 
   return (
-    <div className={`flex items-center justify-start gap-4 shrink-0 mb-4 sm:mb-5 ${className}`}>
+    <div className={`flex items-center justify-start gap-4 shrink-0 mt-6 sm:mt-8 mb-4 sm:mb-5 ${className}`}>
       {href ? (
         <Link href={href} onClick={onClick} className={innerClassName}>
           <ChevronLeft size={16} />

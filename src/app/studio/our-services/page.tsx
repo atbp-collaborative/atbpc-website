@@ -7,10 +7,8 @@ import { getServices } from '@/lib/services/design-services';
 import { SubLandingPage } from '@/components/blocks/SubLandingPage';
 import { LandingCard } from '@/components/blocks/LandingPage';
 import { ROUTES } from '@/lib/navigation/routes';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export default function OurServicesPage() {
-  useDocumentTitle('Our Services');
   const [services, setServices] = React.useState<Service[]>([]);
   const router = useRouter();
 

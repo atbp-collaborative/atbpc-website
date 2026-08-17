@@ -86,12 +86,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
   );
 
   return (
-    <motion.div
-      key="grow-with-us"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
+    <div
       className="w-full flex-1 min-h-0 max-h-[calc(100vh-80px)] mx-auto overflow-hidden flex flex-col py-3 select-none"
     >
       {/* Title Header */}
@@ -227,6 +222,6 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
           I have read and agree to the Privacy Statement
         </label>
       </InfoModal>
-    </motion.div>
+    </div>
   );
 };

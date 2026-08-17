@@ -124,12 +124,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
   );
 
   return (
-    <motion.div
-      key="partner-application-form"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
+    <div
       className="w-full h-full max-h-[calc(100vh-80px)] mx-auto overflow-hidden flex flex-col py-3 select-none"
     >
       <div className="mb-3 shrink-0 flex flex-col md:flex-row md:justify-between md:items-start gap-4 px-4 sm:px-8">
@@ -395,6 +390,6 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
         onSave={(regs) => setFormData(prev => ({ ...prev, ...regs }))}
         isDarkMode={isDarkMode}
       />
-    </motion.div>
+    </div>
   );
 };

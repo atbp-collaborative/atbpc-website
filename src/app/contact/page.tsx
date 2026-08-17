@@ -4,10 +4,8 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { LandingPage, LandingCard } from '@/components/blocks/LandingPage';
 import { ROUTES } from '@/lib/navigation/routes';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export default function ContactPage() {
-  useDocumentTitle('Contact');
   const router = useRouter();
 
   const contactCards: LandingCard[] = [
