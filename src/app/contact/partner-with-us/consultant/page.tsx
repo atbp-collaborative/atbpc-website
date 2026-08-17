@@ -2,11 +2,9 @@
 
 import React from 'react';
 import { PartnerApplicationForm } from '@/components/forms/PartnerApplicationForm';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { consultantConditionsData } from '@/lib/modals/partner-conditions';
 
 export default function ConsultantPage() {
-  useDocumentTitle('Consultants');
   const specialties = [
     'Structural Engineering Practice',
     'MEPFS Engineering (Mechanical, Electrical, Plumbing, Fire)',

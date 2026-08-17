@@ -13,8 +13,8 @@ export const OfficeMap: React.FC<OfficeMapProps> = ({ isDarkMode }) => {
   const mapRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
 
-  // Coordinates for F2QH+G6 Parañaque, Countryside Village, Sun Valley, Parañaque, Philippines
-  const position: [number, number] = [14.4891, 121.0396];
+  // Coordinates for ATBP Collaborative (https://maps.app.goo.gl/nuNmfLPAD9THjhk36)
+  const position: [number, number] = [14.488795, 121.0281222];
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -30,9 +30,9 @@ export const OfficeMap: React.FC<OfficeMapProps> = ({ isDarkMode }) => {
 
     mapRef.current = map;
 
-    // Add Zoom Control to the bottom right for premium appearance
+    // Add Zoom Control to the bottom left
     L.control.zoom({
-      position: 'bottomright'
+      position: 'bottomleft'
     }).addTo(map);
 
     // Custom CSS DivIcon Marker matching branding colors
@@ -63,19 +63,28 @@ export const OfficeMap: React.FC<OfficeMapProps> = ({ isDarkMode }) => {
       closeButton: false,
     });
 
-    // Handle initial sizing layout issues and window resizes
+    // Handle sizing and resizes via ResizeObserver and window events
     const handleResize = () => {
       map.invalidateSize();
     };
 
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+
+    if (mapContainerRef.current) {
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
     const resizeTimeout = setTimeout(() => {
       map.invalidateSize();
-    }, 200);
+    }, 100);
 
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       clearTimeout(resizeTimeout);
       map.remove();
       mapRef.current = null;
@@ -111,7 +120,7 @@ export const OfficeMap: React.FC<OfficeMapProps> = ({ isDarkMode }) => {
 
   return (
     <div 
-      className="relative w-full h-full rounded-none overflow-hidden border border-space-sparkle/10 shadow-sm min-h-[350px]"
+      className="relative w-full h-full rounded-none overflow-hidden border border-space-sparkle/10 shadow-sm"
       style={{ backgroundColor: isDarkMode ? 'rgb(51, 52, 54)' : 'white' }}
     >
       <style>{`
@@ -124,7 +133,7 @@ export const OfficeMap: React.FC<OfficeMapProps> = ({ isDarkMode }) => {
           }
         ` : ''}
       `}</style>
-      <div ref={mapContainerRef} className={`w-full h-full min-h-[350px] z-0 ${isDarkMode ? 'dark-map-tiles' : ''}`} />
+      <div ref={mapContainerRef} className={`w-full h-full z-0 ${isDarkMode ? 'dark-map-tiles' : ''}`} />
     </div>
   );
 };

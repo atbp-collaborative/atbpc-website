@@ -5,10 +5,8 @@ import { useRouter } from 'next/navigation';
 import { LandingPage, LandingCard } from '@/components/blocks/LandingPage';
 import { ROUTES } from '@/lib/navigation/routes';
 import { WORKS_CATEGORIES } from '@/dummy-data/works';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export default function WorksPage() {
-  useDocumentTitle('Works');
   const router = useRouter();
 
   const worksCards: LandingCard[] = WORKS_CATEGORIES.map(category => ({

@@ -3,7 +3,6 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
-import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { Member, Project } from '@/types';
 import { useTheme } from '@/lib/theme-context';
@@ -14,7 +13,6 @@ import { BreadcrumbButton } from '@/components/primitives/BreadcrumbButton';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
 import { getMemberById } from '@/lib/services/members';
 import { getProjects } from '@/lib/services/projects';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 interface MemberDetailProps {
   member: Member;
@@ -39,12 +37,8 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
   };
 
   return (
-    <motion.div 
+    <div 
       id={`member-detail-${member.id}`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
       className="w-full px-4 sm:px-8 py-2 select-none flex flex-col flex-1 min-h-0 h-full overflow-hidden justify-between space-y-2"
     >
       <BreadcrumbButton
@@ -52,42 +46,36 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
         onClick={handleBack}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 flex-1 min-h-0 overflow-hidden pb-1">
+      <div className="grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-10 gap-6 lg:gap-8 xl:gap-8 2xl:gap-10 flex-1 min-h-0 overflow-hidden pb-1">
         
-        {/* LEFT: Portrait Container */}
-        <div className="lg:col-span-5 flex flex-col items-stretch h-full min-h-0 overflow-hidden">
+        {/* COLUMN 1: Portrait Container (40% on XL+) */}
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col items-stretch h-full min-h-0 overflow-hidden">
           <div className="relative w-full h-[50vh] lg:h-full lg:flex-1 min-h-0 overflow-hidden bg-black/10 rounded-none group border border-space-sparkle/20 animate-slide-up">
             <ImageWithFade
               src={member.image}
               alt={member.name}
               fill
-              sizes="(min-width: 1024px) 42vw, 100vw"
+              sizes="(min-width: 1280px) 40vw, (min-width: 1024px) 42vw, 100vw"
               priority
               className="object-cover transition-all duration-700 ease-in-out hover:scale-105"
             />
           </div>
         </div>
 
-        {/* RIGHT: High-End Bio & Project Involvement */}
-        <div className="lg:col-span-7 flex flex-col justify-between h-full min-h-0 overflow-hidden space-y-2 py-0.5">
-          <div className="flex flex-col flex-1 min-h-0 overflow-hidden space-y-2">
+        {/* COLUMN 2: Person Name & Bio (30% on XL+, 7 cols on LG) */}
+        <div className="lg:col-span-7 xl:col-span-3 flex flex-col justify-between h-full min-h-0 overflow-hidden space-y-2 py-0.5">
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden space-y-3">
             <div className="shrink-0 space-y-0.5">
               <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight">
                 {member.name}
               </h1>
 
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+              <div>
                 <span className={`text-caption sm:text-mini uppercase tracking-widest font-bold opacity-80 ${
                   isDarkMode ? 'text-white/80' : 'text-space-sparkle'
                 }`}>
                   {member.role}
                 </span>
-
-                {member.license && (
-                  <span className="text-caption font-sans opacity-60">
-                    • {member.license}
-                  </span>
-                )}
               </div>
             </div>
 
@@ -98,15 +86,18 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
               </p>
             </div>
 
-            {/* Accreditations / Credentials Block */}
-            {member.education && member.education.length > 0 && (
-              <Accordion key={`credentials-${member.id}`} title="Credentials" isDarkMode={isDarkMode} size="sm" className="shrink-0">
-                <div className="pb-2 pt-1 text-mini space-y-2 pl-[30px] max-h-[120px] overflow-y-auto">
-                  <ul className="space-y-1">
-                    {member.education.map((item, idx) => (
+            {/* Accreditations / Credentials Block (Accordion for < XL screens) */}
+            {member.affiliations && member.affiliations.length > 0 && (
+              <Accordion key={`credentials-${member.id}`} title="Credentials" isDarkMode={isDarkMode} size="sm" className="shrink-0 xl:hidden">
+                <div className="pb-2 pt-1 text-mini space-y-2 pl-[30px] max-h-[140px] overflow-y-auto pr-1">
+                  <ul className="space-y-2">
+                    {member.affiliations.map((item, idx) => (
                       <li key={idx} className="flex items-start space-x-2 font-light opacity-90">
                         <span className="text-space-sparkle font-semibold mt-0.5">•</span>
-                        <span className={isDarkMode ? "text-bright-gray/90" : "text-vintage-charcoal/90"}>{item}</span>
+                        <div className="flex flex-col space-y-0.5">
+                          <span className={`font-medium ${isDarkMode ? "text-bright-gray/90" : "text-vintage-charcoal/90"}`}>{item.title}</span>
+                          <span className={`text-caption font-light opacity-75 leading-relaxed ${isDarkMode ? "text-bright-gray/70" : "text-vintage-charcoal/70"}`}>{item.description}</span>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -114,11 +105,11 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
               </Accordion>
             )}
 
-            {/* Dynamic Project Involvement Block */}
+            {/* Dynamic Project Involvement Block (Accordion for < XL screens) */}
             {member.involvement && member.involvement.length > 0 && (
-              <Accordion key={`involvement-${member.id}`} title="Project Involvement" isDarkMode={isDarkMode} size="sm" className="shrink-0">
-                <div className="pb-2 pt-1 text-mini space-y-2 pl-[30px] max-h-[120px] overflow-y-auto">
-                  <ul className="space-y-1">
+              <Accordion key={`involvement-${member.id}`} title="Project Involvement" isDarkMode={isDarkMode} size="sm" className="shrink-0 xl:hidden">
+                <div className="pb-2 pt-1 text-mini space-y-2 pl-[30px] max-h-[140px] overflow-y-auto pr-1">
+                  <ul className="space-y-1.5">
                     {member.involvement.map((inv) => {
                       const project = projects.find(p => p.id === inv.projectId);
                       return (
@@ -149,8 +140,100 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
 
           </div>
         </div>
+
+        {/* COLUMN 3: Credentials & Project Involvement (30% on XL+, hidden on < XL) */}
+        <div className="hidden xl:flex xl:col-span-3 flex-col h-full min-h-0 overflow-hidden space-y-4 py-0.5">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2 no-scrollbar space-y-6">
+            
+            {/* Credentials Section */}
+            {member.affiliations && member.affiliations.length > 0 && (
+              <div className="space-y-3">
+                <h2 className={`text-caption sm:text-mini uppercase tracking-widest font-bold opacity-80 ${
+                  isDarkMode ? 'text-white/80' : 'text-space-sparkle'
+                }`}>
+                  Credentials
+                </h2>
+                <ul className="space-y-3">
+                  {member.affiliations.map((item, idx) => (
+                    <li key={idx} className="flex items-start space-x-2.5 font-light">
+                      <span className="text-space-sparkle font-semibold mt-0.5 text-mini">•</span>
+                      <div className="flex flex-col space-y-0.5">
+                        <span className={`text-mini font-medium leading-snug ${
+                          isDarkMode ? 'text-bright-gray' : 'text-vintage-charcoal'
+                        }`}>
+                          {item.title}
+                        </span>
+                        <p className={`text-caption leading-relaxed font-light ${
+                          isDarkMode ? 'text-bright-gray/70' : 'text-vintage-charcoal/70'
+                        }`}>
+                          {item.description}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Project Involvement Section */}
+            {member.involvement && member.involvement.length > 0 && (
+              <div className="space-y-3">
+                <h2 className={`text-caption sm:text-mini uppercase tracking-widest font-bold opacity-80 ${
+                  isDarkMode ? 'text-white/80' : 'text-space-sparkle'
+                }`}>
+                  Project Involvement
+                </h2>
+                <ul className="space-y-3">
+                  {member.involvement.map((inv) => {
+                    const project = projects.find(p => p.id === inv.projectId);
+                    return (
+                      <li key={inv.projectId} className="flex items-start space-x-2.5 font-light">
+                        <span className="text-space-sparkle font-semibold mt-0.5 text-mini">•</span>
+                        <div className="flex flex-col space-y-0.5 flex-1">
+                          {project ? (
+                            <Link
+                              href={projectRoute(project.id)}
+                              className={`group text-mini font-medium hover:text-space-sparkle transition-all focus:outline-none cursor-pointer inline-flex items-center gap-1.5 ${
+                                isDarkMode ? 'text-bright-gray' : 'text-vintage-charcoal'
+                              }`}
+                            >
+                              <span className="group-hover:underline underline-offset-2">{inv.projectTitle}</span>
+                              <ArrowUpRight size={13} className="opacity-65 text-space-sparkle group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                            </Link>
+                          ) : (
+                            <span className={`text-mini font-medium ${
+                              isDarkMode ? 'text-bright-gray' : 'text-vintage-charcoal'
+                            }`}>
+                              {inv.projectTitle}
+                            </span>
+                          )}
+                          {inv.roleInProject && (
+                            <span className={`text-caption italic font-light ${
+                              isDarkMode ? 'text-bright-gray/60' : 'text-vintage-charcoal/60'
+                            }`}>
+                              {inv.roleInProject}
+                            </span>
+                          )}
+                          {inv.description && (
+                            <p className={`text-caption leading-relaxed font-light mt-0.5 ${
+                              isDarkMode ? 'text-bright-gray/70' : 'text-vintage-charcoal/70'
+                            }`}>
+                              {inv.description}
+                            </p>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
+          </div>
+        </div>
+
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -170,7 +253,6 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
     });
   }, [params]);
 
-  useDocumentTitle(member ? member.name : 'Our People');
 
   if (isLoading || !member) return null;
 

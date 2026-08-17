@@ -1,4 +1,5 @@
 import { StudioSubpageData } from './our-services';
+import { ROUTES } from '@/lib/navigation/routes';
 
 export const OUR_SERVICES_PROCESS_DATA: Record<string, StudioSubpageData> = {
   'designing-with-values': {
@@ -92,3 +93,31 @@ export const OUR_SERVICES_PROCESS_DATA: Record<string, StudioSubpageData> = {
     subtext: 'Honoring regional craftsmanship by integrating traditional artisan techniques with modern standards.'
   }
 };
+
+export const OUR_PROCESS_CARDS = [
+  {
+    id: 'designing-with-values',
+    href: ROUTES.designingWithValues,
+    title: 'designing with values',
+    tagline: 'purpose-driven spatial concepts anchored in environmental & social context',
+    subtext: 'designing spaces that respect context, microclimate, and the human experience.',
+    image: '/images/contact_case_study_house_img_1785469986420.jpg',
+  },
+  {
+    id: 'managing-with-integrity',
+    href: ROUTES.managingWithIntegrity,
+    title: 'managing with integrity',
+    tagline: 'uncompromising fiscal clarity, transparent procurement & rigorous oversight',
+    subtext: 'ensuring project success through transparent procurement and uncompromising oversight.',
+    image: '/images/contact_headquarters_img_1785470005846.jpg',
+  },
+  {
+    id: 'building-with-culture',
+    href: ROUTES.buildingWithCulture,
+    title: 'building with culture',
+    tagline: 'synthesizing regional craftsmanship with modern architectural technology',
+    subtext: 'honoring regional craftsmanship by integrating traditional artisan techniques with modern standards.',
+    image: '/images/studio_process_img_1785469980353.jpg',
+  },
+];
+

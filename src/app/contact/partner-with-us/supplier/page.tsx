@@ -2,11 +2,9 @@
 
 import React from 'react';
 import { PartnerApplicationForm } from '@/components/forms/PartnerApplicationForm';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { supplierConditionsData } from '@/lib/modals/partner-conditions';
 
 export default function SupplierPage() {
-  useDocumentTitle('Suppliers');
   const categories = [
     'Architectural Hardware & Metals',
     'Millwork, Timber & Joinery',

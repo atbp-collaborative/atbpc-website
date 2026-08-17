@@ -6,10 +6,8 @@ import { LandingCard } from '@/components/blocks/LandingPage';
 import { SubLandingPage } from '@/components/blocks/SubLandingPage';
 import { ROUTES } from '@/lib/navigation/routes';
 import { PARTNER_WITH_US_CARDS } from '@/dummy-data/contact';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export default function PartnerWithUsPage() {
-  useDocumentTitle('Partner With Us');
   const router = useRouter();
 
   const cards: LandingCard[] = PARTNER_WITH_US_CARDS.map((card) => ({

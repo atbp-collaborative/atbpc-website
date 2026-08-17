@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { PeopleListPage } from '@/components/blocks/PeopleListPage';
 
 export const metadata: Metadata = {
-  title: 'Our People',
+  title: 'ATBPC | Our People',
 };
 
 export default function OurPeoplePage() {

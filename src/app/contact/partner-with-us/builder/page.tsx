@@ -2,11 +2,9 @@
 
 import React from 'react';
 import { PartnerApplicationForm } from '@/components/forms/PartnerApplicationForm';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { builderConditionsData } from '@/lib/modals/partner-conditions';
 
 export default function BuilderPage() {
-  useDocumentTitle('Builders');
   const specialties = [
     'General Building Contractor',
     'Architectural Fit-Out & Joinery',

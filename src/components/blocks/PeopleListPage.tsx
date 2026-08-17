@@ -2,7 +2,6 @@
 
 import React, { Suspense } from 'react';
 import { getMembers } from '@/lib/services/members';
-import { motion } from 'motion/react';
 import { Member, MemberCategory } from '@/types';
 import { PeopleCarousel } from '@/components/blocks/PeopleCarousel';
 
@@ -18,12 +17,7 @@ function PeopleListPageContent({ activeFilter }: PeopleListPageProps) {
   }, []);
 
   return (
-    <motion.div
-      key="people"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.4 }}
+    <div
       className="w-full h-full flex flex-col justify-between overflow-hidden px-4 sm:px-8 md:px-12 py-3 sm:py-5 select-none"
     >
       <PeopleCarousel members={members} activeFilter={activeFilter} />
@@ -34,7 +28,7 @@ function PeopleListPageContent({ activeFilter }: PeopleListPageProps) {
           we are a licensed, registered collaborative trained and experienced to provide you services ... architecture, engineering, building construction industry, nationwide.
         </p>
       </div>
-    </motion.div>
+    </div>
   );
 }
 

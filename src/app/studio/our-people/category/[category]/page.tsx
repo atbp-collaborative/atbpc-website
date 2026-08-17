@@ -17,7 +17,7 @@ function isMemberCategory(value: string): value is MemberCategory {
 
 export async function generateMetadata({ params }: { params: Promise<{ category: string }> }): Promise<Metadata> {
   const { category } = await params;
-  return { title: isMemberCategory(category) ? CATEGORY_TITLES[category] : undefined };
+  return { title: isMemberCategory(category) ? 'ATBPC | Our People' : undefined };
 }
 
 export default async function Page({ params }: { params: Promise<{ category: string }> }) {
