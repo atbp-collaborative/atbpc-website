@@ -1,0 +1,10 @@
+- [x] Define new content and models for piecework-services and consultation-retainer-services columns
+- [x] Restructure StudioServicesPage.tsx:
+  - [x] Position Title, Tagline, and Description at the top left header section
+  - [x] Update Title typography to match ProcessSubpage.tsx
+  - [x] Implement 3-column accordion layout for piecework-services
+  - [x] Implement 3-column static text block layout for comprehensive-services
+  - [x] Implement 2-column layout for consultation-retainer-services (Consultation and Retainer)
+  - [x] Set bottom subtext to consistently render with top border
+- [x] Verify changes compile via typecheck
+- [x] Manually verify styling and routes on all 3 services subpages

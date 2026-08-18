@@ -106,6 +106,13 @@ export interface AddressFieldConfig extends BaseFieldConfig {
   dense?: boolean;
 }
 
+export interface DivFieldConfig extends BaseFieldConfig {
+  type: 'div';
+  placeholder?: string;
+  grow?: boolean;
+  className?: string;
+}
+
 export type FieldConfig =
   | TextFieldConfig
   | SelectFieldConfig
@@ -113,7 +120,8 @@ export type FieldConfig =
   | FileFieldConfig
   | ChoiceCardFieldConfig
   | ChipMultiSelectFieldConfig
-  | AddressFieldConfig;
+  | AddressFieldConfig
+  | DivFieldConfig;
 
 /** Common props every concrete field component receives from FormFieldRenderer. */
 export interface FieldRenderProps<TValue = any> {

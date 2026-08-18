@@ -7,5 +7,6 @@ export { FileUploadField } from './FileUploadField';
 export { ChoiceCardField } from './ChoiceCardField';
 export { ChipMultiSelectField } from './ChipMultiSelectField';
 export { AddressField } from './AddressField';
+export { DivField } from './DivField';
 export { FormFieldRenderer } from './FormFieldRenderer';
 export { MsFormsEmbed } from './MsFormsEmbed';
