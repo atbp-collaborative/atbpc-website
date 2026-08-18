@@ -113,6 +113,7 @@ function ProjectDetailContent({
 
   const columnRef = useRef<HTMLDivElement>(null);
   const [isDesktop, setIsDesktop] = useState<boolean>(false);
+  const [isXL, setIsXL] = useState<boolean>(false);
   const [coords, setCoords] = useState({
     columnLeft: 0,
     columnTop: 0,
@@ -124,6 +125,7 @@ function ProjectDetailContent({
   useEffect(() => {
     const handleResize = () => {
       setIsDesktop(window.innerWidth >= 1024);
+      setIsXL(window.innerWidth >= 1280);
       if (columnRef.current) {
         const rect = columnRef.current.getBoundingClientRect();
         // Keep track of viewport-relative coordinates
@@ -242,22 +244,72 @@ function ProjectDetailContent({
     return targetTop - coords.columnTop;
   }, [coords.windowHeight, targetHeight, coords.columnTop]);
 
+  const renderProjectSpecs = () => (
+    <div className="flex flex-col space-y-4">
+      {project.specs.area && (
+        <div>
+          <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Floor Area</span>
+          <span className="font-medium text-mini">{project.specs.area}</span>
+        </div>
+      )}
+      <div>
+        <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Contract Type</span>
+        <span className="font-medium text-mini block capitalize">{project.specs.scope}</span>
+      </div>
+      {project.specs.materials && (
+        <div>
+          <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Featured Materials</span>
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            {project.specs.materials.map((m, i) => (
+              <span key={i} className={`px-2 py-0.5 rounded-none text-micro font-sans ${
+                isDarkMode ? 'bg-space-sparkle/10 text-bright-gray' : 'bg-space-sparkle/5 text-vintage-charcoal'
+              }`}>
+                {m}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {contributors.length > 0 && (
+        <div className="pt-0.5">
+          <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1.5">Project Contributors</span>
+          <ul className="space-y-1.5">
+            {contributors.map((member) => (
+              <li key={member.id} className="flex items-start space-x-2 font-light opacity-90">
+                <span className="text-space-sparkle font-semibold mt-0.5">•</span>
+                <Link
+                  href={memberRoute(member.id)}
+                  className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
+                    isDarkMode ? "text-bright-gray/90" : "text-vintage-charcoal/90"
+                  }`}
+                >
+                  <span>{member.name.replace(/,\s*$/, '')}</span>
+                  <ArrowUpRight size={12} className="opacity-65 text-space-sparkle shrink-0" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div 
       id={`project-detail-${project.id}`}
-      className={`w-full px-4 sm:px-8 py-2 select-none flex flex-col flex-1 min-h-0 h-auto lg:h-full justify-start overflow-y-auto ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}
+      className={`w-full px-4 sm:px-8 py-2 select-none flex flex-col lg:flex-1 lg:min-h-0 h-auto lg:h-full justify-start overflow-y-auto ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}
     >
       <BreadcrumbButton
         label={backLabel}
         onClick={() => router.back()}
       />
 
-      <div className={`grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-4 gap-6 flex-1 min-h-0 pb-1 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
+      <div className={`grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-4 gap-6 lg:flex-1 lg:min-h-0 pb-1 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
         
         {/* Carousel & CTA Container */}
-        <div ref={columnRef} className={`lg:col-span-7 lg:order-2 xl:col-span-2 xl:order-3 flex flex-col justify-start lg:h-full min-h-0 space-y-3 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
+        <div ref={columnRef} className={`lg:col-span-7 lg:order-2 xl:col-span-2 xl:order-3 flex flex-col justify-start lg:h-full lg:min-h-0 space-y-3 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
           
-          <div className={`space-y-3 w-full relative flex-1 min-h-0 flex flex-col justify-start ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
+          <div className={`space-y-3 w-full relative lg:flex-1 lg:min-h-0 flex flex-col justify-start ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
             <AnimatePresence>
               {isVideoActive && isDesktop && (
                 <motion.div
@@ -419,22 +471,11 @@ function ProjectDetailContent({
         </div>
 
         {/* High-End Architectural Writeup & Specs */}
-        <div className={`lg:col-span-5 lg:order-1 xl:col-span-2 xl:order-1 flex flex-col xl:flex-row gap-6 justify-start lg:h-full min-h-0 overflow-visible py-0.5 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
-          <div className={`order-1 flex flex-col w-full xl:w-[60%] min-h-0 overflow-visible space-y-2 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-mini uppercase tracking-widest font-sans text-vintage-charcoal/60 dark:text-bright-gray/60 shrink-0">
-              <span className="font-medium">
-                {project.year}
-              </span>
-              <span className="opacity-60 select-none">•</span>
-              <span className="font-medium">
-                {project.category}
-              </span>
-              <span className="opacity-60 select-none">•</span>
-              <span className="font-medium">
-                {project.status}
-              </span>
-            </div>
-
+        <div 
+          className={`lg:col-span-5 lg:order-1 xl:col-span-2 xl:order-1 flex flex-col xl:flex-row gap-6 justify-start lg:h-full lg:min-h-0 overflow-visible py-0.5 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}
+          style={isXL && coords.columnWidth > 0 ? { height: coords.columnWidth * (9 / 16) } : undefined}
+        >
+          <div className={`order-1 flex flex-col w-full xl:w-[60%] lg:min-h-0 overflow-visible space-y-2 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
             <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight shrink-0">
               {project.title}
             </h1>
@@ -445,7 +486,7 @@ function ProjectDetailContent({
             </div>
 
             {/* Scrollable container for project full writeup */}
-            <div className="flex-1 min-h-0 lg:overflow-y-auto pr-1.5 no-scrollbar">
+            <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto pr-1.5 no-scrollbar">
               <p className="text-caption sm:text-body leading-relaxed font-light opacity-90 whitespace-pre-line text-justify">
                 {project.fullWriteup}
               </p>
@@ -471,61 +512,23 @@ function ProjectDetailContent({
             </div>
           </div>
 
-          <div className={`order-2 flex flex-col w-full xl:w-[40%] min-h-0 overflow-visible space-y-2 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
-            {/* Project Overview (Free) */}
-            <div className="flex-1 min-h-0 lg:overflow-y-auto pr-1.5 no-scrollbar">
+          <div className={`order-2 flex flex-col w-full xl:w-[40%] lg:min-h-0 overflow-visible space-y-2 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
+            {/* Project Overview (Standard for >= xl) */}
+            <div className="hidden xl:block lg:flex-1 lg:min-h-0 lg:overflow-y-auto pr-1.5 no-scrollbar">
               <h3 className="font-sans text-body font-semibold tracking-tight mb-2 opacity-80 uppercase">Project Overview</h3>
               <div className="pb-2 pt-1 text-mini pl-[5px]">
-                <div className="flex flex-col space-y-4">
-                  {project.specs.area && (
-                    <div>
-                      <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Floor Area</span>
-                      <span className="font-medium text-mini">{project.specs.area}</span>
-                    </div>
-                  )}
-                  <div>
-                    <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Contract Type</span>
-                    <span className="font-medium text-mini block capitalize">{project.specs.scope}</span>
-                  </div>
-                  {project.specs.materials && (
-                    <div>
-                      <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1">Featured Materials</span>
-                      <div className="flex flex-wrap gap-1.5 mt-1">
-                        {project.specs.materials.map((m, i) => (
-                          <span key={i} className={`px-2 py-0.5 rounded-none text-micro font-sans ${
-                            isDarkMode ? 'bg-space-sparkle/10 text-bright-gray' : 'bg-space-sparkle/5 text-vintage-charcoal'
-                          }`}>
-                            {m}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {contributors.length > 0 && (
-                    <div className="pt-0.5">
-                      <span className="opacity-50 block uppercase text-caption font-semibold tracking-wider mb-1.5">Project Contributors</span>
-                      <ul className="space-y-1.5">
-                        {contributors.map((member) => (
-                          <li key={member.id} className="flex items-start space-x-2 font-light opacity-90">
-                            <span className="text-space-sparkle font-semibold mt-0.5">•</span>
-                            <Link
-                              href={memberRoute(member.id)}
-                              className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
-                                isDarkMode ? "text-bright-gray/90" : "text-vintage-charcoal/90"
-                              }`}
-                            >
-                              <span>{member.name.replace(/,\s*$/, '')}</span>
-                              <ArrowUpRight size={12} className="opacity-65 text-space-sparkle shrink-0" />
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
+                {renderProjectSpecs()}
               </div>
             </div>
 
+            {/* Project Overview (Accordion for < xl) */}
+            <div className="block xl:hidden">
+              <Accordion title="Project Overview" isDarkMode={isDarkMode} size="sm" defaultOpen={false}>
+                <div className="pb-2 pt-1 text-mini pl-[5px]">
+                  {renderProjectSpecs()}
+                </div>
+              </Accordion>
+            </div>
           </div>
 
           {/* Mobile CTAs (hidden on desktop, ordered after Overview) */}

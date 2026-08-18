@@ -7,10 +7,12 @@ import { useTheme } from '@/lib/theme-context';
 import { InfoModal } from '@/components/modals/InfoModal';
 import { careerPrivacyModalData } from '@/lib/modals/career-privacy';
 import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-fields';
-import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CAREER_FORM_REQUIRED_FIELDS, CareerFormData, CareerFormType } from '@/lib/forms/career';
+import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CAREER_FORM_REQUIRED_FIELDS, CareerFormData, CareerFormType, STRUCTURE_DESCRIPTIONS } from '@/lib/forms/career';
 import { submitCareerApplication } from '@/lib/services/career-applications';
 import { RevolvingButton } from '@/components/primitives/RevolvingButton';
 import { useFormViewport } from '@/hooks/useFormViewport';
+import { MultiEntryButton } from '@/components/primitives/MultiEntryButton';
+import { EmergencyContactModal } from '@/components/modals/EmergencyContactModal';
 
 export interface CareerFormProps {
   initialStructure?: string;
@@ -30,10 +32,26 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   const [isModalCheckboxChecked, setIsModalCheckboxChecked] = useState(false);
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const isHeightConstrained = useFormViewport(680);
 
+  const handleSaveEmergencyContact = (name: string, relationship: string, number: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      emergencyContactName: name,
+      emergencyContactRelationship: relationship,
+      emergencyContactNumber: number,
+    }));
+  };
+
   const handleChange = (name: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const nextData = { ...prev, [name]: value };
+      if (formType === 'apprenticeship' && name === 'structure') {
+        nextData.jobDescription = STRUCTURE_DESCRIPTIONS[value] || '';
+      }
+      return nextData;
+    });
   };
 
   const isFormValid =
@@ -156,16 +174,32 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
             <div className="w-full lg:w-1/2 flex flex-col justify-between gap-2.5 lg:gap-2">
               {fields.rightColumnRows.map((row, idx) => (
                 <div key={idx} className={row.length > 1 ? 'grid grid-cols-1 sm:grid-cols-4 gap-3' : ''}>
-                  {row.map((field) => (
-                    <FormFieldRenderer
-                      key={field.name}
-                      config={field}
-                      value={(formData as any)[field.name]}
-                      onChange={handleChange}
-                      isDarkMode={isDarkMode}
-                      theme="neutral"
-                    />
-                  ))}
+                  {row.map((field) => {
+                    if (field.name === 'emergencyContact') {
+                      const count = (formData.emergencyContactName && formData.emergencyContactRelationship && formData.emergencyContactNumber) ? 1 : 0;
+                      return (
+                        <div key={field.name} className={field.wrapperClassName}>
+                          <MultiEntryButton
+                            fieldLabel="Emergency Contact"
+                            label="Add Contact"
+                            count={count}
+                            onClick={() => setShowEmergencyModal(true)}
+                            isDarkMode={isDarkMode}
+                          />
+                        </div>
+                      );
+                    }
+                    return (
+                      <FormFieldRenderer
+                        key={field.name}
+                        config={field}
+                        value={(formData as any)[field.name]}
+                        onChange={handleChange}
+                        isDarkMode={isDarkMode}
+                        theme="neutral"
+                      />
+                    );
+                  })}
                 </div>
               ))}
 
@@ -222,6 +256,16 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
           I have read and agree to the Privacy Statement
         </label>
       </InfoModal>
+
+      <EmergencyContactModal
+        isOpen={showEmergencyModal}
+        onClose={() => setShowEmergencyModal(false)}
+        onSave={handleSaveEmergencyContact}
+        initialName={formData.emergencyContactName}
+        initialRelationship={formData.emergencyContactRelationship}
+        initialNumber={formData.emergencyContactNumber}
+        isDarkMode={isDarkMode}
+      />
     </div>
   );
 };

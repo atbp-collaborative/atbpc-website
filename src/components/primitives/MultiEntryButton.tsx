@@ -21,7 +21,7 @@ export const MultiEntryButton: React.FC<MultiEntryButtonProps> = ({
     : 'border-vintage-charcoal/30 hover:bg-vintage-charcoal/5 text-vintage-charcoal';
 
   return (
-    <div className="flex flex-col gap-1.5 w-full">
+    <div className="flex flex-col gap-0.5 w-full">
       {fieldLabel && (
         <label className="text-caption font-semibold block opacity-90">
           {fieldLabel}

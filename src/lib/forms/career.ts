@@ -148,7 +148,13 @@ const RIGHT_COLUMN_ROWS: FieldConfig[][] = [
       label: "Contact Number",
       badge: "!",
       placeholder: "Must be Viber & Whatsapp Ready",
-      wrapperClassName: "sm:col-span-2",
+      wrapperClassName: "sm:col-span-1",
+    },
+    {
+      type: "div",
+      name: "emergencyContact",
+      label: "Emergency Contact",
+      wrapperClassName: "sm:col-span-1",
     },
     {
       type: "text",
@@ -167,6 +173,84 @@ const RIGHT_COLUMN_ROWS: FieldConfig[][] = [
   ],
 ];
 
+const APPRENTICESHIP_DEPARTMENTS = [
+  "Admin Team (Finance, Marketing, Coordination)",
+  "Production Team (Design & Technical)",
+  "Project Management Team (Procurement, Logistics, Administration)",
+  "Construction Team (Supervision, Manpower)",
+];
+
+const APPRENTICESHIP_STRUCTURES = [
+  "Curriculum-based Internship (CHED Memorandum Order No. 104, Series of 2017)",
+  "Vocational Internship (National Certificate Holder)",
+  "Diversified Architectural Experience (3,840 logbook hours)",
+];
+
+export const STRUCTURE_DESCRIPTIONS: Record<string, string> = {
+  "Curriculum-based Internship (CHED Memorandum Order No. 104, Series of 2017)":
+    "This program is designed for current students seeking to fulfill their academic internship requirements under CHED Memorandum Order No. 104, Series of 2017. You will work on real-world projects under the guidance of licensed professionals, gaining practical experience in design, project coordination, and administration while earning academic credits.\n\nFor more details, refer to the official guidelines: [CMO-NO.-104-S.-2017.pdf](https://legacy.ched.gov.ph/wp-content/uploads/2018/03/CMO-NO.-104-S.-2017.pdf).",
+
+  "Vocational Internship (National Certificate Holder)":
+    "Designed for National Certificate (NC) holders from vocational institutions seeking practical training and competency reinforcement. This internship focuses on hands-on production, design implementation, and technical skill refinement, helping you bridge the gap between vocational certification and industry-standard production workflows.",
+
+  "Diversified Architectural Experience (3,840 logbook hours)":
+    "This program provides the 3,840 logbook hours of Diversified Architectural Experience required for BS Architecture graduates to qualify for the Architect Licensure Examination (ALE) in the Philippines. Under the mentorship of registered and licensed architects, you will gain comprehensive exposure to architectural design, construction supervision, project management, and contract documents as prescribed by the Professional Regulation Commission (PRC) guidelines."
+};
+
+const APPRENTICESHIP_LEFT_COLUMN_TOP: FieldConfig[] = [
+  {
+    type: "select",
+    name: "department",
+    label: "Department",
+    badge: "!",
+    options: APPRENTICESHIP_DEPARTMENTS,
+    placeholder: "[ Select Team ]",
+  },
+  {
+    type: "select",
+    name: "structure",
+    label: "Structure",
+    badge: "!",
+    options: APPRENTICESHIP_STRUCTURES,
+    placeholder: "What kind of role are you exploring?",
+  },
+];
+
+const APPRENTICESHIP_JOB_DESCRIPTION_FIELD: FieldConfig = {
+  type: "div",
+  name: "jobDescription",
+  label: "",
+  placeholder: "Please select an apprenticeship/internship structure above to view the corresponding program description and requirements.",
+  grow: true,
+};
+
+const APPRENTICESHIP_UPLOAD_ROW: FieldConfig[] = [
+  {
+    type: "file",
+    name: "resumeFile",
+    label: "Resumé",
+    badge: "!",
+    dropHint: "Click / Drag to Upload Resumé",
+    typeHint: "(PDF Only)",
+  },
+  {
+    type: "textarea",
+    name: "portfolioLink",
+    label: "Portfolio",
+    badge: "!",
+    variant: "compact",
+    placeholder: "Paste Here Link to Flipbook. (Sorry No PDF)",
+  },
+  {
+    type: "textarea",
+    name: "coverVideoLink",
+    label: "Cover Video",
+    badge: "!",
+    variant: "compact",
+    placeholder: "Paste Here Link to Cover Video",
+  },
+];
+
 export interface CareerFormFieldSet {
   leftColumnTop: FieldConfig[];
   jobDescriptionField: FieldConfig;
@@ -181,9 +265,16 @@ const DEFAULT_FIELD_SET: CareerFormFieldSet = {
   rightColumnRows: RIGHT_COLUMN_ROWS,
 };
 
+const APPRENTICESHIP_FIELD_SET: CareerFormFieldSet = {
+  leftColumnTop: APPRENTICESHIP_LEFT_COLUMN_TOP,
+  jobDescriptionField: APPRENTICESHIP_JOB_DESCRIPTION_FIELD,
+  uploadRow: APPRENTICESHIP_UPLOAD_ROW,
+  rightColumnRows: RIGHT_COLUMN_ROWS,
+};
+
 export const CAREER_FORM_FIELDS: Record<CareerFormType, CareerFormFieldSet> = {
   internship: DEFAULT_FIELD_SET,
-  apprenticeship: DEFAULT_FIELD_SET,
+  apprenticeship: APPRENTICESHIP_FIELD_SET,
   studioRegulars: DEFAULT_FIELD_SET,
 };
 
@@ -205,6 +296,9 @@ export const CAREER_FORM_INITIAL_DATA = {
   email: "",
   facebook: "",
   instagram: "",
+  emergencyContactName: "",
+  emergencyContactRelationship: "",
+  emergencyContactNumber: "",
 };
 
 export type CareerFormData = typeof CAREER_FORM_INITIAL_DATA;
@@ -248,4 +342,7 @@ export const careerSchema = z.object({
   email: z.string().email("Invalid email address"),
   facebook: z.string().optional(),
   instagram: z.string().optional(),
+  emergencyContactName: z.string().optional(),
+  emergencyContactRelationship: z.string().optional(),
+  emergencyContactNumber: z.string().optional(),
 });

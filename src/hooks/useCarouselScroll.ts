@@ -21,52 +21,15 @@ export function useCarouselScroll<T extends HTMLElement>({ resetKey }: UseCarous
   const [canScrollNext, setCanScrollNext] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
+  const lastWheelTimeRef = useRef(0);
+  const WHEEL_COOLDOWN = 800; // milliseconds
+
   const updateScrollState = useCallback(() => {
     if (!node) return;
     const max = node.scrollWidth - node.clientWidth;
     setCanScrollPrev(node.scrollLeft > 1);
     setCanScrollNext(node.scrollLeft < max - 1);
   }, [node]);
-
-  // Re-measure when the node mounts/resizes or the user scrolls it.
-  useEffect(() => {
-    if (!node) return;
-    updateScrollState();
-
-    const onScroll = () => updateScrollState();
-    const onWheel = (e: WheelEvent) => {
-      if (!e.shiftKey) return;
-      e.preventDefault();
-      node.scrollLeft += e.deltaY;
-    };
-
-    const resizeObserver = new ResizeObserver(updateScrollState);
-    resizeObserver.observe(node);
-    // ResizeObserver only reports the container's own box size, not its
-    // scrollWidth — a child count change (e.g. cards mounting once a
-    // JS-measured width becomes available) needs this to be caught too.
-    const mutationObserver = new MutationObserver(updateScrollState);
-    mutationObserver.observe(node, { childList: true, subtree: true });
-    node.addEventListener('scroll', onScroll, { passive: true });
-    // Non-passive so shift+wheel can preventDefault the page's default scroll.
-    node.addEventListener('wheel', onWheel, { passive: false });
-
-    return () => {
-      resizeObserver.disconnect();
-      mutationObserver.disconnect();
-      node.removeEventListener('scroll', onScroll);
-      node.removeEventListener('wheel', onWheel);
-    };
-  }, [node, updateScrollState]);
-
-  // Content (e.g. filter) changed: jump back to the start rather than
-  // leaving the view scrolled into what may now be out-of-range content.
-  useEffect(() => {
-    if (!node) return;
-    node.scrollLeft = 0;
-    updateScrollState();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node, resetKey]);
 
   const getBatchScrollAmount = () => {
     if (!node) return 0;
@@ -81,7 +44,7 @@ export function useCarouselScroll<T extends HTMLElement>({ resetKey }: UseCarous
     return childWidthPlusGap * itemsToScroll;
   };
 
-  const handleScroll = (direction: 'left' | 'right') => {
+  const handleScroll = useCallback((direction: 'left' | 'right') => {
     if (!node) return;
     
     const children = Array.from(node.children) as HTMLElement[];
@@ -110,7 +73,76 @@ export function useCarouselScroll<T extends HTMLElement>({ resetKey }: UseCarous
     if (targetChild) {
       node.scrollTo({ left: targetChild.offsetLeft, behavior: 'smooth' });
     }
-  };
+  }, [node]);
+
+  const handleScrollRef = useRef(handleScroll);
+  useEffect(() => {
+    handleScrollRef.current = handleScroll;
+  });
+
+  // Re-measure when the node mounts/resizes or the user scrolls it.
+  useEffect(() => {
+    if (!node) return;
+    updateScrollState();
+
+    const onScroll = () => updateScrollState();
+    const onWheel = (e: WheelEvent) => {
+      // Determine dominant scroll direction (x or y)
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      // Filter out micro-scrolls or zero movements
+      if (Math.abs(delta) < 5) return;
+
+      const max = node.scrollWidth - node.clientWidth;
+      const canPrev = node.scrollLeft > 1;
+      const canNext = node.scrollLeft < max - 1;
+
+      // Check if carousel can scroll in the requested direction
+      if (delta > 0 && !canNext) {
+        return; // Let the browser scroll the page down
+      }
+      if (delta < 0 && !canPrev) {
+        return; // Let the browser scroll the page up
+      }
+
+      // Intercept wheel scroll to swipe items by batches
+      e.preventDefault();
+
+      const now = Date.now();
+      if (now - lastWheelTimeRef.current < WHEEL_COOLDOWN) {
+        return;
+      }
+
+      lastWheelTimeRef.current = now;
+      handleScrollRef.current(delta > 0 ? 'right' : 'left');
+    };
+
+    const resizeObserver = new ResizeObserver(updateScrollState);
+    resizeObserver.observe(node);
+    // ResizeObserver only reports the container's own box size, not its
+    // scrollWidth — a child count change (e.g. cards mounting once a
+    // JS-measured width becomes available) needs this to be caught too.
+    const mutationObserver = new MutationObserver(updateScrollState);
+    mutationObserver.observe(node, { childList: true, subtree: true });
+    node.addEventListener('scroll', onScroll, { passive: true });
+    // Non-passive so we can preventDefault the page's default scroll.
+    node.addEventListener('wheel', onWheel, { passive: false });
+
+    return () => {
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+      node.removeEventListener('scroll', onScroll);
+      node.removeEventListener('wheel', onWheel);
+    };
+  }, [node, updateScrollState]);
+
+  // Content (e.g. filter) changed: jump back to the start rather than
+  // leaving the view scrolled into what may now be out-of-range content.
+  useEffect(() => {
+    if (!node) return;
+    node.scrollLeft = 0;
+    updateScrollState();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node, resetKey]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -118,9 +150,9 @@ export function useCarouselScroll<T extends HTMLElement>({ resetKey }: UseCarous
         return;
       }
       if (e.key === 'ArrowLeft') {
-        handleScroll('left');
+        handleScrollRef.current('left');
       } else if (e.key === 'ArrowRight') {
-        handleScroll('right');
+        handleScrollRef.current('right');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
