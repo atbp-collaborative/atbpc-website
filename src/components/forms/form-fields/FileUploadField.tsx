@@ -36,7 +36,8 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
 
   const acceptFile = (file: File) => {
     if (!isValidType(file)) {
-      alert(`Please upload a ${accept} file for ${label}.`);
+      const labelText = typeof label === 'string' ? label : name;
+      alert(`Please upload a ${accept} file for ${labelText}.`);
       return;
     }
     onChange(name, file);

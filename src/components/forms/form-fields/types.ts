@@ -1,3 +1,4 @@
+import React from 'react';
 import { FieldTheme } from './fieldStyles';
 
 /**
@@ -9,7 +10,7 @@ import { FieldTheme } from './fieldStyles';
  */
 interface BaseFieldConfig {
   name: string;
-  label: string;
+  label: React.ReactNode;
   required?: boolean;
   /** Small inline annotation after the label, e.g. "(!)" */
   badge?: string;
@@ -17,6 +18,7 @@ interface BaseFieldConfig {
   note?: string;
   /** Escape hatch for grid placement, e.g. "col-span-1 sm:col-span-2". Layout stays the calling form's concern — this just passes a class through. */
   wrapperClassName?: string;
+  disabled?: boolean;
 }
 
 export interface TextFieldConfig extends BaseFieldConfig {

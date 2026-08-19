@@ -4,5 +4,5 @@ import React from 'react';
 import { CareerForm } from '@/components/forms/CareerForm';
 
 export default function Page() {
-  return <CareerForm initialStructure="Full-Time Practice" />;
+  return <CareerForm initialStructure="" formType="studioRegulars" />;
 }

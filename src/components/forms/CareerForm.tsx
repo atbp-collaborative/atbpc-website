@@ -2,17 +2,18 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle, Shield } from 'lucide-react';
+import { CheckCircle, Shield, Upload } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { InfoModal } from '@/components/modals/InfoModal';
 import { careerPrivacyModalData } from '@/lib/modals/career-privacy';
 import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-fields';
-import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CAREER_FORM_REQUIRED_FIELDS, CareerFormData, CareerFormType, STRUCTURE_DESCRIPTIONS } from '@/lib/forms/career';
+import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CAREER_FORM_REQUIRED_FIELDS, CareerFormData, CareerFormType, STRUCTURE_DESCRIPTIONS, getRequiredDocumentFields, getDocumentFieldsForStructure } from '@/lib/forms/career';
 import { submitCareerApplication } from '@/lib/services/career-applications';
 import { RevolvingButton } from '@/components/primitives/RevolvingButton';
 import { useFormViewport } from '@/hooks/useFormViewport';
 import { MultiEntryButton } from '@/components/primitives/MultiEntryButton';
 import { EmergencyContactModal } from '@/components/modals/EmergencyContactModal';
+import { DocumentsModal } from '@/components/modals/DocumentsModal';
 
 export interface CareerFormProps {
   initialStructure?: string;
@@ -33,7 +34,59 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
   const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   const [isModalCheckboxChecked, setIsModalCheckboxChecked] = useState(false);
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const isHeightConstrained = useFormViewport(680);
+
+  const leftColumnTop = React.useMemo(() => {
+    return fields.leftColumnTop.map((field) => {
+      if (formType === 'studioRegulars' && field.name === 'structure' && field.type === 'select') {
+        const dept = formData.department;
+        let options: string[] = [];
+        if (dept === "Admin Team (Finance, Marketing, Coordination)") {
+          options = [
+            "[HROA-01: Intern]",
+            "[HROA-02: Administrative Assistant]",
+            "[HROA-03: Administrative Officer]",
+            "[HROA-04: Associate Administrator]",
+            "[HROA-07: Operations Manager]",
+            "[HROA-08: Managing Director]"
+          ];
+        } else if (dept === "Production Team (Design & Technical)") {
+          options = [
+            "[HRDT-01: Intern]",
+            "[HRDT-02: Apprentice]",
+            "[HRDT-03: Junior Architect]",
+            "[HRDT-05: Junior Designer]",
+            "[HRDT-06: Junior Engineer]",
+            "[HRDT-07: Senior Architect]",
+            "[HRDT-08: Senior Designer]",
+            "[HRDT-09: Senior Engineer]",
+            "[HRDT-10: Project Manager]",
+            "[HRDT-11: Associate Manager]",
+            "[HRDT-12: Principal Architect]"
+          ];
+        } else if (dept === "Construction Team (Supervision, Manpower)") {
+          options = [
+            "[HRGM-01: Helper]",
+            "[HRGM-02: General Specialist]",
+            "[HRGM-03: Skilled Specialist]",
+            "[HRGM-04: Skilled Operator]",
+            "[HRGM-05: Site Foreman]",
+            "[HRGM-06: Construction Manager]",
+            "[HRGM-07: General Foreman]",
+            "[HRGM-08: Principal Builder]"
+          ];
+        }
+        return {
+          ...field,
+          options,
+          placeholder: dept ? "[ Select Role ]" : "Please select a department first",
+          disabled: !dept,
+        };
+      }
+      return field;
+    });
+  }, [fields.leftColumnTop, formType, formData.department]);
 
   const handleSaveEmergencyContact = (name: string, relationship: string, number: string) => {
     setFormData((prev) => ({
@@ -50,13 +103,63 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
       if (formType === 'apprenticeship' && name === 'structure') {
         nextData.jobDescription = STRUCTURE_DESCRIPTIONS[value] || '';
       }
+      if (formType === 'studioRegulars' && name === 'department') {
+        nextData.structure = '';
+      }
+      if (name === 'structure') {
+        // Clear all document file fields when structure changes
+        nextData.resumeFile = null;
+        nextData.ojtRequirementsFile = null;
+        nextData.moaFile = null;
+        nextData.contractFile = null;
+        nextData.enrolmentFormFile = null;
+        nextData.schoolIdFile = null;
+        nextData.clearanceFile = null;
+        nextData.diplomaFile = null;
+        nextData.prcIdFile = null;
+        nextData.validIdFile = null;
+        nextData.tinIdFile = null;
+      }
       return nextData;
     });
   };
 
+  const isDocumentsComplete = () => {
+    const structure = formData.structure;
+    if (!structure) return false;
+    
+    if (
+      structure === "Curriculum-based Internship (CHED Memorandum Order No. 104, Series of 2017)" ||
+      structure === "Vocational Internship (National Certificate Holder)"
+    ) {
+      return Boolean(
+        formData.resumeFile &&
+        formData.ojtRequirementsFile &&
+        formData.moaFile &&
+        formData.contractFile &&
+        formData.enrolmentFormFile &&
+        formData.schoolIdFile
+      );
+    } else if (structure === "Diversified Architectural Experience (3,840 logbook hours)") {
+      return Boolean(
+        formData.resumeFile &&
+        formData.clearanceFile &&
+        formData.diplomaFile
+      );
+    } else {
+      // Regular
+      return Boolean(
+        formData.resumeFile &&
+        formData.validIdFile &&
+        formData.tinIdFile
+      );
+    }
+  };
+
   const isFormValid =
     CAREER_FORM_REQUIRED_FIELDS.every((field) => Boolean(formData[field])) &&
-    Boolean(formData.address.regionCode && formData.address.cityCode && formData.address.barangayCode);
+    Boolean(formData.address.regionCode && formData.address.cityCode && formData.address.barangayCode) &&
+    isDocumentsComplete();
   const canSubmit = isFormValid && privacyAcknowledged;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,7 +178,8 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
     setIsSubmitted(false);
   };
 
-  const inputBorderClass = getFieldThemeStyles('neutral', isDarkMode).borderColor;
+  const fieldStyles = getFieldThemeStyles('neutral', isDarkMode);
+  const inputBorderClass = fieldStyles.borderColor;
 
   const ActionButtons = ({ isTop }: { isTop?: boolean }) => (
     <div className={`grid grid-cols-2 gap-4 w-full ${isTop ? 'md:w-[75%] md:ml-auto' : ''}`}>
@@ -136,7 +240,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
           >
             {/* LEFT COLUMN */}
             <div className="w-full lg:w-1/2 flex flex-col gap-3 lg:gap-2 justify-between">
-              {fields.leftColumnTop.map((field) => (
+              {leftColumnTop.map((field) => (
                 <FormFieldRenderer
                   key={field.name}
                   config={field}
@@ -155,18 +259,79 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
                 theme="neutral"
               />
 
-              {/* Bottom Row: Resume, Portfolio, Cover Video */}
+              {/* Bottom Row: Resume (replaced by Documents), Portfolio, Cover Video */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                {fields.uploadRow.map((field) => (
-                  <FormFieldRenderer
-                    key={field.name}
-                    config={field}
-                    value={(formData as any)[field.name]}
-                    onChange={handleChange}
-                    isDarkMode={isDarkMode}
-                    theme="neutral"
-                  />
-                ))}
+                {fields.uploadRow.map((field) => {
+                  if (field.name === 'resumeFile') {
+                    const requiredList = getRequiredDocumentFields(formData.structure);
+                    const isRoleSelected = Boolean(formData.structure);
+                    
+                    let uploadedCount = 0;
+                    if (formData.structure) {
+                      const allDocs = getDocumentFieldsForStructure(formData.structure);
+                      allDocs.forEach((f) => {
+                        if ((formData as any)[f.name]) {
+                          uploadedCount++;
+                        }
+                      });
+                    }
+
+                    return (
+                      <div key={field.name} className="space-y-1">
+                        <label className={`${fieldStyles.label} truncate`}>
+                          Documents
+                          <span className="text-space-sparkle font-normal"> (!)</span>
+                        </label>
+                        <button
+                          type="button"
+                          disabled={!isRoleSelected}
+                          onClick={() => setShowDocumentsModal(true)}
+                          title={!isRoleSelected ? 'Please select a Role first' : undefined}
+                          className={`w-full h-20 p-2 flex flex-col justify-center text-center border rounded-xl cursor-pointer transition-all ${
+                            !isRoleSelected
+                              ? 'opacity-50 cursor-not-allowed border-gray-300'
+                              : isDocumentsComplete()
+                                ? 'border-space-sparkle bg-space-sparkle/5 text-space-sparkle hover:bg-space-sparkle/10'
+                                : fieldStyles.borderColor + ' hover:opacity-80'
+                          }`}
+                        >
+                          <div className="flex flex-col items-center justify-center space-y-1 w-full">
+                            {isDocumentsComplete() ? (
+                              <CheckCircle size={16} className="text-space-sparkle mx-auto shrink-0" />
+                            ) : (
+                              <Upload size={14} className="opacity-70 mx-auto shrink-0" />
+                            )}
+                            <p className="text-micro font-archivo leading-tight font-medium opacity-80">
+                              {!isRoleSelected
+                                ? 'Select a role first'
+                                : isDocumentsComplete()
+                                  ? 'All Documents Attached'
+                                  : uploadedCount > 0
+                                    ? `${uploadedCount} Document(s) Added`
+                                    : 'Add Documents'}
+                            </p>
+                            {isRoleSelected && (
+                              <span className="text-micro font-archivo opacity-60 block">
+                                ({isDocumentsComplete() ? 'Complete' : `${uploadedCount} / ${requiredList.length} files`})
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <FormFieldRenderer
+                      key={field.name}
+                      config={field}
+                      value={(formData as any)[field.name]}
+                      onChange={handleChange}
+                      isDarkMode={isDarkMode}
+                      theme="neutral"
+                    />
+                  );
+                })}
               </div>
             </div>
 
@@ -264,6 +429,14 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
         initialName={formData.emergencyContactName}
         initialRelationship={formData.emergencyContactRelationship}
         initialNumber={formData.emergencyContactNumber}
+        isDarkMode={isDarkMode}
+      />
+
+      <DocumentsModal
+        isOpen={showDocumentsModal}
+        onClose={() => setShowDocumentsModal(false)}
+        formData={formData}
+        onChange={handleChange}
         isDarkMode={isDarkMode}
       />
     </div>

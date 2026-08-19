@@ -22,7 +22,14 @@ const COMMON_RIGHT_TOP_ROWS: FieldConfig[][] = [
   ],
   [
     { type: 'text', name: 'pronoun', label: 'Pronoun', badge: '!', wrapperClassName: 'sm:col-span-2' },
-    { type: 'text', name: 'titles', label: 'Titles', wrapperClassName: 'sm:col-span-2' },
+    {
+      type: 'select',
+      name: 'titles',
+      label: 'Titles',
+      placeholder: '[ Select Title ]',
+      options: ['Arch.', 'Engr.', 'IDr.', 'Atty.', 'Dr.'],
+      wrapperClassName: 'sm:col-span-2'
+    },
   ],
 ];
 
@@ -53,7 +60,7 @@ export const getPartnerFormFields = (
         name: 'category',
         label: 'Brief Description',
         badge: '!',
-        placeholder: 'What category?',
+        placeholder: '[ Select Category ]',
         options: options.categories
       });
     }
@@ -63,19 +70,12 @@ export const getPartnerFormFields = (
       name: 'message',
       label: '',
       badge: '!',
-      placeholder: 'Message (200 Word Count)',
+      placeholder: 'Please limit your message to a 200-word count. Be brief about your intent (kindly make the composition friendly but professional)',
       grow: true
     });
 
-    const leftColumnBottomGrid: FieldConfig[] = [
-      { type: 'file', name: 'catalog', label: 'Catalog', badge: '!', typeHint: '(PDF Only)' },
-      { type: 'textarea', name: 'websiteLink', label: 'Website', placeholder: 'Paste Here Link to Website', variant: 'compact' },
-      { type: 'file', name: 'sourceOfIncome', label: 'Source of Income' }
-    ];
-
     return {
       leftColumnTop,
-      leftColumnBottomGrid,
       rightColumnRowsTop: COMMON_RIGHT_TOP_ROWS
     };
   }
@@ -101,20 +101,12 @@ export const getPartnerFormFields = (
     name: 'message',
     label: '',
     badge: '!',
-    placeholder: 'Message (200 Word Count)',
+    placeholder: 'Please limit your message to a 200-word count. Be brief about your intent (kindly make the composition friendly but professional)',
     grow: true
   });
 
-  const leftColumnBottomGrid: FieldConfig[] = [
-    { type: 'textarea', name: 'profileLink', label: 'Profile', badge: '!', placeholder: 'Paste Here Link to Flipbook. (Sorry No PDF)', variant: 'compact' },
-    { type: 'file', name: 'document', label: 'Documents', badge: '!', dropHint: 'Sample Contract', typeHint: '(PDF)' },
-    { type: 'textarea', name: 'coverVideoLink', label: 'Cover Video', placeholder: 'Paste Here Link to Cover Video', variant: 'compact' },
-    { type: 'file', name: 'sourceOfIncome', label: 'Source of Income' }
-  ];
-
   return {
     leftColumnTop,
-    leftColumnBottomGrid,
     rightColumnRowsTop: COMMON_RIGHT_TOP_ROWS
   };
 };
@@ -161,7 +153,10 @@ export const PARTNER_FORM_INITIAL_DATA = {
   secRegistration: null as File | null,
   birRegistration: null as File | null,
   dtiRegistration: null as File | null,
+  philgepsRegistration: null as File | null,
   sourceOfIncome: null as File | null,
+  prcLicense: null as File | null,
+  ptrLicense: null as File | null,
 };
 
 export type PartnerFormData = typeof PARTNER_FORM_INITIAL_DATA;
@@ -171,10 +166,10 @@ export const partnerSchema = z.object({
   category: z.string().optional(), // conditionally required
   message: z.string().min(1, "Message is required"),
   specialty: z.string().optional(), // conditionally required
-  profileLink: z.string().min(1, "Profile Link is required"),
+  profileLink: z.string().optional(),
   coverVideoLink: z.string().optional(),
   mapLink: z.string().min(1, "Map Link is required"),
-  licenseLink: z.string().min(1, "License Link is required"),
+  licenseLink: z.string().optional(),
   firstName: z.string().min(1, "First Name is required"),
   pseudonym: z.string().min(1, "Pseudonym is required"),
   middleName: z.string().optional(),
@@ -192,5 +187,8 @@ export const partnerSchema = z.object({
   secRegistration: z.any().refine((file) => file !== null, "SEC Registration is required"),
   birRegistration: z.any().refine((file) => file !== null, "BIR Registration is required"),
   dtiRegistration: z.any().refine((file) => file !== null, "DTI Registration is required"),
-  sourceOfIncome: z.any().refine((file) => file !== null, "Source of Income is required"),
+  philgepsRegistration: z.any().optional(),
+  sourceOfIncome: z.any().optional(),
+  prcLicense: z.any().optional(),
+  ptrLicense: z.any().optional(),
 });

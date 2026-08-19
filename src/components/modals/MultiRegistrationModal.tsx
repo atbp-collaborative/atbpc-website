@@ -5,11 +5,15 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, FileText } from 'lucide-react';
 import { Button } from '@/components/primitives/Button';
 import { FormFieldRenderer } from '@/components/forms/form-fields';
+import { PartnerFormVariant } from '@/lib/forms/partner';
 
 interface BusinessRegistrations {
   secRegistration: File | null;
   birRegistration: File | null;
   dtiRegistration: File | null;
+  philgepsRegistration: File | null;
+  prcLicense?: File | null;
+  ptrLicense?: File | null;
 }
 
 interface MultiRegistrationModalProps {
@@ -18,6 +22,7 @@ interface MultiRegistrationModalProps {
   onSave: (registrations: BusinessRegistrations) => void;
   initialRegistrations: BusinessRegistrations;
   isDarkMode: boolean;
+  variant: PartnerFormVariant;
 }
 
 export const MultiRegistrationModal: React.FC<MultiRegistrationModalProps> = ({
@@ -26,11 +31,15 @@ export const MultiRegistrationModal: React.FC<MultiRegistrationModalProps> = ({
   onSave,
   initialRegistrations,
   isDarkMode,
+  variant,
 }) => {
   const [registrations, setRegistrations] = React.useState<BusinessRegistrations>({
     secRegistration: null,
     birRegistration: null,
     dtiRegistration: null,
+    philgepsRegistration: null,
+    prcLicense: null,
+    ptrLicense: null,
   });
 
   useEffect(() => {
@@ -91,8 +100,14 @@ export const MultiRegistrationModal: React.FC<MultiRegistrationModalProps> = ({
             <div className={`flex items-center justify-between px-6 py-5 sticky top-0 z-20 backdrop-blur-md ${isDarkMode ? 'bg-vintage-charcoal/95' : 'bg-white/95'}`}>
               <div className="flex items-center gap-3">
                 <div>
-                  <h2 className="text-h2 font-sans font-bold tracking-tight lowercase">Business Registrations</h2>
-                  <p className="text-mini opacity-60 font-sans uppercase tracking-wider">Upload SEC, BIR, & DTI Documents</p>
+                  <h2 className="text-h2 font-sans font-bold tracking-tight lowercase">
+                    {variant === 'consultant' ? 'Documents & Licenses' : 'Business Registrations'}
+                  </h2>
+                  <p className="text-mini opacity-60 font-sans uppercase tracking-wider">
+                    {variant === 'consultant'
+                      ? 'Upload SEC, BIR, DTI, PhilGEPS, PRC, & PTR'
+                      : 'Upload SEC, BIR, DTI, & PhilGEPS Documents'}
+                  </p>
                 </div>
               </div>
               <button onClick={onClose} className={`p-2 transition-colors cursor-pointer ${isDarkMode ? 'hover:bg-white/10 text-bright-gray/80 hover:text-white' : 'hover:bg-vintage-charcoal/10 text-vintage-charcoal/80 hover:text-vintage-charcoal'}`}>
@@ -120,6 +135,48 @@ export const MultiRegistrationModal: React.FC<MultiRegistrationModalProps> = ({
                   onChange={handleFieldChange}
                   isDarkMode={isDarkMode}
                 />
+                <FormFieldRenderer
+                  config={{
+                    type: 'file',
+                    name: 'philgepsRegistration',
+                    label: (
+                      <span>
+                        PhilGEPS (
+                        <a
+                          href="https://www.philgeps.gov.ph"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-space-sparkle transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Website
+                        </a>
+                        )
+                      </span>
+                    ),
+                    typeHint: '(PDF, JPG, GIF, PNG)',
+                    variant: 'compact'
+                  }}
+                  value={registrations.philgepsRegistration}
+                  onChange={handleFieldChange}
+                  isDarkMode={isDarkMode}
+                />
+                {variant === 'consultant' && (
+                  <>
+                    <FormFieldRenderer
+                      config={{ type: 'file', name: 'prcLicense', label: 'PRC License', badge: '!', typeHint: '(PDF, JPG, GIF, PNG)', variant: 'compact' }}
+                      value={registrations.prcLicense}
+                      onChange={handleFieldChange}
+                      isDarkMode={isDarkMode}
+                    />
+                    <FormFieldRenderer
+                      config={{ type: 'file', name: 'ptrLicense', label: 'PTR License', badge: '!', typeHint: '(PDF, JPG, GIF, PNG)', variant: 'compact' }}
+                      value={registrations.ptrLicense}
+                      onChange={handleFieldChange}
+                      isDarkMode={isDarkMode}
+                    />
+                  </>
+                )}
               </div>
             </div>
 

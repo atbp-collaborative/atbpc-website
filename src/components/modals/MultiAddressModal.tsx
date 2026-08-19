@@ -60,7 +60,7 @@ export const MultiAddressModal: React.FC<MultiAddressModalProps> = ({
   };
 
   const handleAdd = () => {
-    if (addresses.length < 3) {
+    if (addresses.length < 5) {
       setAddresses(prev => [...prev, { ...EMPTY_PH_ADDRESS, type: '', landline: '', mapLink: '' }]);
     }
   };
@@ -161,7 +161,7 @@ export const MultiAddressModal: React.FC<MultiAddressModalProps> = ({
                 </div>
               ))}
 
-              {addresses.length < 3 && (
+              {addresses.length < 5 && (
                 <div className="pt-2">
                   <MultiEntryButton
                     label="Add Another Address"
