@@ -12,7 +12,7 @@ export const privacyPolicyModalData: ModalContent = {
     closeLabel: 'Close & Accept',
     intro: {
       title: 'Effective Date: January 1, 2026',
-      text: 'This Privacy Policy outlines how ATBP Collaborative (under the Licensed Architectural Practice of Marchie Teodoro Borja, PRC Registration No. 0054827 / SEC OPC) collects, uses, protects, and handles your data in compliance with the Data Privacy Act of 2012 (Republic Act No. 10173) and professional guidelines governing design-build practices in the Philippines.',
+      text: 'This Privacy Policy outlines how ATBP Collaborative (under the Licensed Architectural Practice of Marchie Teodoro Borja, PRC Registration No. 0054827 / SEC OPC) collects, uses, protects, and handles your data in compliance with the Data Privacy Act of 2012 (<a href="https://www.officialgazette.gov.ph/2012/08/15/republic-act-no-10173/" target="_blank" rel="noopener noreferrer" class="underline hover:text-space-sparkle transition-colors">Republic Act No. 10173</a>) and professional guidelines governing design-build practices in the Philippines.',
     },
     sections: [
       {
@@ -33,7 +33,7 @@ export const privacyPolicyModalData: ModalContent = {
         list: [
           'Formulating custom design proposals, project scopes, cost estimations, and architectural contracts.',
           'Managing Discovery Sessions, site inspections, design reviews, and construction phase coordination.',
-          'Facilitating local government unit (LGU) building permit applications, zoning compliance, and regulatory submissions under Republic Act No. 9266 (The Architecture Act of 2004).',
+          'Facilitating local government unit (LGU) building permit applications, zoning compliance, and regulatory submissions under <a href="https://lawphil.net/statutes/repacts/ra2004/ra_9266_2004.html" target="_blank" rel="noopener noreferrer" class="underline hover:text-space-sparkle transition-colors">Republic Act No. 9266</a> (The Architecture Act of 2004).',
           'Communicating project updates, milestone deliverables, and administrative invoices.',
         ],
       },
@@ -43,7 +43,7 @@ export const privacyPolicyModalData: ModalContent = {
         text: 'We implement robust physical, technical, and organizational security measures to protect your personal and project information against unauthorized access, loss, or alteration:',
         list: [
           'Confidential project files and client blueprints are stored on encrypted cloud servers with strict role-based access controls.',
-          'All architectural designs, structural calculations, and technical documentation produced by ATBP Collaborative remain protected under professional copyright and RA 9266 laws.',
+          'All architectural designs, structural calculations, and technical documentation produced by ATBP Collaborative remain protected under professional copyright and <a href="https://lawphil.net/statutes/repacts/ra2004/ra_9266_2004.html" target="_blank" rel="noopener noreferrer" class="underline hover:text-space-sparkle transition-colors">RA 9266</a> laws.',
           'We never sell, trade, or rent client personal or project data to external marketers or unauthorized third parties.',
         ],
       },
@@ -60,7 +60,7 @@ export const privacyPolicyModalData: ModalContent = {
       {
         icon: Scale,
         title: '5. Your Rights & Retention',
-        text: 'Under the Philippine Data Privacy Act of 2012, you hold the right to:',
+        text: 'Under the Philippine <a href="https://www.officialgazette.gov.ph/2012/08/15/republic-act-no-10173/" target="_blank" rel="noopener noreferrer" class="underline hover:text-space-sparkle transition-colors">Data Privacy Act of 2012</a>, you hold the right to:',
         list: [
           'Request access to the personal data we hold about you.',
           'Request correction or updates to inaccurate project details.',

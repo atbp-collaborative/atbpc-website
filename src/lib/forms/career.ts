@@ -45,7 +45,7 @@ const LEFT_COLUMN_TOP: FieldConfig[] = [
     label: "Structure",
     badge: "!",
     options: STRUCTURES,
-    placeholder: "What kind of role are you exploring?",
+    placeholder: "[ Select Role ]",
   },
 ];
 
@@ -188,7 +188,7 @@ const APPRENTICESHIP_STRUCTURES = [
 
 export const STRUCTURE_DESCRIPTIONS: Record<string, string> = {
   "Curriculum-based Internship (CHED Memorandum Order No. 104, Series of 2017)":
-    "This program is designed for current students seeking to fulfill their academic internship requirements under CHED Memorandum Order No. 104, Series of 2017. You will work on real-world projects under the guidance of licensed professionals, gaining practical experience in design, project coordination, and administration while earning academic credits.\n\nFor more details, refer to the official guidelines: [CMO-NO.-104-S.-2017.pdf](https://legacy.ched.gov.ph/wp-content/uploads/2018/03/CMO-NO.-104-S.-2017.pdf).",
+    "This program is designed for current students seeking to fulfill their academic internship requirements under [CHED Memorandum Order No. 104, Series of 2017](https://legacy.ched.gov.ph/wp-content/uploads/2018/03/CMO-NO.-104-S.-2017.pdf). You will work on real-world projects under the guidance of licensed professionals, gaining practical experience in design, project coordination, and administration while earning academic credits.\n\nFor more details, refer to the official guidelines: [CMO-NO.-104-S.-2017.pdf](https://legacy.ched.gov.ph/wp-content/uploads/2018/03/CMO-NO.-104-S.-2017.pdf).",
 
   "Vocational Internship (National Certificate Holder)":
     "Designed for National Certificate (NC) holders from vocational institutions seeking practical training and competency reinforcement. This internship focuses on hands-on production, design implementation, and technical skill refinement, helping you bridge the gap between vocational certification and industry-standard production workflows.",
@@ -212,7 +212,7 @@ const APPRENTICESHIP_LEFT_COLUMN_TOP: FieldConfig[] = [
     label: "Structure",
     badge: "!",
     options: APPRENTICESHIP_STRUCTURES,
-    placeholder: "What kind of role are you exploring?",
+    placeholder: "[ Select Role ]",
   },
 ];
 
@@ -272,10 +272,42 @@ const APPRENTICESHIP_FIELD_SET: CareerFormFieldSet = {
   rightColumnRows: RIGHT_COLUMN_ROWS,
 };
 
+const STUDIO_REGULARS_DEPARTMENTS = [
+  "Admin Team (Finance, Marketing, Coordination)",
+  "Production Team (Design & Technical)",
+  "Construction Team (Supervision, Manpower)",
+];
+
+const STUDIO_REGULARS_LEFT_COLUMN_TOP: FieldConfig[] = [
+  {
+    type: "select",
+    name: "department",
+    label: "Department",
+    badge: "!",
+    options: STUDIO_REGULARS_DEPARTMENTS,
+    placeholder: "In which department do you see your growth?",
+  },
+  {
+    type: "select",
+    name: "structure",
+    label: "Structure",
+    badge: "!",
+    options: [],
+    placeholder: "[ Select Role ]",
+  },
+];
+
+const STUDIO_REGULARS_FIELD_SET: CareerFormFieldSet = {
+  leftColumnTop: STUDIO_REGULARS_LEFT_COLUMN_TOP,
+  jobDescriptionField: JOB_DESCRIPTION_FIELD,
+  uploadRow: UPLOAD_ROW,
+  rightColumnRows: RIGHT_COLUMN_ROWS,
+};
+
 export const CAREER_FORM_FIELDS: Record<CareerFormType, CareerFormFieldSet> = {
   internship: DEFAULT_FIELD_SET,
   apprenticeship: APPRENTICESHIP_FIELD_SET,
-  studioRegulars: DEFAULT_FIELD_SET,
+  studioRegulars: STUDIO_REGULARS_FIELD_SET,
 };
 
 export const CAREER_FORM_INITIAL_DATA = {
@@ -299,6 +331,17 @@ export const CAREER_FORM_INITIAL_DATA = {
   emergencyContactName: "",
   emergencyContactRelationship: "",
   emergencyContactNumber: "",
+  // Dynamic Documents fields
+  ojtRequirementsFile: null as File | null,
+  moaFile: null as File | null,
+  contractFile: null as File | null,
+  enrolmentFormFile: null as File | null,
+  schoolIdFile: null as File | null,
+  clearanceFile: null as File | null,
+  diplomaFile: null as File | null,
+  prcIdFile: null as File | null,
+  validIdFile: null as File | null,
+  tinIdFile: null as File | null,
 };
 
 export type CareerFormData = typeof CAREER_FORM_INITIAL_DATA;
@@ -323,7 +366,7 @@ export const careerSchema = z.object({
   department: z.string().min(1, "Department is required"),
   structure: z.string().min(1, "Structure is required"),
   jobDescription: z.string().optional(),
-  resumeFile: z.any().refine((file) => file !== null, "Resume is required"),
+  resumeFile: z.any().optional().nullable(),
   portfolioLink: z.string().min(1, "Portfolio Link is required"),
   coverVideoLink: z.string().min(1, "Cover Video Link is required"),
   firstName: z.string().min(1, "First Name is required"),
@@ -345,4 +388,61 @@ export const careerSchema = z.object({
   emergencyContactName: z.string().optional(),
   emergencyContactRelationship: z.string().optional(),
   emergencyContactNumber: z.string().optional(),
+  // New Document fields
+  ojtRequirementsFile: z.any().optional().nullable(),
+  moaFile: z.any().optional().nullable(),
+  contractFile: z.any().optional().nullable(),
+  enrolmentFormFile: z.any().optional().nullable(),
+  schoolIdFile: z.any().optional().nullable(),
+  clearanceFile: z.any().optional().nullable(),
+  diplomaFile: z.any().optional().nullable(),
+  prcIdFile: z.any().optional().nullable(),
+  validIdFile: z.any().optional().nullable(),
+  tinIdFile: z.any().optional().nullable(),
 });
+
+export function getRequiredDocumentFields(structure: string): string[] {
+  if (!structure) return [];
+  if (
+    structure === "Curriculum-based Internship (CHED Memorandum Order No. 104, Series of 2017)" ||
+    structure === "Vocational Internship (National Certificate Holder)"
+  ) {
+    return ["resumeFile", "ojtRequirementsFile", "moaFile", "contractFile", "enrolmentFormFile", "schoolIdFile"];
+  } else if (structure === "Diversified Architectural Experience (3,840 logbook hours)") {
+    return ["resumeFile", "clearanceFile", "diplomaFile"];
+  } else {
+    // Regular
+    return ["resumeFile", "validIdFile", "tinIdFile"];
+  }
+}
+
+export function getDocumentFieldsForStructure(structure: string): { name: string; label: string; required: boolean }[] {
+  if (!structure) return [];
+  if (
+    structure === "Curriculum-based Internship (CHED Memorandum Order No. 104, Series of 2017)" ||
+    structure === "Vocational Internship (National Certificate Holder)"
+  ) {
+    return [
+      { name: "resumeFile", label: "Resumé", required: true },
+      { name: "ojtRequirementsFile", label: "OJT Requirements", required: true },
+      { name: "moaFile", label: "Memorandum of Agreement", required: true },
+      { name: "contractFile", label: "Contract", required: true },
+      { name: "enrolmentFormFile", label: "Enrolment Form", required: true },
+      { name: "schoolIdFile", label: "School ID", required: true },
+    ];
+  } else if (structure === "Diversified Architectural Experience (3,840 logbook hours)") {
+    return [
+      { name: "resumeFile", label: "Resumé", required: true },
+      { name: "clearanceFile", label: "Clearance", required: true },
+      { name: "diplomaFile", label: "Diploma", required: true },
+    ];
+  } else {
+    // Regular
+    return [
+      { name: "resumeFile", label: "Resumé", required: true },
+      { name: "prcIdFile", label: "PRC ID", required: false },
+      { name: "validIdFile", label: "Valid ID", required: true },
+      { name: "tinIdFile", label: "TIN ID", required: true },
+    ];
+  }
+}

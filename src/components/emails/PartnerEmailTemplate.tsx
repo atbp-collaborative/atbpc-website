@@ -59,7 +59,9 @@ export const PartnerEmailTemplate: React.FC<any> = (data) => (
           <Text style={text}><strong>Profile Link:</strong> {data.profileLink}</Text>
           {data.coverVideoLink && <Text style={text}><strong>Cover Video:</strong> {data.coverVideoLink}</Text>}
           <Text style={text}><strong>Map Link:</strong> {data.mapLink}</Text>
-          <Text style={text}><strong>License Link:</strong> {data.licenseLink}</Text>
+          {data.licenseLink && <Text style={text}><strong>License Link:</strong> {data.licenseLink}</Text>}
+          {data.prcLicense && <Text style={text}><strong>PRC License:</strong> {data.prcLicense.name || 'Attached'}</Text>}
+          {data.ptrLicense && <Text style={text}><strong>PTR License:</strong> {data.ptrLicense.name || 'Attached'}</Text>}
           {data.websiteLink && <Text style={text}><strong>Website:</strong> {data.websiteLink}</Text>}
           {data.facebook && <Text style={text}><strong>Facebook:</strong> {data.facebook}</Text>}
           {data.instagram && <Text style={text}><strong>Instagram:</strong> {data.instagram}</Text>}

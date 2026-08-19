@@ -54,7 +54,7 @@ export const MultiEmailModal: React.FC<MultiEmailModalProps> = ({
   };
 
   const handleAdd = () => {
-    if (emails.length < 5) {
+    if (emails.length < 3) {
       setEmails(prev => [...prev, { email: '', description: '' }]);
     }
   };
@@ -92,7 +92,7 @@ export const MultiEmailModal: React.FC<MultiEmailModalProps> = ({
               <div className="flex items-center gap-3">
                 <div>
                   <h2 className="text-h2 font-sans font-bold tracking-tight lowercase">Email Addresses</h2>
-                  <p className="text-mini opacity-60 font-sans uppercase tracking-wider">Add up to 5 emails</p>
+                  <p className="text-mini opacity-60 font-sans uppercase tracking-wider">Add up to 3 emails</p>
                 </div>
               </div>
               <button onClick={onClose} className={`p-2 transition-colors cursor-pointer ${isDarkMode ? 'hover:bg-white/10 text-bright-gray/80 hover:text-white' : 'hover:bg-vintage-charcoal/10 text-vintage-charcoal/80 hover:text-vintage-charcoal'}`}>
@@ -132,7 +132,7 @@ export const MultiEmailModal: React.FC<MultiEmailModalProps> = ({
                 </div>
               ))}
 
-              {emails.length < 5 && (
+              {emails.length < 3 && (
                 <div className="pt-2 max-w-sm">
                   <MultiEntryButton
                     label="Add Another Email"

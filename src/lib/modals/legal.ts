@@ -11,14 +11,14 @@ export const legalModalData: ModalContent = {
     icon: Scale,
     intro: {
       title: 'Professional Practice Disclaimer',
-      text: 'ATBP Collaborative operates under the licensed architectural practice of Architect Marchie Teodoro Borja. All professional services, contract drawings, technical specifications, and construction supervisions comply with Republic Act No. 9266 and Philippine building regulations.',
+      text: 'ATBP Collaborative operates under the licensed architectural practice of Architect Marchie Teodoro Borja. All professional services, contract drawings, technical specifications, and construction supervisions comply with <a href="https://lawphil.net/statutes/repacts/ra2004/ra_9266_2004.html" target="_blank" rel="noopener noreferrer" class="underline hover:text-space-sparkle transition-colors">Republic Act No. 9266</a> and Philippine building regulations.',
     },
     sections: [
       {
         icon: Award,
         title: '1. Professional Registration & Accreditation',
         list: [
-          '<strong>Professional Regulation Code (RA 9266):</strong> Sec. 37 Architectural Practice Regulations.',
+          '<strong>Professional Regulation Code (<a href="https://lawphil.net/statutes/repacts/ra2004/ra_9266_2004.html" target="_blank" rel="noopener noreferrer" class="underline hover:text-space-sparkle transition-colors">RA 9266</a>):</strong> Sec. 37 Architectural Practice Regulations.',
           '<strong>PRC Registration:</strong> Architect License No. 0054827 | Board of Architecture (PRC-BOA) Registration No. 0054827.',
           '<strong>PRC-BOMP Certification:</strong> Registration No. 0012169.',
           '<strong>SEC Registry:</strong> Registered One-Person Corporation (OPC) 2026.',
@@ -27,7 +27,7 @@ export const legalModalData: ModalContent = {
       {
         icon: FileText,
         title: '2. Architectural Ownership & Copyright',
-        text: 'Under Section 33 of Republic Act No. 9266 (The Architecture Act of 2004), drawings, specifications, CAD/BIM models, render visuals, and contract documents prepared by ATBP Collaborative as instruments of service are the intellectual property and copyright of the Architect.<br/><br/><span class="opacity-85 text-mini">Reproduction, modification, or re-use of design assets for other sites or projects without prior express written consent is strictly prohibited under Philippine copyright law.</span>',
+        text: 'Under Section 33 of <a href="https://lawphil.net/statutes/repacts/ra2004/ra_9266_2004.html" target="_blank" rel="noopener noreferrer" class="underline hover:text-space-sparkle transition-colors">Republic Act No. 9266</a> (The Architecture Act of 2004), drawings, specifications, CAD/BIM models, render visuals, and contract documents prepared by ATBP Collaborative as instruments of service are the intellectual property and copyright of the Architect.<br/><br/><span class="opacity-85 text-mini">Reproduction, modification, or re-use of design assets for other sites or projects without prior express written consent is strictly prohibited under Philippine copyright law.</span>',
       },
       {
         icon: Building2,

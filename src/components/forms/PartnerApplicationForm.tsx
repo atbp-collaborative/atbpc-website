@@ -11,6 +11,7 @@ import { MultiAddressModal } from '@/components/modals/MultiAddressModal';
 import { MultiEmailModal } from '@/components/modals/MultiEmailModal';
 import { MultiContactModal } from '@/components/modals/MultiContactModal';
 import { MultiRegistrationModal } from '@/components/modals/MultiRegistrationModal';
+import { SocialMediaModal } from '@/components/modals/SocialMediaModal';
 import { getPartnerFormFields, PARTNER_FORM_INITIAL_DATA, PartnerFormData, PartnerFormVariant } from '@/lib/forms/partner';
 import { useFormViewport } from '@/hooks/useFormViewport';
 
@@ -53,6 +54,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [showRegistrationsModal, setShowRegistrationsModal] = useState(false);
+  const [showSocialMediaModal, setShowSocialMediaModal] = useState(false);
   const isHeightConstrained = useFormViewport(680);
 
   const handleFieldChange = (name: string, value: any) => {
@@ -165,19 +167,29 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                 />
               ))}
 
-              {fields.leftColumnBottomGrid && (
-                <div className={`grid ${variant === 'supplier' ? 'grid-cols-1 sm:grid-cols-3 gap-3' : 'grid-cols-1 sm:grid-cols-4 gap-2.5'} pt-1`}>
-                  {fields.leftColumnBottomGrid.map((field) => (
-                    <FormFieldRenderer
-                      key={field.name}
-                      config={field}
-                      value={(formData as any)[field.name]}
-                      onChange={handleFieldChange}
-                      isDarkMode={isDarkMode}
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="bg-[#466263]/50 p-4 rounded-xl flex flex-col justify-center text-left text-caption font-medium min-h-[90px] text-vintage-charcoal dark:text-bright-gray">
+                <span className="font-bold mb-1">Reminders:</span>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  {variant === 'supplier' && (
+                    <>
+                      <li>We need samples kept at our office.</li>
+                      <li>We do not accept physical brochures, please send it as a soft copy.</li>
+                    </>
+                  )}
+                  {variant === 'builder' && (
+                    <>
+                      <li>We require all building partners to hold an active PCAB license and submit valid business registrations.</li>
+                      <li>Please share your project portfolio.</li>
+                    </>
+                  )}
+                  {variant === 'consultant' && (
+                    <>
+                      <li>We collaborate with certified professionals (PRC/PTR).</li>
+                      <li>Please share your credentials, sample contracts, and case studies.</li>
+                    </>
+                  )}
+                </ul>
+              </div>
             </div>
 
             {/* RIGHT COLUMN */}
@@ -230,33 +242,47 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                         <MultiEntryButton
                           fieldLabel="Documents"
                           label="Registrations"
-                          count={(formData.secRegistration ? 1 : 0) + (formData.birRegistration ? 1 : 0) + (formData.dtiRegistration ? 1 : 0)}
+                          count={
+                            (formData.secRegistration ? 1 : 0) +
+                            (formData.birRegistration ? 1 : 0) +
+                            (formData.dtiRegistration ? 1 : 0) +
+                            (formData.philgepsRegistration ? 1 : 0) +
+                            (variant === 'consultant' && formData.prcLicense ? 1 : 0) +
+                            (variant === 'consultant' && formData.ptrLicense ? 1 : 0)
+                          }
                           onClick={() => setShowRegistrationsModal(true)}
                           isDarkMode={isDarkMode}
                         />
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <FormFieldRenderer
-                        config={{ type: 'text', name: 'licenseLink', label: variant === 'builder' ? 'PCAB License' : 'PRC / PTR License', badge: '!' }}
-                        value={formData.licenseLink}
-                        onChange={handleFieldChange}
-                        isDarkMode={isDarkMode}
-                      />
-                      <div className="grid grid-cols-2 gap-3">
-                        <FormFieldRenderer
-                          config={{ type: 'text', name: 'facebook', label: 'Facebook', placeholder: 'Paste URL / Link / Handle' }}
-                          value={formData.facebook}
-                          onChange={handleFieldChange}
-                          isDarkMode={isDarkMode}
-                        />
-                        <FormFieldRenderer
-                          config={{ type: 'text', name: 'instagram', label: 'Instagram', placeholder: 'Paste URL / Link / Handle' }}
-                          value={formData.instagram}
-                          onChange={handleFieldChange}
-                          isDarkMode={isDarkMode}
-                        />
-                      </div>
+                      {variant === 'builder' ? (
+                        <>
+                          <FormFieldRenderer
+                            config={{ type: 'text', name: 'licenseLink', label: 'PCAB License', badge: '!' }}
+                            value={formData.licenseLink}
+                            onChange={handleFieldChange}
+                            isDarkMode={isDarkMode}
+                          />
+                          <MultiEntryButton 
+                            fieldLabel="Social Media"
+                            label="Add Links" 
+                            count={(formData.facebook ? 1 : 0) + (formData.instagram ? 1 : 0) + (formData.websiteLink ? 1 : 0)} 
+                            onClick={() => setShowSocialMediaModal(true)} 
+                            isDarkMode={isDarkMode} 
+                          />
+                        </>
+                      ) : (
+                        <div className="sm:col-span-2">
+                          <MultiEntryButton 
+                            fieldLabel="Social Media"
+                            label="Add Links" 
+                            count={(formData.facebook ? 1 : 0) + (formData.instagram ? 1 : 0) + (formData.websiteLink ? 1 : 0)} 
+                            onClick={() => setShowSocialMediaModal(true)} 
+                            isDarkMode={isDarkMode} 
+                          />
+                        </div>
+                      )}
                     </div>
                   </>
                 ) : (
@@ -275,7 +301,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                         <MultiEntryButton
                           fieldLabel="Documents"
                           label="Registrations"
-                          count={(formData.secRegistration ? 1 : 0) + (formData.birRegistration ? 1 : 0) + (formData.dtiRegistration ? 1 : 0)}
+                          count={(formData.secRegistration ? 1 : 0) + (formData.birRegistration ? 1 : 0) + (formData.dtiRegistration ? 1 : 0) + (formData.philgepsRegistration ? 1 : 0)}
                           onClick={() => setShowRegistrationsModal(true)}
                           isDarkMode={isDarkMode}
                         />
@@ -283,16 +309,17 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <FormFieldRenderer
-                        config={{ type: 'text', name: 'facebook', label: 'Facebook', placeholder: 'URL/Handle' }}
-                        value={formData.facebook}
+                        config={{ type: 'file', name: 'catalog', label: 'Catalog', badge: '!', typeHint: '(PDF Only)', variant: 'compact' }}
+                        value={formData.catalog}
                         onChange={handleFieldChange}
                         isDarkMode={isDarkMode}
                       />
-                      <FormFieldRenderer
-                        config={{ type: 'text', name: 'instagram', label: 'Instagram', placeholder: 'URL/Handle' }}
-                        value={formData.instagram}
-                        onChange={handleFieldChange}
-                        isDarkMode={isDarkMode}
+                      <MultiEntryButton 
+                        fieldLabel="Social Media"
+                        label="Add Links" 
+                        count={(formData.facebook ? 1 : 0) + (formData.instagram ? 1 : 0) + (formData.websiteLink ? 1 : 0)} 
+                        onClick={() => setShowSocialMediaModal(true)} 
+                        isDarkMode={isDarkMode} 
                       />
                     </div>
                   </>
@@ -382,12 +409,28 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
       <MultiRegistrationModal
         isOpen={showRegistrationsModal}
         onClose={() => setShowRegistrationsModal(false)}
+        variant={variant}
         initialRegistrations={{
           secRegistration: formData.secRegistration,
           birRegistration: formData.birRegistration,
           dtiRegistration: formData.dtiRegistration,
+          philgepsRegistration: formData.philgepsRegistration,
+          prcLicense: formData.prcLicense,
+          ptrLicense: formData.ptrLicense,
         }}
         onSave={(regs) => setFormData(prev => ({ ...prev, ...regs }))}
+        isDarkMode={isDarkMode}
+      />
+
+      <SocialMediaModal
+        isOpen={showSocialMediaModal}
+        onClose={() => setShowSocialMediaModal(false)}
+        initialValues={{
+          facebook: formData.facebook,
+          instagram: formData.instagram,
+          websiteLink: formData.websiteLink,
+        }}
+        onSave={(vals) => setFormData(prev => ({ ...prev, ...vals }))}
         isDarkMode={isDarkMode}
       />
     </div>

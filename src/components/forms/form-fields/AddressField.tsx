@@ -10,7 +10,7 @@ import { COUNTRIES } from '@/lib/countries';
 
 type AddressFieldProps = {
   name: string;
-  label: string;
+  label?: React.ReactNode;
   dense?: boolean;
 } & FieldRenderProps<PhAddress>;
 
