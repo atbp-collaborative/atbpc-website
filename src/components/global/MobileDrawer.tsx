@@ -134,7 +134,13 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             <div className="space-y-8">
               {/* Drawer Header */}
               <div className="flex items-center justify-between pb-4">
-                <AtbpLogo isDarkMode={isDarkMode} className="h-6 w-auto" />
+                <Link
+                  href={ROUTES.home}
+                  onClick={closeDrawer}
+                  className="flex items-center cursor-pointer select-none"
+                >
+                  <AtbpLogo isDarkMode={isDarkMode} className="h-6 w-auto transition-opacity hover:opacity-90" />
+                </Link>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="p-2 rounded-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
@@ -145,17 +151,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
               {/* Navigation Links */}
               <nav className="flex flex-col space-y-3">
-                <Link
-                  href={ROUTES.home}
-                  onClick={closeDrawer}
-                  className={`block text-left text-caption tracking-widest uppercase py-3 px-4 rounded-none transition-all cursor-pointer ${
-                    isHomeActive
-                      ? isDarkMode ? 'bg-space-sparkle/20 text-white font-bold' : 'bg-space-sparkle/10 text-space-sparkle font-bold'
-                      : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-80'
-                  }`}
-                >
-                  Homepage | Bungad
-                </Link>
 
                 {/* Sub-item 2-level dropdown section for Works */}
                 <div className="space-y-1">
