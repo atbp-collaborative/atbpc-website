@@ -39,48 +39,52 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
   return (
     <div 
       id={`member-detail-${member.id}`}
-      className="w-full px-4 sm:px-8 py-2 select-none flex flex-col flex-1 min-h-0 h-full overflow-hidden justify-between space-y-2"
+      className="w-full px-4 sm:px-8 py-2 select-none flex flex-col flex-1 min-h-0 h-full overflow-y-auto md:overflow-hidden justify-start space-y-4 md:space-y-2"
     >
       <BreadcrumbButton
         label={`Back to ${member.categories && member.categories.length > 0 ? member.categories[0].charAt(0).toUpperCase() + member.categories[0].slice(1) : 'Our People'}`}
         onClick={handleBack}
+        className={`fixed left-0 right-0 top-[var(--header-height,53px)] md:static z-30 pb-2 md:pb-1 pt-2 md:pt-0 md:mb-2 px-4 sm:px-8 md:px-0 ${
+          isDarkMode ? 'bg-vintage-charcoal md:bg-transparent' : 'bg-bright-gray md:bg-transparent'
+        }`}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-10 gap-6 lg:gap-8 xl:gap-8 2xl:gap-10 flex-1 min-h-0 overflow-hidden pb-1">
+      <div className="mt-10 md:mt-0 grid grid-cols-1 md:grid-cols-12 xl:grid-cols-10 gap-6 md:gap-8 xl:gap-8 2xl:gap-10 flex-none md:flex-1 min-h-0 md:overflow-hidden pb-4 md:pb-1">
         
         {/* COLUMN 1: Portrait Container (40% on XL+) */}
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col items-stretch h-full min-h-0 overflow-hidden">
-          <div className="relative w-full h-[50vh] lg:h-full lg:flex-1 min-h-0 overflow-hidden bg-black/10 rounded-none group border border-space-sparkle/20 animate-slide-up">
+        <div className="md:col-span-5 xl:col-span-4 flex flex-col items-stretch h-auto md:h-full min-h-0 md:overflow-hidden">
+          <div className="relative w-full h-[60vh] sm:h-[70vh] md:h-full md:flex-1 min-h-0 overflow-hidden bg-black/10 rounded-none group border border-space-sparkle/20 animate-slide-up">
             <ImageWithFade
               src={member.image}
               alt={member.name}
               fill
-              sizes="(min-width: 1280px) 40vw, (min-width: 1024px) 42vw, 100vw"
+              sizes="(min-width: 1280px) 40vw, (min-width: 768px) 42vw, 100vw"
               priority
               className="object-cover transition-all duration-700 ease-in-out hover:scale-105"
             />
           </div>
         </div>
 
-        {/* COLUMN 2: Person Name & Bio (30% on XL+, 7 cols on LG) */}
-        <div className="lg:col-span-7 xl:col-span-3 flex flex-col justify-between h-full min-h-0 overflow-hidden space-y-2 py-0.5">
-          <div className="flex flex-col flex-1 min-h-0 overflow-hidden space-y-3">
-            <div className="shrink-0 space-y-0.5">
-              <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight">
-                {member.name}
-              </h1>
+        {/* COLUMN 2: Person Name & Bio (30% on XL+, 7 cols on MD) */}
+        <div className="md:col-span-7 xl:col-span-3 flex flex-col h-auto md:h-full min-h-0 md:overflow-hidden py-0.5">
+          {/* Static Name & Role on Tablet+ */}
+          <div className="shrink-0 space-y-0.5 mb-3 md:mb-4">
+            <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight">
+              {member.name}
+            </h1>
 
-              <div>
-                <span className={`text-caption sm:text-mini uppercase tracking-widest font-bold opacity-80 ${
-                  isDarkMode ? 'text-white/80' : 'text-space-sparkle'
-                }`}>
-                  {member.role}
-                </span>
-              </div>
+            <div>
+              <span className={`text-caption sm:text-mini uppercase tracking-widest font-bold opacity-80 ${
+                isDarkMode ? 'text-white/80' : 'text-space-sparkle'
+              }`}>
+                {member.role}
+              </span>
             </div>
+          </div>
 
-            {/* Scrollable text if bio is long */}
-            <div className="flex-1 min-h-0 overflow-y-auto pr-1.5 no-scrollbar">
+          {/* Scrollable text and accordions wrapper */}
+          <div className="flex flex-col flex-1 min-h-0 md:overflow-y-auto no-scrollbar md:pr-2 space-y-3">
+            <div className="flex-none">
               <p className="text-caption sm:text-body leading-relaxed font-light opacity-90 whitespace-pre-line text-justify">
                 {member.fullBio}
               </p>
@@ -89,7 +93,7 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
             {/* Accreditations / Credentials Block (Accordion for < XL screens) */}
             {member.affiliations && member.affiliations.length > 0 && (
               <Accordion key={`credentials-${member.id}`} title="Credentials" isDarkMode={isDarkMode} size="sm" className="shrink-0 xl:hidden">
-                <div className="pb-2 pt-1 text-mini space-y-2 pl-[30px] max-h-[140px] overflow-y-auto pr-1">
+                <div className="pb-2 pt-1 text-mini space-y-2 pl-[30px] pr-1">
                   <ul className="space-y-2">
                     {member.affiliations.map((item, idx) => (
                       <li key={idx} className="flex items-start space-x-2 font-light opacity-90">
@@ -108,7 +112,7 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
             {/* Dynamic Project Involvement Block (Accordion for < XL screens) */}
             {member.involvement && member.involvement.length > 0 && (
               <Accordion key={`involvement-${member.id}`} title="Project Involvement" isDarkMode={isDarkMode} size="sm" className="shrink-0 xl:hidden">
-                <div className="pb-2 pt-1 text-mini space-y-2 pl-[30px] max-h-[140px] overflow-y-auto pr-1">
+                <div className="pb-2 pt-1 text-mini space-y-2 pl-[30px] pr-1">
                   <ul className="space-y-1.5">
                     {member.involvement.map((inv) => {
                       const project = projects.find(p => p.id === inv.projectId);
@@ -137,7 +141,6 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
                 </div>
               </Accordion>
             )}
-
           </div>
         </div>
 

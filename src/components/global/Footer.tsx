@@ -8,6 +8,7 @@ import { legalModalData } from '@/lib/modals/legal';
 import { privacyPolicyModalData } from '@/lib/modals/privacy-policy';
 import { usePathname } from 'next/navigation';
 import { ROUTES } from '@/lib/navigation/routes';
+import { motion, AnimatePresence } from 'motion/react';
 
 const TAGLINE_PHRASES = [
   { verb: 'designing', noun: 'values', href: ROUTES.designingWithValues },
@@ -64,7 +65,7 @@ export const Footer: React.FC<FooterProps> = ({
     <>
       <footer 
         id="main-footer"
-        className={`border-t py-4 mt-auto shrink-0 transition-colors text-mini ${
+        className={`border-t py-2 md:py-3 lg:py-4 mt-auto shrink-0 transition-colors text-mini ${
           isDarkMode 
             ? 'bg-vintage-charcoal border-space-sparkle/20 text-bright-gray/70' 
             : 'bg-bright-gray border-space-sparkle/10 text-vintage-charcoal/70'
@@ -76,7 +77,8 @@ export const Footer: React.FC<FooterProps> = ({
           }`}
         >
           {/* Subtext on the left */}
-          <div className="hidden md:block font-sans font-light tracking-wide text-mini text-center md:text-left">
+          {/* Desktop view: Side-by-side slogan */}
+          <div className="hidden lg:block font-sans font-light tracking-wide text-mini text-left">
             {TAGLINE_PHRASES.map((phrase, index) => {
               const isActive = activeTaglineIndex === index;
               return (
@@ -99,63 +101,85 @@ export const Footer: React.FC<FooterProps> = ({
             })}
           </div>
 
+          {/* Tablet view: One slogan at a time scrolling up */}
+          <div className="hidden md:block lg:hidden font-sans font-light tracking-wide text-mini text-left h-5 min-w-[180px] relative overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTaglineIndex}
+                initial={{ y: 15, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -15, opacity: 0 }}
+                transition={{ duration: 0.5, ease: 'easeInOut' }}
+                className="absolute inset-0 flex items-center whitespace-nowrap"
+              >
+                <Link href={TAGLINE_PHRASES[activeTaglineIndex].href} className="hover:underline underline-offset-4 decoration-[#d4d4d4]">
+                  {TAGLINE_PHRASES[activeTaglineIndex].verb} with{' '}
+                  <span className="font-semibold">{TAGLINE_PHRASES[activeTaglineIndex].noun}</span>
+                </Link>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
           {/* Copyright & Links moved to the right */}
           <div className="flex items-center justify-center md:justify-end gap-2 sm:gap-2.5 text-[10px] font-sans tracking-wider opacity-90 whitespace-nowrap">
             <span className="uppercase tracking-widest opacity-70 text-[10px]">© 2026 ATBP Collaborative</span>
-            <span className="opacity-40">•</span>
-            <button
-              onClick={() => setIsLegalModalOpen(true)}
-              className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
-            >
-              Legal
-            </button>
-            <span className="opacity-40">•</span>
-            <button
-              onClick={() => setIsPrivacyModalOpen(true)}
-              className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
-            >
-              Privacy Policy
-            </button>
+            
+            <div className="hidden md:flex items-center gap-2 sm:gap-2.5">
+              <span className="opacity-40">•</span>
+              <button
+                onClick={() => setIsLegalModalOpen(true)}
+                className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
+              >
+                Legal
+              </button>
+              <span className="opacity-40">•</span>
+              <button
+                onClick={() => setIsPrivacyModalOpen(true)}
+                className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
+              >
+                Privacy Policy
+              </button>
 
-            {onToggleProtection && (
-              <>
-                <span className="opacity-40">•</span>
-                <button
-                  type="button"
-                  onClick={onToggleProtection}
-                  title={isProtectionEnabled ? 'Disable Content Protection' : 'Enable Content Protection'}
-                  aria-label={isProtectionEnabled ? 'Disable Content Protection' : 'Enable Content Protection'}
-                  className={`p-1 rounded-md border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
-                    isProtectionEnabled
-                      ? 'border-space-sparkle/50 text-space-sparkle bg-space-sparkle/10'
-                      : isDarkMode
-                      ? 'border-bright-gray/20 text-bright-gray/80 hover:text-white hover:border-bright-gray/40'
-                      : 'border-vintage-charcoal/20 text-vintage-charcoal/80 hover:text-black hover:border-vintage-charcoal/40'
-                  }`}
-                >
-                  {isProtectionEnabled ? <Shield size={13} /> : <ShieldOff size={13} />}
-                </button>
-              </>
-            )}
+              {onToggleProtection && (
+                <>
+                  <span className="opacity-40">•</span>
+                  <button
+                    type="button"
+                    onClick={onToggleProtection}
+                    title={isProtectionEnabled ? 'Disable Content Protection' : 'Enable Content Protection'}
+                    aria-label={isProtectionEnabled ? 'Disable Content Protection' : 'Enable Content Protection'}
+                    className={`p-1 rounded-md border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                      isProtectionEnabled
+                        ? 'border-space-sparkle/50 text-space-sparkle bg-space-sparkle/10'
+                        : isDarkMode
+                        ? 'border-bright-gray/20 text-bright-gray/80 hover:text-white hover:border-bright-gray/40'
+                        : 'border-vintage-charcoal/20 text-vintage-charcoal/80 hover:text-black hover:border-vintage-charcoal/40'
+                    }`}
+                  >
+                    {isProtectionEnabled ? <Shield size={13} /> : <ShieldOff size={13} />}
+                  </button>
+                </>
+              )}
 
-            {onToggleTheme && (
-              <>
-                <span className="opacity-40">•</span>
-                <button
-                  type="button"
-                  onClick={onToggleTheme}
-                  title={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-                  aria-label={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-                  className={`p-1 rounded-md border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
-                    isDarkMode
-                      ? 'border-bright-gray/20 text-bright-gray/80 hover:text-white hover:border-bright-gray/40'
-                      : 'border-vintage-charcoal/20 text-vintage-charcoal/80 hover:text-black hover:border-vintage-charcoal/40'
-                  }`}
-                >
-                  {isDarkMode ? <Sun size={13} /> : <Moon size={13} />}
-                </button>
-              </>
-            )}
+              {onToggleTheme && (
+                <>
+                  <span className="opacity-40">•</span>
+                  <button
+                    type="button"
+                    onClick={onToggleTheme}
+                    title={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+                    aria-label={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+                    className={`p-1 rounded-md border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                      isDarkMode
+                        ? 'border-bright-gray/20 text-bright-gray/80 hover:text-white hover:border-bright-gray/40'
+                        : 'border-vintage-charcoal/20 text-vintage-charcoal/80 hover:text-black hover:border-vintage-charcoal/40'
+                    }`}
+                  >
+                    {isDarkMode ? <Sun size={13} /> : <Moon size={13} />}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </footer>

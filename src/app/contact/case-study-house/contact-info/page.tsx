@@ -99,7 +99,7 @@ export default function ContactInfoPage() {
 
   return (
     <div 
-      className="w-full h-full overflow-hidden flex flex-col lg:flex-row items-stretch select-none relative"
+      className="w-full h-full overflow-y-auto md:overflow-hidden flex flex-col md:flex-row items-stretch select-none relative"
     >
       <button
         onClick={() => router.push(ROUTES.contact)}
@@ -109,13 +109,13 @@ export default function ContactInfoPage() {
         <span>Contact Overview</span>
       </button>
 
-      <div className="w-full lg:w-1/2 h-1/2 lg:h-full relative overflow-hidden shrink-0">
+      <div className="w-full md:w-1/2 min-h-[40vh] md:min-h-0 md:h-full relative shrink-0">
         <OfficeMap isDarkMode={isDarkMode} />
       </div>
 
-      <div className={`w-full lg:w-1/2 h-1/2 lg:h-full ${
+      <div className={`w-full md:w-1/2 ${
         isHeightConstrained ? 'p-3 sm:p-5 lg:p-6 xl:p-8' : 'p-5 sm:p-8 lg:p-10 xl:p-12 2xl:p-14'
-      } flex flex-col justify-between overflow-y-auto`}>
+      } flex flex-col justify-between shrink-0 md:h-full md:overflow-y-auto`}>
         
         {/* Writeups Container */}
         <div className="flex-1 flex flex-col justify-start items-center space-y-4 sm:space-y-6 min-h-0 w-full">
@@ -267,7 +267,7 @@ export default function ContactInfoPage() {
 
         </div>
 
-        {/* CTA Buttons - 75% width */}
+        {/* CTA Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full lg:w-[75%] shrink-0 pt-2 mt-auto">
           <Button
             type="filled"

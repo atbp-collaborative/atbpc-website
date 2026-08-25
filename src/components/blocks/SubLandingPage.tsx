@@ -4,6 +4,7 @@ import React from 'react';
 import { LandingCard } from '@/components/blocks/LandingPage';
 import { useTheme } from '@/lib/theme-context';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
+import { useCardLayout } from '@/lib/hooks/useCardLayout';
 
 interface SubLandingPageProps {
   cards: LandingCard[];
@@ -14,6 +15,7 @@ interface SubLandingPageProps {
 
 export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, subtitle, isHeaderSticky }) => {
   const { isDarkMode } = useTheme();
+  const layout = useCardLayout();
 
   return (
     <div className={`w-full h-full select-none flex flex-col flex-1 min-h-0 overflow-hidden px-4 sm:px-8 pb-4 ${isHeaderSticky ? 'pt-4 sm:pt-6' : 'pt-16 sm:pt-20'}`}>
@@ -34,12 +36,16 @@ export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, su
       )}
 
       {/* Cards Grid / Flex Container */}
-      <div className="flex-1 flex flex-col xl:flex-row gap-[2px] h-full min-h-0 items-stretch overflow-y-auto xl:overflow-hidden group/subCards">
+      <div className={`flex-1 flex gap-[2px] h-full min-h-0 items-stretch group/subCards ${
+        layout === 'row' ? 'flex-row overflow-hidden' : 'flex-col overflow-y-auto'
+      }`}>
         {cards.map((card) => (
           <div
             key={card.id}
             onClick={card.onSelect}
-            className={`group/card relative flex-1 min-h-[260px] xl:min-h-0 rounded-none border cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] xl:hover:flex-[1.25] overflow-hidden ${
+            className={`group/card relative flex-1 rounded-none border cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden ${
+              layout === 'row' ? 'min-h-0 hover:flex-[1.25]' : 'min-h-[260px]'
+            } ${
               isDarkMode
                 ? 'bg-vintage-charcoal/40 border-space-sparkle/40 hover:border-bright-gray/30'
                 : 'bg-white/60 border-vintage-charcoal/15 hover:border-space-sparkle/40'

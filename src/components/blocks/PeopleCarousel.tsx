@@ -36,8 +36,12 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members, activeF
   });
 
   return (
-    <div className="w-full h-full flex flex-col justify-between overflow-hidden select-none">
-      <div className="shrink-0 flex items-center justify-between relative pb-2.5 mb-2">
+    <div className="w-full flex-1 flex flex-col justify-between md:overflow-hidden select-none">
+      <div
+        className={`shrink-0 flex items-center justify-between z-20 pb-2.5 mb-2 pt-2 md:pt-0 md:bg-transparent -mx-4 px-4 sm:-mx-8 sm:px-8 md:mx-0 md:px-0 sticky top-[var(--header-height,53px)] md:top-auto md:relative ${
+          isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'
+        }`}
+      >
         <div className="flex items-center justify-start flex-wrap gap-1 sm:gap-2 text-mini sm:text-caption font-medium lowercase tracking-wider">
           {FILTER_OPTIONS.map((filter, index) => {
             const isActive = activeFilter === filter.id;
@@ -63,7 +67,7 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members, activeF
           })}
         </div>
 
-        <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
+        <div className="hidden md:flex items-center space-x-1 sm:space-x-2 shrink-0">
           <button
             onClick={() => handleScroll('left')}
             disabled={!canScrollPrev}
@@ -95,7 +99,7 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members, activeF
         </div>
       </div>
 
-      <div className="flex-1 relative w-full overflow-hidden">
+      <div className="flex-1 relative w-full md:overflow-hidden">
         {filteredMembers.length === 0 ? (
           <div className="text-center py-12 opacity-60 text-caption sm:text-body font-light">
             No team members found in this category.
@@ -104,7 +108,7 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members, activeF
           <div
             ref={carouselRef}
             {...dragHandlers}
-            className="h-full overflow-y-auto md:overflow-y-hidden md:overflow-x-auto overflow-x-hidden no-scrollbar overscroll-x-contain relative flex flex-col md:flex-row gap-[2px] cursor-grab active:cursor-grabbing"
+            className="md:h-full md:overflow-y-hidden md:overflow-x-auto overflow-x-hidden no-scrollbar overscroll-x-contain relative flex flex-col md:flex-row gap-[2px] md:cursor-grab md:active:cursor-grabbing"
           >
             {filteredMembers.map((member) => (
               <Link

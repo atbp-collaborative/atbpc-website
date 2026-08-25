@@ -77,11 +77,11 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
   const currentNode = selectedNodeIndex !== null ? nodes[selectedNodeIndex] : null;
 
   const getNodeClassName = (isSelected: boolean, isNext: boolean, isFlattened: boolean, isDarkMode: boolean) => {
-    const base = `group relative flex flex-col items-center justify-center text-center p-1 cursor-pointer transition-all duration-200 shadow-md rounded-full border mx-auto ${
-      isFlattened
-        ? 'w-3/4 h-8 sm:h-9 md:h-10'
-        : 'aspect-square w-12 sm:w-16 md:w-20 lg:w-24 h-12 sm:h-16 md:h-20 lg:h-24'
-    }`;
+    if (isFlattened) {
+      return `group relative flex flex-col items-center justify-center text-center p-1 cursor-pointer transition-all duration-200 mx-auto w-full min-h-[3rem] z-10`;
+    }
+
+    const base = `group relative flex flex-col items-center justify-center text-center p-1 cursor-pointer transition-all duration-200 shadow-md rounded-full border mx-auto aspect-square w-12 sm:w-16 md:w-20 lg:w-24 h-12 sm:h-16 md:h-20 lg:h-24`;
     
     if (isSelected) {
       return `${base} opacity-100 z-10 ${isDarkMode ? 'bg-white text-vintage-charcoal ring-2 sm:ring-4 ring-white/30 font-bold border-white' : 'bg-vintage-charcoal text-white ring-2 sm:ring-4 ring-vintage-charcoal/30 font-bold border-vintage-charcoal'}`;
@@ -91,9 +91,7 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
       return `${base} z-10 ${isDarkMode ? 'bg-white text-vintage-charcoal ring-2 sm:ring-4 ring-white/30 border-white/40 shadow-lg font-bold' : 'bg-white text-vintage-charcoal ring-2 sm:ring-4 ring-vintage-charcoal/20 border-vintage-charcoal/40 shadow-lg font-bold'}`;
     }
     
-    const opacityClass = isFlattened ? 'opacity-35 hover:opacity-100' : 'opacity-100';
-
-    return `${base} ${opacityClass} ${isDarkMode ? 'bg-white/90 text-vintage-charcoal hover:bg-white hover:ring-2 hover:ring-white/40 border-white/20' : 'bg-white text-vintage-charcoal border border-slate-200 hover:border-vintage-charcoal hover:shadow-lg'}`;
+    return `${base} opacity-100 ${isDarkMode ? 'bg-white/90 text-vintage-charcoal hover:bg-white hover:ring-2 hover:ring-white/40 border-white/20' : 'bg-white text-vintage-charcoal border border-slate-200 hover:border-vintage-charcoal hover:shadow-lg'}`;
   };
 
   const slideVariants = {
@@ -172,7 +170,7 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
         {/* Connecting Dotted Horizontal Line */}
         <div 
           className={`absolute left-0 right-0 top-1/2 -translate-y-1/2 z-0 pointer-events-none transition-opacity duration-300 ${
-            isFlattened ? 'opacity-25' : 'opacity-60'
+            isFlattened ? 'opacity-0' : 'opacity-60'
           }`}
           style={{
             height: '2px',
@@ -213,22 +211,35 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
                   {/* Active Step Display Badge */}
                   {isSelected && (
                     <motion.span 
-                      initial={{ scale: 0.8, opacity: 0 }}
+                      initial={isFlattened ? { scale: 0.9, opacity: 0 } : { scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className={`absolute -top-2.5 sm:-top-3 px-2 py-0.5 text-micro font-sans font-extrabold uppercase rounded-full shadow-md z-20 whitespace-nowrap tracking-wider ${isDarkMode ? 'bg-white text-vintage-charcoal' : 'bg-vintage-charcoal text-white'}`}
+                      className={
+                        isFlattened
+                          ? `mb-1.5 px-4 sm:px-5 py-1 sm:py-1.5 text-mini sm:text-caption font-sans font-bold uppercase rounded-full shadow-md z-20 whitespace-nowrap tracking-wider ${isDarkMode ? 'bg-white text-vintage-charcoal' : 'bg-vintage-charcoal text-white'}`
+                          : `absolute -top-2.5 sm:-top-3 px-2 py-0.5 text-micro font-sans font-extrabold uppercase rounded-full shadow-md z-20 whitespace-nowrap tracking-wider ${isDarkMode ? 'bg-white text-vintage-charcoal' : 'bg-vintage-charcoal text-white'}`
+                      }
                     >
                       Step {node.stepNumber}
                     </motion.span>
                   )}
 
                   {/* Node Text */}
-                  <div className="flex flex-col items-center justify-center leading-tight w-full px-1">
+                  <div className={`flex flex-col items-center justify-center leading-tight w-full px-1 transition-opacity duration-300 ${
+                    isFlattened 
+                      ? (isSelected 
+                          ? (isDarkMode ? 'text-white opacity-100' : 'text-vintage-charcoal opacity-100')
+                          : isNext 
+                             ? (isDarkMode ? 'text-white/70' : 'text-vintage-charcoal/70')
+                             : (isDarkMode ? 'text-white/30' : 'text-vintage-charcoal/30')
+                        )
+                      : ''
+                  }`}>
                     {getLinesForNode(node, isFlattened).map((line, i) => (
                       <span 
                         key={i} 
                         className={`font-sans tracking-tight select-none w-full text-center ${
                           isFlattened 
-                            ? 'text-micro sm:text-mini font-bold line-clamp-1'
+                            ? (isSelected ? 'text-mini sm:text-caption font-bold' : 'text-micro sm:text-mini font-semibold')
                             : 'font-semibold text-micro md:text-mini lg:text-caption'
                         }`}
                       >

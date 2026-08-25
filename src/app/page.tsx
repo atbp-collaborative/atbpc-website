@@ -80,9 +80,11 @@ export default function HeroPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-caption sm:text-body md:text-h2 font-medium text-white/90 tracking-wider font-sans lowercase"
+          className="home-slogan text-caption sm:text-body md:text-h2 font-medium text-white/90 tracking-wider font-sans lowercase"
         >
-          <span className="font-light">designed with</span> <strong>values</strong>. <span className="font-light">managed with</span> <strong>integrity</strong>. <span className="font-light">built with</span> <strong>culture</strong>.
+          <span className="slogan-segment"><span className="font-light">designed with</span> <strong>values</strong>.</span>{' '}
+          <span className="slogan-segment"><span className="font-light">managed with</span> <strong>integrity</strong>.</span>{' '}
+          <span className="slogan-segment"><span className="font-light">built with</span> <strong>culture</strong>.</span>
         </motion.p>
 
         {/* PLACEHOLDER SUBTEXT (TWO LINES) */}

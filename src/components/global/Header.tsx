@@ -52,9 +52,27 @@ export const Header: React.FC<HeaderProps> = ({
   const isContactInfoPage = pathname === ROUTES.contactInfo;
   const hideHeaderCtas = isSingleProjectPage || isContactInfoPage;
 
+  const [headerHeight, setHeaderHeight] = React.useState(53);
+  const headerRef = React.useRef<HTMLElement>(null);
+
+  React.useEffect(() => {
+    const updateHeight = () => {
+      if (headerRef.current) {
+        const height = headerRef.current.getBoundingClientRect().height;
+        setHeaderHeight(height);
+        document.documentElement.style.setProperty('--header-height', `${height}px`);
+      }
+    };
+    
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
+
   return (
     <header
       id="main-header"
+      ref={headerRef}
       className={`${
         isHeaderTransparent
           ? 'absolute top-0 left-0 w-full z-40 bg-transparent border-b border-transparent text-white'

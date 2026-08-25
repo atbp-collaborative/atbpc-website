@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, Sun, Moon, Shield, ShieldOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/lib/theme-context';
@@ -13,9 +13,15 @@ import { useActiveNav } from '@/hooks/useActiveNav';
 
 import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '@/lib/navigation/nav-data';
 
+import { InfoModal } from '@/components/modals/InfoModal';
+import { legalModalData } from '@/lib/modals/legal';
+import { privacyPolicyModalData } from '@/lib/modals/privacy-policy';
+
 interface MobileDrawerProps {
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
+  isProtectionEnabled?: boolean;
+  onToggleProtection?: () => void;
 }
 
 interface SectionTriggerProps {
@@ -70,8 +76,10 @@ const SectionTrigger: React.FC<SectionTriggerProps> = ({
 export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   isMobileMenuOpen,
   setIsMobileMenuOpen,
+  isProtectionEnabled = false,
+  onToggleProtection,
 }) => {
-  const { isDarkMode } = useTheme();
+  const { isDarkMode, toggleTheme } = useTheme();
   const pathname = usePathname();
   const { isWorksActive, isStudioActive, isContactActive, currentCategoryFilter: projectFilter } = useActiveNav();
   const isHomeActive = pathname === '/';
@@ -79,6 +87,9 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   // Accordion expansion state: only one category expanded at a time
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [expandedWorksCategory, setExpandedWorksCategory] = useState<string | null>(null);
+
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
 
   // Sync expanded section with active category when menu is opened or pathname changes
   useEffect(() => {
@@ -106,7 +117,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   const closeDrawer = () => setIsMobileMenuOpen(false);
 
   return (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       {isMobileMenuOpen && (
         <>
           {/* Backdrop */}
@@ -364,6 +376,59 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 onClick={closeDrawer}
               />
 
+              {/* Mobile links and toggles (Legal, Privacy, Protection, Theme) */}
+              <div className="flex flex-col items-center justify-center space-y-2 pt-3 border-t border-space-sparkle/10 w-full">
+                <div className="flex items-center justify-center gap-2.5 text-[10px] font-sans tracking-wider opacity-90 whitespace-nowrap">
+                  <button
+                    onClick={() => setIsLegalModalOpen(true)}
+                    className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
+                  >
+                    Legal
+                  </button>
+                  <span className="opacity-40">•</span>
+                  <button
+                    onClick={() => setIsPrivacyModalOpen(true)}
+                    className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
+                  >
+                    Privacy Policy
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-center gap-4 pt-1">
+                  {onToggleProtection && (
+                    <button
+                      type="button"
+                      onClick={onToggleProtection}
+                      title={isProtectionEnabled ? 'Disable Content Protection' : 'Enable Content Protection'}
+                      aria-label={isProtectionEnabled ? 'Disable Content Protection' : 'Enable Content Protection'}
+                      className={`p-1.5 rounded-md border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                        isProtectionEnabled
+                          ? 'border-space-sparkle/50 text-space-sparkle bg-space-sparkle/10'
+                          : isDarkMode
+                          ? 'border-bright-gray/20 text-bright-gray/80 hover:text-white hover:border-bright-gray/40'
+                          : 'border-vintage-charcoal/20 text-vintage-charcoal/80 hover:text-black hover:border-vintage-charcoal/40'
+                      }`}
+                    >
+                      {isProtectionEnabled ? <Shield size={13} /> : <ShieldOff size={13} />}
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    title={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+                    aria-label={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+                    className={`p-1.5 rounded-md border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                      isDarkMode
+                        ? 'border-bright-gray/20 text-bright-gray/80 hover:text-white hover:border-bright-gray/40'
+                        : 'border-vintage-charcoal/20 text-vintage-charcoal/80 hover:text-black hover:border-vintage-charcoal/40'
+                    }`}
+                  >
+                    {isDarkMode ? <Sun size={13} /> : <Moon size={13} />}
+                  </button>
+                </div>
+              </div>
+
               <div className="text-caption text-center font-sans opacity-40 pt-2">
                 © 2026 ATBP Collaborative
               </div>
@@ -372,5 +437,22 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
         </>
       )}
     </AnimatePresence>
+
+    {/* Dedicated Legal Modal */}
+    <InfoModal
+      isOpen={isLegalModalOpen}
+      onClose={() => setIsLegalModalOpen(false)}
+      isDarkMode={isDarkMode}
+      data={legalModalData.contents}
+    />
+
+    {/* Dedicated Privacy Policy Modal */}
+    <InfoModal
+      isOpen={isPrivacyModalOpen}
+      onClose={() => setIsPrivacyModalOpen(false)}
+      isDarkMode={isDarkMode}
+      data={privacyPolicyModalData.contents}
+    />
+  </>
   );
 };

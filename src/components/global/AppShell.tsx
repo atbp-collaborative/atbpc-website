@@ -32,21 +32,33 @@ function AppShellInner({ children }: { children: ReactNode }) {
   }, [pathname]);
 
   const isFullScreenLanding = !SCROLLABLE_PATHS.includes(pathname);
+  const isOurPeople = pathname.startsWith('/studio/our-people') || pathname.startsWith('/our-people');
   const hideFooter = pathname === '/';
 
   return (
     <div
       id="app-root"
-      className={`${isFullScreenLanding ? 'h-screen overflow-hidden flex flex-col' : 'min-h-screen'
-        } font-sans transition-colors duration-500 ease-in-out ${isDarkMode ? 'bg-vintage-charcoal text-bright-gray' : 'bg-bright-gray text-vintage-charcoal'
-        }`}
+      className={`${
+        isFullScreenLanding && !isOurPeople
+          ? 'h-screen overflow-hidden flex flex-col'
+          : isOurPeople
+            ? 'min-h-[100dvh] md:h-screen md:overflow-hidden flex flex-col'
+            : 'min-h-screen'
+      } font-sans transition-colors duration-500 ease-in-out ${
+        isDarkMode ? 'bg-vintage-charcoal text-bright-gray' : 'bg-bright-gray text-vintage-charcoal'
+      }`}
     >
       <Suspense fallback={null}>
         <Header isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
       </Suspense>
 
       <Suspense fallback={null}>
-        <MobileDrawer isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
+        <MobileDrawer 
+          isMobileMenuOpen={isMobileMenuOpen} 
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          isProtectionEnabled={isProtectionEnabled}
+          onToggleProtection={() => setIsProtectionEnabled((prev) => !prev)}
+        />
       </Suspense>
 
       {children}
