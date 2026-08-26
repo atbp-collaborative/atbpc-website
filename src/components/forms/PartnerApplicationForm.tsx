@@ -100,24 +100,24 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
 
   const ActionButtons = ({ isTop }: { isTop?: boolean }) => (
     <div className={`grid grid-cols-2 gap-4 w-full ${isTop ? 'md:w-[75%] md:ml-auto' : ''}`}>
-      <div className="relative">
+      <div className="relative min-w-0">
         {!conditionsAcknowledged && (
           <div className="absolute inset-0 rounded-xl animate-glow-pulse" />
         )}
         <button
           type="button"
           onClick={() => setShowConditionsModal(true)}
-          className={`relative z-10 w-full h-full py-2 px-4 rounded-xl border text-caption font-medium transition-all hover:opacity-80 cursor-pointer ${inputBorderClass}`}
+          className={`relative z-10 w-full h-full py-2 px-4 rounded-xl border font-medium transition-all hover:opacity-80 cursor-pointer ${inputBorderClass} ${isTop ? 'text-[1.75vw] lg:text-caption whitespace-nowrap truncate' : 'text-caption'}`}
         >
           General Conditions
         </button>
       </div>
-      <div className="relative">
+      <div className="relative min-w-0">
         <button
           type="submit"
           disabled={isSubmitting || !canSubmit}
           title={!conditionsAcknowledged ? 'Acknowledge the General Conditions to continue' : !isFormValid ? 'Fill in all required fields to continue' : undefined}
-          className={`relative z-10 w-full py-2 px-4 rounded-xl border text-caption font-medium transition-all hover:opacity-80 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:opacity-50 ${inputBorderClass} !bg-space-sparkle !text-bright-gray border-none`}
+          className={`relative z-10 w-full py-2 px-4 rounded-xl border font-medium transition-all hover:opacity-80 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:opacity-50 ${inputBorderClass} !bg-space-sparkle !text-bright-gray border-none ${isTop ? 'text-[1.75vw] lg:text-caption whitespace-nowrap truncate' : 'text-caption'}`}
         >
           {isSubmitting ? 'Submitting...' : 'Submit Application'}
         </button>
@@ -156,7 +156,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
             className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto lg:overflow-hidden px-4 sm:px-8 pb-2"
           >
             {/* LEFT COLUMN */}
-            <div className={`w-full lg:w-1/2 flex flex-col ${variant === 'supplier' ? 'gap-3' : 'gap-2.5'} justify-between`}>
+            <div className={`w-full lg:w-1/2 flex flex-col ${variant === 'supplier' ? 'gap-3' : 'gap-2.5'} justify-between lg:h-full lg:overflow-hidden`}>
               {fields.leftColumnTop.map((field) => (
                 <FormFieldRenderer
                   key={field.name}
@@ -167,7 +167,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                 />
               ))}
 
-              <div className="bg-[#466263]/50 p-4 rounded-xl flex flex-col justify-center text-left text-caption font-medium min-h-[90px] text-vintage-charcoal dark:text-bright-gray">
+              <div className="border border-red-500 bg-transparent p-4 rounded-xl flex flex-col justify-center text-left text-caption font-medium min-h-[90px]">
                 <span className="font-bold mb-1">Reminders:</span>
                 <ul className="list-disc pl-4 space-y-0.5">
                   {variant === 'supplier' && (
@@ -193,140 +193,142 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className="w-full lg:w-1/2 flex flex-col gap-2.5 justify-between">
-              {fields.rightColumnRowsTop.map((row, idx) => (
-                <div key={idx} className={row.length > 1 ? 'grid grid-cols-1 sm:grid-cols-4 gap-3' : ''}>
-                  {row.map((field) => (
-                    <FormFieldRenderer
-                      key={field.name}
-                      config={field}
-                      value={(formData as any)[field.name]}
-                      onChange={handleFieldChange}
-                      isDarkMode={isDarkMode}
-                    />
-                  ))}
-                </div>
-              ))}
-
+            <div className="w-full lg:w-1/2 flex flex-col gap-2.5 justify-between lg:h-full lg:overflow-y-auto lg:pr-2">
               <div className="flex flex-col gap-2.5 justify-between flex-1">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <MultiEntryButton 
-                    fieldLabel="Address"
-                    label="Add Address/es" 
-                    count={formData.addresses[0]?.type ? formData.addresses.length : 0} 
-                    onClick={() => setShowAddressModal(true)} 
-                    isDarkMode={isDarkMode} 
-                  />
-                  <MultiEntryButton 
-                    fieldLabel="Email"
-                    label="Add Email/s" 
-                    count={formData.emails[0]?.email ? formData.emails.length : 0} 
-                    onClick={() => setShowEmailModal(true)} 
-                    isDarkMode={isDarkMode} 
-                  />
-                </div>
-
-                {variant !== 'supplier' ? (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="flex flex-col justify-end">
-                        <MultiEntryButton 
-                          fieldLabel="Contact Numbers"
-                          label="Add Contact Number/s" 
-                          count={formData.contacts[0]?.number ? formData.contacts.length : 0} 
-                          onClick={() => setShowContactModal(true)} 
-                          isDarkMode={isDarkMode} 
-                        />
-                      </div>
-                      <div className="flex flex-col justify-end">
-                        <MultiEntryButton
-                          fieldLabel="Documents"
-                          label="Registrations"
-                          count={
-                            (formData.secRegistration ? 1 : 0) +
-                            (formData.birRegistration ? 1 : 0) +
-                            (formData.dtiRegistration ? 1 : 0) +
-                            (formData.philgepsRegistration ? 1 : 0) +
-                            (variant === 'consultant' && formData.prcLicense ? 1 : 0) +
-                            (variant === 'consultant' && formData.ptrLicense ? 1 : 0)
-                          }
-                          onClick={() => setShowRegistrationsModal(true)}
-                          isDarkMode={isDarkMode}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {variant === 'builder' ? (
-                        <>
-                          <FormFieldRenderer
-                            config={{ type: 'text', name: 'licenseLink', label: 'PCAB License', badge: '!' }}
-                            value={formData.licenseLink}
-                            onChange={handleFieldChange}
-                            isDarkMode={isDarkMode}
-                          />
-                          <MultiEntryButton 
-                            fieldLabel="Social Media"
-                            label="Add Links" 
-                            count={(formData.facebook ? 1 : 0) + (formData.instagram ? 1 : 0) + (formData.websiteLink ? 1 : 0)} 
-                            onClick={() => setShowSocialMediaModal(true)} 
-                            isDarkMode={isDarkMode} 
-                          />
-                        </>
-                      ) : (
-                        <div className="sm:col-span-2">
-                          <MultiEntryButton 
-                            fieldLabel="Social Media"
-                            label="Add Links" 
-                            count={(formData.facebook ? 1 : 0) + (formData.instagram ? 1 : 0) + (formData.websiteLink ? 1 : 0)} 
-                            onClick={() => setShowSocialMediaModal(true)} 
-                            isDarkMode={isDarkMode} 
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="flex flex-col justify-end">
-                        <MultiEntryButton 
-                          fieldLabel="Contact Numbers"
-                          label="Add Contact Number/s" 
-                          count={formData.contacts[0]?.number ? formData.contacts.length : 0} 
-                          onClick={() => setShowContactModal(true)} 
-                          isDarkMode={isDarkMode} 
-                        />
-                      </div>
-                      <div className="flex flex-col justify-end">
-                        <MultiEntryButton
-                          fieldLabel="Documents"
-                          label="Registrations"
-                          count={(formData.secRegistration ? 1 : 0) + (formData.birRegistration ? 1 : 0) + (formData.dtiRegistration ? 1 : 0) + (formData.philgepsRegistration ? 1 : 0)}
-                          onClick={() => setShowRegistrationsModal(true)}
-                          isDarkMode={isDarkMode}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {fields.rightColumnRowsTop.map((row, idx) => (
+                  <div key={idx} className={row.length > 1 ? 'grid grid-cols-1 sm:grid-cols-4 gap-3' : ''}>
+                    {row.map((field) => (
                       <FormFieldRenderer
-                        config={{ type: 'file', name: 'catalog', label: 'Catalog', badge: '!', typeHint: '(PDF Only)', variant: 'compact' }}
-                        value={formData.catalog}
+                        key={field.name}
+                        config={field}
+                        value={(formData as any)[field.name]}
                         onChange={handleFieldChange}
                         isDarkMode={isDarkMode}
                       />
-                      <MultiEntryButton 
-                        fieldLabel="Social Media"
-                        label="Add Links" 
-                        count={(formData.facebook ? 1 : 0) + (formData.instagram ? 1 : 0) + (formData.websiteLink ? 1 : 0)} 
-                        onClick={() => setShowSocialMediaModal(true)} 
-                        isDarkMode={isDarkMode} 
-                      />
-                    </div>
-                  </>
-                )}
+                    ))}
+                  </div>
+                ))}
+
+                <div className="flex flex-col gap-2.5 justify-between flex-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <MultiEntryButton 
+                      fieldLabel="Address"
+                      label="Add Address/es" 
+                      count={formData.addresses[0]?.type ? formData.addresses.length : 0} 
+                      onClick={() => setShowAddressModal(true)} 
+                      isDarkMode={isDarkMode} 
+                    />
+                    <MultiEntryButton 
+                      fieldLabel="Email"
+                      label="Add Email/s" 
+                      count={formData.emails[0]?.email ? formData.emails.length : 0} 
+                      onClick={() => setShowEmailModal(true)} 
+                      isDarkMode={isDarkMode} 
+                    />
+                  </div>
+
+                  {variant !== 'supplier' ? (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="flex flex-col justify-end">
+                          <MultiEntryButton 
+                            fieldLabel="Contact Numbers"
+                            label="Add Contact Number/s" 
+                            count={formData.contacts[0]?.number ? formData.contacts.length : 0} 
+                            onClick={() => setShowContactModal(true)} 
+                            isDarkMode={isDarkMode} 
+                          />
+                        </div>
+                        <div className="flex flex-col justify-end">
+                          <MultiEntryButton
+                            fieldLabel="Documents"
+                            label="Registrations"
+                            count={
+                              (formData.secRegistration ? 1 : 0) +
+                              (formData.birRegistration ? 1 : 0) +
+                              (formData.dtiRegistration ? 1 : 0) +
+                              (formData.philgepsRegistration ? 1 : 0) +
+                              (variant === 'consultant' && formData.prcLicense ? 1 : 0) +
+                              (variant === 'consultant' && formData.ptrLicense ? 1 : 0)
+                            }
+                            onClick={() => setShowRegistrationsModal(true)}
+                            isDarkMode={isDarkMode}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {variant === 'builder' ? (
+                          <>
+                            <FormFieldRenderer
+                              config={{ type: 'text', name: 'licenseLink', label: 'PCAB License', badge: '!' }}
+                              value={formData.licenseLink}
+                              onChange={handleFieldChange}
+                              isDarkMode={isDarkMode}
+                            />
+                            <MultiEntryButton 
+                              fieldLabel="Social Media"
+                              label="Add Links" 
+                              count={(formData.facebook ? 1 : 0) + (formData.instagram ? 1 : 0) + (formData.websiteLink ? 1 : 0)} 
+                              onClick={() => setShowSocialMediaModal(true)} 
+                              isDarkMode={isDarkMode} 
+                            />
+                          </>
+                        ) : (
+                          <div className="sm:col-span-2">
+                            <MultiEntryButton 
+                              fieldLabel="Social Media"
+                              label="Add Links" 
+                              count={(formData.facebook ? 1 : 0) + (formData.instagram ? 1 : 0) + (formData.websiteLink ? 1 : 0)} 
+                              onClick={() => setShowSocialMediaModal(true)} 
+                              isDarkMode={isDarkMode} 
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="flex flex-col justify-end">
+                          <MultiEntryButton 
+                            fieldLabel="Contact Numbers"
+                            label="Add Contact Number/s" 
+                            count={formData.contacts[0]?.number ? formData.contacts.length : 0} 
+                            onClick={() => setShowContactModal(true)} 
+                            isDarkMode={isDarkMode} 
+                          />
+                        </div>
+                        <div className="flex flex-col justify-end">
+                          <MultiEntryButton
+                            fieldLabel="Documents"
+                            label="Registrations"
+                            count={(formData.secRegistration ? 1 : 0) + (formData.birRegistration ? 1 : 0) + (formData.dtiRegistration ? 1 : 0) + (formData.philgepsRegistration ? 1 : 0)}
+                            onClick={() => setShowRegistrationsModal(true)}
+                            isDarkMode={isDarkMode}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <FormFieldRenderer
+                          config={{ type: 'file', name: 'catalog', label: 'Catalog', badge: '!', typeHint: '(PDF Only)', variant: 'compact' }}
+                          value={formData.catalog}
+                          onChange={handleFieldChange}
+                          isDarkMode={isDarkMode}
+                        />
+                        <MultiEntryButton 
+                          fieldLabel="Social Media"
+                          label="Add Links" 
+                          count={(formData.facebook ? 1 : 0) + (formData.instagram ? 1 : 0) + (formData.websiteLink ? 1 : 0)} 
+                          onClick={() => setShowSocialMediaModal(true)} 
+                          isDarkMode={isDarkMode} 
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
-              <div className={`sticky bottom-0 z-20 pb-4 pt-4 -mx-4 px-4 sm:-mx-8 sm:px-8 md:pt-2 md:pb-0 md:static md:bg-transparent md:dark:bg-transparent md:mx-0 md:px-0 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'} ${isHeightConstrained ? 'md:hidden' : ''}`}>
+              <div className={`mt-2 md:mt-0 pt-2 md:pt-1 ${isHeightConstrained ? 'md:hidden' : ''}`}>
                 <ActionButtons />
               </div>
             </div>

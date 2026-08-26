@@ -137,32 +137,34 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'tween', duration: 0.35, ease: 'easeInOut' }}
-            className={`fixed top-0 right-0 bottom-0 w-[280px] sm:w-[320px] z-50 h-full p-6 shadow-2xl flex flex-col justify-between ${
+            className={`fixed top-0 right-0 bottom-0 w-[280px] sm:w-[320px] z-50 h-full shadow-2xl flex flex-col ${
               isDarkMode
                 ? 'bg-vintage-charcoal text-bright-gray border-l border-space-sparkle/20'
                 : 'bg-bright-gray text-vintage-charcoal border-l border-space-sparkle/10'
             }`}
           >
-            <div className="space-y-8">
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between pb-4">
-                <Link
-                  href={ROUTES.home}
-                  onClick={closeDrawer}
-                  className="flex items-center cursor-pointer select-none"
-                >
-                  <AtbpLogo isDarkMode={isDarkMode} className="h-6 w-auto transition-opacity hover:opacity-90" />
-                </Link>
-                <button
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2 rounded-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
-                >
-                  <X size={20} />
-                </button>
-              </div>
+            {/* Drawer Header (Fixed) */}
+            <div className="flex-none p-6 pb-4 flex items-center justify-between">
+              <Link
+                href={ROUTES.home}
+                onClick={closeDrawer}
+                className="flex items-center cursor-pointer select-none"
+              >
+                <AtbpLogo isDarkMode={isDarkMode} className="h-6 w-auto transition-opacity hover:opacity-90" />
+              </Link>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 rounded-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-              {/* Navigation Links */}
-              <nav className="flex flex-col space-y-3">
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto px-6 pb-6 flex flex-col justify-between">
+              <div className="pt-4">
+                {/* Navigation Links */}
+                <nav className="flex flex-col space-y-3">
 
                 {/* Sub-item 2-level dropdown section for Works */}
                 <div className="space-y-1">
@@ -357,7 +359,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             </div>
 
             {/* Drawer Footer / CTA Area */}
-            <div className="space-y-2.5 pt-6">
+            <div className="space-y-2.5 pt-6 mt-6">
               <CtaButton
                 layout="full"
                 variant="solid"
@@ -432,6 +434,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               <div className="text-caption text-center font-sans opacity-40 pt-2">
                 © 2026 ATBP Collaborative
               </div>
+            </div>
             </div>
           </motion.div>
         </>

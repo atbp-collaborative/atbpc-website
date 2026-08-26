@@ -9,10 +9,8 @@ import {
   Instagram,
   Youtube,
   MapPin,
-  ArrowLeft,
   Loader2
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useTheme } from '@/lib/theme-context';
 import { ROUTES } from '@/lib/navigation/routes';
@@ -73,7 +71,6 @@ const OfficeMap = dynamic(() => import('@/components/blocks/OfficeMap').then((mo
 
 export default function ContactInfoPage() {
   const { isDarkMode } = useTheme();
-  const router = useRouter();
   const [CONTACT_INFO, setContactInfo] = useState<ContactInfo | null>(null);
   const isHeightConstrained = useFormViewport(750);
 
@@ -101,24 +98,16 @@ export default function ContactInfoPage() {
     <div 
       className="w-full h-full overflow-y-auto md:overflow-hidden flex flex-col md:flex-row items-stretch select-none relative"
     >
-      <button
-        onClick={() => router.push(ROUTES.contact)}
-        className="absolute top-4 left-4 z-30 flex items-center space-x-2 px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white text-mini font-medium backdrop-blur-md transition-all cursor-pointer shadow-lg"
-      >
-        <ArrowLeft size={14} />
-        <span>Contact Overview</span>
-      </button>
-
       <div className="w-full md:w-1/2 min-h-[40vh] md:min-h-0 md:h-full relative shrink-0">
         <OfficeMap isDarkMode={isDarkMode} />
       </div>
 
       <div className={`w-full md:w-1/2 ${
         isHeightConstrained ? 'p-3 sm:p-5 lg:p-6 xl:p-8' : 'p-5 sm:p-8 lg:p-10 xl:p-12 2xl:p-14'
-      } flex flex-col justify-between shrink-0 md:h-full md:overflow-y-auto`}>
+      } flex flex-col shrink-0 md:h-full md:overflow-y-auto`}>
         
         {/* Writeups Container */}
-        <div className="flex-1 flex flex-col justify-start items-center space-y-4 sm:space-y-6 min-h-0 w-full">
+        <div className="flex flex-col justify-start items-center space-y-4 sm:space-y-6 min-h-0 w-full">
           
           {/* Address Section */}
           <div className="space-y-2 w-full">
@@ -265,24 +254,24 @@ export default function ContactInfoPage() {
             </div>
           </div>
 
-        </div>
+          {/* CTA Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full lg:w-[75%] shrink-0 self-start !mt-12 sm:!mt-16 md:!mt-16 lg:!mt-20">
+            <Button
+              type="filled"
+              label="Schedule a Discovery Session"
+              href={ROUTES.discoverySession}
+              fullWidth={true}
+              className="font-medium py-2.5 text-micro sm:text-mini tracking-wider !bg-[#466263] hover:!bg-[#3b5152] !text-[#EDEFEF] shadow-sm"
+            />
+            <Button
+              type="filled"
+              label="Request a Proposal"
+              href={ROUTES.requestForProposal}
+              fullWidth={true}
+              className="font-medium py-2.5 text-micro sm:text-mini tracking-wider !bg-[#466263] hover:!bg-[#3b5152] !text-[#EDEFEF] shadow-sm"
+            />
+          </div>
 
-        {/* CTA Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full lg:w-[75%] shrink-0 pt-2 mt-auto">
-          <Button
-            type="filled"
-            label="Schedule a Discovery Session"
-            href={ROUTES.discoverySession}
-            fullWidth={true}
-            className="font-medium py-2.5 text-micro sm:text-mini tracking-wider !bg-[#466263] hover:!bg-[#3b5152] !text-[#EDEFEF] shadow-sm"
-          />
-          <Button
-            type="filled"
-            label="Request a Proposal"
-            href={ROUTES.requestForProposal}
-            fullWidth={true}
-            className="font-medium py-2.5 text-micro sm:text-mini tracking-wider !bg-[#466263] hover:!bg-[#3b5152] !text-[#EDEFEF] shadow-sm"
-          />
         </div>
 
       </div>

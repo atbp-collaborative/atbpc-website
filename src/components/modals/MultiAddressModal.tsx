@@ -123,7 +123,7 @@ export const MultiAddressModal: React.FC<MultiAddressModalProps> = ({
                     label="Address Type"
                     value={address.type}
                     options={ADDRESS_TYPES}
-                    placeholder="Select Type"
+                    placeholder="[ Select Address Type ]"
                     onChange={(_, val) => handleUpdate(idx, { type: val })}
                     isDarkMode={isDarkMode}
                     theme="neutral"

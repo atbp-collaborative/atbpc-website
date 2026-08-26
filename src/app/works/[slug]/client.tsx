@@ -666,7 +666,7 @@ export default function WorksSlugClient({ slug }: { slug: string }) {
             {/* Mobile selected Typology */}
             <span className="inline lg:hidden text-caption font-light opacity-80 italic leading-none tracking-wide truncate">
               {projectFilter === 'All' || (activeMainCard && projectFilter === activeMainCard.id)
-                ? 'All'
+                ? (activeMainCard ? activeMainCard.tagline : 'a collection of our work')
                 : projectFilter}
             </span>
           </div>
@@ -721,11 +721,13 @@ export default function WorksSlugClient({ slug }: { slug: string }) {
                     onClick={() => {
                       if (category === 'All') {
                         if (activeMainCard && projectFilter === activeMainCard.id) {
-                          setProjectFilter('All');
+                          // Already on the main category "All" view, do nothing.
+                          return;
                         } else if (activeMainCard) {
                           setProjectFilter(activeMainCard.id);
                         } else {
-                          setProjectFilter('All');
+                          // We are at the global level and 'All' is clicked, do nothing.
+                          return;
                         }
                       } else {
                         setProjectFilter(category);

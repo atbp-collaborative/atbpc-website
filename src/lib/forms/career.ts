@@ -37,7 +37,7 @@ const LEFT_COLUMN_TOP: FieldConfig[] = [
     label: "Department",
     badge: "!",
     options: DEPARTMENTS,
-    placeholder: "In which department do you see your growth?",
+    placeholder: "[ Select Department ]",
   },
   {
     type: "select",
@@ -285,7 +285,7 @@ const STUDIO_REGULARS_LEFT_COLUMN_TOP: FieldConfig[] = [
     label: "Department",
     badge: "!",
     options: STUDIO_REGULARS_DEPARTMENTS,
-    placeholder: "In which department do you see your growth?",
+    placeholder: "[ Select Department ]",
   },
   {
     type: "select",

@@ -87,7 +87,7 @@ export const AddressField: React.FC<AddressFieldProps> = ({
           <SelectField
             name="country"
             label=""
-            placeholder="Select country"
+            placeholder="[ Select Country ]"
             options={COUNTRIES.map(c => ({ value: c, label: c }))}
             value={value.country}
             onChange={handleCountryChange}
@@ -103,7 +103,7 @@ export const AddressField: React.FC<AddressFieldProps> = ({
             <SelectField
               name="cityCode"
               label=""
-              placeholder={value.regionCode ? 'Select city / municipality' : 'Select a region first'}
+              placeholder={value.regionCode ? '[ Select City / Municipality ]' : '[ Select a Region First ]'}
               options={cities.map((c) => ({ value: c.code, label: c.name }))}
               value={value.cityCode}
               onChange={handleCityChange}
@@ -131,7 +131,7 @@ export const AddressField: React.FC<AddressFieldProps> = ({
             <SelectField
               name="regionCode"
               label=""
-              placeholder="Select region"
+              placeholder="[ Select Region ]"
               options={regions.map((r) => ({ value: r.code, label: r.name }))}
               value={value.regionCode}
               onChange={handleRegionChange}
@@ -158,7 +158,7 @@ export const AddressField: React.FC<AddressFieldProps> = ({
             <SelectField
               name="barangayCode"
               label=""
-              placeholder={value.cityCode ? 'Select barangay' : 'Select a city first'}
+              placeholder={value.cityCode ? '[ Select Barangay ]' : '[ Select a City First ]'}
               options={barangays.map((b) => ({ value: b.code, label: b.name }))}
               value={value.barangayCode}
               onChange={handleBarangayChange}
@@ -186,7 +186,7 @@ export const AddressField: React.FC<AddressFieldProps> = ({
              <SelectField
               name="provinceCode"
               label=""
-              placeholder={value.regionCode ? (provinces.length > 0 ? 'Select province' : 'N/A') : 'Select a region first'}
+              placeholder={value.regionCode ? (provinces.length > 0 ? '[ Select Province ]' : 'N/A') : '[ Select a Region First ]'}
               options={provinces.map((p) => ({ value: p.code, label: p.name }))}
               value={value.provinceCode}
               onChange={handleProvinceChange}
