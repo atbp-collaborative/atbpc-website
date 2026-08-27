@@ -1,24 +1,38 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudioSubpageData } from '@/dummy-data/our-services';
 import { ROUTES } from '@/lib/navigation/routes';
+import { useTheme } from '@/lib/theme-context';
 
 interface StudioServicesPageProps {
   data: StudioSubpageData;
 }
 
 // Custom Accordion Item for Piecework and Consultation/Retainer Services
-const PieceworkAccordionItem = ({ title, content }: { title: string; content: string }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const PieceworkAccordionItem = ({
+  title,
+  content,
+  defaultOpen = false,
+  isDarkMode = false,
+}: {
+  title: string;
+  content: string;
+  defaultOpen?: boolean;
+  isDarkMode?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="py-2 first:pt-0 last:pb-0 select-none">
+    <div className="py-2 first:pt-0 last:pb-0 select-none relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-start text-left focus:outline-none cursor-pointer group w-full py-1"
+        style={{
+          backgroundColor: isDarkMode ? '#333436' : '#EDEFEF',
+        }}
+        className="flex items-start text-left focus:outline-none cursor-pointer group w-full py-2 sticky top-0 z-20"
       >
         <span className="font-sans font-bold text-space-sparkle mr-2 text-body sm:text-h3 leading-tight select-none">
           {isOpen ? '−' : '+'}
@@ -36,9 +50,68 @@ const PieceworkAccordionItem = ({ title, content }: { title: string; content: st
             transition={{ duration: 0.25, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <p className="pl-5 pt-1.5 pb-2 text-caption font-light leading-relaxed opacity-85 whitespace-pre-line text-justify">
+            <p className="pl-5 pt-1.5 pb-2 text-caption font-light leading-relaxed opacity-85 whitespace-pre-line text-left">
               {content}
             </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Custom Accordion Item for Comprehensive Services (Mobile/Tablet)
+const ComprehensiveAccordionItem = ({
+  title,
+  paragraphs,
+  linkText,
+  href,
+  isDarkMode = false,
+}: {
+  title: string;
+  paragraphs: string[];
+  linkText: string;
+  href: string;
+  isDarkMode?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="py-2 first:pt-0 last:pb-0 select-none relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          backgroundColor: isDarkMode ? '#333436' : '#EDEFEF',
+        }}
+        className="flex items-start text-left focus:outline-none cursor-pointer group w-full py-2 sticky top-0 z-20"
+      >
+        <span className="font-sans font-bold text-space-sparkle mr-2 text-body sm:text-h3 leading-tight select-none">
+          {isOpen ? '−' : '+'}
+        </span>
+        <h4 className="font-sans text-body sm:text-h3 font-bold tracking-tight select-none group-hover:opacity-85 transition-opacity leading-tight">
+          {title}
+        </h4>
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <div className="pl-5 pt-1.5 pb-2 space-y-3 text-caption font-light opacity-95 leading-relaxed text-left">
+              {paragraphs.map((p, pIdx) => (
+                <p key={pIdx}>{p}</p>
+              ))}
+              <Link
+                href={href}
+                className="font-sans text-body font-bold text-space-sparkle hover:opacity-80 transition-opacity pt-1 select-none flex items-center"
+              >
+                &gt; {linkText}
+              </Link>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -97,7 +170,7 @@ const PIECEWORK_COLUMNS = [
 // Data for Comprehensive Services columns
 const COMPREHENSIVE_COLUMNS = [
   {
-    title: '+ Comprehensive Design Services',
+    title: 'Comprehensive Design Services',
     paragraphs: [
       'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
       'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
@@ -108,7 +181,7 @@ const COMPREHENSIVE_COLUMNS = [
     href: ROUTES.designingWithValues,
   },
   {
-    title: '+ Comprehensive Management Services',
+    title: 'Comprehensive Management Services',
     paragraphs: [
       'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
       'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
@@ -119,7 +192,7 @@ const COMPREHENSIVE_COLUMNS = [
     href: ROUTES.managingWithIntegrity,
   },
   {
-    title: '+ Building Construction Services',
+    title: 'Building Construction Services',
     paragraphs: [
       'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
       'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
@@ -143,19 +216,30 @@ const CONSULTATION_RETAINER_COLUMNS = [
   },
 ];
 
+
 export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
   data,
 }) => {
+  const { isDarkMode } = useTheme();
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  useEffect(() => {
+    const checkSize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
+    checkSize();
+    window.addEventListener('resize', checkSize);
+    return () => window.removeEventListener('resize', checkSize);
+  }, []);
+
   const isPiecework = data.id === 'piecework-services';
   const isComprehensive = data.id === 'comprehensive-services';
   const isConsultationRetainer = data.id === 'consultation-retainer-services';
 
   return (
-    <div
-      className="w-full h-full px-4 sm:px-8 md:px-12 py-3 flex flex-col justify-between overflow-hidden select-none min-h-0 flex-1"
-    >
+    <div className="w-full h-full px-4 sm:px-8 md:px-12 py-3 flex flex-col overflow-hidden select-none min-h-0 flex-1">
       {/* Top Left Header Section: Title, Subtext, and Single Paragraph Body Text */}
-      <div className="shrink-0 text-left pt-1 sm:pt-2 pb-2 space-y-1">
+      <div className="shrink-0 text-left pt-3 pb-2 lg:pb-4 space-y-1">
         <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight lowercase leading-tight">
           {data.title}
         </h1>
@@ -165,7 +249,7 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
           </p>
         )}
         {data.description && (
-          <div className="text-caption sm:text-body font-light leading-relaxed opacity-85 max-w-3xl pt-0.5 space-y-2">
+          <div className="text-caption font-light leading-relaxed opacity-85 max-w-3xl pt-0.5 space-y-2">
             <p>{data.description}</p>
             {data.extraDescription && <p>{data.extraDescription}</p>}
           </div>
@@ -173,9 +257,9 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
       </div>
 
       {/* Center Section: Dynamic Grid Content */}
-      <div className="flex-1 flex flex-col justify-start items-stretch w-full min-h-0 py-2 sm:py-4">
+      <div className="flex-1 flex flex-col justify-start items-stretch w-full min-h-0 py-1 overflow-y-auto lg:overflow-hidden no-scrollbar">
         {isPiecework && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 w-full max-w-7xl mx-auto overflow-y-auto no-scrollbar py-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 w-full max-w-7xl mr-auto overflow-y-visible lg:overflow-y-auto no-scrollbar py-2">
             {PIECEWORK_COLUMNS.map((col, colIdx) => (
               <div key={colIdx} className="flex flex-col space-y-4">
                 {col.items.map((item, itemIdx) => (
@@ -183,6 +267,7 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
                     key={itemIdx}
                     title={item.title}
                     content={item.content}
+                    isDarkMode={isDarkMode}
                   />
                 ))}
               </div>
@@ -190,38 +275,70 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
           </div>
         )}
 
-        {isComprehensive && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 w-full max-w-7xl mx-auto overflow-y-auto no-scrollbar py-2">
+        {isComprehensive && isLargeScreen && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 w-full max-w-7xl mr-auto overflow-y-hidden py-2 h-full min-h-0 flex-1">
             {COMPREHENSIVE_COLUMNS.map((col, colIdx) => (
-              <div key={colIdx} className="flex flex-col justify-between h-full space-y-4">
-                <div className="space-y-3">
-                  <h3 className="font-sans text-body sm:text-h3 font-bold tracking-tight leading-tight select-none">
-                    {col.title}
-                  </h3>
-                  <div className="space-y-3 text-caption font-light opacity-95 leading-relaxed text-justify">
-                    {col.paragraphs.map((p, pIdx) => (
-                      <p key={pIdx}>{p}</p>
-                    ))}
-                  </div>
-                </div>
-                <Link
-                  href={col.href}
-                  className="font-sans text-caption sm:text-body font-bold text-space-sparkle hover:opacity-80 transition-opacity pt-1 select-none flex items-center"
+              <div key={colIdx} className="flex flex-col h-full min-h-0 justify-between relative">
+                {/* Sticky Heading */}
+                <h3 
+                  className="shrink-0 font-sans text-body sm:text-h3 font-bold tracking-tight leading-tight select-none pb-3 sticky top-0 z-10"
+                  style={{ backgroundColor: isDarkMode ? '#333436' : '#EDEFEF' }}
                 >
-                  &gt; {col.linkText}
-                </Link>
+                  + {col.title}
+                </h3>
+                
+                {/* Scrollable, Snapping Paragraphs Container */}
+                <div className="flex-1 overflow-y-auto snap-y snap-mandatory no-scrollbar space-y-4 py-2 min-h-0">
+                  {col.paragraphs.map((p, pIdx) => (
+                    <div key={pIdx} className="snap-start snap-always py-1">
+                      <p className="text-caption font-light opacity-95 leading-relaxed text-justify">
+                        {p}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Sticky CTA Link */}
+                <div 
+                  className="shrink-0 pt-3 sticky bottom-0 z-10"
+                  style={{ backgroundColor: isDarkMode ? '#333436' : '#EDEFEF' }}
+                >
+                  <Link
+                    href={col.href}
+                    className="font-sans text-body font-bold text-space-sparkle hover:opacity-80 transition-opacity select-none flex items-center"
+                  >
+                    &gt; {col.linkText}
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
         )}
 
+        {isComprehensive && !isLargeScreen && (
+          <div className="flex flex-col space-y-4 w-full py-2">
+            {COMPREHENSIVE_COLUMNS.map((col, colIdx) => (
+              <ComprehensiveAccordionItem
+                key={colIdx}
+                title={col.title}
+                paragraphs={col.paragraphs}
+                linkText={col.linkText}
+                href={col.href}
+                isDarkMode={isDarkMode}
+              />
+            ))}
+          </div>
+        )}
+
         {isConsultationRetainer && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 w-full max-w-5xl mx-auto overflow-y-auto no-scrollbar py-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 w-full max-w-5xl mr-auto overflow-y-visible lg:overflow-y-auto no-scrollbar py-2">
             {CONSULTATION_RETAINER_COLUMNS.map((item, idx) => (
               <PieceworkAccordionItem
-                key={idx}
+                key={`${idx}-${isLargeScreen}`}
                 title={item.title}
                 content={item.content}
+                defaultOpen={isLargeScreen}
+                isDarkMode={isDarkMode}
               />
             ))}
           </div>
@@ -229,7 +346,7 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
       </div>
 
       {/* Bottom Subtext Row */}
-      <div className="shrink-0 text-center border-t border-space-sparkle/10 pt-2 mt-1">
+      <div className="shrink-0 text-center border-t border-space-sparkle/10 pt-2 mt-2">
         <p className="text-micro sm:text-mini font-light opacity-75 leading-tight max-w-2xl mx-auto tracking-wide italic">
           ATBP Collaborative ◦ {data.subtext}
         </p>

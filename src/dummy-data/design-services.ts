@@ -14,10 +14,10 @@ export const SERVICES_DATA: Service[] = [
     image: '/images/kiosk_coffee_bar_1783495252161.jpg'
   },
   {
-    title: 'studio hours & location',
-    iconName: 'MapPin',
-    desc: 'Interactive office map, physical address in Parañaque City, landline, mobile, Viber & social channels.',
-    image: '/images/contact_headquarters_img_1785470005846.jpg'
+    title: 'consultation',
+    iconName: 'Briefcase',
+    desc: 'Continuous, expert architectural advice designed for ongoing developments, portfolio management, or phased projects that require strategic oversight.',
+    image: '/images/studio_services_img_1785469964556.jpg'
   }
 ];
 

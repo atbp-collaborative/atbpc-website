@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, Sun, Moon, Shield, ShieldOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/lib/theme-context';
@@ -13,9 +13,15 @@ import { useActiveNav } from '@/hooks/useActiveNav';
 
 import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '@/lib/navigation/nav-data';
 
+import { InfoModal } from '@/components/modals/InfoModal';
+import { legalModalData } from '@/lib/modals/legal';
+import { privacyPolicyModalData } from '@/lib/modals/privacy-policy';
+
 interface MobileDrawerProps {
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
+  isProtectionEnabled?: boolean;
+  onToggleProtection?: () => void;
 }
 
 interface SectionTriggerProps {
@@ -70,8 +76,10 @@ const SectionTrigger: React.FC<SectionTriggerProps> = ({
 export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   isMobileMenuOpen,
   setIsMobileMenuOpen,
+  isProtectionEnabled = false,
+  onToggleProtection,
 }) => {
-  const { isDarkMode } = useTheme();
+  const { isDarkMode, toggleTheme } = useTheme();
   const pathname = usePathname();
   const { isWorksActive, isStudioActive, isContactActive, currentCategoryFilter: projectFilter } = useActiveNav();
   const isHomeActive = pathname === '/';
@@ -79,6 +87,9 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   // Accordion expansion state: only one category expanded at a time
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [expandedWorksCategory, setExpandedWorksCategory] = useState<string | null>(null);
+
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
 
   // Sync expanded section with active category when menu is opened or pathname changes
   useEffect(() => {
@@ -106,7 +117,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   const closeDrawer = () => setIsMobileMenuOpen(false);
 
   return (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       {isMobileMenuOpen && (
         <>
           {/* Backdrop */}
@@ -125,32 +137,34 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'tween', duration: 0.35, ease: 'easeInOut' }}
-            className={`fixed top-0 right-0 bottom-0 w-[280px] sm:w-[320px] z-50 h-full p-6 shadow-2xl flex flex-col justify-between ${
+            className={`fixed top-0 right-0 bottom-0 w-[280px] sm:w-[320px] z-50 h-full shadow-2xl flex flex-col ${
               isDarkMode
                 ? 'bg-vintage-charcoal text-bright-gray border-l border-space-sparkle/20'
                 : 'bg-bright-gray text-vintage-charcoal border-l border-space-sparkle/10'
             }`}
           >
-            <div className="space-y-8">
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between pb-4">
-                <Link
-                  href={ROUTES.home}
-                  onClick={closeDrawer}
-                  className="flex items-center cursor-pointer select-none"
-                >
-                  <AtbpLogo isDarkMode={isDarkMode} className="h-6 w-auto transition-opacity hover:opacity-90" />
-                </Link>
-                <button
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2 rounded-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
-                >
-                  <X size={20} />
-                </button>
-              </div>
+            {/* Drawer Header (Fixed) */}
+            <div className="flex-none p-6 pb-4 flex items-center justify-between">
+              <Link
+                href={ROUTES.home}
+                onClick={closeDrawer}
+                className="flex items-center cursor-pointer select-none"
+              >
+                <AtbpLogo isDarkMode={isDarkMode} className="h-6 w-auto transition-opacity hover:opacity-90" />
+              </Link>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 rounded-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-              {/* Navigation Links */}
-              <nav className="flex flex-col space-y-3">
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto px-6 pb-6 flex flex-col justify-between">
+              <div className="pt-4">
+                {/* Navigation Links */}
+                <nav className="flex flex-col space-y-3">
 
                 {/* Sub-item 2-level dropdown section for Works */}
                 <div className="space-y-1">
@@ -345,7 +359,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             </div>
 
             {/* Drawer Footer / CTA Area */}
-            <div className="space-y-2.5 pt-6">
+            <div className="space-y-2.5 pt-6 mt-6">
               <CtaButton
                 layout="full"
                 variant="solid"
@@ -364,13 +378,84 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 onClick={closeDrawer}
               />
 
+              {/* Mobile links and toggles (Legal, Privacy, Protection, Theme) */}
+              <div className="flex flex-col items-center justify-center space-y-2 pt-3 border-t border-space-sparkle/10 w-full">
+                <div className="flex items-center justify-center gap-2.5 text-[10px] font-sans tracking-wider opacity-90 whitespace-nowrap">
+                  <button
+                    onClick={() => setIsLegalModalOpen(true)}
+                    className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
+                  >
+                    Legal
+                  </button>
+                  <span className="opacity-40">•</span>
+                  <button
+                    onClick={() => setIsPrivacyModalOpen(true)}
+                    className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
+                  >
+                    Privacy Policy
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-center gap-4 pt-1">
+                  {onToggleProtection && (
+                    <button
+                      type="button"
+                      onClick={onToggleProtection}
+                      title={isProtectionEnabled ? 'Disable Content Protection' : 'Enable Content Protection'}
+                      aria-label={isProtectionEnabled ? 'Disable Content Protection' : 'Enable Content Protection'}
+                      className={`p-1.5 rounded-md border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                        isProtectionEnabled
+                          ? 'border-space-sparkle/50 text-space-sparkle bg-space-sparkle/10'
+                          : isDarkMode
+                          ? 'border-bright-gray/20 text-bright-gray/80 hover:text-white hover:border-bright-gray/40'
+                          : 'border-vintage-charcoal/20 text-vintage-charcoal/80 hover:text-black hover:border-vintage-charcoal/40'
+                      }`}
+                    >
+                      {isProtectionEnabled ? <Shield size={13} /> : <ShieldOff size={13} />}
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    title={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+                    aria-label={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+                    className={`p-1.5 rounded-md border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                      isDarkMode
+                        ? 'border-bright-gray/20 text-bright-gray/80 hover:text-white hover:border-bright-gray/40'
+                        : 'border-vintage-charcoal/20 text-vintage-charcoal/80 hover:text-black hover:border-vintage-charcoal/40'
+                    }`}
+                  >
+                    {isDarkMode ? <Sun size={13} /> : <Moon size={13} />}
+                  </button>
+                </div>
+              </div>
+
               <div className="text-caption text-center font-sans opacity-40 pt-2">
                 © 2026 ATBP Collaborative
               </div>
+            </div>
             </div>
           </motion.div>
         </>
       )}
     </AnimatePresence>
+
+    {/* Dedicated Legal Modal */}
+    <InfoModal
+      isOpen={isLegalModalOpen}
+      onClose={() => setIsLegalModalOpen(false)}
+      isDarkMode={isDarkMode}
+      data={legalModalData.contents}
+    />
+
+    {/* Dedicated Privacy Policy Modal */}
+    <InfoModal
+      isOpen={isPrivacyModalOpen}
+      onClose={() => setIsPrivacyModalOpen(false)}
+      isDarkMode={isDarkMode}
+      data={privacyPolicyModalData.contents}
+    />
+  </>
   );
 };

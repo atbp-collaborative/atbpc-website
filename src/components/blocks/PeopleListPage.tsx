@@ -18,7 +18,7 @@ function PeopleListPageContent({ activeFilter }: PeopleListPageProps) {
 
   return (
     <div
-      className="w-full h-full flex flex-col justify-between overflow-hidden px-4 sm:px-8 md:px-12 py-3 sm:py-5 select-none"
+      className="w-full flex-1 flex flex-col justify-between md:overflow-hidden px-4 sm:px-8 md:px-12 py-3 sm:py-5 select-none"
     >
       <PeopleCarousel members={members} activeFilter={activeFilter} />
 

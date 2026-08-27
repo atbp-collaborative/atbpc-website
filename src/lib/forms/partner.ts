@@ -87,7 +87,7 @@ export const getPartnerFormFields = (
       name: 'specialty',
       label: 'Specialty',
       badge: '!',
-      placeholder: 'What Specialty?',
+      placeholder: '[ Select Specialty ]',
       options: options.specialties,
       // @ts-ignore
       dense: true

@@ -218,3 +218,18 @@ button, a, [role="button"], .cursor-pointer {
   animation: glow-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* Slogan responsive adjustments */
+@media (max-width: 374px) {
+  .home-slogan .slogan-segment {
+    display: block;
+  }
+}
+@media (min-width: 375px) and (max-width: 778px) {
+  .home-slogan {
+    font-size: 2.6vw !important;
+  }
+}
+
+
+
+

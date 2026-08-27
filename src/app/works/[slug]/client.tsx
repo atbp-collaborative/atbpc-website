@@ -124,7 +124,7 @@ function ProjectDetailContent({
 
   useEffect(() => {
     const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 1024);
+      setIsDesktop(window.innerWidth >= 768);
       setIsXL(window.innerWidth >= 1280);
       if (columnRef.current) {
         const rect = columnRef.current.getBoundingClientRect();
@@ -297,19 +297,20 @@ function ProjectDetailContent({
   return (
     <div 
       id={`project-detail-${project.id}`}
-      className={`w-full px-4 sm:px-8 py-2 select-none flex flex-col lg:flex-1 lg:min-h-0 h-auto lg:h-full justify-start overflow-y-auto ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}
+      className={`w-full px-4 sm:px-8 py-2 select-none flex flex-col md:flex-1 md:min-h-0 h-auto md:h-full justify-start overflow-y-auto ${isVideoActive && isDesktop ? 'md:overflow-visible' : 'md:overflow-hidden'}`}
     >
       <BreadcrumbButton
         label={backLabel}
+        className="mt-6 sm:mt-8 mb-4 sm:mb-5"
         onClick={() => router.back()}
       />
 
-      <div className={`grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-4 gap-6 lg:flex-1 lg:min-h-0 pb-1 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
+      <div className={`grid grid-cols-1 md:grid-cols-12 xl:grid-cols-4 gap-6 md:flex-1 md:min-h-0 pb-1 ${isVideoActive && isDesktop ? 'md:overflow-visible' : 'md:overflow-hidden'}`}>
         
         {/* Carousel & CTA Container */}
-        <div ref={columnRef} className={`lg:col-span-7 lg:order-2 xl:col-span-2 xl:order-3 flex flex-col justify-start lg:h-full lg:min-h-0 space-y-3 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
+        <div ref={columnRef} className={`md:col-span-7 md:order-2 xl:col-span-2 xl:order-3 flex flex-col justify-start md:h-full md:min-h-0 space-y-3 ${isVideoActive && isDesktop ? 'md:overflow-visible' : 'md:overflow-hidden'}`}>
           
-          <div className={`space-y-3 w-full relative lg:flex-1 lg:min-h-0 flex flex-col justify-start ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
+          <div className={`space-y-3 w-full relative md:flex-1 md:min-h-0 flex flex-col justify-start ${isVideoActive && isDesktop ? 'md:overflow-visible' : 'md:overflow-hidden'}`}>
             <AnimatePresence>
               {isVideoActive && isDesktop && (
                 <motion.div
@@ -328,7 +329,7 @@ function ProjectDetailContent({
 
             <div className="relative aspect-video w-full max-h-full">
               <motion.div 
-                className="absolute inset-0 overflow-hidden bg-black/10 rounded-lg group flex items-center justify-center cursor-default"
+                className="absolute inset-0 overflow-hidden bg-space-sparkle/10 rounded-lg group flex items-center justify-center cursor-default"
                 animate={{
                   width: isVideoActive && isDesktop ? targetWidth : '100%',
                   height: isVideoActive && isDesktop ? targetHeight : '100%',
@@ -338,65 +339,58 @@ function ProjectDetailContent({
                 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 120, mass: 0.9 }}
               >
-                {mediaItems[currentSlideIndex].type === 'video' ? (
-                  <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden">
-                    {(() => {
-                      const embedUrl = getYouTubeEmbedUrl(mediaItems[currentSlideIndex].url);
-                      if (embedUrl) {
-                        return (
-                          <iframe
-                            src={embedUrl}
-                            title="Project Video"
-                            className="w-full h-full border-0"
-                            allow="autoplay; encrypted-media; picture-in-picture"
-                            allowFullScreen
-                          />
-                        );
-                      }
-                      return (
-                        <video 
-                          src={mediaItems[currentSlideIndex].url}
-                          className="w-full h-full object-cover"
-                          autoPlay
-                          loop
-                          playsInline
-                        />
-                      );
-                    })()}
-                    {/* Premium Duration Indicator Badge */}
-                    {mediaItems[currentSlideIndex].duration && !(isVideoActive && isDesktop) && (
-                      <div className="absolute top-4 left-4 bg-black/60 text-white text-micro font-sans tracking-widest uppercase py-1 px-2.5 rounded backdrop-blur-sm z-10 flex items-center space-x-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                        <span>VIDEO • {mediaItems[currentSlideIndex].duration}</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="relative w-full h-full overflow-hidden bg-black/5">
-                    <AnimatePresence initial={false} custom={direction}>
-                      <motion.div
-                        key={currentSlideIndex}
-                        custom={direction}
-                        initial={{ x: direction > 0 ? '100%' : '-100%' }}
-                        animate={{ x: 0 }}
-                        exit={{ x: direction > 0 ? '-100%' : '100%' }}
-                        transition={{ 
-                          x: { type: "spring", stiffness: 300, damping: 30 },
-                          opacity: { duration: 0.2 }
-                        }}
-                        className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
-                        drag="x"
-                        dragConstraints={{ left: 0, right: 0 }}
-                        dragElastic={1}
-                        onDragEnd={(e, { offset, velocity }) => {
-                          const swipe = Math.abs(offset.x) * velocity.x;
-                          if (swipe < -5000 || offset.x < -50) {
-                            nextSlide();
-                          } else if (swipe > 5000 || offset.x > 50) {
-                            if (!hasVideo || hasSeenVideo) prevSlide();
-                          }
-                        }}
-                      >
+                <div className="relative w-full h-full overflow-hidden bg-space-sparkle/5">
+                  <AnimatePresence initial={false} custom={direction}>
+                    <motion.div
+                      key={currentSlideIndex}
+                      custom={direction}
+                      initial={{ x: direction > 0 ? '100%' : '-100%' }}
+                      animate={{ x: 0 }}
+                      exit={{ x: direction > 0 ? '-100%' : '100%' }}
+                      transition={{ 
+                        x: { type: "spring", stiffness: 300, damping: 30 },
+                        opacity: { duration: 0.2 }
+                      }}
+                      className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
+                      drag="x"
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={1}
+                      onDragEnd={(e, { offset, velocity }) => {
+                        const swipe = Math.abs(offset.x) * velocity.x;
+                        if (swipe < -5000 || offset.x < -50) {
+                          nextSlide();
+                        } else if (swipe > 5000 || offset.x > 50) {
+                          if (!hasVideo || hasSeenVideo) prevSlide();
+                        }
+                      }}
+                    >
+                      {mediaItems[currentSlideIndex].type === 'video' ? (
+                        <div className="relative w-full h-full flex items-center justify-center bg-transparent overflow-hidden">
+                          {(() => {
+                            const embedUrl = getYouTubeEmbedUrl(mediaItems[currentSlideIndex].url);
+                            if (embedUrl) {
+                              return (
+                                <iframe
+                                  src={embedUrl}
+                                  title="Project Video"
+                                  className={`w-full h-full border-0 ${!isDesktop ? 'pointer-events-none' : ''}`}
+                                  allow="autoplay; encrypted-media; picture-in-picture"
+                                  allowFullScreen
+                                />
+                              );
+                            }
+                            return (
+                              <video 
+                                src={mediaItems[currentSlideIndex].url}
+                                className="w-full h-full object-cover"
+                                autoPlay
+                                loop
+                                playsInline
+                              />
+                            );
+                          })()}
+                        </div>
+                      ) : (
                         <Image
                           src={mediaItems[currentSlideIndex].url}
                           alt={`${project.title} slide ${currentSlideIndex + 1}`}
@@ -406,16 +400,16 @@ function ProjectDetailContent({
                           className="object-cover pointer-events-none"
                           draggable={false}
                         />
-                      </motion.div>
-                    </AnimatePresence>
-                  </div>
-                )}
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
                 
                 {/* Left/Right Buttons */}
                 {(!hasVideo || hasSeenVideo) && (
                   <button 
                     onClick={prevSlide}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all opacity-0 group-hover:opacity-100 cursor-pointer z-10"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all md:opacity-0 md:group-hover:opacity-100 opacity-100 cursor-pointer z-10"
                   >
                     <ChevronLeft size={20} />
                   </button>
@@ -441,7 +435,7 @@ function ProjectDetailContent({
                   return (
                     <button 
                       onClick={nextSlide}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all opacity-0 group-hover:opacity-100 cursor-pointer z-10"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all md:opacity-0 md:group-hover:opacity-100 opacity-100 cursor-pointer z-10"
                     >
                       <ChevronRight size={20} />
                     </button>
@@ -468,72 +462,10 @@ function ProjectDetailContent({
               </div>
             </div>
           </div>
-        </div>
 
-        {/* High-End Architectural Writeup & Specs */}
-        <div 
-          className={`lg:col-span-5 lg:order-1 xl:col-span-2 xl:order-1 flex flex-col xl:flex-row gap-6 justify-start lg:h-full lg:min-h-0 overflow-visible py-0.5 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}
-          style={isXL && coords.columnWidth > 0 ? { height: coords.columnWidth * (9 / 16) } : undefined}
-        >
-          <div className={`order-1 flex flex-col w-full xl:w-[60%] lg:min-h-0 overflow-visible space-y-2 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
-            <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight shrink-0">
-              {project.title}
-            </h1>
-
-            <div className="flex items-center space-x-2 text-mini font-sans opacity-60 shrink-0">
-              <MapPin size={12} />
-              <span>{project.location}</span>
-            </div>
-
-            {/* Scrollable container for project full writeup */}
-            <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto pr-1.5 no-scrollbar">
-              <p className="text-caption sm:text-body leading-relaxed font-light opacity-90 whitespace-pre-line text-justify">
-                {project.fullWriteup}
-              </p>
-            </div>
-
-            {/* Desktop CTAs (hidden on mobile/tablet) */}
-            <div className="hidden xl:flex pt-5 mt-auto flex-col justify-start gap-3 w-full shrink-0 border-t border-space-sparkle/10">
-              <span className="font-sans text-caption font-semibold tracking-tight opacity-80 uppercase text-center sm:text-left">Inspired by this project?</span>
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
-                <Button
-                  type="filled"
-                  label="Schedule discovery"
-                  href={ROUTES.discoverySession}
-                  className="font-medium py-2 text-mini flex-1"
-                />
-                <Button
-                  type="filled"
-                  label="Request proposal"
-                  onClick={() => router.push(ROUTES.contact)}
-                  className="font-medium py-2 text-mini flex-1"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className={`order-2 flex flex-col w-full xl:w-[40%] lg:min-h-0 overflow-visible space-y-2 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
-            {/* Project Overview (Standard for >= xl) */}
-            <div className="hidden xl:block lg:flex-1 lg:min-h-0 lg:overflow-y-auto pr-1.5 no-scrollbar">
-              <h3 className="font-sans text-body font-semibold tracking-tight mb-2 opacity-80 uppercase">Project Overview</h3>
-              <div className="pb-2 pt-1 text-mini pl-[5px]">
-                {renderProjectSpecs()}
-              </div>
-            </div>
-
-            {/* Project Overview (Accordion for < xl) */}
-            <div className="block xl:hidden">
-              <Accordion title="Project Overview" isDarkMode={isDarkMode} size="sm" defaultOpen={false}>
-                <div className="pb-2 pt-1 text-mini pl-[5px]">
-                  {renderProjectSpecs()}
-                </div>
-              </Accordion>
-            </div>
-          </div>
-
-          {/* Mobile CTAs (hidden on desktop, ordered after Overview) */}
-          <div className="flex xl:hidden order-3 pt-5 mt-auto flex-col justify-start gap-3 w-full shrink-0 border-t border-space-sparkle/10">
-            <span className="font-sans text-caption font-semibold tracking-tight opacity-80 uppercase text-center sm:text-left">Inspired by this project?</span>
+          {/* Right Column CTA (LG/XL only) */}
+          <div className={`hidden lg:flex flex-col justify-start gap-3 w-full shrink-0 border-t border-space-sparkle/10 pt-4 pb-1 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'}`}>
+            <span className="font-sans text-caption font-semibold tracking-tight opacity-80 uppercase text-left">Inspired by this project?</span>
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               <Button
                 type="filled"
@@ -549,6 +481,96 @@ function ProjectDetailContent({
               />
             </div>
           </div>
+        </div>
+
+        {/* High-End Architectural Writeup & Specs */}
+        <div 
+          className={`md:col-span-5 md:order-1 xl:col-span-2 xl:order-1 flex flex-col justify-start md:h-full md:min-h-0 py-0.5 ${
+            isVideoActive && isDesktop 
+              ? 'md:overflow-visible' 
+              : 'md:overflow-y-auto no-scrollbar md:relative'
+          }`}
+          style={isXL && coords.columnWidth > 0 ? { height: coords.columnWidth * (9 / 16) } : undefined}
+        >
+          {/* Sticky Header */}
+          <div className={`md:sticky md:top-0 md:z-10 pb-3 flex flex-col shrink-0 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'}`}>
+            <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight shrink-0">
+              {project.title}
+            </h1>
+
+            <div className="flex items-center space-x-2 text-mini font-sans opacity-60 shrink-0 mt-1">
+              <MapPin size={12} />
+              <span>{project.location}</span>
+            </div>
+          </div>
+
+          {/* Main Content Area (Writeup & Specs) */}
+          <div className="flex flex-col xl:flex-row gap-6 w-full md:min-h-0 overflow-visible mt-2 mb-4">
+            {/* Writeup */}
+            <div className="w-full xl:w-[60%] shrink-0">
+              <p className="text-caption sm:text-body leading-relaxed font-light opacity-90 whitespace-pre-line text-justify">
+                {project.fullWriteup}
+              </p>
+            </div>
+
+            {/* Specs / Overview */}
+            <div className="w-full xl:w-[40%] shrink-0">
+              {/* Project Overview (Standard for >= xl) */}
+              <div className="hidden xl:block">
+                <h3 className="font-sans text-body font-semibold tracking-tight mb-2 opacity-80 uppercase">Project Overview</h3>
+                <div className="pb-2 pt-1 text-mini pl-[5px]">
+                  {renderProjectSpecs()}
+                </div>
+              </div>
+
+              {/* Project Overview (Accordion for < xl) */}
+              <div className="block xl:hidden">
+                <Accordion title="Project Overview" isDarkMode={isDarkMode} size="sm" defaultOpen={false}>
+                  <div className="pb-2 pt-1 text-mini pl-[5px]">
+                    {renderProjectSpecs()}
+                  </div>
+                </Accordion>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile CTA (shown only on mobile < 768px) */}
+          <div className={`flex md:hidden flex-col justify-start gap-3 w-full shrink-0 border-t border-space-sparkle/10 pt-4 pb-1 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'}`}>
+            <span className="font-sans text-caption font-semibold tracking-tight opacity-80 uppercase text-center">Inspired by this project?</span>
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <Button
+                type="filled"
+                label="Schedule discovery"
+                href={ROUTES.discoverySession}
+                className="font-medium py-2 text-mini flex-1"
+              />
+              <Button
+                type="filled"
+                label="Request proposal"
+                onClick={() => router.push(ROUTES.contact)}
+                className="font-medium py-2 text-mini flex-1"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Page CTA (Tablet only: md to lg) */}
+      <div className={`hidden md:flex lg:hidden flex-row justify-between items-center w-full shrink-0 border-t border-space-sparkle/10 pt-4 pb-1 mt-auto gap-4 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'}`}>
+        <span className="font-sans text-caption font-semibold tracking-tight opacity-80 uppercase shrink-0">Inspired by this project?</span>
+        <div className="flex flex-row gap-3 min-w-[300px] w-auto">
+          <Button
+            type="filled"
+            label="Schedule discovery"
+            href={ROUTES.discoverySession}
+            className="font-medium py-2 text-mini flex-1"
+          />
+          <Button
+            type="filled"
+            label="Request proposal"
+            onClick={() => router.push(ROUTES.contact)}
+            className="font-medium py-2 text-mini flex-1"
+          />
         </div>
       </div>
     </div>
@@ -632,13 +654,20 @@ export default function WorksSlugClient({ slug }: { slug: string }) {
       <div className="flex-1 flex flex-col min-h-0 h-full justify-between space-y-3 sm:space-y-4 w-full overflow-hidden">
         {/* Top Area: Page Title & Subtext in ONE LINE (Aligned Left) + Homepage Carousel Dots */}
         <div className="shrink-0 pb-2 border-b border-space-sparkle/10 flex flex-row items-center justify-between w-full gap-4 overflow-hidden">
-          {/* Page Title & Subtext in one line, left aligned */}
-          <div className="flex flex-wrap items-baseline gap-x-2.5 sm:gap-x-3.5 gap-y-0.5 min-w-0 flex-1 text-left">
+          {/* Page Title & Subtext stacked on mobile/tablet, inline on desktop */}
+          <div className="flex flex-col lg:flex-row lg:items-baseline gap-y-1 lg:gap-x-3.5 min-w-0 flex-1 text-left">
             <h2 className="font-sans text-h2 sm:text-h1 font-semibold tracking-tight lowercase shrink-0 leading-none">
               {activeMainCard ? activeMainCard.title : projectFilter.toLowerCase()}
             </h2>
-            <span className="text-caption sm:text-body font-light opacity-80 italic leading-none tracking-wide truncate">
+            {/* Desktop tagline */}
+            <span className="hidden lg:inline text-caption lg:text-body font-light opacity-80 italic leading-none tracking-wide truncate">
               {activeMainCard ? activeMainCard.tagline : 'a collection of our work'}
+            </span>
+            {/* Mobile selected Typology */}
+            <span className="inline lg:hidden text-caption font-light opacity-80 italic leading-none tracking-wide truncate">
+              {projectFilter === 'All' || (activeMainCard && projectFilter === activeMainCard.id)
+                ? (activeMainCard ? activeMainCard.tagline : 'a collection of our work')
+                : projectFilter}
             </span>
           </div>
 
@@ -658,10 +687,10 @@ export default function WorksSlugClient({ slug }: { slug: string }) {
                   }`}
                 >
                   <div className="flex items-center justify-center">
-                    <span className={`transition-all duration-300 ease-out overflow-hidden whitespace-nowrap font-sans text-mini sm:text-caption tracking-wider lowercase font-semibold ${
+                     <span className={`transition-all duration-300 ease-out overflow-hidden whitespace-nowrap font-sans text-mini sm:text-caption tracking-wider lowercase font-semibold ${
                       isCatActive 
-                        ? 'max-w-[120px] opacity-100 mr-1.5' 
-                        : 'max-w-0 group-hover:max-w-[120px] opacity-0 group-hover:opacity-100 group-hover:mr-1.5'
+                        ? 'max-w-0 md:max-w-[120px] opacity-0 md:opacity-100 mr-0 md:mr-1.5' 
+                        : 'max-w-0 md:group-hover:max-w-[120px] opacity-0 md:group-hover:opacity-100 md:group-hover:mr-1.5'
                     }`}>
                       {cat.title}
                     </span>
@@ -692,11 +721,13 @@ export default function WorksSlugClient({ slug }: { slug: string }) {
                     onClick={() => {
                       if (category === 'All') {
                         if (activeMainCard && projectFilter === activeMainCard.id) {
-                          setProjectFilter('All');
+                          // Already on the main category "All" view, do nothing.
+                          return;
                         } else if (activeMainCard) {
                           setProjectFilter(activeMainCard.id);
                         } else {
-                          setProjectFilter('All');
+                          // We are at the global level and 'All' is clicked, do nothing.
+                          return;
                         }
                       } else {
                         setProjectFilter(category);
@@ -718,8 +749,8 @@ export default function WorksSlugClient({ slug }: { slug: string }) {
                       </span>
                       <span className={`transition-all duration-300 ease-out overflow-hidden whitespace-nowrap font-sans text-mini sm:text-caption tracking-wider lowercase font-semibold ${
                         isSelected 
-                          ? 'max-w-[200px] opacity-100 ml-1.5' 
-                          : 'max-w-0 group-hover:max-w-[200px] opacity-0 group-hover:opacity-100 group-hover:ml-1.5'
+                          ? 'max-w-0 md:max-w-[200px] opacity-0 md:opacity-100 ml-0 md:ml-1.5' 
+                          : 'max-w-0 md:group-hover:max-w-[200px] opacity-0 md:group-hover:opacity-100 md:group-hover:ml-1.5'
                       }`}>
                         {category.toLowerCase()}
                       </span>
@@ -730,36 +761,38 @@ export default function WorksSlugClient({ slug }: { slug: string }) {
             </div>
 
             {/* Two small arrow buttons for carousel navigation */}
-            <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
-              <button
-                onClick={() => handleScroll('left')}
-                disabled={!canScrollPrev}
-                aria-label="Previous Projects"
-                className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 cursor-pointer ${
-                  !canScrollPrev ? 'opacity-30 cursor-not-allowed' : ''
-                } ${
-                  isDarkMode
-                    ? 'bg-white/10 text-white hover:bg-white/25 border border-white/15'
-                    : 'bg-black/5 text-vintage-charcoal hover:bg-black/15 border border-space-sparkle/15'
-                }`}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                onClick={() => handleScroll('right')}
-                disabled={!canScrollNext}
-                aria-label="Next Projects"
-                className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 cursor-pointer ${
-                  !canScrollNext ? 'opacity-30 cursor-not-allowed' : ''
-                } ${
-                  isDarkMode
-                    ? 'bg-white/10 text-white hover:bg-white/25 border border-white/15'
-                    : 'bg-black/5 text-vintage-charcoal hover:bg-black/15 border border-space-sparkle/15'
-                }`}
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
+            {filteredProjects.length >= 4 && (
+              <div className="hidden md:flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+                <button
+                  onClick={() => handleScroll('left')}
+                  disabled={!canScrollPrev}
+                  aria-label="Previous Projects"
+                  className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 cursor-pointer ${
+                    !canScrollPrev ? 'opacity-30 cursor-not-allowed' : ''
+                  } ${
+                    isDarkMode
+                      ? 'bg-white/10 text-white hover:bg-white/25 border border-white/15'
+                      : 'bg-black/5 text-vintage-charcoal hover:bg-black/15 border border-space-sparkle/15'
+                  }`}
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={() => handleScroll('right')}
+                  disabled={!canScrollNext}
+                  aria-label="Next Projects"
+                  className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 cursor-pointer ${
+                    !canScrollNext ? 'opacity-30 cursor-not-allowed' : ''
+                  } ${
+                    isDarkMode
+                      ? 'bg-white/10 text-white hover:bg-white/25 border border-white/15'
+                      : 'bg-black/5 text-vintage-charcoal hover:bg-black/15 border border-space-sparkle/15'
+                  }`}
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="relative w-full flex-1 min-h-0 flex flex-col items-center group/carousel">

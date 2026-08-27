@@ -183,14 +183,14 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
 
   const ActionButtons = ({ isTop }: { isTop?: boolean }) => (
     <div className={`grid grid-cols-2 gap-4 w-full ${isTop ? 'md:w-[75%] md:ml-auto' : ''}`}>
-      <div className="relative">
+      <div className="relative min-w-0">
         {!privacyAcknowledged && (
           <div className="absolute inset-0 rounded-xl animate-glow-pulse" />
         )}
         <button
           type="button"
           onClick={() => setShowPrivacyModal(true)}
-          className={`relative z-10 w-full h-full py-2 px-4 rounded-xl border text-caption font-medium transition-all hover:opacity-80 cursor-pointer ${inputBorderClass}`}
+          className={`relative z-10 w-full h-full py-2 px-4 rounded-xl border font-medium transition-all hover:opacity-80 cursor-pointer ${inputBorderClass} ${isTop ? 'text-[1.75vw] lg:text-caption whitespace-nowrap truncate' : 'text-caption'}`}
         >
           Privacy Statement
         </button>
@@ -200,7 +200,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
         disabled={isSubmitting || !canSubmit}
         active={!privacyAcknowledged}
         title={!privacyAcknowledged ? 'Acknowledge the Privacy Statement to continue' : !isFormValid ? 'Fill in all required fields to continue' : undefined}
-        className="w-full !bg-space-sparkle !text-bright-gray border-none"
+        className={`w-full !bg-space-sparkle !text-bright-gray border-none min-w-0 ${isTop ? '!text-[1.75vw] lg:!text-caption whitespace-nowrap truncate' : ''}`}
       >
         {isSubmitting ? 'Submitting...' : 'Submit Application'}
       </RevolvingButton>
@@ -236,10 +236,10 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto px-4 sm:px-8 pb-2"
+            className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto lg:overflow-hidden px-4 sm:px-8 pb-2"
           >
             {/* LEFT COLUMN */}
-            <div className="w-full lg:w-1/2 flex flex-col gap-3 lg:gap-2 justify-between">
+            <div className="w-full lg:w-1/2 flex flex-col gap-3 lg:gap-2 justify-between lg:h-full lg:overflow-hidden">
               {leftColumnTop.map((field) => (
                 <FormFieldRenderer
                   key={field.name}
@@ -336,40 +336,42 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className="w-full lg:w-1/2 flex flex-col justify-between gap-2.5 lg:gap-2">
-              {fields.rightColumnRows.map((row, idx) => (
-                <div key={idx} className={row.length > 1 ? 'grid grid-cols-1 sm:grid-cols-4 gap-3' : ''}>
-                  {row.map((field) => {
-                    if (field.name === 'emergencyContact') {
-                      const count = (formData.emergencyContactName && formData.emergencyContactRelationship && formData.emergencyContactNumber) ? 1 : 0;
+            <div className="w-full lg:w-1/2 flex flex-col justify-between gap-2.5 lg:gap-2 lg:h-full lg:overflow-y-auto lg:pr-2">
+              <div className="flex flex-col gap-2.5 lg:gap-2">
+                {fields.rightColumnRows.map((row, idx) => (
+                  <div key={idx} className={row.length > 1 ? 'grid grid-cols-1 sm:grid-cols-4 gap-3' : ''}>
+                    {row.map((field) => {
+                      if (field.name === 'emergencyContact') {
+                        const count = (formData.emergencyContactName && formData.emergencyContactRelationship && formData.emergencyContactNumber) ? 1 : 0;
+                        return (
+                          <div key={field.name} className={field.wrapperClassName}>
+                            <MultiEntryButton
+                              fieldLabel="Emergency Contact"
+                              label="Add Contact"
+                              count={count}
+                              onClick={() => setShowEmergencyModal(true)}
+                              isDarkMode={isDarkMode}
+                            />
+                          </div>
+                        );
+                      }
                       return (
-                        <div key={field.name} className={field.wrapperClassName}>
-                          <MultiEntryButton
-                            fieldLabel="Emergency Contact"
-                            label="Add Contact"
-                            count={count}
-                            onClick={() => setShowEmergencyModal(true)}
-                            isDarkMode={isDarkMode}
-                          />
-                        </div>
+                        <FormFieldRenderer
+                          key={field.name}
+                          config={field}
+                          value={(formData as any)[field.name]}
+                          onChange={handleChange}
+                          isDarkMode={isDarkMode}
+                          theme="neutral"
+                        />
                       );
-                    }
-                    return (
-                      <FormFieldRenderer
-                        key={field.name}
-                        config={field}
-                        value={(formData as any)[field.name]}
-                        onChange={handleChange}
-                        isDarkMode={isDarkMode}
-                        theme="neutral"
-                      />
-                    );
-                  })}
-                </div>
-              ))}
+                    })}
+                  </div>
+                ))}
+              </div>
 
               {/* Action Buttons */}
-              <div className={`sticky bottom-0 z-20 pb-4 pt-4 -mx-4 px-4 sm:-mx-8 sm:px-8 md:pb-0 md:pt-1 md:static md:bg-transparent md:dark:bg-transparent md:mx-0 md:px-0 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'} ${isHeightConstrained ? 'md:hidden' : ''}`}>
+              <div className={`mt-2 md:mt-0 pt-2 md:pt-1 ${isHeightConstrained ? 'md:hidden' : ''}`}>
                 <ActionButtons />
               </div>
             </div>
