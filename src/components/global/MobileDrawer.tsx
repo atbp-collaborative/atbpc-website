@@ -64,7 +64,7 @@ const SectionTrigger: React.FC<SectionTriggerProps> = ({
     >
       <motion.span
         animate={{ rotate: isExpanded ? 180 : 0 }}
-        transition={{ duration: 1.5 }}
+        transition={{ duration: 0.3 }}
         className="flex items-center"
       >
         <ChevronDown size={16} />
@@ -185,7 +185,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 1.5, ease: 'easeInOut' }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
                         <div className="flex flex-col space-y-1.5 pt-1 pb-2">
@@ -203,7 +203,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                                   </span>
                                   <motion.span
                                     animate={{ rotate: isGroupExpanded ? 180 : 0 }}
-                                    transition={{ duration: 1.5 }}
+                                    transition={{ duration: 0.3 }}
                                   >
                                     <ChevronDown size={14} />
                                   </motion.span>
@@ -215,7 +215,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                                       initial={{ height: 0, opacity: 0 }}
                                       animate={{ height: 'auto', opacity: 1 }}
                                       exit={{ height: 0, opacity: 0 }}
-                                      transition={{ duration: 1.5, ease: 'easeInOut' }}
+                                      transition={{ duration: 0.3, ease: 'easeInOut' }}
                                       className="overflow-hidden"
                                     >
                                       <div className="flex flex-col space-y-1 py-1">
@@ -260,7 +260,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 1.5, ease: 'easeInOut' }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
                         <div className="flex flex-col space-y-2 pt-1 pb-2">
@@ -319,7 +319,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 1.5, ease: 'easeInOut' }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
                         <div className="flex flex-col space-y-2 pt-1 pb-2">
@@ -378,8 +378,12 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 onClick={closeDrawer}
               />
 
-              {/* Mobile links and toggles (Legal, Privacy, Protection, Theme) */}
-              <div className="flex flex-col items-center justify-center space-y-2 pt-3 border-t border-space-sparkle/10 w-full">
+              <div className="text-caption text-center font-sans opacity-40 pt-4 mt-3 border-t border-space-sparkle/10 w-full">
+                © 2026 ATBP Collaborative
+              </div>
+
+              {/* Mobile links and toggles (Legal, Privacy, Protection, Theme) - Hidden on tablet (md) */}
+              <div className="flex md:hidden flex-col items-center justify-center space-y-2 pt-2 w-full">
                 <div className="flex items-center justify-center gap-2.5 text-[10px] font-sans tracking-wider opacity-90 whitespace-nowrap">
                   <button
                     onClick={() => setIsLegalModalOpen(true)}
@@ -429,10 +433,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                     {isDarkMode ? <Sun size={13} /> : <Moon size={13} />}
                   </button>
                 </div>
-              </div>
-
-              <div className="text-caption text-center font-sans opacity-40 pt-2">
-                © 2026 ATBP Collaborative
               </div>
             </div>
             </div>
