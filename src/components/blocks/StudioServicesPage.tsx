@@ -15,27 +15,27 @@ interface StudioServicesPageProps {
 const PieceworkAccordionItem = ({
   title,
   content,
-  defaultOpen = false,
+  isOpen = false,
+  onToggle,
   isDarkMode = false,
 }: {
   title: string;
   content: string;
-  defaultOpen?: boolean;
+  isOpen?: boolean;
+  onToggle?: () => void;
   isDarkMode?: boolean;
 }) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
   return (
     <div className="py-2 first:pt-0 last:pb-0 select-none relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={onToggle}
         style={{
           backgroundColor: isDarkMode ? '#333436' : '#EDEFEF',
         }}
         className="flex items-start text-left focus:outline-none cursor-pointer group w-full py-2 sticky top-0 z-20"
       >
         <span className="font-sans font-bold text-space-sparkle mr-2 text-body sm:text-h3 leading-tight select-none">
-          {isOpen ? '−' : '+'}
+          {isOpen ? '—' : '+'}
         </span>
         <h4 className="font-sans text-body sm:text-h3 font-bold tracking-tight select-none group-hover:opacity-85 transition-opacity leading-tight">
           {title}
@@ -66,27 +66,29 @@ const ComprehensiveAccordionItem = ({
   paragraphs,
   linkText,
   href,
+  isOpen = false,
+  onToggle,
   isDarkMode = false,
 }: {
   title: string;
   paragraphs: string[];
   linkText: string;
   href: string;
+  isOpen?: boolean;
+  onToggle?: () => void;
   isDarkMode?: boolean;
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
   return (
     <div className="py-2 first:pt-0 last:pb-0 select-none relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={onToggle}
         style={{
           backgroundColor: isDarkMode ? '#333436' : '#EDEFEF',
         }}
         className="flex items-start text-left focus:outline-none cursor-pointer group w-full py-2 sticky top-0 z-20"
       >
         <span className="font-sans font-bold text-space-sparkle mr-2 text-body sm:text-h3 leading-tight select-none">
-          {isOpen ? '−' : '+'}
+          {isOpen ? '—' : '+'}
         </span>
         <h4 className="font-sans text-body sm:text-h3 font-bold tracking-tight select-none group-hover:opacity-85 transition-opacity leading-tight">
           {title}
@@ -222,6 +224,7 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
 }) => {
   const { isDarkMode } = useTheme();
   const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const [openItemId, setOpenItemId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkSize = () => {
@@ -259,24 +262,29 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
       {/* Center Section: Dynamic Grid Content */}
       <div className="flex-1 flex flex-col justify-start items-stretch w-full min-h-0 py-1 overflow-y-auto lg:overflow-hidden no-scrollbar">
         {isPiecework && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 w-full max-w-7xl mr-auto overflow-y-visible lg:overflow-y-auto no-scrollbar py-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 w-full md:w-3/4 lg:w-full mr-auto overflow-y-visible lg:overflow-y-auto no-scrollbar py-2">
             {PIECEWORK_COLUMNS.map((col, colIdx) => (
               <div key={colIdx} className="flex flex-col space-y-4">
-                {col.items.map((item, itemIdx) => (
-                  <PieceworkAccordionItem
-                    key={itemIdx}
-                    title={item.title}
-                    content={item.content}
-                    isDarkMode={isDarkMode}
-                  />
-                ))}
+                {col.items.map((item, itemIdx) => {
+                  const itemId = `piecework-${colIdx}-${itemIdx}`;
+                  return (
+                    <PieceworkAccordionItem
+                      key={itemIdx}
+                      title={item.title}
+                      content={item.content}
+                      isOpen={isLargeScreen ? true : openItemId === itemId}
+                      onToggle={() => setOpenItemId(openItemId === itemId ? null : itemId)}
+                      isDarkMode={isDarkMode}
+                    />
+                  );
+                })}
               </div>
             ))}
           </div>
         )}
 
         {isComprehensive && isLargeScreen && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 w-full max-w-7xl mr-auto overflow-y-hidden py-2 h-full min-h-0 flex-1">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 w-full md:w-3/4 lg:w-full mr-auto overflow-y-hidden py-2 h-full min-h-0 flex-1">
             {COMPREHENSIVE_COLUMNS.map((col, colIdx) => (
               <div key={colIdx} className="flex flex-col h-full min-h-0 justify-between relative">
                 {/* Sticky Heading */}
@@ -316,7 +324,7 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
         )}
 
         {isComprehensive && !isLargeScreen && (
-          <div className="flex flex-col space-y-4 w-full py-2">
+          <div className="flex flex-col space-y-4 w-full md:w-3/4 lg:w-full py-2">
             {COMPREHENSIVE_COLUMNS.map((col, colIdx) => (
               <ComprehensiveAccordionItem
                 key={colIdx}
@@ -324,6 +332,8 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
                 paragraphs={col.paragraphs}
                 linkText={col.linkText}
                 href={col.href}
+                isOpen={openItemId === `comp-${colIdx}`}
+                onToggle={() => setOpenItemId(openItemId === `comp-${colIdx}` ? null : `comp-${colIdx}`)}
                 isDarkMode={isDarkMode}
               />
             ))}
@@ -331,13 +341,14 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
         )}
 
         {isConsultationRetainer && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 w-full max-w-5xl mr-auto overflow-y-visible lg:overflow-y-auto no-scrollbar py-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 w-full md:w-3/4 lg:w-full mr-auto overflow-y-visible lg:overflow-y-auto no-scrollbar py-2">
             {CONSULTATION_RETAINER_COLUMNS.map((item, idx) => (
               <PieceworkAccordionItem
                 key={`${idx}-${isLargeScreen}`}
                 title={item.title}
                 content={item.content}
-                defaultOpen={isLargeScreen}
+                isOpen={isLargeScreen ? true : openItemId === `consult-${idx}`}
+                onToggle={() => setOpenItemId(openItemId === `consult-${idx}` ? null : `consult-${idx}`)}
                 isDarkMode={isDarkMode}
               />
             ))}

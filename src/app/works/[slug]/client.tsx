@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useMemo, Suspense } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { LayoutGrid, ArrowLeft, ChevronLeft, ChevronRight, MapPin, Play, ArrowUpRight, X } from 'lucide-react';
 import { notFound, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
@@ -20,6 +20,7 @@ import { Accordion } from '@/components/primitives/Accordion';
 import { BreadcrumbButton } from '@/components/primitives/BreadcrumbButton';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
 import { isUnsplashUrl, unsplashLoader } from '@/lib/imageLoaders';
+import { ProjectCard } from '@/components/blocks/ProjectCard';
 
 // motion needs a ref-forwarding component to animate; next/image forwards
 // its ref to the underlying <img>, so this keeps the existing slide-transform
@@ -36,45 +37,6 @@ function getYouTubeEmbedUrl(url: string): string | null {
   return null;
 }
 
-interface ProjectCardProps {
-  project: Project;
-  totalProjects: number;
-  isDarkMode: boolean;
-  onClick: () => void;
-}
-
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, totalProjects, isDarkMode, onClick }) => {
-  const isFewProjects = totalProjects <= 2;
-
-  return (
-    <div
-      onClick={onClick}
-      className={`group relative flex-shrink-0 w-full md:w-[calc(100%/var(--max-items-tablet))] lg:w-[calc(100%/var(--max-items-desktop))] aspect-[3/2] ${isFewProjects ? '3xl:aspect-[4/3]' : '3xl:aspect-[9/16]'} 3xl:max-h-[85vh] overflow-hidden rounded-none border transition-all duration-500 cursor-pointer select-none ${
-        isDarkMode ? 'border-space-sparkle/20 bg-vintage-charcoal/40 hover:border-white/40' : 'border-space-sparkle/15 bg-white hover:border-space-sparkle/40'
-      }`}
-    >
-      <ImageWithFade
-        src={project.images[0]}
-        alt={project.title}
-        fill
-        sizes="(min-width: 1024px) 410px, (min-width: 768px) 370px, 100vw"
-        className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
-      />
-
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent opacity-85 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-4 sm:p-5 z-10 text-left">
-        <div className="transform translate-y-1 group-hover:translate-y-0 transition-transform duration-500 ease-out space-y-1 text-left">
-          <h3 className="font-sans text-body sm:text-h2 font-semibold text-white tracking-wide leading-tight text-left">
-            {project.title}
-          </h3>
-
-          <span className="text-caption font-sans text-white/75 block text-left">
-            {project.location}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 interface ProjectDetailProps {
   project: Project;
@@ -88,8 +50,8 @@ function ProjectDetailContent({
   const { isDarkMode } = useTheme();
   const router = useRouter();
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
-  const [direction, setDirection] = useState<number>(1);
-  const [hasSeenVideo, setHasSeenVideo] = useState<boolean>(false);
+  const carouselRef = useRef<HTMLDivElement>(null);
+
   const filterName = project.subcategory || project.mainCategory || project.category || 'All Works';
   const isAllWorks = filterName === 'All' || filterName === 'All Works' || filterName === 'works';
   const backLabel = isAllWorks ? 'Back to all works' : `Back to ${filterName}`;
@@ -112,8 +74,6 @@ function ProjectDetailContent({
   }, [project.video, project.images]);
 
   const columnRef = useRef<HTMLDivElement>(null);
-  const [isDesktop, setIsDesktop] = useState<boolean>(false);
-  const [isXL, setIsXL] = useState<boolean>(false);
   const [coords, setCoords] = useState({
     columnLeft: 0,
     columnTop: 0,
@@ -121,6 +81,9 @@ function ProjectDetailContent({
     windowWidth: typeof window !== 'undefined' ? window.innerWidth : 1200,
     windowHeight: typeof window !== 'undefined' ? window.innerHeight : 800,
   });
+
+  const [isDesktop, setIsDesktop] = useState(true);
+  const [isXL, setIsXL] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -143,31 +106,18 @@ function ProjectDetailContent({
     window.addEventListener('resize', handleResize);
     window.addEventListener('scroll', handleResize, { passive: true });
 
-    const observer = new ResizeObserver(() => {
-      handleResize();
-    });
-    if (columnRef.current) {
-      observer.observe(columnRef.current);
-    }
-
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleResize);
-      observer.disconnect();
     };
   }, []);
 
-  // Reset slide index when project changes
   useEffect(() => {
     setCurrentSlideIndex(0);
-    setHasSeenVideo(false);
-  }, [project.id]);
-
-  useEffect(() => {
-    if (mediaItems[currentSlideIndex]?.type === 'video') {
-      setHasSeenVideo(true);
+    if (carouselRef.current) {
+      carouselRef.current.scrollTo({ left: 0 });
     }
-  }, [currentSlideIndex, mediaItems]);
+  }, [project.id]);
 
   // Auto-scroll image/video carousel every 5 seconds (stops at the last image / penultimate item if there's a video)
   useEffect(() => {
@@ -179,37 +129,58 @@ function ProjectDetailContent({
     }
 
     const timer = setInterval(() => {
-      setDirection(1);
-      setCurrentSlideIndex((prev) => {
-        if (prev < lastImageIndex) {
-          return prev + 1;
+      if (carouselRef.current) {
+        const nextIndex = currentSlideIndex + 1;
+        const slide = carouselRef.current.children[nextIndex] as HTMLElement;
+        if (slide) {
+          carouselRef.current.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
         }
-        return prev;
-      });
+      }
     }, 5000);
 
     return () => clearInterval(timer);
   }, [currentSlideIndex, mediaItems]);
 
-  const hasVideo = useMemo(() => mediaItems.some(item => item.type === 'video'), [mediaItems]);
-
   const nextSlide = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setDirection(1);
-    setCurrentSlideIndex((prev) => (prev + 1) % mediaItems.length);
+    if (!carouselRef.current) return;
+    
+    let nextIndex = currentSlideIndex + 1;
+    if (nextIndex >= mediaItems.length) {
+      nextIndex = 0; // Wrap to start
+    }
+    const slide = carouselRef.current.children[nextIndex] as HTMLElement;
+    if (slide) {
+      carouselRef.current.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
+    }
   };
 
   const prevSlide = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (hasVideo && !hasSeenVideo) return;
-    setDirection(-1);
-    setCurrentSlideIndex((prev) => (prev - 1 + mediaItems.length) % mediaItems.length);
+    if (!carouselRef.current) return;
+    if (currentSlideIndex === 0) return; // Do not scroll left from item 1
+    
+    const prevIndex = currentSlideIndex - 1;
+    const slide = carouselRef.current.children[prevIndex] as HTMLElement;
+    if (slide) {
+      carouselRef.current.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
+    }
+  };
+
+  const handleScroll = () => {
+    if (carouselRef.current) {
+      const container = carouselRef.current;
+      const index = Math.round(container.scrollLeft / container.clientWidth);
+      if (index !== currentSlideIndex) {
+        setCurrentSlideIndex(index);
+      }
+    }
   };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') {
-        if (!hasVideo || hasSeenVideo) prevSlide();
+        prevSlide();
       } else if (e.key === 'ArrowRight') {
         nextSlide();
       }
@@ -218,7 +189,7 @@ function ProjectDetailContent({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [mediaItems.length]);
+  }, [currentSlideIndex]);
 
   const isVideoActive = mediaItems[currentSlideIndex]?.type === 'video';
 
@@ -297,7 +268,7 @@ function ProjectDetailContent({
   return (
     <div 
       id={`project-detail-${project.id}`}
-      className={`w-full px-4 sm:px-8 py-2 select-none flex flex-col md:flex-1 md:min-h-0 h-auto md:h-full justify-start overflow-y-auto ${isVideoActive && isDesktop ? 'md:overflow-visible' : 'md:overflow-hidden'}`}
+      className={`w-full px-4 sm:px-8 py-2 select-none flex flex-col lg:flex-1 lg:min-h-0 h-auto lg:h-full justify-start overflow-y-auto ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}
     >
       <BreadcrumbButton
         label={backLabel}
@@ -305,18 +276,18 @@ function ProjectDetailContent({
         onClick={() => router.back()}
       />
 
-      <div className={`grid grid-cols-1 md:grid-cols-12 xl:grid-cols-4 gap-6 md:flex-1 md:min-h-0 pb-1 ${isVideoActive && isDesktop ? 'md:overflow-visible' : 'md:overflow-hidden'}`}>
+      <div className={`grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-4 gap-6 lg:flex-1 lg:min-h-0 pb-1 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
         
         {/* Carousel & CTA Container */}
-        <div ref={columnRef} className={`md:col-span-7 md:order-2 xl:col-span-2 xl:order-3 flex flex-col justify-start md:h-full md:min-h-0 space-y-3 ${isVideoActive && isDesktop ? 'md:overflow-visible' : 'md:overflow-hidden'}`}>
+        <div ref={columnRef} className={`lg:col-span-7 lg:order-2 xl:col-span-2 xl:order-3 flex flex-col justify-start lg:h-full lg:min-h-0 space-y-3 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
           
-          <div className={`space-y-3 w-full relative md:flex-1 md:min-h-0 flex flex-col justify-start ${isVideoActive && isDesktop ? 'md:overflow-visible' : 'md:overflow-hidden'}`}>
-            <AnimatePresence>
+          <div className={`space-y-3 w-full relative lg:flex-1 lg:min-h-0 flex flex-col justify-start ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
+            
               {isVideoActive && isDesktop && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                  
                   transition={{ duration: 0.3 }}
                   className="fixed inset-0 z-[100] cursor-pointer backdrop-blur-sm bg-black/85"
                   onClick={(e) => {
@@ -325,7 +296,7 @@ function ProjectDetailContent({
                   }}
                 />
               )}
-            </AnimatePresence>
+            
 
             <div className="relative aspect-video w-full max-h-full">
               <motion.div 
@@ -339,74 +310,58 @@ function ProjectDetailContent({
                 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 120, mass: 0.9 }}
               >
-                <div className="relative w-full h-full overflow-hidden bg-space-sparkle/5">
-                  <AnimatePresence initial={false} custom={direction}>
-                    <motion.div
-                      key={currentSlideIndex}
-                      custom={direction}
-                      initial={{ x: direction > 0 ? '100%' : '-100%' }}
-                      animate={{ x: 0 }}
-                      exit={{ x: direction > 0 ? '-100%' : '100%' }}
-                      transition={{ 
-                        x: { type: "spring", stiffness: 300, damping: 30 },
-                        opacity: { duration: 0.2 }
-                      }}
-                      className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
-                      drag="x"
-                      dragConstraints={{ left: 0, right: 0 }}
-                      dragElastic={1}
-                      onDragEnd={(e, { offset, velocity }) => {
-                        const swipe = Math.abs(offset.x) * velocity.x;
-                        if (swipe < -5000 || offset.x < -50) {
-                          nextSlide();
-                        } else if (swipe > 5000 || offset.x > 50) {
-                          if (!hasVideo || hasSeenVideo) prevSlide();
-                        }
-                      }}
+                  <div className="relative w-full h-full overflow-hidden bg-space-sparkle/5">
+                    <div 
+                      ref={carouselRef}
+                      className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth w-full h-full"
+                      onScroll={handleScroll}
                     >
-                      {mediaItems[currentSlideIndex].type === 'video' ? (
-                        <div className="relative w-full h-full flex items-center justify-center bg-transparent overflow-hidden">
-                          {(() => {
-                            const embedUrl = getYouTubeEmbedUrl(mediaItems[currentSlideIndex].url);
-                            if (embedUrl) {
-                              return (
-                                <iframe
-                                  src={embedUrl}
-                                  title="Project Video"
-                                  className={`w-full h-full border-0 ${!isDesktop ? 'pointer-events-none' : ''}`}
-                                  allow="autoplay; encrypted-media; picture-in-picture"
-                                  allowFullScreen
-                                />
-                              );
-                            }
-                            return (
-                              <video 
-                                src={mediaItems[currentSlideIndex].url}
-                                className="w-full h-full object-cover"
-                                autoPlay
-                                loop
-                                playsInline
-                              />
-                            );
-                          })()}
+                      {mediaItems.map((item, idx) => (
+                        <div key={idx} className="flex-none w-full h-full snap-center relative">
+                          {item.type === 'video' ? (
+                            <div className="relative w-full h-full flex items-center justify-center bg-transparent overflow-hidden">
+                              {(() => {
+                                const embedUrl = getYouTubeEmbedUrl(item.url);
+                                if (embedUrl) {
+                                  return (
+                                    <iframe
+                                      src={embedUrl}
+                                      title="Project Video"
+                                      className={`w-full h-full border-0 ${!isDesktop ? 'pointer-events-none' : ''}`}
+                                      allow="autoplay; encrypted-media; picture-in-picture"
+                                      allowFullScreen
+                                    />
+                                  );
+                                }
+                                return (
+                                  <video 
+                                    src={item.url}
+                                    className="w-full h-full object-cover pointer-events-none"
+                                    autoPlay
+                                    loop
+                                    playsInline
+                                  />
+                                );
+                              })()}
+                            </div>
+                          ) : (
+                            <Image
+                              src={item.url}
+                              alt={`${project.title} slide ${idx + 1}`}
+                              fill
+                              sizes="(min-width: 1024px) 58vw, 100vw"
+                              loader={isUnsplashUrl(item.url) ? unsplashLoader : undefined}
+                              className="object-cover pointer-events-none"
+                              draggable={false}
+                            />
+                          )}
                         </div>
-                      ) : (
-                        <Image
-                          src={mediaItems[currentSlideIndex].url}
-                          alt={`${project.title} slide ${currentSlideIndex + 1}`}
-                          fill
-                          sizes="(min-width: 1024px) 58vw, 100vw"
-                          loader={isUnsplashUrl(mediaItems[currentSlideIndex].url) ? unsplashLoader : undefined}
-                          className="object-cover pointer-events-none"
-                          draggable={false}
-                        />
-                      )}
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-                
-                {/* Left/Right Buttons */}
-                {(!hasVideo || hasSeenVideo) && (
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Left/Right Buttons */}
+                  {currentSlideIndex !== 0 && (
                   <button 
                     onClick={prevSlide}
                     className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all md:opacity-0 md:group-hover:opacity-100 opacity-100 cursor-pointer z-10"
@@ -485,15 +440,15 @@ function ProjectDetailContent({
 
         {/* High-End Architectural Writeup & Specs */}
         <div 
-          className={`md:col-span-5 md:order-1 xl:col-span-2 xl:order-1 flex flex-col justify-start md:h-full md:min-h-0 py-0.5 ${
+          className={`lg:col-span-5 lg:order-1 xl:col-span-2 xl:order-1 flex flex-col justify-start lg:h-full lg:min-h-0 py-0.5 ${
             isVideoActive && isDesktop 
-              ? 'md:overflow-visible' 
-              : 'md:overflow-y-auto no-scrollbar md:relative'
+              ? 'lg:overflow-visible' 
+              : 'lg:overflow-y-auto no-scrollbar lg:relative'
           }`}
           style={isXL && coords.columnWidth > 0 ? { height: coords.columnWidth * (9 / 16) } : undefined}
         >
           {/* Sticky Header */}
-          <div className={`md:sticky md:top-0 md:z-10 pb-3 flex flex-col shrink-0 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'}`}>
+          <div className={`lg:sticky lg:top-0 lg:z-10 pb-3 flex flex-col shrink-0 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'}`}>
             <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight shrink-0">
               {project.title}
             </h1>
@@ -505,7 +460,7 @@ function ProjectDetailContent({
           </div>
 
           {/* Main Content Area (Writeup & Specs) */}
-          <div className="flex flex-col xl:flex-row gap-6 w-full md:min-h-0 overflow-visible mt-2 mb-4">
+          <div className="flex flex-col xl:flex-row gap-6 w-full lg:min-h-0 overflow-visible mt-2 mb-4">
             {/* Writeup */}
             <div className="w-full xl:w-[60%] shrink-0">
               <p className="text-caption sm:text-body leading-relaxed font-light opacity-90 whitespace-pre-line text-justify">
@@ -534,8 +489,8 @@ function ProjectDetailContent({
             </div>
           </div>
 
-          {/* Mobile CTA (shown only on mobile < 768px) */}
-          <div className={`flex md:hidden flex-col justify-start gap-3 w-full shrink-0 border-t border-space-sparkle/10 pt-4 pb-1 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'}`}>
+          {/* Mobile CTA (shown only on mobile < 1024px) */}
+          <div className={`flex lg:hidden flex-col justify-start gap-3 w-full shrink-0 border-t border-space-sparkle/10 pt-4 pb-1 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'}`}>
             <span className="font-sans text-caption font-semibold tracking-tight opacity-80 uppercase text-center">Inspired by this project?</span>
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               <Button
@@ -555,8 +510,8 @@ function ProjectDetailContent({
         </div>
       </div>
 
-      {/* Bottom Page CTA (Tablet only: md to lg) */}
-      <div className={`hidden md:flex lg:hidden flex-row justify-between items-center w-full shrink-0 border-t border-space-sparkle/10 pt-4 pb-1 mt-auto gap-4 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'}`}>
+      {/* Bottom Page CTA (Tablet only: md to lg) - Now hidden as tablet stacks like mobile */}
+      <div className={`hidden flex-row justify-between items-center w-full shrink-0 border-t border-space-sparkle/10 pt-4 pb-1 mt-auto gap-4 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'}`}>
         <span className="font-sans text-caption font-semibold tracking-tight opacity-80 uppercase shrink-0">Inspired by this project?</span>
         <div className="flex flex-row gap-3 min-w-[300px] w-auto">
           <Button
@@ -824,3 +779,12 @@ export default function WorksSlugClient({ slug }: { slug: string }) {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
