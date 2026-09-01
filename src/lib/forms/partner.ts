@@ -1,4 +1,4 @@
-import { FieldConfig, PhAddress, EMPTY_PH_ADDRESS } from '@/components/forms/form-fields';
+import { FieldConfig, PhAddress, EMPTY_PH_ADDRESS } from '@/components/forms/form-fields/types';
 import { z } from 'zod';
 
 export type PartnerFormVariant = 'supplier' | 'builder' | 'consultant';

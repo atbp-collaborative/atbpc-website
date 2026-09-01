@@ -22,7 +22,7 @@ interface BaseFieldConfig {
 }
 
 export interface TextFieldConfig extends BaseFieldConfig {
-  type: 'text' | 'email' | 'tel';
+  type: 'text' | 'email' | 'tel' | 'time';
   placeholder?: string;
 }
 
@@ -115,6 +115,21 @@ export interface DivFieldConfig extends BaseFieldConfig {
   className?: string;
 }
 
+export interface DateFieldConfig extends BaseFieldConfig {
+  type: 'date';
+}
+
+export interface MapPinFieldConfig extends BaseFieldConfig {
+  type: 'map-pin';
+}
+
+export interface RepeaterFieldConfig extends BaseFieldConfig {
+  type: 'repeater';
+  subfields: FieldConfig[];
+  maxCount?: number;
+  itemLabel?: string;
+}
+
 export type FieldConfig =
   | TextFieldConfig
   | SelectFieldConfig
@@ -123,7 +138,10 @@ export type FieldConfig =
   | ChoiceCardFieldConfig
   | ChipMultiSelectFieldConfig
   | AddressFieldConfig
-  | DivFieldConfig;
+  | DivFieldConfig
+  | DateFieldConfig
+  | MapPinFieldConfig
+  | RepeaterFieldConfig;
 
 /** Common props every concrete field component receives from FormFieldRenderer. */
 export interface FieldRenderProps<TValue = any> {

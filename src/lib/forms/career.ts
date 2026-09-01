@@ -2,7 +2,7 @@ import {
   FieldConfig,
   PhAddress,
   EMPTY_PH_ADDRESS,
-} from "@/components/forms/form-fields";
+} from "@/components/forms/form-fields/types";
 import { z } from "zod";
 
 /**
