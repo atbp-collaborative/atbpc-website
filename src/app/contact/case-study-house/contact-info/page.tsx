@@ -96,15 +96,15 @@ export default function ContactInfoPage() {
 
   return (
     <div 
-      className="w-full h-full overflow-y-auto md:overflow-hidden flex flex-col md:flex-row items-stretch select-none relative"
+      className="w-full h-full overflow-y-auto lg:overflow-hidden flex flex-col lg:flex-row items-stretch select-none relative"
     >
-      <div className="w-full md:w-1/2 min-h-[40vh] md:min-h-0 md:h-full relative shrink-0">
+      <div className="w-full lg:w-1/2 min-h-[40vh] lg:min-h-0 lg:h-full relative shrink-0">
         <OfficeMap isDarkMode={isDarkMode} />
       </div>
 
-      <div className={`w-full md:w-1/2 ${
+      <div className={`w-full lg:w-1/2 ${
         isHeightConstrained ? 'p-3 sm:p-5 lg:p-6 xl:p-8' : 'p-5 sm:p-8 lg:p-10 xl:p-12 2xl:p-14'
-      } flex flex-col shrink-0 md:h-full md:overflow-y-auto`}>
+      } flex flex-col shrink-0 lg:h-full lg:overflow-y-auto`}>
         
         {/* Writeups Container */}
         <div className="flex flex-col justify-start items-center space-y-4 sm:space-y-6 min-h-0 w-full">

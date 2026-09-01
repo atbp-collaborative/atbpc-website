@@ -167,7 +167,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                 />
               ))}
 
-              <div className="border border-red-500 bg-transparent p-4 rounded-xl flex flex-col justify-center text-left text-caption font-medium min-h-[90px]">
+              <div className="border border-space-sparkle bg-transparent p-4 rounded-xl flex flex-col justify-center text-left text-caption font-medium min-h-[90px]">
                 <span className="font-bold mb-1">Reminders:</span>
                 <ul className="list-disc pl-4 space-y-0.5">
                   {variant === 'supplier' && (

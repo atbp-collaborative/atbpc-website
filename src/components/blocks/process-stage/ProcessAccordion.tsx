@@ -35,10 +35,7 @@ export const ProcessAccordion: React.FC<ProcessAccordionProps> = ({ nodes, categ
                 >
                   <div className="pl-6 pr-2 pb-4 pt-1 space-y-4">
                     <div>
-                      <h4 className="text-micro font-semibold uppercase tracking-wider opacity-70 mb-1.5">
-                        description
-                      </h4>
-                      <p className="text-caption font-light leading-relaxed opacity-90 border-l-2 border-space-sparkle/30 pl-3">
+                      <p className="text-caption font-light leading-relaxed opacity-90">
                         {node.description}
                       </p>
                     </div>

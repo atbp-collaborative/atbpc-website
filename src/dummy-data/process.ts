@@ -10,7 +10,7 @@ export interface ProcessNode {
   duration: string;
 }
 
-export const PROCESS_NODES: ProcessNode[] = [
+const BASE_PROCESS_NODES: ProcessNode[] = [
   {
     id: 'discovery',
     stepNumber: '01',
@@ -124,6 +124,11 @@ export const PROCESS_NODES: ProcessNode[] = [
     duration: '15 Years'
   }
 ];
+
+export const PROCESS_NODES_DESIGNING = [...BASE_PROCESS_NODES];
+export const PROCESS_NODES_MANAGING = [...BASE_PROCESS_NODES];
+export const PROCESS_NODES_BUILDING = [...BASE_PROCESS_NODES];
+export const PROCESS_NODES = BASE_PROCESS_NODES; // Kept for backward compatibility if used elsewhere
 
 export const CATEGORY_GROUPS: { key: ProcessNode['category']; label: string; colStart: number; colSpan: number }[] = [
   { key: 'guidance', label: 'guidance', colStart: 1, colSpan: 3 },
