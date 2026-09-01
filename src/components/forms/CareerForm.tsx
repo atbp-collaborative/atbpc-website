@@ -292,7 +292,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
                               ? 'opacity-50 cursor-not-allowed border-gray-300'
                               : isDocumentsComplete()
                                 ? 'border-space-sparkle bg-space-sparkle/5 text-space-sparkle hover:bg-space-sparkle/10'
-                                : fieldStyles.borderColor + ' hover:opacity-80'
+                                : fieldStyles.borderColor + ' hover:opacity-80 !bg-white/80 dark:!bg-white/10'
                           }`}
                         >
                           <div className="flex flex-col items-center justify-center space-y-1 w-full">
@@ -371,7 +371,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
               </div>
 
               {/* Action Buttons */}
-              <div className={`mt-2 md:mt-0 pt-2 md:pt-1 ${isHeightConstrained ? 'md:hidden' : ''}`}>
+              <div className={`mt-2 md:mt-8 lg:mt-0 pt-2 md:pt-1 lg:pt-1 ${isHeightConstrained ? 'md:hidden' : ''}`}>
                 <ActionButtons />
               </div>
             </div>

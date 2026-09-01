@@ -3,7 +3,7 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Member, Project } from '@/types';
 import { useTheme } from '@/lib/theme-context';
 import { ROUTES, projectRoute } from '@/lib/navigation/routes';
@@ -22,6 +22,17 @@ interface MemberDetailProps {
 function MemberDetailContent({ member, projects }: MemberDetailProps) {
   const { isDarkMode } = useTheme();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const from = searchParams.get('from');
+
+  let breadcrumbLabel = 'People';
+  if (from === 'designers') breadcrumbLabel = 'Designers';
+  else if (from === 'managers') breadcrumbLabel = 'Managers';
+  else if (from === 'builders') breadcrumbLabel = 'Builders';
+  else if (from === 'all') breadcrumbLabel = 'People';
+  else if (member.categories && member.categories.length > 0) {
+    breadcrumbLabel = member.categories[0].charAt(0).toUpperCase() + member.categories[0].slice(1);
+  }
 
   const handleBack = () => {
     // Real browser back returns to whichever our-people tab (all/designers/
@@ -39,21 +50,21 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
   return (
     <div 
       id={`member-detail-${member.id}`}
-      className="w-full px-4 sm:px-8 py-2 select-none flex flex-col flex-1 min-h-0 h-full overflow-y-auto md:overflow-hidden justify-start space-y-4 md:space-y-2"
+      className="w-full px-4 sm:px-8 py-2 select-none flex flex-col flex-1 min-h-0 h-full overflow-y-auto lg:overflow-hidden justify-start space-y-4 lg:space-y-2"
     >
       <BreadcrumbButton
-        label={`Back to ${member.categories && member.categories.length > 0 ? member.categories[0].charAt(0).toUpperCase() + member.categories[0].slice(1) : 'Our People'}`}
+        label={`Back to ${breadcrumbLabel}`}
         onClick={handleBack}
-        className={`fixed left-0 right-0 top-[var(--header-height,53px)] md:static z-30 pb-2 md:pb-1 pt-2 md:pt-0 md:mb-2 px-4 sm:px-8 md:px-0 ${
-          isDarkMode ? 'bg-vintage-charcoal md:bg-transparent' : 'bg-bright-gray md:bg-transparent'
+        className={`fixed left-0 right-0 top-[var(--header-height,53px)] lg:static z-30 pb-2 lg:pb-1 pt-2 lg:pt-0 lg:mb-2 px-4 sm:px-8 lg:px-0 ${
+          isDarkMode ? 'bg-vintage-charcoal lg:bg-transparent' : 'bg-bright-gray lg:bg-transparent'
         }`}
       />
 
-      <div className="mt-10 md:mt-0 grid grid-cols-1 md:grid-cols-12 xl:grid-cols-10 gap-6 md:gap-8 xl:gap-8 2xl:gap-10 flex-none md:flex-1 min-h-0 md:overflow-hidden pb-4 md:pb-1">
+      <div className="mt-10 lg:mt-0 grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-10 gap-6 lg:gap-8 xl:gap-8 2xl:gap-10 flex-none lg:flex-1 min-h-0 lg:overflow-hidden pb-4 lg:pb-1">
         
         {/* COLUMN 1: Portrait Container (40% on XL+) */}
-        <div className="md:col-span-5 xl:col-span-4 flex flex-col items-stretch h-auto md:h-full min-h-0 md:overflow-hidden">
-          <div className="relative w-full h-[60vh] sm:h-[70vh] md:h-full md:flex-1 min-h-0 overflow-hidden bg-black/10 rounded-none group border border-space-sparkle/20 animate-slide-up">
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col items-stretch h-auto lg:h-full min-h-0 lg:overflow-hidden">
+          <div className="relative w-full h-[60vh] sm:h-[70vh] lg:h-full lg:flex-1 min-h-0 overflow-hidden bg-black/10 rounded-none group border border-space-sparkle/20 animate-slide-up">
             <ImageWithFade
               src={member.image}
               alt={member.name}
@@ -66,9 +77,9 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
         </div>
 
         {/* COLUMN 2: Person Name & Bio (30% on XL+, 7 cols on MD) */}
-        <div className="md:col-span-7 xl:col-span-3 flex flex-col h-auto md:h-full min-h-0 md:overflow-hidden py-0.5">
+        <div className="lg:col-span-7 xl:col-span-3 flex flex-col h-auto lg:h-full min-h-0 lg:overflow-hidden py-0.5">
           {/* Static Name & Role on Tablet+ */}
-          <div className="shrink-0 space-y-0.5 mb-3 md:mb-4">
+          <div className="shrink-0 space-y-0.5 mb-3 lg:mb-4">
             <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight">
               {member.name}
             </h1>
@@ -83,7 +94,7 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
           </div>
 
           {/* Scrollable text and accordions wrapper */}
-          <div className="flex flex-col flex-1 min-h-0 md:overflow-y-auto no-scrollbar md:pr-2 space-y-3">
+          <div className="flex flex-col flex-1 min-h-0 lg:overflow-y-auto no-scrollbar lg:pr-2 space-y-3">
             <div className="flex-none">
               <p className="text-caption sm:text-body leading-relaxed font-light opacity-90 whitespace-pre-line text-justify">
                 {member.fullBio}

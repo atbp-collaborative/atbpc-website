@@ -95,18 +95,15 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
   };
 
   const slideVariants = {
-    enter: (dir: number) => ({
-      x: dir > 0 ? 30 : -30,
+    enter: {
       opacity: 0,
-    }),
+    },
     center: {
-      x: 0,
       opacity: 1,
     },
-    exit: (dir: number) => ({
-      x: dir > 0 ? -30 : 30,
+    exit: {
       opacity: 0,
-    }),
+    },
   };
 
   const getLinesForNode = (node: ProcessNode, isFlattened: boolean) => {
@@ -120,9 +117,7 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
     <motion.div
       layout
       transition={{ layout: { duration: 0.45, ease: [0.25, 0.1, 0.25, 1] } }}
-      className={`w-full flex flex-col relative overflow-hidden min-h-0 ${
-        isFlattened ? 'h-full justify-start' : 'h-full justify-center my-auto'
-      }`}
+      className="w-full flex flex-col relative overflow-hidden min-h-0 h-full justify-start mt-4 sm:mt-8"
     >
       {/* Category Headers Row */}
       <motion.div
@@ -141,9 +136,15 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
             : `${group.colStart} / span ${group.colSpan}`;
 
           return (
-            <div
+            <motion.div
+              layout
               key={group.key}
-              style={{ gridColumn, opacity: isVisible ? 1 : 0, pointerEvents: isVisible ? 'auto' : 'none' }}
+              style={{ 
+                gridColumn, 
+                opacity: isVisible ? 1 : 0, 
+                pointerEvents: isVisible ? 'auto' : 'none',
+                zIndex: isActiveGroup ? 10 : 0
+              }}
               className="flex flex-col items-center transition-opacity duration-300"
             >
               <span className={`tracking-wider transition-all duration-300 truncate ${
@@ -154,7 +155,7 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
                 {group.label}
               </span>
               <div className={`w-3/4 h-[1px] mt-1 ${isDarkMode ? 'bg-white/20' : 'bg-vintage-charcoal/20'}`} />
-            </div>
+            </motion.div>
           );
         })}
       </motion.div>
@@ -187,6 +188,14 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
           {nodes.map((node, index) => {
             const isSelected = selectedNodeIndex === index;
             const isNext = selectedNodeIndex !== null && index === selectedNodeIndex + 1;
+            const distance = selectedNodeIndex !== null ? Math.abs(index - selectedNodeIndex) : -1;
+
+            const getTextColorClass = (dist: number, isDark: boolean) => {
+              if (dist === 0) return isDark ? 'text-white font-bold opacity-100' : 'text-vintage-charcoal font-bold opacity-100';
+              if (dist === 1) return isDark ? 'text-white/60 font-semibold opacity-100' : 'text-vintage-charcoal/60 font-semibold opacity-100';
+              if (dist >= 2) return isDark ? 'text-white/30 font-normal opacity-100' : 'text-vintage-charcoal/30 font-normal opacity-100';
+              return ''; // Default when not flattened
+            };
 
             return (
               <div key={node.id} className="flex justify-center w-full">
@@ -226,12 +235,7 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
                   {/* Node Text */}
                   <div className={`flex flex-col items-center justify-center leading-tight w-full px-1 transition-opacity duration-300 ${
                     isFlattened 
-                      ? (isSelected 
-                          ? (isDarkMode ? 'text-white opacity-100' : 'text-vintage-charcoal opacity-100')
-                          : isNext 
-                             ? (isDarkMode ? 'text-white/70' : 'text-vintage-charcoal/70')
-                             : (isDarkMode ? 'text-white/30' : 'text-vintage-charcoal/30')
-                        )
+                      ? getTextColorClass(distance, isDarkMode)
                       : ''
                   }`}>
                     {getLinesForNode(node, isFlattened).map((line, i) => (
@@ -239,7 +243,7 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
                         key={i} 
                         className={`font-sans tracking-tight select-none w-full text-center ${
                           isFlattened 
-                            ? (isSelected ? 'text-mini sm:text-caption font-bold' : 'text-micro sm:text-mini font-semibold')
+                            ? '' // Sizing/weight handled by getTextColorClass wrapper
                             : 'font-semibold text-micro md:text-mini lg:text-caption'
                         }`}
                       >
@@ -282,11 +286,10 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
             isDarkMode ? 'text-bright-gray' : 'text-vintage-charcoal'
           }`}
         >
-          <AnimatePresence mode="popLayout" custom={direction} initial={false}>
+          <AnimatePresence mode="popLayout" initial={false}>
             {currentNode && (
               <motion.div
                 key={currentNode.id}
-                custom={direction}
                 variants={slideVariants}
                 initial="enter"
                 animate="center"
@@ -294,19 +297,9 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
                 transition={{ duration: 0.28, ease: [0.25, 0.1, 0.25, 1] }}
                 className="w-full h-full flex flex-col justify-between space-y-2 sm:space-y-3 overflow-hidden"
               >
-                {/* Top Bar inside Detail Card - Anchored to Left per Reference Image */}
-                <div className="border-b border-space-sparkle/10 pb-2 shrink-0">
-                  <h2 className="text-body sm:text-h2 font-bold tracking-tight">
-                    {currentNode.title}
-                  </h2>
-                </div>
-
-                {/* Section 1: Description & Subtitle */}
+                {/* Section 1: Description */}
                 <div className="shrink-0">
-                  <h3 className="text-mini sm:text-caption font-semibold uppercase tracking-wider opacity-70 mb-1">
-                    description
-                  </h3>
-                  <p className="text-caption sm:text-body font-light leading-relaxed opacity-90 border-l-2 border-space-sparkle/30 pl-3">
+                  <p className="text-caption sm:text-body font-light leading-relaxed opacity-90">
                     {currentNode.description}
                   </p>
                 </div>

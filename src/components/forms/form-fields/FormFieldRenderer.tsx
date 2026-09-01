@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { FieldConfig, ChoiceCardOption } from './types';
 import { FieldTheme } from './fieldStyles';
@@ -9,7 +11,11 @@ import { ChoiceCardField } from './ChoiceCardField';
 import { ChipMultiSelectField } from './ChipMultiSelectField';
 import { AddressField } from './AddressField';
 import { DivField } from './DivField';
+import { DateField } from './DateField';
 import { EMPTY_PH_ADDRESS } from './types';
+import dynamic from 'next/dynamic';
+
+const MapPinField = dynamic(() => import('./MapPinField').then((mod) => mod.MapPinField), { ssr: false });
 
 interface FormFieldRendererProps {
   config: FieldConfig;
@@ -72,6 +78,14 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
     case 'div':
       return wrapper(
         <DivField {...config} value={value ?? ''} onChange={onChange} isDarkMode={isDarkMode} theme={theme} />
+      );
+    case 'date':
+      return wrapper(
+        <DateField {...config} value={value ?? ''} onChange={onChange} isDarkMode={isDarkMode} theme={theme} />
+      );
+    case 'map-pin':
+      return wrapper(
+        <MapPinField {...config} value={value ?? null} onChange={onChange} isDarkMode={isDarkMode} theme={theme} />
       );
   }
 };

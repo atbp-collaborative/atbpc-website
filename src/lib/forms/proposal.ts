@@ -1,65 +1,111 @@
-import { ChoiceCardFieldConfig, ChipMultiSelectFieldConfig, FieldConfig } from '@/components/forms/form-fields';
+import { z } from 'zod';
 
-export const STEP1_PROJECT_TYPE_FIELD: ChoiceCardFieldConfig = {
-  type: 'choice-card',
-  name: 'projectType',
-  label: '',
-  columns: 2,
-  options: [
-    { id: 'Residential', label: 'Residential Dwelling', desc: 'Custom ground-up houses or massive full-scale renovations.' },
-    { id: 'Condo Fit-out', label: 'Condominium Interior Fit-out', desc: 'Sleek modular built-ins and custom space layouts.' },
-    { id: 'Kiosk', label: 'Specialty Retail Kiosk', desc: 'F&B units or mall-based commercial express counters.' },
-    { id: 'Retail Fit-out', label: 'Commercial / Retail Store Fit-out', desc: 'Fashion boutiques, modern offices, or restaurant spots.' },
-    { id: 'Production Outsourcing', label: 'B2B Production Drawings', desc: 'Detailed CAD Permitting & shop drawing outsourcing.' },
-  ],
+export const personSchema = z.object({
+  firstName: z.string().optional(),
+  middleName: z.string().optional(),
+  lastName: z.string().optional(),
+  address: z.string().optional(),
+  title: z.string().optional(),
+  contactNo: z.string().optional(),
+  email: z.string().email().optional().or(z.literal('')),
+});
+
+export const proposalSchema = z.object({
+  principalDecisionMakers: z.array(personSchema).max(2).optional(),
+  authorizedRepresentatives: z.array(personSchema).max(2).optional(),
+
+  typology: z.string().optional(),
+  services: z.string().optional(),
+  scope: z.string().optional(),
+
+  propertyAreaType: z.string().optional(),
+  propertyAreaSize: z.string().optional(),
+  siteAddress: z.string().optional(),
+  mapCoordinates: z.object({
+    lat: z.number(),
+    lng: z.number(),
+    address: z.string().optional()
+  }).optional().nullable(),
+
+  constructionBudget: z.string().optional(),
+  targetDate: z.string().optional(),
+
+  attachments: z.array(z.object({
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+    content: z.string() // base64
+  })).optional(),
+  
+  superstitions: z.string().optional(),
+
+  documents: z.array(z.object({
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+    content: z.string() // base64
+  })).optional(),
+
+  additionalInfo: z.string().optional(),
+});
+
+export type ProposalFormData = z.infer<typeof proposalSchema>;
+
+export const defaultProposalFormData: ProposalFormData = {
+  principalDecisionMakers: [{}],
+  authorizedRepresentatives: [{}],
+  typology: '',
+  services: '',
+  scope: '',
+  propertyAreaType: '',
+  propertyAreaSize: '',
+  siteAddress: '',
+  mapCoordinates: null,
+  constructionBudget: '',
+  targetDate: '',
+  attachments: [],
+  superstitions: '',
+  documents: [],
+  additionalInfo: '',
 };
 
-export const STEP2_INCOME_CATEGORY_FIELD: ChoiceCardFieldConfig = {
-  type: 'choice-card',
-  name: 'incomeCategory',
-  label: '',
-  columns: 3,
-  options: [
-    { id: 'Mid-Income', label: 'Mid-Income Project', highlight: '₱350k - ₱1.5M', desc: 'Suited for boutiques, F&B kiosks, and premium modular condo layouts.' },
-    { id: 'Mid-High-Income', label: 'Mid-High-Income Project', highlight: '₱1.5M - ₱5M', desc: 'Suited for complete residential overhauls, high-end retail, and larger suites.' },
-    { id: 'High-Income', label: 'High-Income Project', highlight: '₱5M - ₱15M+', desc: 'Suited for ground-up concrete villas, mansions, or global outsourcing contracts.' },
+export const TYPOLOGY_OPTIONS = [
+  { value: 'Residential', label: 'Residential', desc: 'Custom ground-up houses or massive full-scale renovations.' },
+  { value: 'Commercial', label: 'Commercial', desc: 'Sleek modular built-ins, retail spaces, and corporate offices.' },
+  { value: 'Institutional', label: 'Institutional', desc: 'Schools, hospitals, and specialized public facilities.' },
+];
+
+export const SERVICES_OPTIONS = [
+  { value: 'Comprehensive', label: 'Comprehensive' },
+  { value: 'Piecework', label: 'Piecework' },
+  { value: 'Consultation and Retainer', label: 'Consultation & Retainer' },
+];
+
+// Based on OUR_SERVICES_DATA
+export const SCOPE_MAPPING: Record<string, { value: string; label: string; desc: string }[]> = {
+  'Comprehensive': [
+    { value: 'Full Architectural Masterplanning', label: 'Full Architectural Masterplanning', desc: 'Integrated spatial design, exterior form development...' },
+    { value: 'Engineering & MEPFS Integration', label: 'Engineering & MEPFS Integration', desc: 'Comprehensive structural calculation, electrical...' },
+    { value: 'Permitting & Bureaucratic Approvals', label: 'Permitting & Bureaucratic Approvals', desc: 'Full regulatory compliance, local government approvals...' },
+    { value: 'Turnkey Construction Supervision', label: 'Turnkey Construction Supervision', desc: 'On-site quality audits, material inspection...' },
   ],
+  'Piecework': [
+    { value: 'Architectural Working Drawings', label: 'Architectural Working Drawings', desc: 'High-precision technical drafting...' },
+    { value: 'Joinery & Facade Detailing', label: 'Joinery & Facade Detailing', desc: 'Bespoke architectural metalwork...' },
+    { value: 'Peer Review & Value Engineering', label: 'Peer Review & Value Engineering', desc: 'Independent auditing of third-party blueprints...' },
+    { value: 'Material Specification Audits', label: 'Material Specification Audits', desc: 'Specialized procurement advisory...' },
+  ],
+  'Consultation and Retainer': [
+    { value: 'Strategic Project Advisory', label: 'Strategic Project Advisory', desc: 'High-level guidance on feasibility...' },
+    { value: 'Portfolio & Asset Management', label: 'Portfolio & Asset Management', desc: 'Long-term architectural strategy...' },
+    { value: 'Phased Development Planning', label: 'Phased Development Planning', desc: 'Masterplanning and architectural roadmapping...' },
+    { value: 'On-Demand Technical Consultation', label: 'On-Demand Technical Consultation', desc: 'Flexible access to architectural expertise...' },
+  ]
 };
 
-export const STEP2_SCOPE_FIELD: ChipMultiSelectFieldConfig = {
-  type: 'chip-multiselect',
-  name: 'scopeNeeded',
-  label: 'What architectural services do you require? (Select all that apply)',
-  options: [
-    'Architecture Design', 'Interior Fit-Out', 'Project Management',
-    'Structural Engineering', 'Plumbing & Sanitary Design',
-    'BIM Modeling / Rendering', 'General Construction / Contracting', 'Outsourced Drafting',
-  ],
-};
-
-export const STEP3_FIELDS: FieldConfig[] = [
-  { type: 'text', name: 'name', label: 'Your Complete Name', required: true, placeholder: 'e.g., Adrian Mores' },
-  { type: 'email', name: 'email', label: 'Email Address', required: true, placeholder: 'e.g., adrian@domain.com' },
-  { type: 'tel', name: 'phone', label: 'Mobile Contact Number', required: true, placeholder: 'e.g., +63 917 123 4567' },
-  { type: 'tel', name: 'viber', label: 'Viber Number (If different)', placeholder: 'e.g., Same as Mobile' },
-  {
-    type: 'select',
-    name: 'timeline',
-    label: 'Onboarding Timeline',
-    placeholder: '-- Select Timeline Preference --',
-    options: [
-      { value: 'Immediate', label: 'Immediate / Within 30 days' },
-      { value: 'Quarterly', label: 'This Quarter / 2-3 months' },
-      { value: 'Planning', label: 'Just planning / 6+ months' },
-    ],
-    wrapperClassName: 'col-span-1 sm:col-span-2',
-  },
-  {
-    type: 'textarea',
-    name: 'additionalDetails',
-    label: 'Briefly Outline Site Location & Requirements',
-    placeholder: 'Describe lot dimension, specific subdivision regulations, structural parameters...',
-    rows: 3,
-    wrapperClassName: 'col-span-1 sm:col-span-2',
-  },
+export const BUDGET_OPTIONS = [
+  { value: '1M-3M', label: 'Php 1,000,000 - 3M' },
+  { value: '4M-6M', label: 'Php 4,000,000 - 6M' },
+  { value: '7M-12M', label: 'Php 7,000,000 - 12M' },
+  { value: '12M+', label: 'Php 12,000,000 above' },
 ];
