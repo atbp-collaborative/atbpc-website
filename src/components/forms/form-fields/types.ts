@@ -106,6 +106,7 @@ export interface AddressFieldConfig extends BaseFieldConfig {
   type: 'address';
   /** Tighter vertical padding on the inner selects, to match a denser surrounding layout. */
   dense?: boolean;
+  variant?: 'full' | 'city-region-only';
 }
 
 export interface DivFieldConfig extends BaseFieldConfig {
