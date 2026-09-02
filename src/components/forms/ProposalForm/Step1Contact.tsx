@@ -3,8 +3,9 @@
 import React from 'react';
 import { ProposalFormData } from '@/lib/forms/proposal';
 import { TextField } from '@/components/forms/form-fields/TextField';
+import { SelectField } from '@/components/forms/form-fields/SelectField';
 import { Button } from '@/components/primitives/Button';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Info } from 'lucide-react';
 
 interface Props {
   formData: ProposalFormData;
@@ -38,6 +39,12 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
         <h3 className="font-sans text-h3 font-bold mb-4 flex justify-between items-center">
           {label}
         </h3>
+        {field === 'authorizedRepresentatives' && (
+          <div className={`mb-6 p-4 rounded-lg flex gap-3 ${isDarkMode ? 'bg-blue-900/20 text-blue-300' : 'bg-blue-50 text-blue-800'}`}>
+            <Info size={20} className="shrink-0 mt-0.5" />
+            <p className="text-caption">Reminder: You will be required to submit an SPA (Special Power of Attorney) on the next step. Please prepare your PDF file.</p>
+          </div>
+        )}
         
         {list.map((person, i) => (
           <div key={i} className="mb-8 relative">
@@ -117,11 +124,27 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
       <div className="mb-8">
         <span className="text-caption font-sans text-space-sparkle block opacity-70 mb-2 uppercase tracking-widest">Step 1 of 4</span>
         <h2 className="font-sans text-h2 font-bold text-space-sparkle mb-2">Contact Information</h2>
-        <p className="text-caption opacity-60">Please provide the details for the principal decision makers and authorized representatives. You can add up to 2 for each.</p>
+        <p className="text-caption opacity-60">Please provide the details for the principal decision makers and authorized representatives.</p>
       </div>
 
-      {renderPersonList('principalDecisionMakers', 'a. Principal Decision Maker')}
-      {renderPersonList('authorizedRepresentatives', 'b. Authorized Representative')}
+      <div className="mb-10 w-full md:w-1/2">
+        <SelectField
+          name="businessEntity"
+          label="Will the project be named after a business or a private entity?"
+          placeholder="Select Yes or No"
+          options={[
+            { value: 'Yes', label: 'Yes' },
+            { value: 'No', label: 'No' }
+          ]}
+          value={formData.businessEntity || ''}
+          onChange={(name, val) => updateField('businessEntity', val)}
+          isDarkMode={isDarkMode}
+        />
+      </div>
+
+      {renderPersonList('principalDecisionMakers', 'a. Principal Decision Maker', 3)}
+      {renderPersonList('authorizedRepresentatives', 'b. Authorized Representative', 1)}
     </div>
   );
 };
+

@@ -10,6 +10,7 @@ import { Step4Additional } from './Step4Additional';
 import { useTheme } from '@/lib/theme-context';
 import { Button } from '@/components/primitives/Button';
 import { Loader2, ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 export const ProposalFormRoot: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -19,13 +20,16 @@ export const ProposalFormRoot: React.FC = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+  const totalSteps = isDesktop ? 2 : 4;
+
   if (!isLoaded) return <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-space-sparkle opacity-60" size={32} /></div>;
 
   const updateField = (field: keyof ProposalFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleNext = () => setCurrentStep(prev => Math.min(prev + 1, 4));
+  const handleNext = () => setCurrentStep(prev => Math.min(prev + 1, totalSteps));
   const handlePrev = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
   const handleSubmit = async () => {
@@ -61,20 +65,48 @@ export const ProposalFormRoot: React.FC = () => {
     );
   }
 
+  // Adjust currentStep if viewport resizes down and currentStep is out of bounds
+  if (currentStep > totalSteps) {
+    setCurrentStep(totalSteps);
+  }
+
+  const stepsArray = Array.from({ length: totalSteps }, (_, i) => i + 1);
+
   return (
     <div className="flex flex-col h-full max-w-4xl mx-auto py-8">
       {/* Progress */}
       <div className="mb-8 flex space-x-2">
-        {[1, 2, 3, 4].map(step => (
+        {stepsArray.map(step => (
           <div key={step} className={`h-1.5 flex-1 rounded-full ${step <= currentStep ? 'bg-space-sparkle' : 'bg-space-sparkle/20'}`} />
         ))}
       </div>
 
       <div className="flex-1 overflow-y-auto pr-4 mb-8">
-        {currentStep === 1 && <Step1Contact formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
-        {currentStep === 2 && <Step2Services formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
-        {currentStep === 3 && <Step3Property formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
-        {currentStep === 4 && <Step4Additional formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
+        {!isDesktop ? (
+          <>
+            {currentStep === 1 && <Step1Contact formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
+            {currentStep === 2 && <Step2Services formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
+            {currentStep === 3 && <Step3Property formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
+            {currentStep === 4 && <Step4Additional formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
+          </>
+        ) : (
+          <>
+            {currentStep === 1 && (
+              <div className="space-y-16">
+                <Step1Contact formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
+                <hr className="border-space-sparkle/10" />
+                <Step2Services formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
+              </div>
+            )}
+            {currentStep === 2 && (
+              <div className="space-y-16">
+                <Step3Property formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
+                <hr className="border-space-sparkle/10" />
+                <Step4Additional formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
+              </div>
+            )}
+          </>
+        )}
         {submitError && <p className="text-red-500 text-sm mt-4">{submitError}</p>}
       </div>
 
@@ -89,7 +121,7 @@ export const ProposalFormRoot: React.FC = () => {
           <span>Back</span>
         </button>
 
-        {currentStep < 4 ? (
+        {currentStep < totalSteps ? (
           <Button 
             type="filled" 
             onClick={handleNext}
