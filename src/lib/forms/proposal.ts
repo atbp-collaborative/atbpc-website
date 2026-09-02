@@ -11,10 +11,13 @@ export const personSchema = z.object({
 });
 
 export const proposalSchema = z.object({
-  principalDecisionMakers: z.array(personSchema).max(2).optional(),
-  authorizedRepresentatives: z.array(personSchema).max(2).optional(),
+  businessEntity: z.string().optional(),
+  principalDecisionMakers: z.array(personSchema).max(3).optional(),
+  authorizedRepresentatives: z.array(personSchema).max(1).optional(),
 
+  category: z.string().optional(),
   typology: z.string().optional(),
+  projectType: z.string().optional(),
   services: z.string().optional(),
   scope: z.string().optional(),
 
@@ -52,9 +55,12 @@ export const proposalSchema = z.object({
 export type ProposalFormData = z.infer<typeof proposalSchema>;
 
 export const defaultProposalFormData: ProposalFormData = {
+  businessEntity: '',
   principalDecisionMakers: [{}],
   authorizedRepresentatives: [{}],
+  category: '',
   typology: '',
+  projectType: '',
   services: '',
   scope: '',
   propertyAreaType: '',
@@ -69,10 +75,35 @@ export const defaultProposalFormData: ProposalFormData = {
   additionalInfo: '',
 };
 
-export const TYPOLOGY_OPTIONS = [
-  { value: 'Residential', label: 'Residential', desc: 'Custom ground-up houses or massive full-scale renovations.' },
-  { value: 'Commercial', label: 'Commercial', desc: 'Sleek modular built-ins, retail spaces, and corporate offices.' },
-  { value: 'Institutional', label: 'Institutional', desc: 'Schools, hospitals, and specialized public facilities.' },
+export const CATEGORY_OPTIONS = [
+  { value: 'Shelter', label: 'Shelter' },
+  { value: 'Livelihood', label: 'Livelihood' },
+  { value: 'Community', label: 'Community' },
+];
+
+export const TYPOLOGY_MAPPING: Record<string, { value: string; label: string }[]> = {
+  'Shelter': [
+    { value: 'Tiny Living', label: 'Tiny Living' },
+    { value: 'Multi-Generational', label: 'Multi-Generational' },
+    { value: 'Vacation Homes', label: 'Vacation Homes' },
+  ],
+  'Livelihood': [
+    { value: 'Food & Beverage', label: 'Food & Beverage' },
+    { value: 'Retail & Lifestyle', label: 'Retail & Lifestyle' },
+    { value: 'Workspaces', label: 'Workspaces' },
+  ],
+  'Community': [
+    { value: 'Shared Spaces', label: 'Shared Spaces' },
+    { value: 'Shared Places', label: 'Shared Places' },
+    { value: 'Sacred Structures', label: 'Sacred Structures' },
+  ]
+};
+
+export const PROJECT_TYPE_OPTIONS = [
+  { value: 'New Structure', label: 'New Structure' },
+  { value: 'Renovation', label: 'Renovation' },
+  { value: 'Extension', label: 'Extension' },
+  { value: 'Fit-out', label: 'Fit-out' },
 ];
 
 export const SERVICES_OPTIONS = [

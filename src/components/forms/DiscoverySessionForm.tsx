@@ -18,6 +18,7 @@ export interface DiscoverySessionFormData {
   email: string;
   contactNumber: string;
   address: PhAddress;
+  clientAddress: PhAddress;
   meetingType: 'meet-up' | 'online' | '';
   venue: string;
   location: { lat: number; lng: number; address?: string } | null;
@@ -34,6 +35,7 @@ const INITIAL_DATA: DiscoverySessionFormData = {
   email: '',
   contactNumber: '',
   address: EMPTY_PH_ADDRESS,
+  clientAddress: EMPTY_PH_ADDRESS,
   meetingType: '',
   venue: '',
   location: null,
@@ -179,7 +181,7 @@ export const DiscoverySessionForm: React.FC = () => {
 
               <div className="pt-1">
                 <FormFieldRenderer
-                  config={{ type: 'address', name: 'address', label: 'Current Address', required: true }}
+                  config={{ type: 'address', name: 'address', label: 'Project Site Address', required: true }}
                   value={formData.address}
                   onChange={handleChange}
                   isDarkMode={isDarkMode}
@@ -191,38 +193,41 @@ export const DiscoverySessionForm: React.FC = () => {
             {/* RIGHT COLUMN */}
             <div className="w-full lg:w-1/2 flex flex-col justify-between gap-2.5 lg:gap-2 lg:h-full lg:overflow-y-auto lg:pr-2">
               <div className="flex flex-col gap-3 lg:gap-2">
-                <div className="space-y-2">
-                  <label className={`${fieldStyles.label} block`}>
-                    Meeting Type <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="meetingType"
-                        value="meet-up"
-                        checked={formData.meetingType === 'meet-up'}
-                        onChange={() => handleChange('meetingType', 'meet-up')}
-                        className="accent-space-sparkle w-4 h-4"
-                      />
-                      <span className="text-body font-normal">Meet-up</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="meetingType"
-                        value="online"
-                        checked={formData.meetingType === 'online'}
-                        onChange={() => handleChange('meetingType', 'online')}
-                        className="accent-space-sparkle w-4 h-4"
-                      />
-                      <span className="text-body font-normal">Online</span>
-                    </label>
-                  </div>
+                <div className="pb-1">
+                  <FormFieldRenderer
+                    config={{ type: 'address', name: 'clientAddress', label: 'Client Address', variant: 'city-region-only' } as any}
+                    value={formData.clientAddress}
+                    onChange={handleChange}
+                    isDarkMode={isDarkMode}
+                    theme="neutral"
+                  />
                 </div>
+                <FormFieldRenderer
+                  config={{
+                    type: 'select',
+                    name: 'meetingType',
+                    label: 'Meeting Type',
+                    placeholder: '[ Select Meeting Type ]',
+                    options: [
+                      { value: 'meet-up', label: 'Meet-up' },
+                      { value: 'online', label: 'Online' }
+                    ],
+                    required: true
+                  }}
+                  value={formData.meetingType}
+                  onChange={handleChange}
+                  isDarkMode={isDarkMode}
+                  theme="neutral"
+                />
 
                 {formData.meetingType === 'meet-up' && (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-3">
+                    <div className="p-4 border rounded-xl bg-space-sparkle/5 border-space-sparkle/20 flex flex-col justify-center">
+                      <span className="text-body font-bold text-space-sparkle mb-1">Meet-up Reminder</span>
+                      <p className="text-body opacity-80 leading-relaxed">
+                        Charges apply. Different rates apply within and outside Metro Manila.
+                      </p>
+                    </div>
                     <FormFieldRenderer
                       config={{ type: 'text', name: 'venue', label: 'Venue', placeholder: 'Enter venue name or address', required: true }}
                       value={formData.venue}
@@ -245,6 +250,8 @@ export const DiscoverySessionForm: React.FC = () => {
                     <span className="text-body font-bold text-space-sparkle mb-1">Online Meeting Platform</span>
                     <p className="text-caption opacity-80 leading-relaxed">
                       Please note that all online discovery sessions are conducted strictly via Microsoft Teams. A meeting link will be sent to your email address once scheduled.
+                      <br /><br />
+                      <strong>Reminder:</strong> 30 minutes maximum only.
                     </p>
                   </div>
                 )}

@@ -1,9 +1,8 @@
 'use client';
 
 import React from 'react';
-import { ProposalFormData, TYPOLOGY_OPTIONS, SERVICES_OPTIONS, SCOPE_MAPPING } from '@/lib/forms/proposal';
+import { ProposalFormData, CATEGORY_OPTIONS, TYPOLOGY_MAPPING, PROJECT_TYPE_OPTIONS, SERVICES_OPTIONS, SCOPE_MAPPING } from '@/lib/forms/proposal';
 import { SelectField } from '@/components/forms/form-fields/SelectField';
-import { ChoiceCardOption } from '@/components/forms/form-fields/types';
 
 interface Props {
   formData: ProposalFormData;
@@ -12,9 +11,15 @@ interface Props {
 }
 
 export const Step2Services: React.FC<Props> = ({ formData, updateField, isDarkMode }) => {
+  const currentTypologyOptions = formData.category ? TYPOLOGY_MAPPING[formData.category] || [] : [];
   const currentScopeOptions = formData.services ? SCOPE_MAPPING[formData.services] || [] : [];
-  const selectedTypology = TYPOLOGY_OPTIONS.find(t => t.value === formData.typology);
+  
   const selectedScope = currentScopeOptions.find(s => s.value === formData.scope);
+
+  const handleCategoryChange = (name: string, value: string) => {
+    updateField('category', value);
+    updateField('typology', ''); // Reset typology when category changes
+  };
 
   const handleServiceChange = (name: string, value: string) => {
     updateField('services', value);
@@ -32,21 +37,38 @@ export const Step2Services: React.FC<Props> = ({ formData, updateField, isDarkMo
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <h3 className="font-sans text-h3 font-bold mb-4">c. Project Typology</h3>
-          <SelectField
-            name="typology"
-            label="Project Typology"
-            placeholder="Select a typology"
-            options={TYPOLOGY_OPTIONS}
-            value={formData.typology || ''}
-            onChange={(name, val) => updateField('typology', val)}
-            isDarkMode={isDarkMode}
-          />
-          {selectedTypology && (
-            <div className="mt-3 text-caption opacity-80 pl-2 border-l-2 border-space-sparkle/20">
-              <p className="font-medium">{selectedTypology.label}</p>
-              <p className="text-xs opacity-70">{selectedTypology.desc}</p>
-            </div>
-          )}
+          <div className="space-y-4">
+            <SelectField
+              name="category"
+              label="Project Category"
+              placeholder="Select a category"
+              options={CATEGORY_OPTIONS}
+              value={formData.category || ''}
+              onChange={handleCategoryChange}
+              isDarkMode={isDarkMode}
+            />
+
+            <SelectField
+              name="typology"
+              label="Project Typology"
+              placeholder={formData.category ? "Select a typology" : "Select a category first"}
+              options={currentTypologyOptions}
+              value={formData.typology || ''}
+              onChange={(name, val) => updateField('typology', val)}
+              isDarkMode={isDarkMode}
+              disabled={!formData.category}
+            />
+
+            <SelectField
+              name="projectType"
+              label="Project Type"
+              placeholder="Select project type"
+              options={PROJECT_TYPE_OPTIONS}
+              value={formData.projectType || ''}
+              onChange={(name, val) => updateField('projectType', val)}
+              isDarkMode={isDarkMode}
+            />
+          </div>
         </div>
 
         <div>

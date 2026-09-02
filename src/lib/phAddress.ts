@@ -32,6 +32,11 @@ export function getRegions(): PhAddressOption[] {
         displayName = `${r.designation} : ${r.name}`;
       }
     }
+
+    if (r.name.toUpperCase().includes('MIMAROPA') || (r.designation && r.designation.toUpperCase().includes('MIMAROPA'))) {
+      displayName = 'Region IV-B : MIMAROPA';
+    }
+
     return {
       code: r.psgcCode,
       name: displayName,
@@ -39,36 +44,70 @@ export function getRegions(): PhAddressOption[] {
     };
   });
 
-  const ncrIndex = regions.findIndex((r) => r.originalName === 'National Capital Region');
-  if (ncrIndex > -1) {
-    const [ncr] = regions.splice(ncrIndex, 1);
-    regions.unshift(ncr);
-  }
+  const isNCR = (name: string, originalName: string) =>
+    originalName === 'National Capital Region' || name.toUpperCase().includes('NCR');
+
+  regions.sort((a, b) => {
+    const aNCR = isNCR(a.name, a.originalName);
+    const bNCR = isNCR(b.name, b.originalName);
+    if (aNCR && !bNCR) return -1;
+    if (!aNCR && bNCR) return 1;
+
+    const aStartsWithRegion = a.name.startsWith('Region');
+    const bStartsWithRegion = b.name.startsWith('Region');
+
+    if (!aStartsWithRegion && bStartsWithRegion) return -1;
+    if (aStartsWithRegion && !bStartsWithRegion) return 1;
+
+    return a.name.localeCompare(b.name);
+  });
 
   return regions.map((r) => ({ code: r.code, name: r.name }));
 }
 
 export function getProvinces(regionCode: string): PhAddressOption[] {
+  const ncrRegion = getAllRegions().find(r => r.name === 'National Capital Region' || r.name.toUpperCase().includes('NCR'));
+  if (ncrRegion && regionCode === ncrRegion.psgcCode) {
+    return [{ code: 'metro-manila', name: 'Metro Manila' }];
+  }
+
   return getProvincesByRegion(regionCode)
     .map((p) => ({ code: p.psgcCode, name: p.name }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 }
 
 export function getCities(regionCode: string, provinceCode?: string): PhAddressOption[] {
-  if (provinceCode) {
-    return getMunicipalitiesByProvince(provinceCode)
-      .map((m) => ({ code: m.psgcCode, name: m.name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+  let list: PhAddressOption[] = [];
+  if (provinceCode && provinceCode !== 'metro-manila') {
+    list = getMunicipalitiesByProvince(provinceCode)
+      .map((m) => ({ code: m.psgcCode, name: m.name }));
+  } else {
+    const regionPrefix = regionCode.slice(0, 2);
+    list = municipalities()
+      .filter((m) => m.psgcCode.slice(0, 2) === regionPrefix)
+      .map((m) => ({ code: m.psgcCode, name: m.name }));
   }
-  const regionPrefix = regionCode.slice(0, 2);
-  return municipalities()
-    .filter((m) => m.psgcCode.slice(0, 2) === regionPrefix)
-    .map((m) => ({ code: m.psgcCode, name: m.name }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const ncrRegion = getAllRegions().find(r => r.name === 'National Capital Region' || r.name.toUpperCase().includes('NCR'));
+  if (ncrRegion && regionCode === ncrRegion.psgcCode) {
+    list = list.filter(m => m.name.toUpperCase().includes('CITY') || m.name.toUpperCase().includes('PATEROS'));
+  }
+
+  return list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 }
 
 export function getBarangays(cityCode: string): PhAddressOption[] {
-  return getBarangaysByMunicipality(cityCode)
+  let bList = getBarangaysByMunicipality(cityCode);
+
+  // Fix for Manila City whose barangays are nested under its districts in the dataset
+  if (bList.length === 0 && cityCode === '1380600000') {
+    const districts = municipalities().filter(m => m.provinceCode === cityCode);
+    for (const d of districts) {
+      bList = bList.concat(getBarangaysByMunicipality(d.psgcCode));
+    }
+  }
+
+  return bList
     .map((b) => ({ code: b.psgcCode, name: b.name }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 }

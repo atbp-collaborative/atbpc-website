@@ -12,6 +12,7 @@ type AddressFieldProps = {
   name: string;
   label?: React.ReactNode;
   dense?: boolean;
+  variant?: 'full' | 'city-region-only';
 } & FieldRenderProps<PhAddress>;
 
 /**
@@ -26,6 +27,7 @@ export const AddressField: React.FC<AddressFieldProps> = ({
   isDarkMode,
   theme = 'neutral',
   dense = false,
+  variant = 'full',
 }) => {
   const styles = getFieldThemeStyles(theme, isDarkMode);
 
@@ -59,7 +61,17 @@ export const AddressField: React.FC<AddressFieldProps> = ({
 
   const handleRegionChange = (_name: string, regionCode: string) => {
     const regionName = regions.find((r) => r.code === regionCode)?.name ?? '';
-    set({ regionCode, regionName, provinceCode: '', provinceName: '', cityCode: '', cityName: '', barangayCode: '', barangayName: '' });
+    const isNCR = regionName.toUpperCase().includes('NCR') || regionName.toUpperCase() === 'NATIONAL CAPITAL REGION';
+    set({ 
+      regionCode, 
+      regionName, 
+      provinceCode: isNCR ? 'metro-manila' : '', 
+      provinceName: isNCR ? 'Metro Manila' : '', 
+      cityCode: '', 
+      cityName: '', 
+      barangayCode: '', 
+      barangayName: '' 
+    });
   };
 
   const handleProvinceChange = (_name: string, provinceCode: string) => {
@@ -82,22 +94,81 @@ export const AddressField: React.FC<AddressFieldProps> = ({
       {label && <label className={styles.label}>{label}</label>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="order-1 md:order-1">
-          <span className={styles.label}>Country</span>
-          <SelectField
-            name="country"
-            label=""
-            placeholder="[ Select Country ]"
-            options={COUNTRIES.map(c => ({ value: c, label: c }))}
-            value={value.country}
-            onChange={handleCountryChange}
-            isDarkMode={isDarkMode}
-            theme={theme}
-            dense={dense}
-          />
+        {variant === 'full' && (
+          <div>
+            <span className={styles.label}>Country</span>
+            <SelectField
+              name="country"
+              label=""
+              placeholder="[ Select Country ]"
+              options={COUNTRIES.map(c => ({ value: c, label: c }))}
+              value={value.country}
+              onChange={handleCountryChange}
+              isDarkMode={isDarkMode}
+              theme={theme}
+              dense={dense}
+            />
+          </div>
+        )}
+
+        <div>
+          <span className={styles.label}>Region</span>
+          {isPH ? (
+            <SelectField
+              name="regionCode"
+              label=""
+              placeholder="[ Select Region ]"
+              options={regions.map((r) => ({ value: r.code, label: r.name }))}
+              value={value.regionCode}
+              onChange={handleRegionChange}
+              isDarkMode={isDarkMode}
+              theme={theme}
+              dense={dense}
+            />
+          ) : (
+            <TextField
+              name="regionName"
+              label=""
+              value={value.regionName}
+              onChange={(_name: string, val: string) => set({ regionName: val })}
+              isDarkMode={isDarkMode}
+              theme={theme}
+              placeholder="-"
+            />
+          )}
         </div>
 
-        <div className="order-4 md:order-2">
+        {variant === 'full' && (
+          <div>
+            <span className={styles.label}>{isPH ? 'Province' : 'Province / State / Prefecture'}</span>
+            {isPH ? (
+               <SelectField
+                name="provinceCode"
+                label=""
+                placeholder={value.regionCode ? (provinces.length > 0 ? '[ Select Province ]' : 'N/A') : '[ Select a Region First ]'}
+                options={provinces.map((p) => ({ value: p.code, label: p.name }))}
+                value={value.provinceCode}
+                onChange={handleProvinceChange}
+                isDarkMode={isDarkMode}
+                theme={theme}
+                disabled={!value.regionCode || provinces.length === 0 || (provinces.length === 1 && provinces[0].code === 'metro-manila')}
+                dense={dense}
+              />
+            ) : (
+              <TextField
+                name="provinceName"
+                label=""
+                value={value.provinceName}
+                onChange={(_name: string, val: string) => set({ provinceName: val })}
+                isDarkMode={isDarkMode}
+                theme={theme}
+                placeholder="-"
+              />
+            )}
+          </div>
+        )}
+
+        <div>
           <span className={styles.label}>City / Municipality</span>
           {isPH ? (
             <SelectField
@@ -125,101 +196,50 @@ export const AddressField: React.FC<AddressFieldProps> = ({
           )}
         </div>
 
-        <div className="order-2 md:order-3">
-          <span className={styles.label}>Region</span>
-          {isPH ? (
-            <SelectField
-              name="regionCode"
-              label=""
-              placeholder="[ Select Region ]"
-              options={regions.map((r) => ({ value: r.code, label: r.name }))}
-              value={value.regionCode}
-              onChange={handleRegionChange}
-              isDarkMode={isDarkMode}
-              theme={theme}
-              dense={dense}
-            />
-          ) : (
+        {variant === 'full' && (
+          <div>
+            <span className={styles.label}>{isPH ? 'Barangay' : 'District / County / Borough'}</span>
+            {isPH ? (
+              <SelectField
+                name="barangayCode"
+                label=""
+                placeholder={value.cityCode ? '[ Select Barangay ]' : '[ Select a City First ]'}
+                options={barangays.map((b) => ({ value: b.code, label: b.name }))}
+                value={value.barangayCode}
+                onChange={handleBarangayChange}
+                isDarkMode={isDarkMode}
+                theme={theme}
+                disabled={!value.cityCode}
+                dense={dense}
+              />
+            ) : (
+              <TextField
+                name="barangayName"
+                label=""
+                value={value.barangayName}
+                onChange={(_name: string, val: string) => set({ barangayName: val })}
+                isDarkMode={isDarkMode}
+                theme={theme}
+                placeholder="-"
+              />
+            )}
+          </div>
+        )}
+
+        {variant === 'full' && (
+          <div>
+            <span className={styles.label}>Phase/Blk/Lot/Unit/Subdivision</span>
             <TextField
-              name="regionName"
+              name="addressLine"
               label=""
-              value={value.regionName}
-              onChange={(_name: string, val: string) => set({ regionName: val })}
+              value={value.addressLine}
+              onChange={(_name: string, val: string) => set({ addressLine: val })}
               isDarkMode={isDarkMode}
               theme={theme}
               placeholder="-"
             />
-          )}
-        </div>
-
-        <div className="order-5 md:order-4">
-          <span className={styles.label}>{isPH ? 'Barangay' : 'District / County / Borough'}</span>
-          {isPH ? (
-            <SelectField
-              name="barangayCode"
-              label=""
-              placeholder={value.cityCode ? '[ Select Barangay ]' : '[ Select a City First ]'}
-              options={barangays.map((b) => ({ value: b.code, label: b.name }))}
-              value={value.barangayCode}
-              onChange={handleBarangayChange}
-              isDarkMode={isDarkMode}
-              theme={theme}
-              disabled={!value.cityCode}
-              dense={dense}
-            />
-          ) : (
-            <TextField
-              name="barangayName"
-              label=""
-              value={value.barangayName}
-              onChange={(_name: string, val: string) => set({ barangayName: val })}
-              isDarkMode={isDarkMode}
-              theme={theme}
-              placeholder="-"
-            />
-          )}
-        </div>
-
-        <div className="order-3 md:order-5">
-          <span className={styles.label}>{isPH ? 'Province' : 'Province / State / Prefecture'}</span>
-          {isPH ? (
-             <SelectField
-              name="provinceCode"
-              label=""
-              placeholder={value.regionCode ? (provinces.length > 0 ? '[ Select Province ]' : 'N/A') : '[ Select a Region First ]'}
-              options={provinces.map((p) => ({ value: p.code, label: p.name }))}
-              value={value.provinceCode}
-              onChange={handleProvinceChange}
-              isDarkMode={isDarkMode}
-              theme={theme}
-              disabled={!value.regionCode || provinces.length === 0}
-              dense={dense}
-            />
-          ) : (
-            <TextField
-              name="provinceName"
-              label=""
-              value={value.provinceName}
-              onChange={(_name: string, val: string) => set({ provinceName: val })}
-              isDarkMode={isDarkMode}
-              theme={theme}
-              placeholder="-"
-            />
-          )}
-        </div>
-
-        <div className="order-6 md:order-6">
-          <span className={styles.label}>Phase/Blk/Lot/Unit/Subdivision</span>
-          <TextField
-            name="addressLine"
-            label=""
-            value={value.addressLine}
-            onChange={(_name: string, val: string) => set({ addressLine: val })}
-            isDarkMode={isDarkMode}
-            theme={theme}
-            placeholder="-"
-          />
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
