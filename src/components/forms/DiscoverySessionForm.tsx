@@ -164,7 +164,7 @@ export const DiscoverySessionForm: React.FC = () => {
             className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto lg:overflow-hidden px-4 sm:px-8 pb-2"
           >
             {/* LEFT COLUMN */}
-            <div className="w-full lg:w-1/2 flex flex-col gap-3 lg:gap-2 justify-between lg:h-full lg:overflow-hidden">
+            <div className="w-full lg:w-1/2 flex flex-col gap-3 lg:gap-2 justify-start lg:h-full lg:overflow-hidden">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-2">
                 {leftFields.map((field) => (
                   <div key={field.name}>
@@ -191,7 +191,7 @@ export const DiscoverySessionForm: React.FC = () => {
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className="w-full lg:w-1/2 flex flex-col justify-between gap-2.5 lg:gap-2 lg:h-full lg:overflow-y-auto lg:pr-2">
+            <div className="w-full lg:w-1/2 flex flex-col justify-start gap-2.5 lg:gap-2 lg:h-full lg:overflow-y-auto lg:pr-2">
               <div className="flex flex-col gap-3 lg:gap-2">
                 <div className="pb-1">
                   <FormFieldRenderer

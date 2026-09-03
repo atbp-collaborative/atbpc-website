@@ -73,36 +73,42 @@ export const ProposalFormRoot: React.FC = () => {
   const stepsArray = Array.from({ length: totalSteps }, (_, i) => i + 1);
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto py-8">
+    <div className="flex flex-col h-full w-full mx-auto pt-0 pb-0">
       {/* Progress */}
-      <div className="mb-8 flex space-x-2">
+      <div className="mb-6 flex space-x-2">
         {stepsArray.map(step => (
           <div key={step} className={`h-1.5 flex-1 rounded-full ${step <= currentStep ? 'bg-space-sparkle' : 'bg-space-sparkle/20'}`} />
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto pr-4 mb-8">
+      <div className="flex-1 min-h-0 mb-4">
         {!isDesktop ? (
-          <>
+          <div className="h-full overflow-y-auto pr-4">
             {currentStep === 1 && <Step1Contact formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
             {currentStep === 2 && <Step2Services formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
             {currentStep === 3 && <Step3Property formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
             {currentStep === 4 && <Step4Additional formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
-          </>
+          </div>
         ) : (
           <>
             {currentStep === 1 && (
-              <div className="space-y-16">
-                <Step1Contact formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
-                <hr className="border-space-sparkle/10" />
-                <Step2Services formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
+              <div className="h-full grid grid-cols-2 gap-12">
+                <div className="h-full overflow-y-auto pr-4 custom-scrollbar">
+                  <Step1Contact formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
+                </div>
+                <div className="h-full overflow-y-auto pr-4 custom-scrollbar">
+                  <Step2Services formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
+                </div>
               </div>
             )}
             {currentStep === 2 && (
-              <div className="space-y-16">
-                <Step3Property formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
-                <hr className="border-space-sparkle/10" />
-                <Step4Additional formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
+              <div className="h-full grid grid-cols-2 gap-12">
+                <div className="h-full overflow-y-auto pr-4 custom-scrollbar">
+                  <Step3Property formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
+                </div>
+                <div className="h-full overflow-y-auto pr-4 custom-scrollbar">
+                  <Step4Additional formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
+                </div>
               </div>
             )}
           </>
@@ -110,7 +116,7 @@ export const ProposalFormRoot: React.FC = () => {
         {submitError && <p className="text-red-500 text-sm mt-4">{submitError}</p>}
       </div>
 
-      <div className="flex justify-between mt-auto pt-4 border-t border-space-sparkle/10">
+      <div className="flex justify-between mt-auto pt-4 pb-6 border-t border-space-sparkle/10">
         <button
           type="button"
           onClick={handlePrev}

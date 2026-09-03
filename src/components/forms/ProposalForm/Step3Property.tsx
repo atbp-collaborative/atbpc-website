@@ -19,8 +19,7 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-8">
-        <span className="text-caption font-sans text-space-sparkle block opacity-70 mb-2 uppercase tracking-widest">Step 3 of 4</span>
-        <h2 className="font-sans text-h2 font-bold text-space-sparkle mb-2">Property, Budget & Timeline</h2>
+        <h2 className="font-sans text-h2 font-bold text-space-sparkle mb-2">Step 3. Property, Budget & Timeline</h2>
         <p className="text-caption opacity-60">Help us understand the scale, location, and constraints of your project.</p>
       </div>
 

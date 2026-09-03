@@ -95,7 +95,7 @@ export const AddressField: React.FC<AddressFieldProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {variant === 'full' && (
-          <div>
+          <div className="order-1 md:order-1">
             <span className={styles.label}>Country</span>
             <SelectField
               name="country"
@@ -111,7 +111,7 @@ export const AddressField: React.FC<AddressFieldProps> = ({
           </div>
         )}
 
-        <div>
+        <div className={variant === 'full' ? 'order-2 md:order-3' : 'order-1 md:order-1'}>
           <span className={styles.label}>Region</span>
           {isPH ? (
             <SelectField
@@ -139,7 +139,7 @@ export const AddressField: React.FC<AddressFieldProps> = ({
         </div>
 
         {variant === 'full' && (
-          <div>
+          <div className="order-3 md:order-5">
             <span className={styles.label}>{isPH ? 'Province' : 'Province / State / Prefecture'}</span>
             {isPH ? (
                <SelectField
@@ -168,7 +168,7 @@ export const AddressField: React.FC<AddressFieldProps> = ({
           </div>
         )}
 
-        <div>
+        <div className={variant === 'full' ? 'order-4 md:order-2' : 'order-2 md:order-2'}>
           <span className={styles.label}>City / Municipality</span>
           {isPH ? (
             <SelectField
@@ -197,7 +197,7 @@ export const AddressField: React.FC<AddressFieldProps> = ({
         </div>
 
         {variant === 'full' && (
-          <div>
+          <div className="order-5 md:order-4">
             <span className={styles.label}>{isPH ? 'Barangay' : 'District / County / Borough'}</span>
             {isPH ? (
               <SelectField
@@ -227,7 +227,7 @@ export const AddressField: React.FC<AddressFieldProps> = ({
         )}
 
         {variant === 'full' && (
-          <div>
+          <div className="order-6 md:order-6">
             <span className={styles.label}>Phase/Blk/Lot/Unit/Subdivision</span>
             <TextField
               name="addressLine"

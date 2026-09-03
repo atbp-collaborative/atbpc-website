@@ -15,8 +15,7 @@ export const Step4Additional: React.FC<Props> = ({ formData, updateField, isDark
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-8">
-        <span className="text-caption font-sans text-space-sparkle block opacity-70 mb-2 uppercase tracking-widest">Step 4 of 4</span>
-        <h2 className="font-sans text-h2 font-bold text-space-sparkle mb-2">Additional Information (Optional)</h2>
+        <h2 className="font-sans text-h2 font-bold text-space-sparkle mb-2">Step 4. Additional Information (Optional)</h2>
         <p className="text-caption opacity-60">Upload relevant files and share any extra details.</p>
       </div>
 
