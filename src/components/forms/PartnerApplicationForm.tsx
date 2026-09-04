@@ -153,7 +153,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto lg:overflow-hidden px-4 sm:px-8 pb-2"
+            className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto no-scrollbar lg:overflow-hidden px-4 sm:px-8 pb-2"
           >
             {/* LEFT COLUMN */}
             <div className={`w-full lg:w-1/2 flex flex-col ${variant === 'supplier' ? 'gap-3' : 'gap-2.5'} justify-between lg:h-full lg:overflow-hidden`}>
@@ -193,7 +193,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className="w-full lg:w-1/2 flex flex-col gap-2.5 justify-between lg:h-full lg:overflow-y-auto lg:pr-2">
+            <div className="w-full lg:w-1/2 flex flex-col gap-2.5 justify-between lg:h-full lg:overflow-y-auto no-scrollbar lg:pr-2">
               <div className="flex flex-col gap-2.5 justify-between flex-1">
                 {fields.rightColumnRowsTop.map((row, idx) => (
                   <div key={idx} className={row.length > 1 ? 'grid grid-cols-1 sm:grid-cols-4 gap-3' : ''}>

@@ -59,7 +59,7 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
 
     return (
       <div className="mb-10">
-        <h3 className="font-sans text-caption lg:text-body font-bold mb-4 flex justify-between items-center">
+        <h3 className="font-sans text-caption font-bold mb-4 flex justify-between items-center">
           {label}
         </h3>
         {field === 'authorizedRepresentatives' && (
@@ -147,12 +147,12 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
       <div className="mb-8">
-        <h2 className="font-sans text-body lg:text-h2 font-bold text-space-sparkle mb-2">Step 1. Contact Information</h2>
+        <h2 className="font-sans text-body font-bold text-space-sparkle mb-2">Step 1. Contact Information</h2>
         <p className="text-caption opacity-60">Please provide the details for the principal decision makers and authorized representatives.</p>
       </div>
 
       <div className="mb-10 w-full">
-        <h3 className="font-sans text-caption lg:text-body font-bold mb-4">1a. About the Client</h3>
+        <h3 className="font-sans text-caption font-bold mb-4">1a. About the Client</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:items-center">
           <label className="text-caption font-semibold block opacity-90 lg:pr-4">
             Will the project be named after a business or a private entity?
