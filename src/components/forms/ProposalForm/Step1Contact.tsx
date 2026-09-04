@@ -19,14 +19,14 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
   const confirmRemove = () => {
     if (!personToDelete) return;
     const { field, index } = personToDelete;
-    const list = formData[field] || [{}];
+    const list = (formData[field] || [{}]) as any[];
     const newList = list.filter((_, i) => i !== index);
     updateField(field, newList.length > 0 ? newList : [{}]);
     setPersonToDelete(null);
   };
 
   const renderPersonList = (field: 'principalDecisionMakers' | 'authorizedRepresentatives', label: string, max: number = 2, personPrefix: string) => {
-    const list = formData[field] || [{}];
+    const list = (formData[field] || [{}]) as any[];
 
     const handleUpdate = (index: number, key: string, value: string) => {
       const newList = [...list];

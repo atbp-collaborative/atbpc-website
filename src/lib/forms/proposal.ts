@@ -89,8 +89,8 @@ export type ProposalFormData = z.infer<typeof proposalSchema>;
 
 export const defaultProposalFormData: ProposalFormData = {
   businessEntity: '',
-  principalDecisionMakers: [{}],
-  authorizedRepresentatives: [{}],
+  principalDecisionMakers: [{ firstName: '', lastName: '', address: '', contactNo: '', email: '' }] as any,
+  authorizedRepresentatives: [{ firstName: '', lastName: '', address: '', contactNo: '', email: '' }] as any,
   category: '',
   typology: '',
   projectType: '',
