@@ -17,7 +17,13 @@ export async function POST(request: Request) {
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     // Format attachments for resend
-    const allFiles = [...(validatedData.attachments || []), ...(validatedData.documents || [])];
+    const allFiles = [
+      ...(validatedData.attachments || []),
+      validatedData.tctDocument,
+      validatedData.lotPlanDocument,
+      validatedData.deedDocument,
+      ...(validatedData.documents || [])
+    ].filter((f): f is NonNullable<typeof f> => Boolean(f));
     const emailAttachments = allFiles.map((file) => ({
       filename: file.name,
       content: file.content.split(',')[1], // Remove the data:image/jpeg;base64, prefix

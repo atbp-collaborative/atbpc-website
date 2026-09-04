@@ -42,6 +42,25 @@ export const proposalSchema = z.object({
   
   superstitions: z.string().optional(),
 
+  tctDocument: z.object({
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+    content: z.string()
+  }).optional(),
+  lotPlanDocument: z.object({
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+    content: z.string()
+  }).optional(),
+  deedDocument: z.object({
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+    content: z.string()
+  }).optional(),
+
   documents: z.array(z.object({
     name: z.string(),
     type: z.string(),
@@ -49,6 +68,7 @@ export const proposalSchema = z.object({
     content: z.string() // base64
   })).optional(),
 
+  hasProjectManager: z.string().optional(),
   additionalInfo: z.string().optional(),
 });
 
@@ -72,6 +92,7 @@ export const defaultProposalFormData: ProposalFormData = {
   attachments: [],
   superstitions: '',
   documents: [],
+  hasProjectManager: '',
   additionalInfo: '',
 };
 

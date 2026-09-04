@@ -22,7 +22,7 @@ interface BaseFieldConfig {
 }
 
 export interface TextFieldConfig extends BaseFieldConfig {
-  type: 'text' | 'email' | 'tel' | 'time';
+  type: 'text' | 'email' | 'tel' | 'time' | 'number';
   placeholder?: string;
 }
 

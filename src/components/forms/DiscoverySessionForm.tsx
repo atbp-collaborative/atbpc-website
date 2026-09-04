@@ -224,7 +224,7 @@ export const DiscoverySessionForm: React.FC = () => {
                   <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-3">
                     <div className="p-4 border rounded-xl bg-space-sparkle/5 border-space-sparkle/20 flex flex-col justify-center">
                       <span className="text-body font-bold text-space-sparkle mb-1">Meet-up Reminder</span>
-                      <p className="text-body opacity-80 leading-relaxed">
+                      <p className="text-caption opacity-80 leading-relaxed">
                         Charges apply. Different rates apply within and outside Metro Manila.
                       </p>
                     </div>

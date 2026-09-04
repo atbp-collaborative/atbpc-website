@@ -157,16 +157,6 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
           >
             {/* LEFT COLUMN */}
             <div className={`w-full lg:w-1/2 flex flex-col ${variant === 'supplier' ? 'gap-3' : 'gap-2.5'} justify-between lg:h-full lg:overflow-hidden`}>
-              {fields.leftColumnTop.map((field) => (
-                <FormFieldRenderer
-                  key={field.name}
-                  config={field}
-                  value={(formData as any)[field.name]}
-                  onChange={handleFieldChange}
-                  isDarkMode={isDarkMode}
-                />
-              ))}
-
               <div className="border border-space-sparkle bg-transparent p-4 rounded-xl flex flex-col justify-center text-left text-caption font-medium min-h-[90px]">
                 <span className="font-bold mb-1">Reminders:</span>
                 <ul className="list-disc pl-4 space-y-0.5">
@@ -190,6 +180,16 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                   )}
                 </ul>
               </div>
+
+              {fields.leftColumnTop.map((field) => (
+                <FormFieldRenderer
+                  key={field.name}
+                  config={field}
+                  value={(formData as any)[field.name]}
+                  onChange={handleFieldChange}
+                  isDarkMode={isDarkMode}
+                />
+              ))}
             </div>
 
             {/* RIGHT COLUMN */}

@@ -14,6 +14,7 @@ import { useFormViewport } from '@/hooks/useFormViewport';
 import { MultiEntryButton } from '@/components/primitives/MultiEntryButton';
 import { EmergencyContactModal } from '@/components/modals/EmergencyContactModal';
 import { DocumentsModal } from '@/components/modals/DocumentsModal';
+import { FacultyContactModal } from '@/components/modals/FacultyContactModal';
 
 export interface CareerFormProps {
   initialStructure?: string;
@@ -35,52 +36,48 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
   const [isModalCheckboxChecked, setIsModalCheckboxChecked] = useState(false);
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [showFacultyContactModal, setShowFacultyContactModal] = useState(false);
   const isHeightConstrained = useFormViewport(680);
 
   const leftColumnTop = React.useMemo(() => {
     return fields.leftColumnTop.map((field) => {
-      if (formType === 'studioRegulars' && field.name === 'structure' && field.type === 'select') {
+      if (field.name === 'structure' && field.type === 'select') {
         const dept = formData.department;
-        let options: string[] = [];
-        if (dept === "Admin Team (Finance, Marketing, Coordination)") {
-          options = [
-            "[HROA-01: Intern]",
-            "[HROA-02: Administrative Assistant]",
-            "[HROA-03: Administrative Officer]",
-            "[HROA-04: Associate Administrator]",
-            "[HROA-07: Operations Manager]",
-            "[HROA-08: Managing Director]"
-          ];
-        } else if (dept === "Production Team (Design & Technical)") {
-          options = [
-            "[HRDT-01: Intern]",
-            "[HRDT-02: Apprentice]",
-            "[HRDT-03: Junior Architect]",
-            "[HRDT-05: Junior Designer]",
-            "[HRDT-06: Junior Engineer]",
-            "[HRDT-07: Senior Architect]",
-            "[HRDT-08: Senior Designer]",
-            "[HRDT-09: Senior Engineer]",
-            "[HRDT-10: Project Manager]",
-            "[HRDT-11: Associate Manager]",
-            "[HRDT-12: Principal Architect]"
-          ];
-        } else if (dept === "Construction Team (Supervision, Manpower)") {
-          options = [
-            "[HRGM-01: Helper]",
-            "[HRGM-02: General Specialist]",
-            "[HRGM-03: Skilled Specialist]",
-            "[HRGM-04: Skilled Operator]",
-            "[HRGM-05: Site Foreman]",
-            "[HRGM-06: Construction Manager]",
-            "[HRGM-07: General Foreman]",
-            "[HRGM-08: Principal Builder]"
-          ];
+        let options = field.options;
+        
+        if (formType === 'studioRegulars') {
+          if (dept === "Admin Team (Finance, Marketing, Coordination)") {
+            options = [
+              "[HROA-02: Administrative Assistant]",
+              "[HROA-03: Administrative Officer]",
+              "[HROA-04: Associate Administrator]"
+            ];
+          } else if (dept === "Production Team (Design & Technical)") {
+            options = [
+              "[HRDT-03: Junior Architect]",
+              "[HRDT-05: Junior Designer]",
+              "[HRDT-06: Junior Engineer]",
+              "[HRDT-07: Senior Architect]",
+              "[HRDT-08: Senior Designer]",
+              "[HRDT-09: Senior Engineer]",
+              "[HRDT-10: Project Manager]"
+            ];
+          } else if (dept === "Construction Team (Supervision, Manpower)") {
+            options = [
+              "[HRGM-01: Helper]",
+              "[HRGM-02: General Specialist]",
+              "[HRGM-03: Skilled Specialist]",
+              "[HRGM-04: Skilled Operator]",
+              "[HRGM-05: Site Foreman]",
+              "[HRGM-06: Construction Manager]"
+            ];
+          }
         }
+
         return {
           ...field,
           options,
-          placeholder: dept ? "[ Select Role ]" : "Please select a department first",
+          placeholder: dept ? (formType === 'studioRegulars' ? "[ Select Role ]" : field.placeholder) : "Please select a department first",
           disabled: !dept,
         };
       }
@@ -88,12 +85,24 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
     });
   }, [fields.leftColumnTop, formType, formData.department]);
 
-  const handleSaveEmergencyContact = (name: string, relationship: string, number: string) => {
+  const handleSaveEmergencyContact = (
+    name: string,
+    relationship: string,
+    number: string,
+    landline: string,
+    email: string,
+    sameAsApplicant: boolean,
+    address: any
+  ) => {
     setFormData((prev) => ({
       ...prev,
       emergencyContactName: name,
       emergencyContactRelationship: relationship,
       emergencyContactNumber: number,
+      emergencyContactLandline: landline,
+      emergencyContactEmail: email,
+      emergencyContactSameAsApplicant: sameAsApplicant,
+      emergencyContactAddress: address,
     }));
   };
 
@@ -260,7 +269,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
               />
 
               {/* Bottom Row: Resume (replaced by Documents), Portfolio, Cover Video */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <div className={`grid grid-cols-1 ${formData.structure === "Curriculum-based Internship (CHED Memorandum Order No. 104, Series of 2017)" ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3 pt-1`}>
                 {fields.uploadRow.map((field) => {
                   if (field.name === 'resumeFile') {
                     const requiredList = getRequiredDocumentFields(formData.structure);
@@ -276,48 +285,85 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
                       });
                     }
 
+                    const isCurriculumBased = formData.structure === "Curriculum-based Internship (CHED Memorandum Order No. 104, Series of 2017)";
+                    const facultyFilled =
+                      formData.facultyContacts.dean.name &&
+                      formData.facultyContacts.chairperson.name &&
+                      formData.facultyContacts.ojtInstructor.name &&
+                      formData.facultyContacts.guidanceOfficer.name &&
+                      formData.facultyContacts.disciplineOfficer.name;
+
                     return (
-                      <div key={field.name} className="space-y-1">
-                        <label className={`${fieldStyles.label} truncate`}>
-                          Documents
-                          <span className="text-space-sparkle font-normal"> (!)</span>
-                        </label>
-                        <button
-                          type="button"
-                          disabled={!isRoleSelected}
-                          onClick={() => setShowDocumentsModal(true)}
-                          title={!isRoleSelected ? 'Please select a Role first' : undefined}
-                          className={`w-full h-20 p-2 flex flex-col justify-center text-center border rounded-xl cursor-pointer transition-all ${
-                            !isRoleSelected
-                              ? 'opacity-50 cursor-not-allowed border-gray-300'
-                              : isDocumentsComplete()
-                                ? 'border-space-sparkle bg-space-sparkle/5 text-space-sparkle hover:bg-space-sparkle/10'
-                                : fieldStyles.borderColor + ' hover:opacity-80 !bg-white/80 dark:!bg-white/10'
-                          }`}
-                        >
-                          <div className="flex flex-col items-center justify-center space-y-1 w-full">
-                            {isDocumentsComplete() ? (
-                              <CheckCircle size={16} className="text-space-sparkle mx-auto shrink-0" />
-                            ) : (
-                              <Upload size={14} className="opacity-70 mx-auto shrink-0" />
-                            )}
-                            <p className="text-micro font-archivo leading-tight font-medium opacity-80">
-                              {!isRoleSelected
-                                ? 'Select a role first'
+                      <React.Fragment key={field.name}>
+                        <div className="space-y-1">
+                          <label className={`${fieldStyles.label} truncate`}>
+                            Documents
+                            <span className="text-space-sparkle font-normal"> (!)</span>
+                          </label>
+                          <button
+                            type="button"
+                            disabled={!isRoleSelected}
+                            onClick={() => setShowDocumentsModal(true)}
+                            title={!isRoleSelected ? 'Please select a Role first' : undefined}
+                            className={`w-full h-20 p-2 flex flex-col justify-center text-center border rounded-xl cursor-pointer transition-all ${
+                              !isRoleSelected
+                                ? 'opacity-50 cursor-not-allowed border-gray-300'
                                 : isDocumentsComplete()
-                                  ? 'All Documents Attached'
-                                  : uploadedCount > 0
-                                    ? `${uploadedCount} Document(s) Added`
-                                    : 'Add Documents'}
-                            </p>
-                            {isRoleSelected && (
-                              <span className="text-micro font-archivo opacity-60 block">
-                                ({isDocumentsComplete() ? 'Complete' : `${uploadedCount} / ${requiredList.length} files`})
-                              </span>
-                            )}
+                                  ? 'border-space-sparkle bg-space-sparkle/5 text-space-sparkle hover:bg-space-sparkle/10'
+                                  : fieldStyles.borderColor + ' hover:opacity-80 !bg-white/80 dark:!bg-white/10'
+                            }`}
+                          >
+                            <div className="flex flex-col items-center justify-center space-y-1 w-full">
+                              {isDocumentsComplete() ? (
+                                <CheckCircle size={16} className="text-space-sparkle mx-auto shrink-0" />
+                              ) : (
+                                <Upload size={14} className="opacity-70 mx-auto shrink-0" />
+                              )}
+                              <p className="text-micro font-archivo leading-tight font-medium opacity-80">
+                                {!isRoleSelected
+                                  ? 'Select a role first'
+                                  : isDocumentsComplete()
+                                    ? 'All Documents Attached'
+                                    : uploadedCount > 0
+                                      ? `${uploadedCount} Document(s) Added`
+                                      : 'Add Documents'}
+                              </p>
+                              {isRoleSelected && (
+                                <span className="text-micro font-archivo opacity-60 block">
+                                  ({isDocumentsComplete() ? 'Complete' : `${uploadedCount} / ${requiredList.length} files`})
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        </div>
+                        {isCurriculumBased && (
+                          <div className="space-y-1">
+                            <label className={`${fieldStyles.label} truncate`}>
+                              Faculty Contact
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setShowFacultyContactModal(true)}
+                              className={`w-full h-20 p-2 flex flex-col justify-center text-center border rounded-xl cursor-pointer transition-all ${
+                                facultyFilled
+                                  ? 'border-space-sparkle bg-space-sparkle/5 text-space-sparkle hover:bg-space-sparkle/10'
+                                  : fieldStyles.borderColor + ' hover:opacity-80 !bg-white/80 dark:!bg-white/10'
+                              }`}
+                            >
+                              <div className="flex flex-col items-center justify-center space-y-1 w-full">
+                                {facultyFilled ? (
+                                  <CheckCircle size={16} className="text-space-sparkle mx-auto shrink-0" />
+                                ) : (
+                                  <Upload size={14} className="opacity-70 mx-auto shrink-0" />
+                                )}
+                                <p className="text-micro font-archivo leading-tight font-medium opacity-80">
+                                  {facultyFilled ? 'Contacts Added' : 'Add Contacts'}
+                                </p>
+                              </div>
+                            </button>
                           </div>
-                        </button>
-                      </div>
+                        )}
+                      </React.Fragment>
                     );
                   }
 
@@ -428,9 +474,13 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
         isOpen={showEmergencyModal}
         onClose={() => setShowEmergencyModal(false)}
         onSave={handleSaveEmergencyContact}
-        initialName={formData.emergencyContactName}
-        initialRelationship={formData.emergencyContactRelationship}
-        initialNumber={formData.emergencyContactNumber}
+        initialName={formData.emergencyContactName || ''}
+        initialRelationship={formData.emergencyContactRelationship || ''}
+        initialNumber={formData.emergencyContactNumber || ''}
+        initialLandline={formData.emergencyContactLandline || ''}
+        initialEmail={formData.emergencyContactEmail || ''}
+        initialSameAsApplicant={formData.emergencyContactSameAsApplicant ?? true}
+        initialAddress={formData.emergencyContactAddress}
         isDarkMode={isDarkMode}
       />
 
@@ -439,6 +489,14 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
         onClose={() => setShowDocumentsModal(false)}
         formData={formData}
         onChange={handleChange}
+        isDarkMode={isDarkMode}
+      />
+
+      <FacultyContactModal
+        isOpen={showFacultyContactModal}
+        onClose={() => setShowFacultyContactModal(false)}
+        onSave={(contacts) => setFormData(prev => ({ ...prev, facultyContacts: contacts }))}
+        initialContacts={formData.facultyContacts}
         isDarkMode={isDarkMode}
       />
     </div>

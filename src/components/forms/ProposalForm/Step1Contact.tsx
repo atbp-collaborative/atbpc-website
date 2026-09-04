@@ -59,7 +59,7 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
 
     return (
       <div className="mb-10">
-        <h3 className="font-sans text-h3 font-bold mb-4 flex justify-between items-center">
+        <h3 className="font-sans text-caption lg:text-body font-bold mb-4 flex justify-between items-center">
           {label}
         </h3>
         {field === 'authorizedRepresentatives' && (
@@ -85,7 +85,7 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
               {personPrefix} {list.length > 1 ? i + 1 : ''}
             </h4>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
               <TextField 
                 name="firstName" label="Given Name" 
                 value={person.firstName || ''} onChange={(_, val) => handleUpdate(i, 'firstName', val)} 
@@ -108,7 +108,7 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
               />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <TextField 
                 type="tel" name="contactNo" label="Contact No." 
                 value={person.contactNo || ''} onChange={(_, val) => handleUpdate(i, 'contactNo', val)} 
@@ -147,13 +147,13 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
       <div className="mb-8">
-        <h2 className="font-sans text-h2 font-bold text-space-sparkle mb-2">Step 1. Contact Information</h2>
+        <h2 className="font-sans text-body lg:text-h2 font-bold text-space-sparkle mb-2">Step 1. Contact Information</h2>
         <p className="text-caption opacity-60">Please provide the details for the principal decision makers and authorized representatives.</p>
       </div>
 
       <div className="mb-10 w-full">
-        <h3 className="font-sans text-h3 font-bold mb-4">1a. About the Client</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:items-center">
+        <h3 className="font-sans text-caption lg:text-body font-bold mb-4">1a. About the Client</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:items-center">
           <label className="text-caption font-semibold block opacity-90 lg:pr-4">
             Will the project be named after a business or a private entity?
           </label>

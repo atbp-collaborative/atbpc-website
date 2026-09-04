@@ -121,7 +121,7 @@ export const ProposalFormRoot: React.FC = () => {
           type="button"
           onClick={handlePrev}
           disabled={currentStep === 1 || isSubmitting}
-          className={`font-medium uppercase tracking-widest text-caption rounded-none transition-all flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0 select-none py-3.5 px-8 space-x-2 border ${isDarkMode ? 'border-bright-gray/30 text-white hover:bg-white/10' : 'border-vintage-charcoal/30 text-vintage-charcoal hover:bg-vintage-charcoal/5'} disabled:cursor-not-allowed disabled:opacity-50`}
+          className={`font-medium uppercase tracking-widest !text-mini lg:!text-caption rounded-none transition-all flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0 select-none !py-2 !px-4 lg:!py-3.5 lg:!px-8 space-x-2 border ${isDarkMode ? 'border-bright-gray/30 text-white hover:bg-white/10' : 'border-vintage-charcoal/30 text-vintage-charcoal hover:bg-vintage-charcoal/5'} disabled:cursor-not-allowed disabled:opacity-50`}
         >
           <ArrowLeft size={16} />
           <span>Back</span>
@@ -132,7 +132,7 @@ export const ProposalFormRoot: React.FC = () => {
             type="filled" 
             onClick={handleNext}
             label="Next Step"
-            className="space-x-2"
+            className="space-x-2 !text-mini lg:!text-caption !py-2 !px-4 lg:!py-2.5 lg:!px-5"
           >
             <ArrowRight size={16} />
           </Button>
@@ -142,6 +142,7 @@ export const ProposalFormRoot: React.FC = () => {
             onClick={handleSubmit}
             disabled={isSubmitting}
             label={isSubmitting ? "Submitting..." : "Submit Proposal"}
+            className="!text-mini lg:!text-caption !py-2 !px-4 lg:!py-2.5 lg:!px-5"
           />
         )}
       </div>
