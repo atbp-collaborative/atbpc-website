@@ -31,13 +31,13 @@ export const Step4Additional: React.FC<Props> = ({ formData, updateField, isDark
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-8">
-        <h2 className="font-sans text-body lg:text-h2 font-bold text-space-sparkle mb-2">Step 4. Additional Information (Optional)</h2>
+        <h2 className="font-sans text-body font-bold text-space-sparkle mb-2">Step 4. Additional Information (Optional)</h2>
         <p className="text-caption opacity-60">Upload relevant files and share any extra details.</p>
       </div>
 
       <div className="space-y-10">
         <div>
-          <h3 className="font-sans text-caption lg:text-body font-bold mb-4">4a. References & Superstitions</h3>
+          <h3 className="font-sans text-caption font-bold mb-4">4a. References & Superstitions</h3>
           <div className="mb-6">
             <MultiFileUploadField
               name="attachments"
@@ -62,7 +62,7 @@ export const Step4Additional: React.FC<Props> = ({ formData, updateField, isDark
         </div>
 
         <div>
-          <h3 className="font-sans text-caption lg:text-body font-bold mb-4">4b. Documents</h3>
+          <h3 className="font-sans text-caption font-bold mb-4">4b. Documents</h3>
           <div className="space-y-1">
             <label className={`${fieldStyles.label} truncate`}>
               Legal Documents
@@ -86,7 +86,7 @@ export const Step4Additional: React.FC<Props> = ({ formData, updateField, isDark
         </div>
 
         <div>
-          <h3 className="font-sans text-caption lg:text-body font-bold mb-4">4c. Declarations</h3>
+          <h3 className="font-sans text-caption font-bold mb-4">4c. Declarations</h3>
           
           <div className="mb-6">
             <SelectField

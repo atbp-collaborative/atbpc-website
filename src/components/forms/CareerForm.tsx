@@ -96,22 +96,21 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
   ) => {
     setFormData((prev) => ({
       ...prev,
-      emergencyContactName: name,
-      emergencyContactRelationship: relationship,
-      emergencyContactNumber: number,
-      emergencyContactLandline: landline,
-      emergencyContactEmail: email,
-      emergencyContactSameAsApplicant: sameAsApplicant,
-      emergencyContactAddress: address,
+      emergencyContactPerson: {
+        name,
+        relationship,
+        number,
+        landline,
+        email,
+        sameAsApplicant,
+        address,
+      }
     }));
   };
 
   const handleChange = (name: string, value: any) => {
     setFormData((prev) => {
       const nextData = { ...prev, [name]: value };
-      if (formType === 'apprenticeship' && name === 'structure') {
-        nextData.jobDescription = STRUCTURE_DESCRIPTIONS[value] || '';
-      }
       if (formType === 'studioRegulars' && name === 'department') {
         nextData.structure = '';
       }
@@ -167,7 +166,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
 
   const isFormValid =
     CAREER_FORM_REQUIRED_FIELDS.every((field) => Boolean(formData[field])) &&
-    Boolean(formData.address.regionCode && formData.address.cityCode && formData.address.barangayCode) &&
+    Boolean(formData.applicantAddress.regionCode && formData.applicantAddress.cityCode && formData.applicantAddress.barangayCode) &&
     isDocumentsComplete();
   const canSubmit = isFormValid && privacyAcknowledged;
 
@@ -245,7 +244,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto lg:overflow-hidden px-4 sm:px-8 pb-2"
+            className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto no-scrollbar lg:overflow-hidden px-4 sm:px-8 pb-2"
           >
             {/* LEFT COLUMN */}
             <div className="w-full lg:w-1/2 flex flex-col gap-3 lg:gap-2 justify-between lg:h-full lg:overflow-hidden">
@@ -382,13 +381,13 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className="w-full lg:w-1/2 flex flex-col justify-between gap-2.5 lg:gap-2 lg:h-full lg:overflow-y-auto lg:pr-2">
+            <div className="w-full lg:w-1/2 flex flex-col justify-between gap-2.5 lg:gap-2 lg:h-full lg:overflow-y-auto no-scrollbar lg:pr-2">
               <div className="flex flex-col gap-2.5 lg:gap-2">
                 {fields.rightColumnRows.map((row, idx) => (
                   <div key={idx} className={row.length > 1 ? 'grid grid-cols-1 sm:grid-cols-4 gap-3' : ''}>
                     {row.map((field) => {
                       if (field.name === 'emergencyContact') {
-                        const count = (formData.emergencyContactName && formData.emergencyContactRelationship && formData.emergencyContactNumber) ? 1 : 0;
+                        const count = (formData.emergencyContactPerson?.name && formData.emergencyContactPerson?.relationship && formData.emergencyContactPerson?.number) ? 1 : 0;
                         return (
                           <div key={field.name} className={field.wrapperClassName}>
                             <MultiEntryButton
@@ -474,13 +473,13 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
         isOpen={showEmergencyModal}
         onClose={() => setShowEmergencyModal(false)}
         onSave={handleSaveEmergencyContact}
-        initialName={formData.emergencyContactName || ''}
-        initialRelationship={formData.emergencyContactRelationship || ''}
-        initialNumber={formData.emergencyContactNumber || ''}
-        initialLandline={formData.emergencyContactLandline || ''}
-        initialEmail={formData.emergencyContactEmail || ''}
-        initialSameAsApplicant={formData.emergencyContactSameAsApplicant ?? true}
-        initialAddress={formData.emergencyContactAddress}
+        initialName={formData.emergencyContactPerson?.name || ''}
+        initialRelationship={formData.emergencyContactPerson?.relationship || ''}
+        initialNumber={formData.emergencyContactPerson?.number || ''}
+        initialLandline={formData.emergencyContactPerson?.landline || ''}
+        initialEmail={formData.emergencyContactPerson?.email || ''}
+        initialSameAsApplicant={formData.emergencyContactPerson?.sameAsApplicant ?? true}
+        initialAddress={formData.emergencyContactPerson?.address}
         isDarkMode={isDarkMode}
       />
 

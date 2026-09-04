@@ -83,7 +83,7 @@ export const ProposalFormRoot: React.FC = () => {
 
       <div className="flex-1 min-h-0 mb-4">
         {!isDesktop ? (
-          <div className="h-full overflow-y-auto pr-4">
+          <div className="h-full overflow-y-auto pr-4 no-scrollbar">
             {currentStep === 1 && <Step1Contact formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
             {currentStep === 2 && <Step2Services formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
             {currentStep === 3 && <Step3Property formData={formData} updateField={updateField} isDarkMode={isDarkMode} />}
@@ -93,20 +93,20 @@ export const ProposalFormRoot: React.FC = () => {
           <>
             {currentStep === 1 && (
               <div className="h-full grid grid-cols-2 gap-12">
-                <div className="h-full overflow-y-auto pr-4 custom-scrollbar">
+                <div className="h-full overflow-y-auto pr-4 no-scrollbar">
                   <Step1Contact formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
                 </div>
-                <div className="h-full overflow-y-auto pr-4 custom-scrollbar">
+                <div className="h-full overflow-y-auto pr-4 no-scrollbar">
                   <Step2Services formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
                 </div>
               </div>
             )}
             {currentStep === 2 && (
               <div className="h-full grid grid-cols-2 gap-12">
-                <div className="h-full overflow-y-auto pr-4 custom-scrollbar">
+                <div className="h-full overflow-y-auto pr-4 no-scrollbar">
                   <Step3Property formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
                 </div>
-                <div className="h-full overflow-y-auto pr-4 custom-scrollbar">
+                <div className="h-full overflow-y-auto pr-4 no-scrollbar">
                   <Step4Additional formData={formData} updateField={updateField} isDarkMode={isDarkMode} />
                 </div>
               </div>
@@ -121,7 +121,7 @@ export const ProposalFormRoot: React.FC = () => {
           type="button"
           onClick={handlePrev}
           disabled={currentStep === 1 || isSubmitting}
-          className={`font-medium uppercase tracking-widest !text-mini lg:!text-caption rounded-none transition-all flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0 select-none !py-2 !px-4 lg:!py-3.5 lg:!px-8 space-x-2 border ${isDarkMode ? 'border-bright-gray/30 text-white hover:bg-white/10' : 'border-vintage-charcoal/30 text-vintage-charcoal hover:bg-vintage-charcoal/5'} disabled:cursor-not-allowed disabled:opacity-50`}
+          className={`font-medium uppercase tracking-widest !text-mini rounded-none transition-all flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0 select-none !py-2 !px-4 space-x-2 border ${isDarkMode ? 'border-bright-gray/30 text-white hover:bg-white/10' : 'border-vintage-charcoal/30 text-vintage-charcoal hover:bg-vintage-charcoal/5'} disabled:cursor-not-allowed disabled:opacity-50`}
         >
           <ArrowLeft size={16} />
           <span>Back</span>
@@ -132,7 +132,7 @@ export const ProposalFormRoot: React.FC = () => {
             type="filled" 
             onClick={handleNext}
             label="Next Step"
-            className="space-x-2 !text-mini lg:!text-caption !py-2 !px-4 lg:!py-2.5 lg:!px-5"
+            className="space-x-2 !text-mini !py-2 !px-4"
           >
             <ArrowRight size={16} />
           </Button>
@@ -142,7 +142,7 @@ export const ProposalFormRoot: React.FC = () => {
             onClick={handleSubmit}
             disabled={isSubmitting}
             label={isSubmitting ? "Submitting..." : "Submit Proposal"}
-            className="!text-mini lg:!text-caption !py-2 !px-4 lg:!py-2.5 lg:!px-5"
+            className="!text-mini !py-2 !px-4"
           />
         )}
       </div>

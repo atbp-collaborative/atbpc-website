@@ -19,20 +19,14 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
   const confirmRemove = () => {
     if (!personToDelete) return;
     const { field, index } = personToDelete;
-    const list = formData[field] || [{}];
+    const list = (formData[field] || [{}]) as any[];
     const newList = list.filter((_, i) => i !== index);
     updateField(field, newList.length > 0 ? newList : [{}]);
     setPersonToDelete(null);
   };
 
   const renderPersonList = (field: 'principalDecisionMakers' | 'authorizedRepresentatives', label: string, max: number = 2, personPrefix: string) => {
-    // Filter out extra completely empty persons to prevent them from showing up due to local storage, but keep at least 1
-    const rawList = formData[field] || [{}];
-    const list = rawList.filter((person, idx) => {
-      if (idx === 0) return true;
-      return Object.values(person).some(v => v && typeof v === 'string' && v.trim() !== '');
-    });
-    // If we filtered out items, we ideally should update the form state, but for rendering this is fine.
+    const list = (formData[field] || [{}]) as any[];
 
     const handleUpdate = (index: number, key: string, value: string) => {
       const newList = [...list];
@@ -59,7 +53,7 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
 
     return (
       <div className="mb-10">
-        <h3 className="font-sans text-caption lg:text-body font-bold mb-4 flex justify-between items-center">
+        <h3 className="font-sans text-caption font-bold mb-4 flex justify-between items-center">
           {label}
         </h3>
         {field === 'authorizedRepresentatives' && (
@@ -147,12 +141,12 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
       <div className="mb-8">
-        <h2 className="font-sans text-body lg:text-h2 font-bold text-space-sparkle mb-2">Step 1. Contact Information</h2>
+        <h2 className="font-sans text-body font-bold text-space-sparkle mb-2">Step 1. Contact Information</h2>
         <p className="text-caption opacity-60">Please provide the details for the principal decision makers and authorized representatives.</p>
       </div>
 
       <div className="mb-10 w-full">
-        <h3 className="font-sans text-caption lg:text-body font-bold mb-4">1a. About the Client</h3>
+        <h3 className="font-sans text-caption font-bold mb-4">1a. About the Client</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:items-center">
           <label className="text-caption font-semibold block opacity-90 lg:pr-4">
             Will the project be named after a business or a private entity?

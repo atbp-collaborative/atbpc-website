@@ -157,7 +157,7 @@ const RIGHT_COLUMN_ROWS: FieldConfig[][] = [
       wrapperClassName: "sm:col-span-2",
     },
   ],
-  [{ type: "address", name: "address", label: "", dense: true }],
+  [{ type: "address", name: "applicantAddress", label: "", dense: true }],
   [
     {
       type: "text",
@@ -330,7 +330,6 @@ export const CAREER_FORM_FIELDS: Record<CareerFormType, CareerFormFieldSet> = {
 export const CAREER_FORM_INITIAL_DATA = {
   department: "",
   structure: "",
-  jobDescription: "",
   resumeFile: null as File | null,
   portfolioLink: "",
   coverVideoLink: "",
@@ -340,18 +339,20 @@ export const CAREER_FORM_INITIAL_DATA = {
   lastName: "",
   pronoun: "",
   titles: "",
-  address: EMPTY_PH_ADDRESS as PhAddress,
+  applicantAddress: EMPTY_PH_ADDRESS as PhAddress,
   contactNumber: "",
   email: "",
   facebook: "",
   instagram: "",
-  emergencyContactName: "",
-  emergencyContactRelationship: "",
-  emergencyContactNumber: "",
-  emergencyContactLandline: "",
-  emergencyContactEmail: "",
-  emergencyContactAddress: EMPTY_PH_ADDRESS as PhAddress,
-  emergencyContactSameAsApplicant: true,
+  emergencyContactPerson: {
+    name: "",
+    relationship: "",
+    number: "",
+    landline: "",
+    email: "",
+    sameAsApplicant: true,
+    address: EMPTY_PH_ADDRESS as PhAddress,
+  },
   // Dynamic Documents fields
   ojtRequirementsFile: null as File | null,
   moaFile: null as File | null,
@@ -388,12 +389,13 @@ export const CAREER_FORM_REQUIRED_FIELDS: (keyof CareerFormData)[] = [
   "pronoun",
   "contactNumber",
   "email",
+  "portfolioLink",
+  "coverVideoLink",
 ];
 
 export const careerSchema = z.object({
   department: z.string().min(1, "Department is required"),
   structure: z.string().min(1, "Structure is required"),
-  jobDescription: z.string().optional(),
   resumeFile: z.any().optional().nullable(),
   portfolioLink: z.string().min(1, "Portfolio Link is required"),
   coverVideoLink: z.string().min(1, "Cover Video Link is required"),
@@ -403,7 +405,7 @@ export const careerSchema = z.object({
   lastName: z.string().min(1, "Last Name is required"),
   pronoun: z.string().min(1, "Pronoun is required"),
   titles: z.string().optional(),
-  address: z.object({
+  applicantAddress: z.object({
     regionCode: z.string().min(1, "Region is required"),
     cityCode: z.string().min(1, "City is required"),
     barangayCode: z.string().min(1, "Barangay is required"),
@@ -413,17 +415,19 @@ export const careerSchema = z.object({
   email: z.string().email("Invalid email address"),
   facebook: z.string().optional(),
   instagram: z.string().optional(),
-  emergencyContactName: z.string().optional(),
-  emergencyContactRelationship: z.string().optional(),
-  emergencyContactNumber: z.string().optional(),
-  emergencyContactLandline: z.string().optional(),
-  emergencyContactEmail: z.string().optional(),
-  emergencyContactSameAsApplicant: z.boolean().optional(),
-  emergencyContactAddress: z.object({
-    regionCode: z.string().optional(),
-    cityCode: z.string().optional(),
-    barangayCode: z.string().optional(),
-    streetAddress: z.string().optional(),
+  emergencyContactPerson: z.object({
+    name: z.string().optional(),
+    relationship: z.string().optional(),
+    number: z.string().optional(),
+    landline: z.string().optional(),
+    email: z.string().optional(),
+    sameAsApplicant: z.boolean().optional(),
+    address: z.object({
+      regionCode: z.string().optional(),
+      cityCode: z.string().optional(),
+      barangayCode: z.string().optional(),
+      streetAddress: z.string().optional(),
+    }).optional(),
   }).optional(),
   // New Document fields
   ojtRequirementsFile: z.any().optional().nullable(),
@@ -436,7 +440,38 @@ export const careerSchema = z.object({
   prcIdFile: z.any().optional().nullable(),
   validIdFile: z.any().optional().nullable(),
   tinIdFile: z.any().optional().nullable(),
-  facultyContacts: z.any().optional(),
+  facultyContacts: z.object({
+    dean: z.object({
+      name: z.string().min(1, "Required"),
+      contactNumber: z.string().min(1, "Required"),
+      email: z.string().min(1, "Required"),
+      landline: z.string().optional(),
+    }),
+    chairperson: z.object({
+      name: z.string().min(1, "Required"),
+      contactNumber: z.string().min(1, "Required"),
+      email: z.string().min(1, "Required"),
+      landline: z.string().optional(),
+    }),
+    ojtInstructor: z.object({
+      name: z.string().min(1, "Required"),
+      contactNumber: z.string().min(1, "Required"),
+      email: z.string().min(1, "Required"),
+      landline: z.string().optional(),
+    }),
+    guidanceOfficer: z.object({
+      name: z.string().min(1, "Required"),
+      contactNumber: z.string().min(1, "Required"),
+      email: z.string().min(1, "Required"),
+      landline: z.string().optional(),
+    }),
+    disciplineOfficer: z.object({
+      name: z.string().min(1, "Required"),
+      contactNumber: z.string().min(1, "Required"),
+      email: z.string().min(1, "Required"),
+      landline: z.string().optional(),
+    }),
+  }).optional(),
 });
 
 export function getRequiredDocumentFields(structure: string): string[] {

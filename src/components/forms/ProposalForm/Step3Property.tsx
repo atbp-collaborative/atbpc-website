@@ -19,13 +19,13 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-8">
-        <h2 className="font-sans text-body lg:text-h2 font-bold text-space-sparkle mb-2">Step 3. Property, Budget & Timeline</h2>
+        <h2 className="font-sans text-body font-bold text-space-sparkle mb-2">Step 3. Property, Budget & Timeline</h2>
         <p className="text-caption opacity-60">Help us understand the scale, location, and constraints of your project.</p>
       </div>
 
       <div className="space-y-10">
         <div>
-          <h3 className="font-sans text-caption lg:text-body font-bold mb-4">3a. Property Area</h3>
+          <h3 className="font-sans text-caption font-bold mb-4">3a. Property Area</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <SelectField
               name="propertyAreaType"
@@ -73,7 +73,7 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
         </div>
 
         <div>
-          <h3 className="font-sans text-caption lg:text-body font-bold mb-4">3b. Your Build Forecast</h3>
+          <h3 className="font-sans text-caption font-bold mb-4">3b. Your Build Forecast</h3>
           <div className="w-full md:w-1/2">
             <SelectField
               name="constructionBudget"
@@ -93,7 +93,7 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
         </div>
 
         <div>
-          <h3 className="font-sans text-caption lg:text-body font-bold mb-4">3c. Timeline</h3>
+          <h3 className="font-sans text-caption font-bold mb-4">3c. Timeline</h3>
           <div className="w-full md:w-1/2">
             <DateField
               name="targetDate"
