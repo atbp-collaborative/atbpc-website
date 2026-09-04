@@ -8,10 +8,10 @@ export default function RequestForProposalPage() {
   const isHeightConstrained = useFormViewport(750);
 
   return (
-    <div className={`w-full h-full overflow-y-auto flex flex-col items-center bg-transparent 
-      ${isHeightConstrained ? 'p-4 sm:p-6 lg:p-8' : 'p-6 sm:p-10 lg:p-12 xl:p-16 2xl:p-20'}`}
+    <div className={`w-full h-full flex flex-col items-center bg-transparent overflow-y-auto lg:overflow-hidden
+      ${isHeightConstrained ? 'px-4 sm:px-6 lg:px-8 pt-2' : 'px-6 sm:px-10 lg:px-12 xl:px-16 2xl:px-20 pt-4'}`}
     >
-      <div className="w-full max-w-4xl flex-1 flex flex-col">
+      <div className="w-full flex-1 flex flex-col min-h-0">
         <ProposalFormRoot />
       </div>
     </div>

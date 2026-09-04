@@ -29,14 +29,13 @@ export const Step2Services: React.FC<Props> = ({ formData, updateField, isDarkMo
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-8">
-        <span className="text-caption font-sans text-space-sparkle block opacity-70 mb-2 uppercase tracking-widest">Step 2 of 4</span>
-        <h2 className="font-sans text-h2 font-bold text-space-sparkle mb-2">Project Typology & Services</h2>
+        <h2 className="font-sans text-body lg:text-h2 font-bold text-space-sparkle mb-2">Step 2. Project Typology & Services</h2>
         <p className="text-caption opacity-60">Select the appropriate project classification and the services you require from ATBP Collaborative.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
-          <h3 className="font-sans text-h3 font-bold mb-4">c. Project Typology</h3>
+          <h3 className="font-sans text-caption lg:text-body font-bold mb-4">2a. Project Typology & Services</h3>
           <div className="space-y-4">
             <SelectField
               name="category"
@@ -72,7 +71,7 @@ export const Step2Services: React.FC<Props> = ({ formData, updateField, isDarkMo
         </div>
 
         <div>
-          <h3 className="font-sans text-h3 font-bold mb-4">d. Services & Scope</h3>
+          <h3 className="font-sans text-caption lg:text-body font-bold mb-4">2b. Services & Scope</h3>
           <div className="space-y-4">
             <SelectField
               name="services"

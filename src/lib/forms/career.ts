@@ -5,6 +5,23 @@ import {
 } from "@/components/forms/form-fields/types";
 import { z } from "zod";
 
+export interface FacultyContactInfo {
+  name: string;
+  contactNumber: string;
+  landline: string;
+  email: string;
+}
+
+export type FacultyContacts = {
+  dean: FacultyContactInfo;
+  chairperson: FacultyContactInfo;
+  ojtInstructor: FacultyContactInfo;
+  guidanceOfficer: FacultyContactInfo;
+  disciplineOfficer: FacultyContactInfo;
+};
+
+export const EMPTY_FACULTY_CONTACT: FacultyContactInfo = { name: "", contactNumber: "", landline: "", email: "" };
+
 /**
  * studio-regulars / internship-program / apprenticeship-program all render
  * CareerForm today with an identical field set — only the pre-selected
@@ -331,6 +348,10 @@ export const CAREER_FORM_INITIAL_DATA = {
   emergencyContactName: "",
   emergencyContactRelationship: "",
   emergencyContactNumber: "",
+  emergencyContactLandline: "",
+  emergencyContactEmail: "",
+  emergencyContactAddress: EMPTY_PH_ADDRESS as PhAddress,
+  emergencyContactSameAsApplicant: true,
   // Dynamic Documents fields
   ojtRequirementsFile: null as File | null,
   moaFile: null as File | null,
@@ -342,6 +363,13 @@ export const CAREER_FORM_INITIAL_DATA = {
   prcIdFile: null as File | null,
   validIdFile: null as File | null,
   tinIdFile: null as File | null,
+  facultyContacts: {
+    dean: { ...EMPTY_FACULTY_CONTACT },
+    chairperson: { ...EMPTY_FACULTY_CONTACT },
+    ojtInstructor: { ...EMPTY_FACULTY_CONTACT },
+    guidanceOfficer: { ...EMPTY_FACULTY_CONTACT },
+    disciplineOfficer: { ...EMPTY_FACULTY_CONTACT },
+  } as FacultyContacts,
 };
 
 export type CareerFormData = typeof CAREER_FORM_INITIAL_DATA;
@@ -388,6 +416,15 @@ export const careerSchema = z.object({
   emergencyContactName: z.string().optional(),
   emergencyContactRelationship: z.string().optional(),
   emergencyContactNumber: z.string().optional(),
+  emergencyContactLandline: z.string().optional(),
+  emergencyContactEmail: z.string().optional(),
+  emergencyContactSameAsApplicant: z.boolean().optional(),
+  emergencyContactAddress: z.object({
+    regionCode: z.string().optional(),
+    cityCode: z.string().optional(),
+    barangayCode: z.string().optional(),
+    streetAddress: z.string().optional(),
+  }).optional(),
   // New Document fields
   ojtRequirementsFile: z.any().optional().nullable(),
   moaFile: z.any().optional().nullable(),
@@ -399,6 +436,7 @@ export const careerSchema = z.object({
   prcIdFile: z.any().optional().nullable(),
   validIdFile: z.any().optional().nullable(),
   tinIdFile: z.any().optional().nullable(),
+  facultyContacts: z.any().optional(),
 });
 
 export function getRequiredDocumentFields(structure: string): string[] {
@@ -438,11 +476,20 @@ export function getDocumentFieldsForStructure(structure: string): { name: string
     ];
   } else {
     // Regular
-    return [
+    const fields = [
       { name: "resumeFile", label: "Resumé", required: true },
       { name: "prcIdFile", label: "PRC ID", required: false },
       { name: "validIdFile", label: "Valid ID", required: true },
       { name: "tinIdFile", label: "TIN ID", required: true },
     ];
+
+    if (
+      structure.includes("[HROA-") ||
+      (structure.includes("[HRGM-") && !structure.includes("[HRGM-06"))
+    ) {
+      return fields.filter((f) => f.name !== "prcIdFile");
+    }
+
+    return fields;
   }
 }

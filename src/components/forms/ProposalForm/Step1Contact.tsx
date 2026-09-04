@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ProposalFormData } from '@/lib/forms/proposal';
 import { TextField } from '@/components/forms/form-fields/TextField';
 import { SelectField } from '@/components/forms/form-fields/SelectField';
@@ -14,8 +14,25 @@ interface Props {
 }
 
 export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMode }) => {
-  const renderPersonList = (field: 'principalDecisionMakers' | 'authorizedRepresentatives', label: string, max: number = 2) => {
+  const [personToDelete, setPersonToDelete] = useState<{ field: 'principalDecisionMakers' | 'authorizedRepresentatives', index: number } | null>(null);
+
+  const confirmRemove = () => {
+    if (!personToDelete) return;
+    const { field, index } = personToDelete;
     const list = formData[field] || [{}];
+    const newList = list.filter((_, i) => i !== index);
+    updateField(field, newList.length > 0 ? newList : [{}]);
+    setPersonToDelete(null);
+  };
+
+  const renderPersonList = (field: 'principalDecisionMakers' | 'authorizedRepresentatives', label: string, max: number = 2, personPrefix: string) => {
+    // Filter out extra completely empty persons to prevent them from showing up due to local storage, but keep at least 1
+    const rawList = formData[field] || [{}];
+    const list = rawList.filter((person, idx) => {
+      if (idx === 0) return true;
+      return Object.values(person).some(v => v && typeof v === 'string' && v.trim() !== '');
+    });
+    // If we filtered out items, we ideally should update the form state, but for rendering this is fine.
 
     const handleUpdate = (index: number, key: string, value: string) => {
       const newList = [...list];
@@ -29,14 +46,20 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
       }
     };
 
-    const handleRemove = (index: number) => {
-      const newList = list.filter((_, i) => i !== index);
-      updateField(field, newList.length > 0 ? newList : [{}]);
+    const handleRemoveClick = (index: number) => {
+      const person = list[index];
+      const hasValues = Object.values(person).some(v => v && typeof v === 'string' && v.trim() !== '');
+      if (hasValues) {
+        setPersonToDelete({ field, index });
+      } else {
+        const newList = list.filter((_, i) => i !== index);
+        updateField(field, newList.length > 0 ? newList : [{}]);
+      }
     };
 
     return (
       <div className="mb-10">
-        <h3 className="font-sans text-h3 font-bold mb-4 flex justify-between items-center">
+        <h3 className="font-sans text-caption lg:text-body font-bold mb-4 flex justify-between items-center">
           {label}
         </h3>
         {field === 'authorizedRepresentatives' && (
@@ -51,16 +74,18 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
             {i > 0 && (
               <button 
                 type="button"
-                onClick={() => handleRemove(i)}
+                onClick={() => handleRemoveClick(i)}
                 className="absolute top-0 right-0 text-red-500 hover:text-red-700 transition-colors"
-                title="Remove person"
+                title={`Remove ${personPrefix.toLowerCase()}`}
               >
                 <Trash2 size={18} />
               </button>
             )}
-            <h4 className="font-sans font-medium text-mini mb-4 opacity-70 uppercase tracking-widest">Person {i + 1}</h4>
+            <h4 className="font-sans font-medium text-mini mb-4 opacity-70 uppercase tracking-widest">
+              {personPrefix} {list.length > 1 ? i + 1 : ''}
+            </h4>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
               <TextField 
                 name="firstName" label="Given Name" 
                 value={person.firstName || ''} onChange={(_, val) => handleUpdate(i, 'firstName', val)} 
@@ -83,7 +108,7 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
               />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <TextField 
                 type="tel" name="contactNo" label="Contact No." 
                 value={person.contactNo || ''} onChange={(_, val) => handleUpdate(i, 'contactNo', val)} 
@@ -112,7 +137,7 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
             className={`mt-2 py-2 px-6 rounded-xl border text-caption font-medium transition-all hover:opacity-80 flex items-center space-x-2 ${isDarkMode ? 'border-bright-gray/30 bg-vintage-charcoal/50 text-white' : 'border-vintage-charcoal/30 bg-white/60 text-vintage-charcoal'}`}
           >
             <Plus size={16} />
-            <span>Add another {label.split('. ')[1].toLowerCase()}</span>
+            <span>Add another {personPrefix}</span>
           </button>
         )}
       </div>
@@ -120,31 +145,49 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
       <div className="mb-8">
-        <span className="text-caption font-sans text-space-sparkle block opacity-70 mb-2 uppercase tracking-widest">Step 1 of 4</span>
-        <h2 className="font-sans text-h2 font-bold text-space-sparkle mb-2">Contact Information</h2>
+        <h2 className="font-sans text-body lg:text-h2 font-bold text-space-sparkle mb-2">Step 1. Contact Information</h2>
         <p className="text-caption opacity-60">Please provide the details for the principal decision makers and authorized representatives.</p>
       </div>
 
-      <div className="mb-10 w-full md:w-1/2">
-        <SelectField
-          name="businessEntity"
-          label="Will the project be named after a business or a private entity?"
-          placeholder="Select Yes or No"
-          options={[
-            { value: 'Yes', label: 'Yes' },
-            { value: 'No', label: 'No' }
-          ]}
-          value={formData.businessEntity || ''}
-          onChange={(name, val) => updateField('businessEntity', val)}
-          isDarkMode={isDarkMode}
-        />
+      <div className="mb-10 w-full">
+        <h3 className="font-sans text-caption lg:text-body font-bold mb-4">1a. About the Client</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:items-center">
+          <label className="text-caption font-semibold block opacity-90 lg:pr-4">
+            Will the project be named after a business or a private entity?
+          </label>
+          <div className="w-full">
+            <SelectField
+              name="businessEntity"
+              placeholder="[ Select Client Type ]"
+              options={[
+                { value: 'Private Entity', label: 'Private Entity' },
+                { value: 'Business', label: 'Business' }
+              ]}
+              value={formData.businessEntity || ''}
+              onChange={(name, val) => updateField('businessEntity', val)}
+              isDarkMode={isDarkMode}
+            />
+          </div>
+        </div>
       </div>
 
-      {renderPersonList('principalDecisionMakers', 'a. Principal Decision Maker', 3)}
-      {renderPersonList('authorizedRepresentatives', 'b. Authorized Representative', 1)}
+      {renderPersonList('principalDecisionMakers', '1b. Principal Decision Maker', 3, 'Decision Maker')}
+      {formData.businessEntity === 'Business' && renderPersonList('authorizedRepresentatives', '1c. Authorized Representative', 1, 'Representative')}
+
+      {personToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className={`w-full max-w-sm p-6 rounded-2xl ${isDarkMode ? 'bg-vintage-charcoal border border-bright-gray/20' : 'bg-white border border-vintage-charcoal/20'}`}>
+            <h3 className="font-bold text-lg mb-2">Confirm Deletion</h3>
+            <p className="mb-6 opacity-80 text-sm">Are you sure you want to remove this person? All their details will be lost.</p>
+            <div className="flex justify-end gap-3">
+              <Button type="outline" onClick={() => setPersonToDelete(null)} label="Cancel" />
+              <Button type="filled" onClick={confirmRemove} label="Delete" className="bg-red-500 hover:bg-red-600 border-red-500" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-

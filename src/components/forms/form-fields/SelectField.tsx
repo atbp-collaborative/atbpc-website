@@ -3,7 +3,8 @@ import { ChevronDown } from 'lucide-react';
 import { SelectFieldConfig, FieldRenderProps } from './types';
 import { getFieldThemeStyles } from './fieldStyles';
 
-type SelectFieldProps = Omit<SelectFieldConfig, 'type'> & FieldRenderProps<string> & {
+type SelectFieldProps = Omit<SelectFieldConfig, 'type' | 'label'> & FieldRenderProps<string> & {
+  label?: React.ReactNode;
   disabled?: boolean;
   /** Tighter vertical padding (py-1.5 instead of py-2) to match a denser surrounding layout. */
   dense?: boolean;

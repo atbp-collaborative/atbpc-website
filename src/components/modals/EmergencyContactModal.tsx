@@ -5,14 +5,28 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/primitives/Button';
 import { TextField } from '@/components/forms/form-fields';
+import { AddressField } from '@/components/forms/form-fields/AddressField';
+import { PhAddress, EMPTY_PH_ADDRESS } from '@/components/forms/form-fields/types';
 
 interface EmergencyContactModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (name: string, relationship: string, number: string) => void;
+  onSave: (
+    name: string,
+    relationship: string,
+    number: string,
+    landline: string,
+    email: string,
+    sameAsApplicant: boolean,
+    address: PhAddress
+  ) => void;
   initialName: string;
   initialRelationship: string;
   initialNumber: string;
+  initialLandline: string;
+  initialEmail: string;
+  initialSameAsApplicant: boolean;
+  initialAddress: PhAddress;
   isDarkMode: boolean;
 }
 
@@ -23,19 +37,31 @@ export const EmergencyContactModal: React.FC<EmergencyContactModalProps> = ({
   initialName,
   initialRelationship,
   initialNumber,
+  initialLandline,
+  initialEmail,
+  initialSameAsApplicant,
+  initialAddress,
   isDarkMode,
 }) => {
   const [name, setName] = useState('');
   const [relationship, setRelationship] = useState('');
   const [number, setNumber] = useState('');
+  const [landline, setLandline] = useState('');
+  const [email, setEmail] = useState('');
+  const [sameAsApplicant, setSameAsApplicant] = useState(true);
+  const [address, setAddress] = useState<PhAddress>(EMPTY_PH_ADDRESS);
 
   useEffect(() => {
     if (isOpen) {
       setName(initialName || '');
       setRelationship(initialRelationship || '');
       setNumber(initialNumber || '');
+      setLandline(initialLandline || '');
+      setEmail(initialEmail || '');
+      setSameAsApplicant(initialSameAsApplicant ?? true);
+      setAddress(initialAddress || EMPTY_PH_ADDRESS);
     }
-  }, [isOpen, initialName, initialRelationship, initialNumber]);
+  }, [isOpen, initialName, initialRelationship, initialNumber, initialLandline, initialEmail, initialSameAsApplicant, initialAddress]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -52,13 +78,11 @@ export const EmergencyContactModal: React.FC<EmergencyContactModalProps> = ({
   }, [isOpen, onClose]);
 
   const handleSave = () => {
-    onSave(name, relationship, number);
+    onSave(name, relationship, number, landline, email, sameAsApplicant, address);
     onClose();
   };
 
-  const isSaveDisabled =
-    (name !== '' || relationship !== '' || number !== '') &&
-    (name === '' || relationship === '' || number === '');
+  const isSaveDisabled = name === '' || relationship === '' || number === '';
 
   return (
     <AnimatePresence>
@@ -99,7 +123,7 @@ export const EmergencyContactModal: React.FC<EmergencyContactModalProps> = ({
                 name="emergency-name"
                 label="Name"
                 value={name}
-                placeholder="e.g. Jane Doe"
+                placeholder=""
                 onChange={(_, val) => setName(val)}
                 isDarkMode={isDarkMode}
                 theme="neutral"
@@ -115,13 +139,54 @@ export const EmergencyContactModal: React.FC<EmergencyContactModalProps> = ({
               />
               <TextField
                 name="emergency-number"
-                label="Contact No."
+                label="Phone Number"
                 value={number}
                 placeholder="e.g. 0917XXXXXXX"
                 onChange={(_, val) => setNumber(val)}
                 isDarkMode={isDarkMode}
                 theme="neutral"
               />
+              <TextField
+                name="emergency-landline"
+                label="Landline"
+                value={landline}
+                placeholder=""
+                onChange={(_, val) => setLandline(val)}
+                isDarkMode={isDarkMode}
+                theme="neutral"
+              />
+              <TextField
+                name="emergency-email"
+                label="Email"
+                value={email}
+                placeholder=""
+                onChange={(_, val) => setEmail(val)}
+                isDarkMode={isDarkMode}
+                theme="neutral"
+              />
+              
+              <div className="space-y-4 pt-2">
+                <label className="flex items-center gap-2 text-caption cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={sameAsApplicant}
+                    onChange={(e) => setSameAsApplicant(e.target.checked)}
+                    className="h-4 w-4 accent-space-sparkle cursor-pointer"
+                  />
+                  Same as applicant's address
+                </label>
+
+                {!sameAsApplicant && (
+                  <AddressField
+                    name="emergencyContactAddress"
+                    value={address}
+                    onChange={(_, val) => setAddress(val)}
+                    isDarkMode={isDarkMode}
+                    theme="neutral"
+                    columns={1}
+                  />
+                )}
+              </div>
             </div>
 
             <div className={`p-4 px-6 border-t flex justify-end sticky bottom-0 z-20 backdrop-blur-md ${isDarkMode ? 'bg-vintage-charcoal/95 border-space-sparkle/20' : 'bg-white/95 border-space-sparkle/15'}`}>

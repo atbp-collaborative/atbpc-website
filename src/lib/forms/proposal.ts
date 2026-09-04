@@ -42,6 +42,25 @@ export const proposalSchema = z.object({
   
   superstitions: z.string().optional(),
 
+  tctDocument: z.object({
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+    content: z.string()
+  }).optional(),
+  lotPlanDocument: z.object({
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+    content: z.string()
+  }).optional(),
+  deedDocument: z.object({
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+    content: z.string()
+  }).optional(),
+
   documents: z.array(z.object({
     name: z.string(),
     type: z.string(),
@@ -49,6 +68,7 @@ export const proposalSchema = z.object({
     content: z.string() // base64
   })).optional(),
 
+  hasProjectManager: z.string().optional(),
   additionalInfo: z.string().optional(),
 });
 
@@ -72,6 +92,7 @@ export const defaultProposalFormData: ProposalFormData = {
   attachments: [],
   superstitions: '',
   documents: [],
+  hasProjectManager: '',
   additionalInfo: '',
 };
 
@@ -107,30 +128,31 @@ export const PROJECT_TYPE_OPTIONS = [
 ];
 
 export const SERVICES_OPTIONS = [
-  { value: 'Comprehensive', label: 'Comprehensive' },
-  { value: 'Piecework', label: 'Piecework' },
-  { value: 'Consultation and Retainer', label: 'Consultation & Retainer' },
+  { value: 'Comprehensive Services', label: 'Comprehensive Services' },
+  { value: 'Piecework Services', label: 'Piecework Services' },
+  { value: 'Consultation & Retainer Services', label: 'Consultation & Retainer Services' },
 ];
 
 // Based on OUR_SERVICES_DATA
-export const SCOPE_MAPPING: Record<string, { value: string; label: string; desc: string }[]> = {
-  'Comprehensive': [
-    { value: 'Full Architectural Masterplanning', label: 'Full Architectural Masterplanning', desc: 'Integrated spatial design, exterior form development...' },
-    { value: 'Engineering & MEPFS Integration', label: 'Engineering & MEPFS Integration', desc: 'Comprehensive structural calculation, electrical...' },
-    { value: 'Permitting & Bureaucratic Approvals', label: 'Permitting & Bureaucratic Approvals', desc: 'Full regulatory compliance, local government approvals...' },
-    { value: 'Turnkey Construction Supervision', label: 'Turnkey Construction Supervision', desc: 'On-site quality audits, material inspection...' },
+export const SCOPE_MAPPING: Record<string, { value: string; label: string; desc?: string }[]> = {
+  'Comprehensive Services': [
+    { value: 'Comprehensive Design Services', label: 'Comprehensive Design Services' },
+    { value: 'Comprehensive Management Services', label: 'Comprehensive Management Services' },
+    { value: 'Building Construction Services', label: 'Building Construction Services' },
   ],
-  'Piecework': [
-    { value: 'Architectural Working Drawings', label: 'Architectural Working Drawings', desc: 'High-precision technical drafting...' },
-    { value: 'Joinery & Facade Detailing', label: 'Joinery & Facade Detailing', desc: 'Bespoke architectural metalwork...' },
-    { value: 'Peer Review & Value Engineering', label: 'Peer Review & Value Engineering', desc: 'Independent auditing of third-party blueprints...' },
-    { value: 'Material Specification Audits', label: 'Material Specification Audits', desc: 'Specialized procurement advisory...' },
+  'Piecework Services': [
+    { value: 'Architectural Interiors', label: 'Architectural Interiors' },
+    { value: 'Lighting Design', label: 'Lighting Design' },
+    { value: 'Site Planning', label: 'Site Planning' },
+    { value: 'Document & Assessment', label: 'Document & Assessment' },
+    { value: 'Code Compliance', label: 'Code Compliance' },
+    { value: 'Permit Processing', label: 'Permit Processing' },
+    { value: 'Masonry', label: 'Masonry' },
+    { value: 'Paint Jobs', label: 'Paint Jobs' },
   ],
-  'Consultation and Retainer': [
-    { value: 'Strategic Project Advisory', label: 'Strategic Project Advisory', desc: 'High-level guidance on feasibility...' },
-    { value: 'Portfolio & Asset Management', label: 'Portfolio & Asset Management', desc: 'Long-term architectural strategy...' },
-    { value: 'Phased Development Planning', label: 'Phased Development Planning', desc: 'Masterplanning and architectural roadmapping...' },
-    { value: 'On-Demand Technical Consultation', label: 'On-Demand Technical Consultation', desc: 'Flexible access to architectural expertise...' },
+  'Consultation & Retainer Services': [
+    { value: 'Consultation', label: 'Consultation' },
+    { value: 'Retainer', label: 'Retainer' },
   ]
 };
 
