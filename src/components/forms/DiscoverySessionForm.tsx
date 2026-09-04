@@ -83,6 +83,8 @@ export const DiscoverySessionForm: React.FC = () => {
     formData.email &&
     formData.contactNumber &&
     formData.address.regionCode &&
+    formData.clientAddress.regionCode &&
+    formData.clientAddress.cityCode &&
     formData.meetingType &&
     (formData.meetingType === 'online' || (formData.location && formData.venue)) &&
     formData.date &&
@@ -195,7 +197,7 @@ export const DiscoverySessionForm: React.FC = () => {
               <div className="flex flex-col gap-3 lg:gap-2">
                 <div className="pb-1">
                   <FormFieldRenderer
-                    config={{ type: 'address', name: 'clientAddress', label: 'Client Address', variant: 'city-region-only' } as any}
+                    config={{ type: 'address', name: 'clientAddress', label: 'Client Address', badge: '!', variant: 'city-region-only' } as any}
                     value={formData.clientAddress}
                     onChange={handleChange}
                     isDarkMode={isDarkMode}

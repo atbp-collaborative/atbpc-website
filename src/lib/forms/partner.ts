@@ -154,7 +154,6 @@ export const PARTNER_FORM_INITIAL_DATA = {
   birRegistration: null as File | null,
   dtiRegistration: null as File | null,
   philgepsRegistration: null as File | null,
-  sourceOfIncome: null as File | null,
   prcLicense: null as File | null,
   ptrLicense: null as File | null,
 };
@@ -166,7 +165,7 @@ export const partnerSchema = z.object({
   category: z.string().optional(), // conditionally required
   message: z.string().min(1, "Message is required"),
   specialty: z.string().optional(), // conditionally required
-  profileLink: z.string().optional(),
+  profileLink: z.string().min(1, "Profile Link is required"),
   coverVideoLink: z.string().optional(),
   mapLink: z.string().min(1, "Map Link is required"),
   licenseLink: z.string().optional(),
@@ -188,7 +187,6 @@ export const partnerSchema = z.object({
   birRegistration: z.any().refine((file) => file !== null, "BIR Registration is required"),
   dtiRegistration: z.any().refine((file) => file !== null, "DTI Registration is required"),
   philgepsRegistration: z.any().optional(),
-  sourceOfIncome: z.any().optional(),
   prcLicense: z.any().optional(),
   ptrLicense: z.any().optional(),
 });

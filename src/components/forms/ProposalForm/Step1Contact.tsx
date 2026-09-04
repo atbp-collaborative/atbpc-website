@@ -26,13 +26,7 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
   };
 
   const renderPersonList = (field: 'principalDecisionMakers' | 'authorizedRepresentatives', label: string, max: number = 2, personPrefix: string) => {
-    // Filter out extra completely empty persons to prevent them from showing up due to local storage, but keep at least 1
-    const rawList = formData[field] || [{}];
-    const list = rawList.filter((person, idx) => {
-      if (idx === 0) return true;
-      return Object.values(person).some(v => v && typeof v === 'string' && v.trim() !== '');
-    });
-    // If we filtered out items, we ideally should update the form state, but for rendering this is fine.
+    const list = formData[field] || [{}];
 
     const handleUpdate = (index: number, key: string, value: string) => {
       const newList = [...list];

@@ -1,36 +1,36 @@
 import { z } from 'zod';
 
 export const personSchema = z.object({
-  firstName: z.string().optional(),
+  firstName: z.string().min(1, 'Given name is required'),
   middleName: z.string().optional(),
-  lastName: z.string().optional(),
-  address: z.string().optional(),
+  lastName: z.string().min(1, 'Last name is required'),
+  address: z.string().min(1, 'Address is required'),
   title: z.string().optional(),
-  contactNo: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
+  contactNo: z.string().min(1, 'Contact number is required'),
+  email: z.string().email('Valid email is required'),
 });
 
 export const proposalSchema = z.object({
-  businessEntity: z.string().optional(),
-  principalDecisionMakers: z.array(personSchema).max(3).optional(),
+  businessEntity: z.string().min(1, 'Business Entity is required'),
+  principalDecisionMakers: z.array(personSchema).min(1, 'At least one principal decision maker is required').max(3),
   authorizedRepresentatives: z.array(personSchema).max(1).optional(),
 
-  category: z.string().optional(),
-  typology: z.string().optional(),
-  projectType: z.string().optional(),
-  services: z.string().optional(),
-  scope: z.string().optional(),
+  category: z.string().min(1, 'Category is required'),
+  typology: z.string().min(1, 'Typology is required'),
+  projectType: z.string().min(1, 'Project type is required'),
+  services: z.string().min(1, 'Services are required'),
+  scope: z.string().min(1, 'Scope is required'),
 
-  propertyAreaType: z.string().optional(),
-  propertyAreaSize: z.string().optional(),
-  siteAddress: z.string().optional(),
+  propertyAreaType: z.string().min(1, 'Property area type is required'),
+  propertyAreaSize: z.string().min(1, 'Property area size is required'),
+  siteAddress: z.string().min(1, 'Site address is required'),
   mapCoordinates: z.object({
     lat: z.number(),
     lng: z.number(),
-    address: z.string().optional()
+    address: z.string().min(1, 'Map address is required')
   }).optional().nullable(),
 
-  constructionBudget: z.string().optional(),
+  constructionBudget: z.string().min(1, 'Construction budget is required'),
   targetDate: z.string().optional(),
 
   attachments: z.array(z.object({
@@ -70,6 +70,19 @@ export const proposalSchema = z.object({
 
   hasProjectManager: z.string().optional(),
   additionalInfo: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // If about the client is a business, require authorized representatives
+  // Note: Since 'businessEntity' is now required, it will always be a business in this context,
+  // but let's assume if businessEntity is filled, we need an authorized rep.
+  if (data.businessEntity && data.businessEntity.trim().length > 0) {
+    if (!data.authorizedRepresentatives || data.authorizedRepresentatives.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Authorized representative is required for a business entity',
+        path: ['authorizedRepresentatives'],
+      });
+    }
+  }
 });
 
 export type ProposalFormData = z.infer<typeof proposalSchema>;
