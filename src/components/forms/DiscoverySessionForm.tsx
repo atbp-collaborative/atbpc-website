@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle } from 'lucide-react';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-fields';
 import { RevolvingButton } from '@/components/primitives/RevolvingButton';
 import { useFormViewport } from '@/hooks/useFormViewport';

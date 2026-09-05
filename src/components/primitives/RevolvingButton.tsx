@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 
 interface RevolvingButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean;

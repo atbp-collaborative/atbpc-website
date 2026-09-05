@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudioSubpageData } from '@/lib/dummy-data/our-services';
 import { ROUTES } from '@/lib/navigation/routes';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 
 interface StudioServicesPageProps {
   data: StudioSubpageData;

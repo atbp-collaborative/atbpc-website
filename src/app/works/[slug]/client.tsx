@@ -6,13 +6,13 @@ import { LayoutGrid, ArrowLeft, ChevronLeft, ChevronRight, MapPin, Play, ArrowUp
 import { notFound, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getProjectById, getProjects } from '@/lib/services/projects';
-import { getMembers } from '@/lib/services/members';
+import { getProjectById, getProjects } from '@/services/projects';
+import { getMembers } from '@/services/members';
 import { Project, Member } from '@/types';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { ROUTES, projectRoute, memberRoute } from '@/lib/navigation/routes';
 import { WORKS_CATEGORIES } from '@/lib/dummy-data/works';
-import { filterCategories, categoryNavItems, getFilterIcon } from '@/lib/data/typologies';
+import { filterCategories, categoryNavItems, getFilterIcon } from '@/components/primitives/ProjectTypologiesIcons';
 import { useCarouselScroll } from '@/hooks/useCarouselScroll';
 
 import { Button } from '@/components/primitives/Button';

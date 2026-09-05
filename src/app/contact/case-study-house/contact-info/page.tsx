@@ -12,9 +12,9 @@ import {
   Loader2
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { ROUTES } from '@/lib/navigation/routes';
-import { getContactInfo } from '@/lib/services/contact-info';
+import { getContactInfo } from '@/services/contact-info';
 import { ContactInfo } from '@/lib/dummy-data/contact-info';
 import { useFormViewport } from '@/hooks/useFormViewport';
 import { Button } from '@/components/primitives/Button';

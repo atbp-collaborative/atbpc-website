@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useRef, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import { ThemeProvider, useTheme } from '@/lib/theme-context';
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { useContentProtection } from '@/hooks/useContentProtection';
 import { markNavigated } from '@/lib/navigation/nav-history';
 import { Header } from '@/components/global/Header';

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, Shield, X } from 'lucide-react';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { InfoModal } from '@/components/modals/InfoModal';
 import { FormFieldRenderer } from '@/components/forms/form-fields';
 import { MultiEntryButton } from '@/components/primitives/MultiEntryButton';

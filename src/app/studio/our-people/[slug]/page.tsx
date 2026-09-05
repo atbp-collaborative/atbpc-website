@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Member, Project } from '@/types';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { ROUTES, projectRoute } from '@/lib/navigation/routes';
 import { hasNavigatedWithinApp } from '@/lib/navigation/nav-history';
 import { Accordion } from '@/components/primitives/Accordion';
 import { BreadcrumbButton } from '@/components/primitives/BreadcrumbButton';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
-import { getMemberById } from '@/lib/services/members';
-import { getProjects } from '@/lib/services/projects';
+import { getMemberById } from '@/services/members';
+import { getProjects } from '@/services/projects';
 
 interface MemberDetailProps {
   member: Member;

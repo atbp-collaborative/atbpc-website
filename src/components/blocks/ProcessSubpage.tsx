@@ -11,7 +11,7 @@ import {
   CATEGORY_GROUPS,
   ProcessNode
 } from '@/lib/dummy-data/process';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 
 interface ProcessSubpageProps {
   data: StudioSubpageData;

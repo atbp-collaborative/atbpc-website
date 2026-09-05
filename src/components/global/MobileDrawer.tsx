@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { X, ChevronDown, Sun, Moon, Shield, ShieldOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePathname } from 'next/navigation';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { ROUTES } from '@/lib/navigation/routes';
 import { AtbpLogo } from '@/components/global/AtbpLogo';
 import { CtaButton } from '@/components/global/CtaButton';

@@ -3,12 +3,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, Shield, Upload } from 'lucide-react';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { InfoModal } from '@/components/modals/InfoModal';
 import { careerPrivacyModalData } from '@/lib/modals/career-privacy';
 import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-fields';
 import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CAREER_FORM_REQUIRED_FIELDS, CareerFormData, CareerFormType, STRUCTURE_DESCRIPTIONS, getRequiredDocumentFields, getDocumentFieldsForStructure } from '@/lib/forms/career';
-import { submitCareerApplication } from '@/lib/services/career-applications';
+import { submitCareerApplication } from '@/services/career-applications';
 import { RevolvingButton } from '@/components/primitives/RevolvingButton';
 import { useFormViewport } from '@/hooks/useFormViewport';
 import { MultiEntryButton } from '@/components/primitives/MultiEntryButton';

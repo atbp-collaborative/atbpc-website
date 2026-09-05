@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getProjectById } from '@/lib/services/projects';
+import { getProjectById } from '@/services/projects';
 import WorksSlugClient from './client';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {

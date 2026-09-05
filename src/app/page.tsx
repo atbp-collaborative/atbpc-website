@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
 
-import { getHomeCarouselImages } from '@/lib/services/home-carousel';
+import { getHomeCarouselImages } from '@/services/home-carousel';
 import { HomeCarouselImage } from '@/lib/dummy-data/home-carousel';
 
 export default function HeroPage() {

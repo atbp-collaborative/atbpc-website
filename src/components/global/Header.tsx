@@ -4,14 +4,14 @@ import React from 'react';
 import Link from 'next/link';
 import { Menu, X, Calendar, FileText } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { ROUTES } from '@/lib/navigation/routes';
 import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '@/lib/navigation/nav-data';
 import { AtbpLogo } from '@/components/global/AtbpLogo';
 import { NavItem } from '@/components/global/NavItem';
 import { CtaButton } from '@/components/global/CtaButton';
 import { WORKS_CATEGORIES } from '@/lib/dummy-data/works';
-import { filterCategories } from '@/lib/data/typologies';
+import { filterCategories } from '@/components/primitives/ProjectTypologiesIcons';
 
 import { useActiveNav } from '@/hooks';
 
