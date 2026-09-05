@@ -1,4 +1,4 @@
-import { HOME_CAROUSEL_DATA, HomeCarouselImage } from '@/lib/dummy-data/home-carousel';
+import { HOME_CAROUSEL_DATA, HomeCarouselImage } from '@/lib/dummy-data/works/home-carousel';
 
 // Reads from local dummy content today; swap the body for a Supabase/DB/CMS
 // call later without changing any calling component.

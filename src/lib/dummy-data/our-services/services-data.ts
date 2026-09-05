@@ -1,3 +1,26 @@
+import { Service } from '@/types';
+
+export const SERVICES_DATA: Service[] = [
+  {
+    title: 'comprehensive design',
+    iconName: 'Layers',
+    desc: 'Full-envelope design solutions encompassing conceptual planning, structural, MEPFS documents, BIM modeling, and permitting support.',
+    image: '/images/hero_modern_villa_1783495183350.jpg'
+  },
+  {
+    title: 'piecework services',
+    iconName: 'LayoutGrid',
+    desc: 'Targeted architectural detailing, modular kitchen/bath designs, single spaces, or individual drawing sets billed per deliverable.',
+    image: '/images/kiosk_coffee_bar_1783495252161.jpg'
+  },
+  {
+    title: 'consultation',
+    iconName: 'Briefcase',
+    desc: 'Continuous, expert architectural advice designed for ongoing developments, portfolio management, or phased projects that require strategic oversight.',
+    image: '/images/studio_services_img_1785469964556.jpg'
+  }
+];
+
 export interface StudioSubpageData {
   id: string;
   title: string;
@@ -10,8 +33,6 @@ export interface StudioSubpageData {
     title: string;
     desc: string;
   }[];
-  parentTab: string;
-  parentTabLabel: string;
   subtext: string;
 }
 
@@ -40,8 +61,6 @@ export const OUR_SERVICES_DATA: Record<string, StudioSubpageData> = {
         desc: 'On-site quality audits, material inspection, schedule tracking, and seamless contractor direction.'
       }
     ],
-    parentTab: 'our-services',
-    parentTabLabel: 'Our Services Overview',
     subtext: 'From concept to turnkey delivery, we guide every detail of your vision to reality.'
   },
   'piecework-services': {
@@ -68,8 +87,6 @@ export const OUR_SERVICES_DATA: Record<string, StudioSubpageData> = {
         desc: 'Specialized procurement advisory, finish schedules, and performance material sourcing.'
       }
     ],
-    parentTab: 'our-services',
-    parentTabLabel: 'Our Services Overview',
     subtext: 'Targeted architectural solutions and independent technical reviews for bespoke requirements.'
   },
   'consultation-retainer-services': {
@@ -96,8 +113,6 @@ export const OUR_SERVICES_DATA: Record<string, StudioSubpageData> = {
         desc: 'Flexible access to architectural expertise for troubleshooting, peer review, and continuous improvement.'
       }
     ],
-    parentTab: 'our-services',
-    parentTabLabel: 'Our Services Overview',
     subtext: 'Long-term architectural guidance and strategic advisory for complex, ongoing developments.'
   }
 };

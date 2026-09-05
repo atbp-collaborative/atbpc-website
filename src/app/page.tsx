@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
 
 import { getHomeCarouselImages } from '@/services/home-carousel';
-import { HomeCarouselImage } from '@/lib/dummy-data/home-carousel';
+import { HomeCarouselImage } from '@/lib/dummy-data/works/home-carousel';
 
 export default function HeroPage() {
   const [heroActiveIndex, setHeroActiveIndex] = useState<number>(0);

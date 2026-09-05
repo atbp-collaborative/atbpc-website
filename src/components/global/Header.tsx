@@ -10,7 +10,7 @@ import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from
 import { AtbpLogo } from '@/components/global/AtbpLogo';
 import { NavItem } from '@/components/global/NavItem';
 import { CtaButton } from '@/components/global/CtaButton';
-import { WORKS_CATEGORIES } from '@/lib/dummy-data/works';
+import { WORKS_CATEGORIES } from '@/lib/dummy-data/works/works';
 import { filterCategories } from '@/components/primitives/ProjectTypologiesIcons';
 
 import { useActiveNav } from '@/hooks';

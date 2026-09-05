@@ -1,16 +1,14 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { StudioSubpageData } from '@/lib/dummy-data/our-services';
+import { StudioSubpageData } from '@/lib/dummy-data/our-services/services-data';
 import { ProcessStage, ProcessAccordion } from '@/components/blocks/process-stage';
 import { 
   PROCESS_NODES, 
-  PROCESS_NODES_DESIGNING, 
-  PROCESS_NODES_MANAGING, 
-  PROCESS_NODES_BUILDING, 
+  BASE_PROCESS_NODES, 
   CATEGORY_GROUPS,
   ProcessNode
-} from '@/lib/dummy-data/process';
+} from '@/lib/dummy-data/our-process/process-data';
 import { useTheme } from '@/context/ThemeContext';
 
 interface ProcessSubpageProps {
@@ -23,11 +21,11 @@ export const ProcessSubpage: React.FC<ProcessSubpageProps> = ({ data }) => {
   const nodes = useMemo(() => {
     switch (data.id) {
       case 'designing-with-values':
-        return PROCESS_NODES_DESIGNING;
+        return BASE_PROCESS_NODES;
       case 'managing-with-integrity':
-        return PROCESS_NODES_MANAGING;
+        return BASE_PROCESS_NODES;
       case 'building-with-culture':
-        return PROCESS_NODES_BUILDING;
+        return BASE_PROCESS_NODES;
       default:
         return PROCESS_NODES;
     }

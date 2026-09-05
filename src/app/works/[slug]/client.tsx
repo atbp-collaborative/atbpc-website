@@ -11,7 +11,7 @@ import { getMembers } from '@/services/members';
 import { Project, Member } from '@/types';
 import { useTheme } from '@/context/ThemeContext';
 import { ROUTES, projectRoute, memberRoute } from '@/lib/navigation/routes';
-import { WORKS_CATEGORIES } from '@/lib/dummy-data/works';
+import { WORKS_CATEGORIES } from '@/lib/dummy-data/works/works';
 import { filterCategories, categoryNavItems, getFilterIcon } from '@/components/primitives/ProjectTypologiesIcons';
 import { useCarouselScroll } from '@/hooks/useCarouselScroll';
 

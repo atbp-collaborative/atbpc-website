@@ -15,7 +15,7 @@ import dynamic from 'next/dynamic';
 import { useTheme } from '@/context/ThemeContext';
 import { ROUTES } from '@/lib/navigation/routes';
 import { getContactInfo } from '@/services/contact-info';
-import { ContactInfo } from '@/lib/dummy-data/contact-info';
+import { ContactInfo } from '@/lib/dummy-data/contact/contact-info';
 import { useFormViewport } from '@/hooks/useFormViewport';
 import { Button } from '@/components/primitives/Button';
 

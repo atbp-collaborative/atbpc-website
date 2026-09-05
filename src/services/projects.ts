@@ -1,5 +1,5 @@
 import { Project } from '@/types';
-import { PROJECTS_DATA } from '@/lib/dummy-data/projects';
+import { PROJECTS_DATA } from '@/lib/dummy-data/works/projects';
 
 // Reads from local dummy content today; swap the body for a Supabase/DB/CMS
 // call later without changing any calling component.
