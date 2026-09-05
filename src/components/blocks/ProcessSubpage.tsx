@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { StudioSubpageData } from '@/dummy-data/our-services';
+import { StudioSubpageData } from '@/lib/dummy-data/our-services';
 import { ProcessStage, ProcessAccordion } from '@/components/blocks/process-stage';
 import { 
   PROCESS_NODES, 
@@ -10,7 +10,7 @@ import {
   PROCESS_NODES_BUILDING, 
   CATEGORY_GROUPS,
   ProcessNode
-} from '@/dummy-data/process';
+} from '@/lib/dummy-data/process';
 import { useTheme } from '@/lib/theme-context';
 
 interface ProcessSubpageProps {

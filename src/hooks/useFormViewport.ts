@@ -7,8 +7,8 @@ export function useFormViewport(heightThreshold: number = 750) {
     function handleResize() {
       const ratio = window.innerWidth / window.innerHeight;
       // Constrain (move buttons to top) if it's a landscape screen (ratio > 1.2)
-      // and vertical height is somewhat limited (< 950px), common for laptops.
-      setIsHeightConstrained(ratio > 1.2 && window.innerHeight < 950);
+      // and vertical height is somewhat limited (< heightThreshold), common for laptops.
+      setIsHeightConstrained(ratio > 1.2 && window.innerHeight < heightThreshold);
     }
 
     window.addEventListener("resize", handleResize);

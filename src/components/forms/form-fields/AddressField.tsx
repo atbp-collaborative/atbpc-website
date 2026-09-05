@@ -5,8 +5,8 @@ import { SelectField } from './SelectField';
 import { TextField } from './TextField';
 import { getFieldThemeStyles } from './fieldStyles';
 import { PhAddress, FieldRenderProps } from './types';
-import { getRegions, getProvinces, getCities, getBarangays } from '@/lib/phAddress';
-import { COUNTRIES } from '@/lib/countries';
+import { getRegions, getProvinces, getCities, getBarangays } from '@/lib/address/phAddress';
+import { COUNTRIES } from '@/lib/address/countries';
 
 type AddressFieldProps = {
   name: string;

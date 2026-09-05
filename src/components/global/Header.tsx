@@ -10,8 +10,10 @@ import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from
 import { AtbpLogo } from '@/components/global/AtbpLogo';
 import { NavItem } from '@/components/global/NavItem';
 import { CtaButton } from '@/components/global/CtaButton';
-import { WORKS_CATEGORIES } from '@/dummy-data/works';
+import { WORKS_CATEGORIES } from '@/lib/dummy-data/works';
 import { filterCategories } from '@/lib/data/typologies';
+
+import { useActiveNav } from '@/hooks';
 
 interface HeaderProps {
   isMobileMenuOpen: boolean;
@@ -24,8 +26,8 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { isDarkMode } = useTheme();
   const pathname = usePathname();
+  const { isWorksActive, isStudioActive, isContactActive, currentCategoryFilter } = useActiveNav();
   const worksSlug = pathname.startsWith('/works/') ? pathname.split('/')[2] : null;
-  const currentCategoryFilter = worksSlug ? decodeURIComponent(worksSlug) : 'All';
 
   const isWorksLanding = pathname === '/works';
   const isStudioLanding = pathname === '/' || pathname === '/studio';
@@ -33,19 +35,6 @@ export const Header: React.FC<HeaderProps> = ({
 
   const isHeroPage = pathname === '/';
   const isHeaderTransparent = isStudioLanding || isWorksLanding || isContactLanding;
-
-  const isWorksActive = pathname.startsWith('/works');
-  const isStudioActive =
-    pathname.startsWith('/our-services') ||
-    pathname.startsWith('/our-people') ||
-    pathname.startsWith('/services') ||
-    pathname.startsWith('/studio/');
-  const isContactActive =
-    pathname.startsWith('/contact') ||
-    pathname === '/career' ||
-    pathname === '/supplier' ||
-    pathname === '/builder' ||
-    pathname === '/consultant';
 
   const isWorksCategory = filterCategories.includes(currentCategoryFilter) || WORKS_CATEGORIES.some(c => c.id === currentCategoryFilter);
   const isSingleProjectPage = pathname.startsWith('/works/') && worksSlug && !isWorksCategory;
