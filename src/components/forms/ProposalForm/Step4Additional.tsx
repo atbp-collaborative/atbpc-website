@@ -128,7 +128,7 @@ export const Step4Additional: React.FC<Props> = ({ formData, updateField, isDark
         isOpen={showDocumentsModal}
         onClose={() => setShowDocumentsModal(false)}
         formData={formData}
-        onChange={(name, val) => updateField(name as any, val)}
+        onChange={(name: string, val: any) => updateField(name as any, val)}
         isDarkMode={isDarkMode}
       />
     </div>

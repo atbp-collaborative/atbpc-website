@@ -204,7 +204,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
         </button>
       </div>
       <Button type="revolving"
-        type="submit"
+        htmlType="submit"
         disabled={isSubmitting || !canSubmit}
         active={!privacyAcknowledged}
         title={!privacyAcknowledged ? 'Acknowledge the Privacy Statement to continue' : !isFormValid ? 'Fill in all required fields to continue' : undefined}
@@ -494,7 +494,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
       <FacultyContactModal
         isOpen={showFacultyContactModal}
         onClose={() => setShowFacultyContactModal(false)}
-        onSave={(contacts) => setFormData(prev => ({ ...prev, facultyContacts: contacts }))}
+        onSave={(contacts: any) => setFormData(prev => ({ ...prev, facultyContacts: contacts }))}
         initialContacts={formData.facultyContacts}
         isDarkMode={isDarkMode}
       />

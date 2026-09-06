@@ -79,7 +79,7 @@ export const DiscoverySessionForm: React.FC = () => {
   const ActionButtons = ({ isTop }: { isTop?: boolean }) => (
     <div className={`grid grid-cols-1 gap-4 w-full ${isTop ? 'md:w-[50%] md:ml-auto' : ''}`}>
       <Button type="revolving"
-        type="submit"
+        htmlType="submit"
         disabled={isSubmitting || !isFormValid}
         active={true}
         title={!isFormValid ? 'Fill in all required fields to continue' : undefined}

@@ -4,6 +4,7 @@ import { useTheme } from '@/context/ThemeContext';
 
 export interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'onClick'> {
   type?: 'filled' | 'outline' | 'revolving' | 'ghost' | 'iconOnly';
+  htmlType?: 'button' | 'submit' | 'reset';
   label?: string;
   fullWidth?: boolean;
   /** Optional trailing icon rendered after the label */
@@ -18,6 +19,7 @@ export interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonE
 
 export const Button: React.FC<ButtonProps> = ({
   type = 'filled',
+  htmlType,
   label,
   fullWidth = false,
   className = '',
@@ -39,6 +41,7 @@ export const Button: React.FC<ButtonProps> = ({
           <div className="absolute inset-[-100%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,var(--color-space-sparkle)_20%,transparent_20%,transparent_50%,var(--color-space-sparkle)_70%,transparent_70%,transparent_100%)]" />
         )}
         <button
+          type={htmlType || 'button'}
           disabled={disabled}
           onClick={onClick}
           className={`relative z-10 w-full h-full rounded-[11px] py-2 px-4 text-caption font-medium transition-all hover:opacity-90 ${isDarkMode ? 'bg-vintage-charcoal text-white' : 'bg-white text-vintage-charcoal'} ${className}`}
@@ -85,6 +88,7 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button
       {...props}
+      type={htmlType || 'button'}
       disabled={disabled}
       onClick={onClick}
       className={`${baseStyles} ${typeStyles} ${widthStyles} ${disabledStyles} ${className}`}

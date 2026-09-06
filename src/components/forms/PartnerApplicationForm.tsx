@@ -388,7 +388,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
         isOpen={showAddressModal}
         onClose={() => setShowAddressModal(false)}
         initialAddresses={formData.addresses}
-        onSave={(addresses) => setFormData(prev => ({ ...prev, addresses }))}
+        onSave={(addresses: any) => setFormData(prev => ({ ...prev, addresses }))}
         isDarkMode={isDarkMode}
       />
 
@@ -396,7 +396,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
         isOpen={showEmailModal}
         onClose={() => setShowEmailModal(false)}
         initialEmails={formData.emails}
-        onSave={(emails) => setFormData(prev => ({ ...prev, emails }))}
+        onSave={(emails: any) => setFormData(prev => ({ ...prev, emails }))}
         isDarkMode={isDarkMode}
       />
 
@@ -404,7 +404,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
         isOpen={showContactModal}
         onClose={() => setShowContactModal(false)}
         initialContacts={formData.contacts}
-        onSave={(contacts) => setFormData(prev => ({ ...prev, contacts }))}
+        onSave={(contacts: any) => setFormData(prev => ({ ...prev, contacts }))}
         isDarkMode={isDarkMode}
       />
 
@@ -420,7 +420,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
           prcLicense: formData.prcLicense,
           ptrLicense: formData.ptrLicense,
         }}
-        onSave={(regs) => setFormData(prev => ({ ...prev, ...regs }))}
+        onSave={(regs: any) => setFormData(prev => ({ ...prev, ...regs }))}
         isDarkMode={isDarkMode}
       />
 
@@ -432,7 +432,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
           instagram: formData.instagram,
           websiteLink: formData.websiteLink,
         }}
-        onSave={(vals) => setFormData(prev => ({ ...prev, ...vals }))}
+        onSave={(vals: any) => setFormData(prev => ({ ...prev, ...vals }))}
         isDarkMode={isDarkMode}
       />
     </div>
