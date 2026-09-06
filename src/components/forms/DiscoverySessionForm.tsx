@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-fields';
-import { RevolvingButton } from '@/components/primitives/buttons/RevolvingButton';
+import { Button } from '@/components/primitives/buttons/Button';
 import { useFormViewport } from '@/hooks/useFormViewport';
 import { 
   DiscoverySessionFormData, 

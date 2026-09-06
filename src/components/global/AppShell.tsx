@@ -45,7 +45,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
         isFullScreenLanding && !isOurPeople
           ? 'h-screen overflow-hidden flex flex-col'
           : isOurPeople
-            ? 'min-h-[100dvh] md:h-screen md:overflow-hidden flex flex-col'
+            ? 'min-h-dvh md:h-screen md:overflow-hidden flex flex-col'
             : 'min-h-screen'
       } font-sans transition-colors duration-500 ease-in-out ${
         isDarkMode ? 'bg-vintage-charcoal text-bright-gray' : 'bg-bright-gray text-vintage-charcoal'

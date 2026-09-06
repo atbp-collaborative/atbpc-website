@@ -9,7 +9,7 @@ import { careerPrivacyModalData } from '@/lib/modals/career-privacy';
 import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-fields';
 import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CAREER_FORM_REQUIRED_FIELDS, CareerFormData, CareerFormType, STRUCTURE_DESCRIPTIONS, getRequiredDocumentFields, getDocumentFieldsForStructure } from '@/lib/forms/career.schema';
 import { submitCareerApplication } from '@/services/api.service';
-import { RevolvingButton } from '@/components/primitives/buttons/RevolvingButton';
+import { Button } from '@/components/primitives/buttons/Button';
 import { useFormViewport } from '@/hooks/useFormViewport';
 import { MultiEntryButton } from '@/components/primitives/buttons/MultiEntryButton';
 import { EmergencyContactModal } from '@/components/modals/EmergencyContactModal';

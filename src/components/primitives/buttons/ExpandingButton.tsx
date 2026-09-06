@@ -84,7 +84,7 @@ export const ExpandingButton: React.FC<ExpandingButtonProps> = ({
     return (
       <div className="flex items-center justify-center">
         <span
-          className={`max-w-0 ${expandedMaxWidthClass} opacity-0 group-hover:opacity-100 transition-all duration-[700ms] delay-300 group-hover:delay-0 ease-out overflow-hidden whitespace-nowrap flex flex-col items-end text-right font-sans text-micro font-semibold uppercase tracking-wider leading-tight group-hover:mr-2`}
+          className={`max-w-0 ${expandedMaxWidthClass} opacity-0 group-hover:opacity-100 transition-all duration-700 delay-300 group-hover:delay-0 ease-out overflow-hidden whitespace-nowrap flex flex-col items-end text-right font-sans text-micro font-semibold uppercase tracking-wider leading-tight group-hover:mr-2`}
         >
           {lines ? (
             <>
