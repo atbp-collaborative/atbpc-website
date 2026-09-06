@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ProposalFormData, CATEGORY_OPTIONS, TYPOLOGY_MAPPING, PROJECT_TYPE_OPTIONS, SERVICES_OPTIONS, SCOPE_MAPPING } from '@/lib/forms/proposal';
+import { ProposalFormData, CATEGORY_OPTIONS, TYPOLOGY_MAPPING, PROJECT_TYPE_OPTIONS, SERVICES_OPTIONS, SCOPE_MAPPING } from '@/lib/forms/proposal.schema';
 import { SelectField } from '@/components/forms/form-fields/SelectField';
 
 interface Props {

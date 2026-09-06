@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Trash2, MapPin } from 'lucide-react';
 import { Button } from '@/components/primitives/Button';
 import { MultiEntryButton } from '@/components/primitives/MultiEntryButton';
-import { PartnerAddress } from '@/lib/forms/partner';
+import { PartnerAddress } from '@/lib/forms/partner.schema';
 import { AddressField, SelectField, TextField, EMPTY_PH_ADDRESS } from '@/components/forms/form-fields';
 
 interface MultiAddressModalProps {

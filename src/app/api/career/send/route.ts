@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 import { z } from 'zod';
 import * as React from 'react';
 import { CareerEmailTemplate } from '@/components/emails/CareerEmailTemplate';
-import { careerSchema } from '@/lib/forms/career';
+import { careerSchema } from '@/lib/forms/career.schema';
 
 export async function POST(request: Request) {
   try {

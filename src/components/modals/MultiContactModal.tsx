@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Trash2, Phone } from 'lucide-react';
 import { Button } from '@/components/primitives/Button';
 import { MultiEntryButton } from '@/components/primitives/MultiEntryButton';
-import { PartnerContact } from '@/lib/forms/partner';
+import { PartnerContact } from '@/lib/forms/partner.schema';
 import { TextField } from '@/components/forms/form-fields';
 
 interface MultiContactModalProps {

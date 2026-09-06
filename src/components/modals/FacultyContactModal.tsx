@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/primitives/Button';
 import { TextField } from '@/components/forms/form-fields';
-import { FacultyContacts } from '@/lib/forms/career';
+import { FacultyContacts } from '@/lib/forms/career.schema';
 
 interface FacultyContactModalProps {
   isOpen: boolean;

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import { getMembers } from '@/services/members';
+import { getMembers } from '@/services/dummy-data.service';
 import { Member, MemberCategory } from '@/types';
 import { PeopleCarousel } from '@/components/blocks/PeopleCarousel';
 

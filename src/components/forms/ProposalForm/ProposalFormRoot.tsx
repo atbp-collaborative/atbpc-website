@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { usePersistentForm } from '@/hooks/usePersistentForm';
-import { defaultProposalFormData, ProposalFormData } from '@/lib/forms/proposal';
+import { defaultProposalFormData, ProposalFormData } from '@/lib/forms/proposal.schema';
+import { submitProposal } from '@/services/api.service';
 import { Step1Contact } from './Step1Contact';
 import { Step2Services } from './Step2Services';
 import { Step3Property } from './Step3Property';
@@ -36,12 +37,7 @@ export const ProposalFormRoot: React.FC = () => {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const res = await fetch('/api/proposal/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      if (!res.ok) throw new Error('Failed to submit');
+      await submitProposal(formData);
       setSubmitSuccess(true);
       clearForm();
     } catch (err) {

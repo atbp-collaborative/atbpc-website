@@ -12,7 +12,7 @@ import { MultiEmailModal } from '@/components/modals/MultiEmailModal';
 import { MultiContactModal } from '@/components/modals/MultiContactModal';
 import { MultiRegistrationModal } from '@/components/modals/MultiRegistrationModal';
 import { SocialMediaModal } from '@/components/modals/SocialMediaModal';
-import { getPartnerFormFields, PARTNER_FORM_INITIAL_DATA, PartnerFormData, PartnerFormVariant } from '@/lib/forms/partner';
+import { getPartnerFormFields, PARTNER_FORM_INITIAL_DATA, PartnerFormData, PartnerFormVariant } from '@/lib/forms/partner.schema';
 import { useFormViewport } from '@/hooks/useFormViewport';
 
 export interface PartnerApplicationFormProps {

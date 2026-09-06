@@ -6,8 +6,8 @@ import { LayoutGrid, ArrowLeft, ChevronLeft, ChevronRight, MapPin, Play, ArrowUp
 import { notFound, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getProjectById, getProjects } from '@/services/projects';
-import { getMembers } from '@/services/members';
+import { getProjectById, getProjects } from '@/services/dummy-data.service';
+import { getMembers } from '@/services/dummy-data.service';
 import { Project, Member } from '@/types';
 import { useTheme } from '@/context/ThemeContext';
 import { ROUTES, projectRoute, memberRoute } from '@/lib/navigation/routes';

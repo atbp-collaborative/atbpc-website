@@ -11,8 +11,8 @@ import { hasNavigatedWithinApp } from '@/lib/navigation/nav-history';
 import { Accordion } from '@/components/primitives/Accordion';
 import { BreadcrumbButton } from '@/components/primitives/BreadcrumbButton';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
-import { getMemberById } from '@/services/members';
-import { getProjects } from '@/services/projects';
+import { getMemberById } from '@/services/dummy-data.service';
+import { getProjects } from '@/services/dummy-data.service';
 
 interface MemberDetailProps {
   member: Member;

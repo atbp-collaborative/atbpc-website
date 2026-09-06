@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 import { z } from 'zod';
 import * as React from 'react';
 import { PartnerEmailTemplate } from '@/components/emails/PartnerEmailTemplate';
-import { partnerSchema } from '@/lib/forms/partner';
+import { partnerSchema } from '@/lib/forms/partner.schema';
 
 export async function POST(request: Request) {
   try {

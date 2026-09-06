@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ProposalFormData } from '@/lib/forms/proposal';
+import { ProposalFormData } from '@/lib/forms/proposal.schema';
 import { TextAreaField } from '@/components/forms/form-fields/TextAreaField';
 import { MultiFileUploadField } from '@/components/forms/form-fields/MultiFileUploadField';
 import { SelectField } from '@/components/forms/form-fields/SelectField';
