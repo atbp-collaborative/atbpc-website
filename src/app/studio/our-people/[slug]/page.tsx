@@ -9,7 +9,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { ROUTES, projectRoute } from '@/lib/navigation/routes';
 import { hasNavigatedWithinApp } from '@/lib/navigation/nav-history';
 import { Accordion } from '@/components/primitives/Accordion';
-import { BreadcrumbButton } from '@/components/primitives/BreadcrumbButton';
+import { BreadcrumbButton } from '@/components/primitives/buttons/BreadcrumbButton';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
 import { getMemberById } from '@/services/dummy-data.service';
 import { getProjects } from '@/services/dummy-data.service';

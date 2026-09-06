@@ -6,7 +6,7 @@ import { CheckCircle, Shield, X } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { InfoModal } from '@/components/modals/InfoModal';
 import { FormFieldRenderer } from '@/components/forms/form-fields';
-import { MultiEntryButton } from '@/components/primitives/MultiEntryButton';
+import { MultiEntryButton } from '@/components/primitives/buttons/MultiEntryButton';
 import { MultiAddressModal } from '@/components/modals/MultiAddressModal';
 import { MultiEmailModal } from '@/components/modals/MultiEmailModal';
 import { MultiContactModal } from '@/components/modals/MultiContactModal';

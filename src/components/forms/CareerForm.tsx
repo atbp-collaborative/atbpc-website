@@ -9,9 +9,9 @@ import { careerPrivacyModalData } from '@/lib/modals/career-privacy';
 import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-fields';
 import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CAREER_FORM_REQUIRED_FIELDS, CareerFormData, CareerFormType, STRUCTURE_DESCRIPTIONS, getRequiredDocumentFields, getDocumentFieldsForStructure } from '@/lib/forms/career.schema';
 import { submitCareerApplication } from '@/services/api.service';
-import { RevolvingButton } from '@/components/primitives/RevolvingButton';
+import { RevolvingButton } from '@/components/primitives/buttons/RevolvingButton';
 import { useFormViewport } from '@/hooks/useFormViewport';
-import { MultiEntryButton } from '@/components/primitives/MultiEntryButton';
+import { MultiEntryButton } from '@/components/primitives/buttons/MultiEntryButton';
 import { EmergencyContactModal } from '@/components/modals/EmergencyContactModal';
 import { DocumentsModal } from '@/components/modals/DocumentsModal';
 import { FacultyContactModal } from '@/components/modals/FacultyContactModal';
@@ -203,7 +203,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
           Privacy Statement
         </button>
       </div>
-      <RevolvingButton
+      <Button type="revolving"
         type="submit"
         disabled={isSubmitting || !canSubmit}
         active={!privacyAcknowledged}
@@ -211,7 +211,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
         className={`w-full !bg-space-sparkle !text-bright-gray border-none min-w-0 ${isTop ? '!text-[1.75vw] lg:!text-caption whitespace-nowrap truncate' : ''}`}
       >
         {isSubmitting ? 'Submitting...' : 'Submit Application'}
-      </RevolvingButton>
+      </Button>
     </div>
   );
 

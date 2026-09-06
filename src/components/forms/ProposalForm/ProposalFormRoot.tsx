@@ -9,7 +9,7 @@ import { Step2Services } from './Step2Services';
 import { Step3Property } from './Step3Property';
 import { Step4Additional } from './Step4Additional';
 import { useTheme } from '@/context/ThemeContext';
-import { Button } from '@/components/primitives/Button';
+import { Button } from '@/components/primitives/buttons/Button';
 import { Loader2, ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 

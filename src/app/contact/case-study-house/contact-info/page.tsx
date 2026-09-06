@@ -17,7 +17,7 @@ import { ROUTES } from '@/lib/navigation/routes';
 import { getContactInfo } from '@/services/dummy-data.service';
 import { ContactInfo } from '@/lib/dummy-data/contact/contact-info';
 import { useFormViewport } from '@/hooks/useFormViewport';
-import { Button } from '@/components/primitives/Button';
+import { Button } from '@/components/primitives/buttons/Button';
 
 function VintageTelephoneIcon({ size = 14, className = '' }: { size?: number | string; className?: string }) {
   return (

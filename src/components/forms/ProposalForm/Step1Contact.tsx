@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ProposalFormData } from '@/lib/forms/proposal.schema';
 import { TextField } from '@/components/forms/form-fields/TextField';
 import { SelectField } from '@/components/forms/form-fields/SelectField';
-import { Button } from '@/components/primitives/Button';
+import { Button } from '@/components/primitives/buttons/Button';
 import { Plus, Trash2, Info } from 'lucide-react';
 
 interface Props {

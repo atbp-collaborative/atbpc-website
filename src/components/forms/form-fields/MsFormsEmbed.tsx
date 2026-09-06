@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from '@/components/primitives/Button';
+import { Button } from '@/components/primitives/buttons/Button';
 
 interface MsFormsEmbedProps {
   /** Microsoft Forms share URL. When falsy, this renders `children` directly with no toggle — there's nothing to switch to. */

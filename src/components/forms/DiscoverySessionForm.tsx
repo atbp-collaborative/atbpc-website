@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-fields';
-import { RevolvingButton } from '@/components/primitives/RevolvingButton';
+import { RevolvingButton } from '@/components/primitives/buttons/RevolvingButton';
 import { useFormViewport } from '@/hooks/useFormViewport';
 import { 
   DiscoverySessionFormData, 
@@ -78,7 +78,7 @@ export const DiscoverySessionForm: React.FC = () => {
 
   const ActionButtons = ({ isTop }: { isTop?: boolean }) => (
     <div className={`grid grid-cols-1 gap-4 w-full ${isTop ? 'md:w-[50%] md:ml-auto' : ''}`}>
-      <RevolvingButton
+      <Button type="revolving"
         type="submit"
         disabled={isSubmitting || !isFormValid}
         active={true}
@@ -86,7 +86,7 @@ export const DiscoverySessionForm: React.FC = () => {
         className={`w-full !bg-space-sparkle !text-bright-gray border-none min-w-0 ${isTop ? '!text-[1.75vw] lg:!text-caption whitespace-nowrap truncate' : ''}`}
       >
         {isSubmitting ? 'Submitting...' : 'Schedule Session'}
-      </RevolvingButton>
+      </Button>
     </div>
   );
 

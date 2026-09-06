@@ -2,26 +2,26 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { X, ChevronDown, Sun, Moon, Shield, ShieldOff } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
 import { ROUTES } from '@/lib/navigation/routes';
 import { AtbpLogo } from '@/components/global/AtbpLogo';
-import { CtaButton } from '@/components/global/CtaButton';
+import { ExpandingButton } from '@/components/primitives/buttons/ExpandingButton';
 import { useActiveNav } from '@/hooks/useActiveNav';
 
 import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '@/lib/navigation/nav-data';
-
-import { InfoModal } from '@/components/modals/InfoModal';
-import { legalModalData } from '@/lib/modals/legal';
-import { privacyPolicyModalData } from '@/lib/modals/privacy-policy';
+import { ThemeToggle } from '@/components/global/ThemeToggle';
+import { ProtectionToggle } from '@/components/global/ProtectionToggle';
 
 interface MobileDrawerProps {
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
   isProtectionEnabled?: boolean;
   onToggleProtection?: () => void;
+  onOpenLegal?: () => void;
+  onOpenPrivacy?: () => void;
 }
 
 interface SectionTriggerProps {
@@ -78,18 +78,16 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   setIsMobileMenuOpen,
   isProtectionEnabled = false,
   onToggleProtection,
+  onOpenLegal,
+  onOpenPrivacy,
 }) => {
   const { isDarkMode, toggleTheme } = useTheme();
   const pathname = usePathname();
   const { isWorksActive, isStudioActive, isContactActive, currentCategoryFilter: projectFilter } = useActiveNav();
-  const isHomeActive = pathname === '/';
 
   // Accordion expansion state: only one category expanded at a time
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [expandedWorksCategory, setExpandedWorksCategory] = useState<string | null>(null);
-
-  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
-  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
 
   // Sync expanded section with active category when menu is opened or pathname changes
   useEffect(() => {
@@ -360,7 +358,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
             {/* Drawer Footer / CTA Area */}
             <div className="space-y-2.5 pt-6 mt-6">
-              <CtaButton
+              <ExpandingButton
                 layout="full"
                 variant="solid"
                 lines={['Schedule a', 'Discovery Session']}
@@ -369,7 +367,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 onClick={closeDrawer}
               />
 
-              <CtaButton
+              <ExpandingButton
                 layout="full"
                 variant="outline"
                 lines={['Request a', 'Proposal']}
@@ -386,14 +384,14 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               <div className="flex md:hidden flex-col items-center justify-center space-y-2 pt-2 w-full">
                 <div className="flex items-center justify-center gap-2.5 text-[10px] font-sans tracking-wider opacity-90 whitespace-nowrap">
                   <button
-                    onClick={() => setIsLegalModalOpen(true)}
+                    onClick={onOpenLegal}
                     className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
                   >
                     Legal
                   </button>
                   <span className="opacity-40">•</span>
                   <button
-                    onClick={() => setIsPrivacyModalOpen(true)}
+                    onClick={onOpenPrivacy}
                     className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
                   >
                     Privacy Policy
@@ -402,36 +400,19 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
                 <div className="flex items-center justify-center gap-4 pt-1">
                   {onToggleProtection && (
-                    <button
-                      type="button"
-                      onClick={onToggleProtection}
-                      title={isProtectionEnabled ? 'Disable Content Protection' : 'Enable Content Protection'}
-                      aria-label={isProtectionEnabled ? 'Disable Content Protection' : 'Enable Content Protection'}
-                      className={`p-1.5 rounded-md border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
-                        isProtectionEnabled
-                          ? 'border-space-sparkle/50 text-space-sparkle bg-space-sparkle/10'
-                          : isDarkMode
-                          ? 'border-bright-gray/20 text-bright-gray/80 hover:text-white hover:border-bright-gray/40'
-                          : 'border-vintage-charcoal/20 text-vintage-charcoal/80 hover:text-black hover:border-vintage-charcoal/40'
-                      }`}
-                    >
-                      {isProtectionEnabled ? <Shield size={13} /> : <ShieldOff size={13} />}
-                    </button>
+                    <ProtectionToggle
+                      isProtectionEnabled={isProtectionEnabled}
+                      onToggle={onToggleProtection}
+                      isDarkMode={isDarkMode}
+                      className="p-1.5"
+                    />
                   )}
 
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    title={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-                    aria-label={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-                    className={`p-1.5 rounded-md border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
-                      isDarkMode
-                        ? 'border-bright-gray/20 text-bright-gray/80 hover:text-white hover:border-bright-gray/40'
-                        : 'border-vintage-charcoal/20 text-vintage-charcoal/80 hover:text-black hover:border-vintage-charcoal/40'
-                    }`}
-                  >
-                    {isDarkMode ? <Sun size={13} /> : <Moon size={13} />}
-                  </button>
+                  <ThemeToggle
+                    isDarkMode={isDarkMode}
+                    onToggle={toggleTheme}
+                    className="p-1.5"
+                  />
                 </div>
               </div>
             </div>
@@ -440,22 +421,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
         </>
       )}
     </AnimatePresence>
-
-    {/* Dedicated Legal Modal */}
-    <InfoModal
-      isOpen={isLegalModalOpen}
-      onClose={() => setIsLegalModalOpen(false)}
-      isDarkMode={isDarkMode}
-      data={legalModalData.contents}
-    />
-
-    {/* Dedicated Privacy Policy Modal */}
-    <InfoModal
-      isOpen={isPrivacyModalOpen}
-      onClose={() => setIsPrivacyModalOpen(false)}
-      isDarkMode={isDarkMode}
-      data={privacyPolicyModalData.contents}
-    />
   </>
   );
 };

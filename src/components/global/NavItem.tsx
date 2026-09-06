@@ -84,7 +84,7 @@ export const NavItem: React.FC<NavItemProps> = ({
         </span>
         {isActive && (
           <span
-            className={`absolute bottom-0 left-[30%] w-[40%] h-[2px] rounded ${
+            className={`absolute bottom-0 left-[30%] w-[40%] h-0.5 rounded ${
               isHeaderTransparent ? 'bg-white' : 'bg-space-sparkle'
             }`}
           ></span>

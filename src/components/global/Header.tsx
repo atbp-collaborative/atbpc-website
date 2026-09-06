@@ -9,7 +9,7 @@ import { ROUTES } from '@/lib/navigation/routes';
 import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '@/lib/navigation/nav-data';
 import { AtbpLogo } from '@/components/global/AtbpLogo';
 import { NavItem } from '@/components/global/NavItem';
-import { CtaButton } from '@/components/global/CtaButton';
+import { ExpandingButton } from '@/components/primitives/buttons/ExpandingButton';
 import { WORKS_CATEGORIES } from '@/lib/dummy-data/works/works';
 import { filterCategories } from '@/components/primitives/ProjectTypologiesIcons';
 
@@ -41,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isContactInfoPage = pathname === ROUTES.contactInfo;
   const hideHeaderCtas = isSingleProjectPage || isContactInfoPage;
 
-  const [headerHeight, setHeaderHeight] = React.useState(53);
+  const [, setHeaderHeight] = React.useState(53);
   const headerRef = React.useRef<HTMLElement>(null);
 
   React.useEffect(() => {
@@ -131,7 +131,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center space-x-2 sm:space-x-2.5 mr-0 pr-0">
           {!hideHeaderCtas && (
             <>
-              <CtaButton
+              <ExpandingButton
                 title="Schedule a Discovery Session"
                 lines={['Schedule a', 'Discovery Session']}
                 icon={<Calendar size={18} className="shrink-0" />}
@@ -142,7 +142,7 @@ export const Header: React.FC<HeaderProps> = ({
                 expandedMaxWidthClass="group-hover:max-w-[140px]"
               />
 
-              <CtaButton
+              <ExpandingButton
                 title="Request a Proposal"
                 lines={['Request a', 'Proposal']}
                 icon={<FileText size={18} className="shrink-0" />}
