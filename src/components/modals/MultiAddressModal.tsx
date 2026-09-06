@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Trash2, MapPin } from 'lucide-react';
-import { Button } from '@/components/primitives/Button';
-import { MultiEntryButton } from '@/components/primitives/MultiEntryButton';
-import { PartnerAddress } from '@/lib/forms/partner';
+import { Button } from '@/components/primitives/buttons/Button';
+import { MultiEntryButton } from '@/components/primitives/buttons/MultiEntryButton';
+import { PartnerAddress } from '@/lib/forms/partner.schema';
 import { AddressField, SelectField, TextField, EMPTY_PH_ADDRESS } from '@/components/forms/form-fields';
 
 interface MultiAddressModalProps {

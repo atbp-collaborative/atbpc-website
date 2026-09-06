@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Member, MemberCategory } from '@/types';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { ROUTES, memberRoute, memberCategoryRoute } from '@/lib/navigation/routes';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
 import { useCarouselScroll } from '@/hooks/useCarouselScroll';

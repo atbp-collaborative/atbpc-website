@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
-import { useCardLayout } from '@/lib/hooks/useCardLayout';
+import { useCardLayout } from '@/hooks/useCardLayout';
 
 export interface LandingCard {
   id: string;

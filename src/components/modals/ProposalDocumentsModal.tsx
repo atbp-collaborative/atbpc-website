@@ -3,9 +3,9 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
-import { Button } from '@/components/primitives/Button';
+import { Button } from '@/components/primitives/buttons/Button';
 import { FileUploadField } from '@/components/forms/form-fields/FileUploadField';
-import { ProposalFormData } from '@/lib/forms/proposal';
+import { ProposalFormData } from '@/lib/forms/proposal.schema';
 
 interface ProposalDocumentsModalProps {
   isOpen: boolean;

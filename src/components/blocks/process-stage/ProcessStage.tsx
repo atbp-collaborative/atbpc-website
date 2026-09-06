@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2 } from 'lucide-react';
-import { useTheme } from '@/lib/theme-context';
-import type { ProcessNode } from '@/dummy-data/process';
+import { useTheme } from '@/context/ThemeContext';
+import type { ProcessNode } from '@/lib/dummy-data/our-process/process-data';
 
 interface ProcessStageProps {
   nodes: ProcessNode[];

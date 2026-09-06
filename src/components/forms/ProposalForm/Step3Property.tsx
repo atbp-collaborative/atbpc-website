@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ProposalFormData, BUDGET_OPTIONS } from '@/lib/forms/proposal';
+import { ProposalFormData, BUDGET_OPTIONS } from '@/lib/forms/proposal.schema';
 import { TextField } from '@/components/forms/form-fields/TextField';
 import { SelectField } from '@/components/forms/form-fields/SelectField';
 import { DateField } from '@/components/forms/form-fields/DateField';

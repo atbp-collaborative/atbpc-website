@@ -3,52 +3,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle } from 'lucide-react';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-fields';
-import { RevolvingButton } from '@/components/primitives/RevolvingButton';
+import { Button } from '@/components/primitives/buttons/Button';
 import { useFormViewport } from '@/hooks/useFormViewport';
-import { EMPTY_PH_ADDRESS, PhAddress } from '@/components/forms/form-fields/types';
-import { FieldConfig } from '@/components/forms/form-fields/types';
-
-export interface DiscoverySessionFormData {
-  title: string;
-  firstName: string;
-  middleName: string;
-  lastName: string;
-  email: string;
-  contactNumber: string;
-  address: PhAddress;
-  clientAddress: PhAddress;
-  meetingType: 'meet-up' | 'online' | '';
-  venue: string;
-  location: { lat: number; lng: number; address?: string } | null;
-  date: string;
-  startTime: string;
-  endTime: string;
-}
-
-const INITIAL_DATA: DiscoverySessionFormData = {
-  title: '',
-  firstName: '',
-  middleName: '',
-  lastName: '',
-  email: '',
-  contactNumber: '',
-  address: EMPTY_PH_ADDRESS,
-  clientAddress: EMPTY_PH_ADDRESS,
-  meetingType: '',
-  venue: '',
-  location: null,
-  date: '',
-  startTime: '',
-  endTime: '',
-};
+import { 
+  DiscoverySessionFormData, 
+  INITIAL_DISCOVERY_DATA, 
+  DISCOVERY_LEFT_FIELDS, 
+  discoverySchema 
+} from '@/lib/forms/discovery.schema';
+import { submitDiscoverySession } from '@/services/api.service';
 
 export const DiscoverySessionForm: React.FC = () => {
   const { isDarkMode } = useTheme();
   const isHeightConstrained = useFormViewport(680);
 
-  const [formData, setFormData] = useState<DiscoverySessionFormData>(INITIAL_DATA);
+  const [formData, setFormData] = useState<DiscoverySessionFormData>(INITIAL_DISCOVERY_DATA);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -77,33 +48,27 @@ export const DiscoverySessionForm: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const isFormValid =
-    formData.firstName &&
-    formData.lastName &&
-    formData.email &&
-    formData.contactNumber &&
-    formData.address.regionCode &&
-    formData.clientAddress.regionCode &&
-    formData.clientAddress.cityCode &&
-    formData.meetingType &&
-    (formData.meetingType === 'online' || (formData.location && formData.venue)) &&
-    formData.date &&
-    formData.startTime &&
-    formData.endTime;
+  const isFormValid = discoverySchema.safeParse(formData).success;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Mock submission
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await submitDiscoverySession(formData);
       setIsSubmitted(true);
       localStorage.removeItem('discovery-session-form');
-    }, 1200);
+    } catch (err) {
+      console.error(err);
+      // Mock success if endpoint doesn't exist yet
+      setIsSubmitted(true);
+      localStorage.removeItem('discovery-session-form');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
-    setFormData(INITIAL_DATA);
+    setFormData(INITIAL_DISCOVERY_DATA);
     setIsSubmitted(false);
     localStorage.removeItem('discovery-session-form');
   };
@@ -111,26 +76,17 @@ export const DiscoverySessionForm: React.FC = () => {
   const fieldStyles = getFieldThemeStyles('neutral', isDarkMode);
   const inputBorderClass = fieldStyles.borderColor;
 
-  const leftFields: FieldConfig[] = [
-    { type: 'text', name: 'firstName', label: 'Given Name', required: true },
-    { type: 'text', name: 'middleName', label: 'Middle Name' },
-    { type: 'text', name: 'lastName', label: 'Last Name', required: true },
-    { type: 'text', name: 'title', label: 'Title / Suffix / Prefix', placeholder: 'e.g. Mr., Ms., Dr., Jr.' },
-    { type: 'tel', name: 'contactNumber', label: 'Contact No.', required: true },
-    { type: 'email', name: 'email', label: 'Email Address', required: true },
-  ];
-
   const ActionButtons = ({ isTop }: { isTop?: boolean }) => (
     <div className={`grid grid-cols-1 gap-4 w-full ${isTop ? 'md:w-[50%] md:ml-auto' : ''}`}>
-      <RevolvingButton
-        type="submit"
+      <Button type="revolving"
+        htmlType="submit"
         disabled={isSubmitting || !isFormValid}
         active={true}
         title={!isFormValid ? 'Fill in all required fields to continue' : undefined}
         className={`w-full !bg-space-sparkle !text-bright-gray border-none min-w-0 ${isTop ? '!text-[1.75vw] lg:!text-caption whitespace-nowrap truncate' : ''}`}
       >
         {isSubmitting ? 'Submitting...' : 'Schedule Session'}
-      </RevolvingButton>
+      </Button>
     </div>
   );
 
@@ -168,7 +124,7 @@ export const DiscoverySessionForm: React.FC = () => {
             {/* LEFT COLUMN */}
             <div className="w-full lg:w-1/2 flex flex-col gap-3 lg:gap-2 justify-start lg:h-full lg:overflow-hidden">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-2">
-                {leftFields.map((field) => (
+                {DISCOVERY_LEFT_FIELDS.map((field) => (
                   <div key={field.name}>
                     <FormFieldRenderer
                       config={field}

@@ -3,7 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Service } from '@/types';
-import { getServices } from '@/lib/services/design-services';
+import { getServices } from '@/services/dummy-data.service';
 import { SubLandingPage } from '@/components/blocks/SubLandingPage';
 import { LandingCard } from '@/components/blocks/LandingPage';
 import { ROUTES } from '@/lib/navigation/routes';

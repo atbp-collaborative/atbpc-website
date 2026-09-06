@@ -4,7 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { LandingPage, LandingCard } from '@/components/blocks/LandingPage';
 import { ROUTES } from '@/lib/navigation/routes';
-import { WORKS_CATEGORIES } from '@/dummy-data/works';
+import { WORKS_CATEGORIES } from '@/lib/dummy-data/works/works';
 
 export default function WorksPage() {
   const router = useRouter();

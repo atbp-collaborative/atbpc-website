@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { LandingCard } from '@/components/blocks/LandingPage';
 import { SubLandingPage } from '@/components/blocks/SubLandingPage';
 import { ROUTES } from '@/lib/navigation/routes';
-import { OUR_PROCESS_CARDS } from '@/dummy-data/our-services-process';
+import { OUR_PROCESS_CARDS } from '@/lib/dummy-data/our-process/process-data';
 
 export default function OurProcessPage() {
   const router = useRouter();

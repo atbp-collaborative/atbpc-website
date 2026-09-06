@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { Accordion } from '@/components/primitives/Accordion';
 import { CheckCircle2 } from 'lucide-react';
-import type { ProcessNode } from '@/dummy-data/process';
+import type { ProcessNode } from '@/lib/dummy-data/our-process/process-data';
 
 interface ProcessAccordionProps {
   nodes: ProcessNode[];

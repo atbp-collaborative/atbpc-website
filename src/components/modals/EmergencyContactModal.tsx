@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
-import { Button } from '@/components/primitives/Button';
+import { Button } from '@/components/primitives/buttons/Button';
 import { TextField } from '@/components/forms/form-fields';
 import { AddressField } from '@/components/forms/form-fields/AddressField';
 import { PhAddress, EMPTY_PH_ADDRESS } from '@/components/forms/form-fields/types';

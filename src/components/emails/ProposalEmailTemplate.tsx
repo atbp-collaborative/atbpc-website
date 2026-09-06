@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Html, Body, Head, Heading, Container, Text, Section } from '@react-email/components';
-import { ProposalFormData } from '@/lib/forms/proposal';
+import { ProposalFormData } from '@/lib/forms/proposal.schema';
 
 interface ProposalEmailTemplateProps {
   data: ProposalFormData;

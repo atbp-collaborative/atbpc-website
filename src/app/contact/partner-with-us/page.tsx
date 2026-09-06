@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { LandingCard } from '@/components/blocks/LandingPage';
 import { SubLandingPage } from '@/components/blocks/SubLandingPage';
 import { ROUTES } from '@/lib/navigation/routes';
-import { PARTNER_WITH_US_CARDS } from '@/dummy-data/contact';
+import { PARTNER_WITH_US_CARDS } from '@/lib/dummy-data/contact/contact-cards';
 
 export default function PartnerWithUsPage() {
   const router = useRouter();

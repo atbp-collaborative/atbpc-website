@@ -2,12 +2,13 @@
 
 import { Suspense, useState, useEffect, useRef, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import { ThemeProvider, useTheme } from '@/lib/theme-context';
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { useContentProtection } from '@/hooks/useContentProtection';
 import { markNavigated } from '@/lib/navigation/nav-history';
 import { Header } from '@/components/global/Header';
 import { Footer } from '@/components/global/Footer';
 import { MobileDrawer } from '@/components/global/MobileDrawer';
+import { LegalPrivacyModals } from '@/components/modals/LegalPrivacyModals';
 
 // Paths that keep the ordinary scrollable min-h-screen layout instead of the
 // locked full-viewport h-screen treatment used by the marketing/landing pages.
@@ -19,6 +20,8 @@ function AppShellInner({ children }: { children: ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProtectionEnabled, setIsProtectionEnabled] = useState(false);
   const { isShielded } = useContentProtection(isProtectionEnabled);
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
   // Marks that an in-app client-side route change has happened, so
   // MemberDetail's back button can tell a real in-app history from a
@@ -42,7 +45,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
         isFullScreenLanding && !isOurPeople
           ? 'h-screen overflow-hidden flex flex-col'
           : isOurPeople
-            ? 'min-h-[100dvh] md:h-screen md:overflow-hidden flex flex-col'
+            ? 'min-h-dvh md:h-screen md:overflow-hidden flex flex-col'
             : 'min-h-screen'
       } font-sans transition-colors duration-500 ease-in-out ${
         isDarkMode ? 'bg-vintage-charcoal text-bright-gray' : 'bg-bright-gray text-vintage-charcoal'
@@ -58,6 +61,8 @@ function AppShellInner({ children }: { children: ReactNode }) {
           setIsMobileMenuOpen={setIsMobileMenuOpen}
           isProtectionEnabled={isProtectionEnabled}
           onToggleProtection={() => setIsProtectionEnabled((prev) => !prev)}
+          onOpenLegal={() => setIsLegalModalOpen(true)}
+          onOpenPrivacy={() => setIsPrivacyModalOpen(true)}
         />
       </Suspense>
 
@@ -69,6 +74,8 @@ function AppShellInner({ children }: { children: ReactNode }) {
           onToggleTheme={toggleTheme}
           isProtectionEnabled={isProtectionEnabled}
           onToggleProtection={() => setIsProtectionEnabled((prev) => !prev)}
+          onOpenLegal={() => setIsLegalModalOpen(true)}
+          onOpenPrivacy={() => setIsPrivacyModalOpen(true)}
         />
       )}
 
@@ -85,6 +92,14 @@ function AppShellInner({ children }: { children: ReactNode }) {
           </p>
         </div>
       )}
+
+      <LegalPrivacyModals
+        isDarkMode={isDarkMode}
+        isLegalOpen={isLegalModalOpen}
+        onLegalClose={() => setIsLegalModalOpen(false)}
+        isPrivacyOpen={isPrivacyModalOpen}
+        onPrivacyClose={() => setIsPrivacyModalOpen(false)}
+      />
     </div>
   );
 }

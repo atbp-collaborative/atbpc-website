@@ -2,13 +2,14 @@
 
 import React, { useState } from 'react';
 import { usePersistentForm } from '@/hooks/usePersistentForm';
-import { defaultProposalFormData, ProposalFormData } from '@/lib/forms/proposal';
+import { defaultProposalFormData, ProposalFormData } from '@/lib/forms/proposal.schema';
+import { submitProposal } from '@/services/api.service';
 import { Step1Contact } from './Step1Contact';
 import { Step2Services } from './Step2Services';
 import { Step3Property } from './Step3Property';
 import { Step4Additional } from './Step4Additional';
-import { useTheme } from '@/lib/theme-context';
-import { Button } from '@/components/primitives/Button';
+import { useTheme } from '@/context/ThemeContext';
+import { Button } from '@/components/primitives/buttons/Button';
 import { Loader2, ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
@@ -36,12 +37,7 @@ export const ProposalFormRoot: React.FC = () => {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const res = await fetch('/api/proposal/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      if (!res.ok) throw new Error('Failed to submit');
+      await submitProposal(formData);
       setSubmitSuccess(true);
       clearForm();
     } catch (err) {

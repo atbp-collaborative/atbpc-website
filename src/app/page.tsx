@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
 
-import { getHomeCarouselImages } from '@/lib/services/home-carousel';
-import { HomeCarouselImage } from '@/dummy-data/home-carousel';
+import { getHomeCarouselImages } from '@/services/dummy-data.service';
+import { HomeCarouselImage } from '@/lib/dummy-data/works/home-carousel';
 
 export default function HeroPage() {
   const [heroActiveIndex, setHeroActiveIndex] = useState<number>(0);

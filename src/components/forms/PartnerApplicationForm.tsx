@@ -3,16 +3,16 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, Shield, X } from 'lucide-react';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { InfoModal } from '@/components/modals/InfoModal';
 import { FormFieldRenderer } from '@/components/forms/form-fields';
-import { MultiEntryButton } from '@/components/primitives/MultiEntryButton';
+import { MultiEntryButton } from '@/components/primitives/buttons/MultiEntryButton';
 import { MultiAddressModal } from '@/components/modals/MultiAddressModal';
 import { MultiEmailModal } from '@/components/modals/MultiEmailModal';
 import { MultiContactModal } from '@/components/modals/MultiContactModal';
 import { MultiRegistrationModal } from '@/components/modals/MultiRegistrationModal';
 import { SocialMediaModal } from '@/components/modals/SocialMediaModal';
-import { getPartnerFormFields, PARTNER_FORM_INITIAL_DATA, PartnerFormData, PartnerFormVariant } from '@/lib/forms/partner';
+import { getPartnerFormFields, PARTNER_FORM_INITIAL_DATA, PartnerFormData, PartnerFormVariant } from '@/lib/forms/partner.schema';
 import { useFormViewport } from '@/hooks/useFormViewport';
 
 export interface PartnerApplicationFormProps {
@@ -388,7 +388,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
         isOpen={showAddressModal}
         onClose={() => setShowAddressModal(false)}
         initialAddresses={formData.addresses}
-        onSave={(addresses) => setFormData(prev => ({ ...prev, addresses }))}
+        onSave={(addresses: any) => setFormData(prev => ({ ...prev, addresses }))}
         isDarkMode={isDarkMode}
       />
 
@@ -396,7 +396,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
         isOpen={showEmailModal}
         onClose={() => setShowEmailModal(false)}
         initialEmails={formData.emails}
-        onSave={(emails) => setFormData(prev => ({ ...prev, emails }))}
+        onSave={(emails: any) => setFormData(prev => ({ ...prev, emails }))}
         isDarkMode={isDarkMode}
       />
 
@@ -404,7 +404,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
         isOpen={showContactModal}
         onClose={() => setShowContactModal(false)}
         initialContacts={formData.contacts}
-        onSave={(contacts) => setFormData(prev => ({ ...prev, contacts }))}
+        onSave={(contacts: any) => setFormData(prev => ({ ...prev, contacts }))}
         isDarkMode={isDarkMode}
       />
 
@@ -420,7 +420,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
           prcLicense: formData.prcLicense,
           ptrLicense: formData.ptrLicense,
         }}
-        onSave={(regs) => setFormData(prev => ({ ...prev, ...regs }))}
+        onSave={(regs: any) => setFormData(prev => ({ ...prev, ...regs }))}
         isDarkMode={isDarkMode}
       />
 
@@ -432,7 +432,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
           instagram: formData.instagram,
           websiteLink: formData.websiteLink,
         }}
-        onSave={(vals) => setFormData(prev => ({ ...prev, ...vals }))}
+        onSave={(vals: any) => setFormData(prev => ({ ...prev, ...vals }))}
         isDarkMode={isDarkMode}
       />
     </div>

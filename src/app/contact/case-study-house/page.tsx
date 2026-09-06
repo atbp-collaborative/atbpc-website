@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { LandingCard } from '@/components/blocks/LandingPage';
 import { SubLandingPage } from '@/components/blocks/SubLandingPage';
 import { ROUTES } from '@/lib/navigation/routes';
-import { CASE_STUDY_HOUSE_CARDS } from '@/dummy-data/contact';
+import { CASE_STUDY_HOUSE_CARDS } from '@/lib/dummy-data/contact/contact-cards';
 
 export default function CaseStudyHousePage() {
   const router = useRouter();

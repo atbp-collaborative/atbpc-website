@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { LandingCard } from '@/components/blocks/LandingPage';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
-import { useCardLayout } from '@/lib/hooks/useCardLayout';
+import { useCardLayout } from '@/hooks/useCardLayout';
 
 interface SubLandingPageProps {
   cards: LandingCard[];

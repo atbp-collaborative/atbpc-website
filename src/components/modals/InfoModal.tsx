@@ -3,10 +3,10 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
-import { Button } from '@/components/primitives/Button';
+import { Button } from '@/components/primitives/buttons/Button';
 import { ModalData } from '@/lib/modals/types';
 
-interface InfoModalProps {
+export interface InfoModalProps {
   isOpen: boolean;
   onClose: () => void;
   isDarkMode: boolean;
@@ -89,8 +89,12 @@ export const InfoModal: React.FC<InfoModalProps> = ({
                 : 'bg-white/95'
             }`}>
               <div className="flex items-center gap-3">
+                {icon && <div className="text-space-sparkle">{icon}</div>}
                 <div>
                   <h2 className="text-h2 font-sans font-bold tracking-tight lowercase">{title}</h2>
+                  {subtitle && (
+                    <p className="text-micro font-sans tracking-wide opacity-60 uppercase">{subtitle}</p>
+                  )}
                 </div>
               </div>
 
@@ -111,6 +115,14 @@ export const InfoModal: React.FC<InfoModalProps> = ({
             <div className="p-6 sm:p-8 overflow-y-auto space-y-8 text-caption font-light leading-relaxed">
               {data && (
                 <>
+                  {data.intro && (
+                    <div className="space-y-2 border-b pb-6 border-space-sparkle/10">
+                      {data.intro.title && (
+                        <h3 className="font-semibold text-caption">{data.intro.title}</h3>
+                      )}
+                      <p className="opacity-90" dangerouslySetInnerHTML={{ __html: data.intro.text }} />
+                    </div>
+                  )}
 
                   {data.sections?.map((section, idx) => {
                     const SectionIcon = section.icon;
@@ -118,6 +130,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({
                       <section key={idx} className="space-y-3">
                         {section.title && (
                           <div className="flex items-center gap-2 text-h2 font-sans font-bold tracking-tight">
+                            {SectionIcon && <SectionIcon size={16} className="text-space-sparkle shrink-0" />}
                             <h3>{section.title}</h3>
                           </div>
                         )}

@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 import { z } from 'zod';
 import * as React from 'react';
 import { ProposalEmailTemplate } from '@/components/emails/ProposalEmailTemplate';
-import { proposalSchema } from '@/lib/forms/proposal';
+import { proposalSchema } from '@/lib/forms/proposal.schema';
 
 export const maxDuration = 60; // Increase timeout for large file uploads if needed
 

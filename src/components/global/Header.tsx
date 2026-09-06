@@ -4,14 +4,16 @@ import React from 'react';
 import Link from 'next/link';
 import { Menu, X, Calendar, FileText } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { ROUTES } from '@/lib/navigation/routes';
 import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '@/lib/navigation/nav-data';
 import { AtbpLogo } from '@/components/global/AtbpLogo';
 import { NavItem } from '@/components/global/NavItem';
-import { CtaButton } from '@/components/global/CtaButton';
-import { WORKS_CATEGORIES } from '@/dummy-data/works';
-import { filterCategories } from '@/lib/data/typologies';
+import { ExpandingButton } from '@/components/primitives/buttons/ExpandingButton';
+import { WORKS_CATEGORIES } from '@/lib/dummy-data/works/works';
+import { filterCategories } from '@/components/primitives/ProjectTypologiesIcons';
+
+import { useActiveNav } from '@/hooks';
 
 interface HeaderProps {
   isMobileMenuOpen: boolean;
@@ -24,8 +26,8 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { isDarkMode } = useTheme();
   const pathname = usePathname();
+  const { isWorksActive, isStudioActive, isContactActive, currentCategoryFilter } = useActiveNav();
   const worksSlug = pathname.startsWith('/works/') ? pathname.split('/')[2] : null;
-  const currentCategoryFilter = worksSlug ? decodeURIComponent(worksSlug) : 'All';
 
   const isWorksLanding = pathname === '/works';
   const isStudioLanding = pathname === '/' || pathname === '/studio';
@@ -34,25 +36,12 @@ export const Header: React.FC<HeaderProps> = ({
   const isHeroPage = pathname === '/';
   const isHeaderTransparent = isStudioLanding || isWorksLanding || isContactLanding;
 
-  const isWorksActive = pathname.startsWith('/works');
-  const isStudioActive =
-    pathname.startsWith('/our-services') ||
-    pathname.startsWith('/our-people') ||
-    pathname.startsWith('/services') ||
-    pathname.startsWith('/studio/');
-  const isContactActive =
-    pathname.startsWith('/contact') ||
-    pathname === '/career' ||
-    pathname === '/supplier' ||
-    pathname === '/builder' ||
-    pathname === '/consultant';
-
   const isWorksCategory = filterCategories.includes(currentCategoryFilter) || WORKS_CATEGORIES.some(c => c.id === currentCategoryFilter);
   const isSingleProjectPage = pathname.startsWith('/works/') && worksSlug && !isWorksCategory;
   const isContactInfoPage = pathname === ROUTES.contactInfo;
   const hideHeaderCtas = isSingleProjectPage || isContactInfoPage;
 
-  const [headerHeight, setHeaderHeight] = React.useState(53);
+  const [, setHeaderHeight] = React.useState(53);
   const headerRef = React.useRef<HTMLElement>(null);
 
   React.useEffect(() => {
@@ -142,7 +131,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center space-x-2 sm:space-x-2.5 mr-0 pr-0">
           {!hideHeaderCtas && (
             <>
-              <CtaButton
+              <ExpandingButton
                 title="Schedule a Discovery Session"
                 lines={['Schedule a', 'Discovery Session']}
                 icon={<Calendar size={18} className="shrink-0" />}
@@ -153,7 +142,7 @@ export const Header: React.FC<HeaderProps> = ({
                 expandedMaxWidthClass="group-hover:max-w-[140px]"
               />
 
-              <CtaButton
+              <ExpandingButton
                 title="Request a Proposal"
                 lines={['Request a', 'Proposal']}
                 icon={<FileText size={18} className="shrink-0" />}

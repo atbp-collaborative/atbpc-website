@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ProposalFormData } from '@/lib/forms/proposal';
+import { ProposalFormData } from '@/lib/forms/proposal.schema';
 import { TextAreaField } from '@/components/forms/form-fields/TextAreaField';
 import { MultiFileUploadField } from '@/components/forms/form-fields/MultiFileUploadField';
 import { SelectField } from '@/components/forms/form-fields/SelectField';
@@ -128,7 +128,7 @@ export const Step4Additional: React.FC<Props> = ({ formData, updateField, isDark
         isOpen={showDocumentsModal}
         onClose={() => setShowDocumentsModal(false)}
         formData={formData}
-        onChange={(name, val) => updateField(name as any, val)}
+        onChange={(name: string, val: any) => updateField(name as any, val)}
         isDarkMode={isDarkMode}
       />
     </div>

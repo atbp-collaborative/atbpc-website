@@ -3,9 +3,9 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, FileText } from 'lucide-react';
-import { Button } from '@/components/primitives/Button';
+import { Button } from '@/components/primitives/buttons/Button';
 import { FormFieldRenderer } from '@/components/forms/form-fields';
-import { PartnerFormVariant } from '@/lib/forms/partner';
+import { PartnerFormVariant } from '@/lib/forms/partner.schema';
 
 interface BusinessRegistrations {
   secRegistration: File | null;

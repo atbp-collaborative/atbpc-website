@@ -6,18 +6,19 @@ import { LayoutGrid, ArrowLeft, ChevronLeft, ChevronRight, MapPin, Play, ArrowUp
 import { notFound, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getProjectById, getProjects } from '@/lib/services/projects';
-import { getMembers } from '@/lib/services/members';
+import { getProjectById, getProjects } from '@/services/dummy-data.service';
+import { getMembers } from '@/services/dummy-data.service';
 import { Project, Member } from '@/types';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/context/ThemeContext';
 import { ROUTES, projectRoute, memberRoute } from '@/lib/navigation/routes';
-import { WORKS_CATEGORIES } from '@/dummy-data/works';
-import { filterCategories, categoryNavItems, getFilterIcon } from '@/lib/data/typologies';
+import { WORKS_CATEGORIES } from '@/lib/dummy-data/works/works';
+import { filterCategories, categoryNavItems, getFilterIcon } from '@/components/primitives/ProjectTypologiesIcons';
 import { useCarouselScroll } from '@/hooks/useCarouselScroll';
 
-import { Button } from '@/components/primitives/Button';
+import { Button } from '@/components/primitives/buttons/Button';
+import { ExpandingButton } from '@/components/primitives/buttons/ExpandingButton';
 import { Accordion } from '@/components/primitives/Accordion';
-import { BreadcrumbButton } from '@/components/primitives/BreadcrumbButton';
+import { BreadcrumbButton } from '@/components/primitives/buttons/BreadcrumbButton';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
 import { isUnsplashUrl, unsplashLoader } from '@/lib/imageLoaders';
 import { ProjectCard } from '@/components/blocks/ProjectCard';
@@ -375,15 +376,7 @@ function ProjectDetailContent({
 
                   if (isLastImageBeforeVideo) {
                     return (
-                      <button
-                        onClick={nextSlide}
-                        className="group/btn absolute right-4 top-1/2 -translate-y-1/2 h-9 pl-3 pr-2.5 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all duration-300 ease-in-out shadow-lg z-10 cursor-pointer flex items-center animate-pulse hover:animate-none"
-                      >
-                        <span className="max-w-[100px] mr-2 group-hover/btn:max-w-0 group-hover/btn:mr-0 overflow-hidden text-micro font-archivo uppercase tracking-widest font-bold whitespace-nowrap opacity-100 group-hover/btn:opacity-0 transition-all duration-300 select-none">
-                          Watch Video
-                        </span>
-                        <Play size={16} fill="currentColor" className="flex-shrink-0" />
-                      </button>
+                      <ExpandingButton onClick={nextSlide} layout="collapse" variant="custom" text="Watch Video" icon={<Play size={16} fill="currentColor" className="flex-shrink-0" />} expandedMaxWidthClass="max-w-[100px]" className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 text-white hover:bg-black/70 shadow-lg z-10 animate-pulse hover:animate-none" />
                     );
                   }
 
