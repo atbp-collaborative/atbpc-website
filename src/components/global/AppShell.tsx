@@ -34,7 +34,7 @@ function AppShellInner({ children, isUnderConstruction }: { children: ReactNode,
     }
   }, [pathname]);
 
-  const isFullScreenLanding = !SCROLLABLE_PATHS.includes(pathname);
+  const isFullScreenLanding = !SCROLLABLE_PATHS.includes(pathname) && !isUnderConstruction;
   const isOurPeople = pathname.startsWith('/studio/our-people') || pathname.startsWith('/our-people');
   const hideHeader = pathname === '/under-construction' || isUnderConstruction;
   const hideFooter = pathname === '/' || pathname === '/under-construction' || isUnderConstruction;
