@@ -193,7 +193,7 @@ export default function UnderConstruction() {
 
       {/* Footer */}
       <div className="absolute bottom-6 left-0 w-full text-center px-6">
-        <div className="text-[11px] opacity-50 font-minor max-w-5xl mx-auto leading-relaxed">
+        <div className="text-[11px] opacity-50 font-minor max-w-5xl mx-auto leading-relaxed space-y-1">
           <p>ATBP Collaborative is a proudly Filipino-owned and managed professional practice providing comprehensive architecture, architectural interior, engineering, and building construction solutions.</p>
           <p>We are fully registered and licensed by the Professional Regulation Commission Board of Architecture (PRC-BOA) under License Nos. 0054827 & 0045492.</p>
         </div>
