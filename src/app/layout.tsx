@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { AppShell } from '@/components/global/AppShell';
 import './globals.css';
 
@@ -15,11 +16,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const headersList = await headers();
+  const isUnderConstruction = headersList.get('x-under-construction') === 'true';
+
   return (
     <html lang="en">
       <body>
-        <AppShell>{children}</AppShell>
+        <AppShell isUnderConstruction={isUnderConstruction}>{children}</AppShell>
       </body>
     </html>
   );

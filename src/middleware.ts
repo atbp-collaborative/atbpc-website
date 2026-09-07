@@ -16,7 +16,15 @@ export function middleware(request: NextRequest) {
     if (request.nextUrl.pathname !== '/under-construction') {
       const url = request.nextUrl.clone();
       url.pathname = '/under-construction';
-      return NextResponse.rewrite(url);
+      
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('x-under-construction', 'true');
+      
+      return NextResponse.rewrite(url, {
+        request: {
+          headers: requestHeaders,
+        },
+      });
     }
   }
 
