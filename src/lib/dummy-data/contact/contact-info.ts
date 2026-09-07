@@ -23,9 +23,9 @@ export const CONTACT_INFO: ContactInfo = {
   mobile: "+63 917 165 4827",
   email: "enquire@atbpcollaborative.com",
   socials: {
-    facebook: { label: "ATBP Collaborative", url: "#fb" },
-    threads: { label: "@atbp.collaborative", url: "#threads" },
-    instagram: { label: "@atbp.collaborative", url: "#ig" },
-    youtube: { label: "@atbp.collaborative", url: "https://youtube.com/@atbp.collaborative" }
+    facebook: { label: "ATBP Collaborative", url: "https://www.facebook.com/atbp.collaborative/" },
+    threads: { label: "@atbp.collaborative", url: "https://www.threads.com/@atbp.collaborative" },
+    instagram: { label: "@atbp.collaborative", url: "https://www.instagram.com/atbp.collaborative" },
+    youtube: { label: "@atbpcollaborative9514", url: "https://www.youtube.com/@atbpcollaborative9514" }
   }
 };
