@@ -14,7 +14,7 @@ import { LegalPrivacyModals } from '@/components/modals/LegalPrivacyModals';
 // locked full-viewport h-screen treatment used by the marketing/landing pages.
 const SCROLLABLE_PATHS = ['/our-services', '/under-construction'];
 
-function AppShellInner({ children }: { children: ReactNode }) {
+function AppShellInner({ children, isUnderConstruction }: { children: ReactNode, isUnderConstruction?: boolean }) {
   const { isDarkMode, toggleTheme } = useTheme();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -36,8 +36,8 @@ function AppShellInner({ children }: { children: ReactNode }) {
 
   const isFullScreenLanding = !SCROLLABLE_PATHS.includes(pathname);
   const isOurPeople = pathname.startsWith('/studio/our-people') || pathname.startsWith('/our-people');
-  const hideHeader = pathname === '/under-construction';
-  const hideFooter = pathname === '/' || pathname === '/under-construction';
+  const hideHeader = pathname === '/under-construction' || isUnderConstruction;
+  const hideFooter = pathname === '/' || pathname === '/under-construction' || isUnderConstruction;
 
   return (
     <div
@@ -107,10 +107,10 @@ function AppShellInner({ children }: { children: ReactNode }) {
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, isUnderConstruction }: { children: ReactNode, isUnderConstruction?: boolean }) {
   return (
     <ThemeProvider>
-      <AppShellInner>{children}</AppShellInner>
+      <AppShellInner isUnderConstruction={isUnderConstruction}>{children}</AppShellInner>
     </ThemeProvider>
   );
 }
