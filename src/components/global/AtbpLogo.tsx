@@ -1,5 +1,4 @@
 import React from 'react';
-import Image from 'next/image';
 
 interface AtbpLogoProps {
   className?: string;
@@ -16,14 +15,10 @@ export const AtbpLogo: React.FC<AtbpLogoProps> = ({
   const src = isWhite ? "/logo-white.svg" : "/logo-charcoal.svg";
 
   return (
-    <div className={`relative ${className}`}>
-      <Image
-        src={src}
-        alt="ATBP Collaborative"
-        fill
-        className="object-contain"
-        priority
-      />
-    </div>
+    <img
+      src={src}
+      alt="ATBP Collaborative"
+      className={`${className} object-contain`}
+    />
   );
 };

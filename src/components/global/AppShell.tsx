@@ -12,7 +12,7 @@ import { LegalPrivacyModals } from '@/components/modals/LegalPrivacyModals';
 
 // Paths that keep the ordinary scrollable min-h-screen layout instead of the
 // locked full-viewport h-screen treatment used by the marketing/landing pages.
-const SCROLLABLE_PATHS = ['/our-services'];
+const SCROLLABLE_PATHS = ['/our-services', '/under-construction'];
 
 function AppShellInner({ children }: { children: ReactNode }) {
   const { isDarkMode, toggleTheme } = useTheme();
@@ -36,7 +36,8 @@ function AppShellInner({ children }: { children: ReactNode }) {
 
   const isFullScreenLanding = !SCROLLABLE_PATHS.includes(pathname);
   const isOurPeople = pathname.startsWith('/studio/our-people') || pathname.startsWith('/our-people');
-  const hideFooter = pathname === '/';
+  const hideHeader = pathname === '/under-construction';
+  const hideFooter = pathname === '/' || pathname === '/under-construction';
 
   return (
     <div
@@ -51,9 +52,11 @@ function AppShellInner({ children }: { children: ReactNode }) {
         isDarkMode ? 'bg-vintage-charcoal text-bright-gray' : 'bg-bright-gray text-vintage-charcoal'
       }`}
     >
-      <Suspense fallback={null}>
-        <Header isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
-      </Suspense>
+      {!hideHeader && (
+        <Suspense fallback={null}>
+          <Header isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
+        </Suspense>
+      )}
 
       <Suspense fallback={null}>
         <MobileDrawer 
