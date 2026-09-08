@@ -135,51 +135,51 @@ export default function UnderConstruction() {
         </div>
 
         {/* Social Media & Contact Links */}
-        <div className="flex flex-wrap items-center justify-center gap-6 mb-6 max-w-[140px] md:max-w-none mx-auto">
+        <div className="flex flex-wrap items-center justify-center gap-6 mb-6 w-full px-4 mx-auto">
           {/* Email */}
-          <a href={`mailto:${CONTACT_INFO.email}`} title="Email" className="opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all">
+          <a href={`mailto:${CONTACT_INFO.email}`} title="Email" className="inline-block opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all outline-none focus-visible:ring-2 focus-visible:ring-gray-400/50 [-webkit-tap-highlight-color:transparent]">
             <Mail size={24} />
           </a>
           
           {/* SMS */}
-          <a href={`sms:${mobileClean}`} title="SMS" className="opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all">
+          <a href={`sms:${mobileClean}`} title="SMS" className="inline-block opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all outline-none focus-visible:ring-2 focus-visible:ring-gray-400/50 [-webkit-tap-highlight-color:transparent]">
             <MessageSquare size={24} />
           </a>
 
           {/* iMessage */}
-          <a href={`sms:${mobileClean}`} title="iMessage" className="opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all">
+          <a href={`sms:${mobileClean}`} title="iMessage" className="inline-block opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all outline-none focus-visible:ring-2 focus-visible:ring-gray-400/50 [-webkit-tap-highlight-color:transparent]">
             <MessageCircle size={24} />
           </a>
 
           {/* WhatsApp */}
-          <a href={`https://wa.me/${mobileClean.replace('+', '')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp" className="opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all">
+          <a href={`https://wa.me/${mobileClean.replace('+', '')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp" className="inline-block opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all outline-none focus-visible:ring-2 focus-visible:ring-gray-400/50 [-webkit-tap-highlight-color:transparent]">
             <PhoneCall size={24} />
           </a>
 
           {/* Facebook */}
           {CONTACT_INFO.socials?.facebook && (
-            <a href={CONTACT_INFO.socials.facebook.url} target="_blank" rel="noopener noreferrer" title="Facebook" className="opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all">
+            <a href={CONTACT_INFO.socials.facebook.url} target="_blank" rel="noopener noreferrer" title="Facebook" className="inline-block opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all outline-none focus-visible:ring-2 focus-visible:ring-gray-400/50 [-webkit-tap-highlight-color:transparent]">
               <Facebook size={24} />
             </a>
           )}
           
           {/* Instagram */}
           {CONTACT_INFO.socials?.instagram && (
-            <a href={CONTACT_INFO.socials.instagram.url} target="_blank" rel="noopener noreferrer" title="Instagram" className="opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all">
+            <a href={CONTACT_INFO.socials.instagram.url} target="_blank" rel="noopener noreferrer" title="Instagram" className="inline-block opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all outline-none focus-visible:ring-2 focus-visible:ring-gray-400/50 [-webkit-tap-highlight-color:transparent]">
               <Instagram size={24} />
             </a>
           )}
           
           {/* Threads */}
           {CONTACT_INFO.socials?.threads && (
-            <a href={CONTACT_INFO.socials.threads.url} target="_blank" rel="noopener noreferrer" title="Threads" className="opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all">
+            <a href={CONTACT_INFO.socials.threads.url} target="_blank" rel="noopener noreferrer" title="Threads" className="inline-block opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all outline-none focus-visible:ring-2 focus-visible:ring-gray-400/50 [-webkit-tap-highlight-color:transparent]">
               <AtSign size={24} />
             </a>
           )}
           
           {/* YouTube */}
           {CONTACT_INFO.socials?.youtube && (
-            <a href={CONTACT_INFO.socials.youtube.url} target="_blank" rel="noopener noreferrer" title="YouTube" className="opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all">
+            <a href={CONTACT_INFO.socials.youtube.url} target="_blank" rel="noopener noreferrer" title="YouTube" className="inline-block opacity-70 hover:opacity-100 hover:text-space-sparkle transition-all outline-none focus-visible:ring-2 focus-visible:ring-gray-400/50 [-webkit-tap-highlight-color:transparent]">
               <Youtube size={24} />
             </a>
           )}

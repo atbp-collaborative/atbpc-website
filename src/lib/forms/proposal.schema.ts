@@ -12,7 +12,7 @@ export const personSchema = z.object({
 
 export const proposalSchema = z.object({
   businessEntity: z.string().min(1, 'Business Entity is required'),
-  principalDecisionMakers: z.array(personSchema).min(1, 'At least one principal decision maker is required').max(3),
+  principalDecisionMakers: z.array(personSchema).min(1, 'At least one principal decision maker is required').max(2),
   authorizedRepresentatives: z.array(personSchema).max(1).optional(),
 
   category: z.string().min(1, 'Category is required'),

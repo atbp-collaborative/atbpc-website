@@ -28,16 +28,74 @@ import { ProjectCard } from '@/components/blocks/ProjectCard';
 // animation working the same way the old motion.img did.
 const MotionImage = motion.create(Image);
 
-function getYouTubeEmbedUrl(url: string): string | null {
+function getYouTubeEmbedUrl(url: string, autoplay: boolean = true): string | null {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
   const match = url.match(regExp);
   if (match && match[2].length === 11) {
     const videoId = match[2];
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&controls=1&modestbranding=1&rel=0`;
+    return `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&loop=1&playlist=${videoId}&controls=1&modestbranding=1&rel=0&enablejsapi=1`;
   }
   return null;
 }
 
+const VideoItem = ({ url, isPlaying, onPlayingChange }: { url: string, isPlaying: boolean, onPlayingChange: (playing: boolean) => void }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  
+  const [initialIsPlaying] = useState(isPlaying);
+  const embedUrl = useMemo(() => getYouTubeEmbedUrl(url, initialIsPlaying), [url, initialIsPlaying]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      videoRef.current?.play().catch(() => {});
+      iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*');
+    } else {
+      videoRef.current?.pause();
+      iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*');
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== 'https://www.youtube.com') return;
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event === 'infoDelivery' && data.info && data.info.playerState !== undefined) {
+          const state = data.info.playerState;
+          if (state === 1) onPlayingChange(true);
+          else if (state === 2 || state === 0) onPlayingChange(false);
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [onPlayingChange]);
+
+  if (embedUrl) {
+    return (
+      <iframe
+        ref={iframeRef}
+        src={embedUrl}
+        title="Project Video"
+        className="w-full h-full border-0"
+        allow="autoplay; encrypted-media; picture-in-picture"
+        allowFullScreen
+      />
+    );
+  }
+  return (
+    <video 
+      ref={videoRef}
+      src={url}
+      className="w-full h-full object-cover"
+      loop
+      playsInline
+      controls
+      onPlay={() => onPlayingChange(true)}
+      onPause={() => onPlayingChange(false)}
+    />
+  );
+};
 
 interface ProjectDetailProps {
   project: Project;
@@ -142,33 +200,25 @@ function ProjectDetailContent({
     return () => clearInterval(timer);
   }, [currentSlideIndex, mediaItems]);
 
-  const nextSlide = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (!carouselRef.current) return;
-    
-    let nextIndex = currentSlideIndex + 1;
-    if (nextIndex >= mediaItems.length) {
-      nextIndex = 0; // Wrap to start
-    }
-    const slide = carouselRef.current.children[nextIndex] as HTMLElement;
-    if (slide) {
-      carouselRef.current.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
-    }
-  };
+  const [isVideoExpanded, setIsVideoExpanded] = useState<boolean>(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState<boolean>(false);
+  const isAnimatingRef = useRef(false);
 
-  const prevSlide = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (!carouselRef.current) return;
-    if (currentSlideIndex === 0) return; // Do not scroll left from item 1
-    
-    const prevIndex = currentSlideIndex - 1;
-    const slide = carouselRef.current.children[prevIndex] as HTMLElement;
-    if (slide) {
-      carouselRef.current.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
-    }
+  const exitExpandedVideo = () => {
+    isAnimatingRef.current = true;
+    setIsVideoExpanded(false);
+    setTimeout(() => {
+      if (carouselRef.current) {
+        carouselRef.current.scrollTo({ left: currentSlideIndex * carouselRef.current.clientWidth, behavior: 'instant' });
+      }
+      setTimeout(() => {
+        isAnimatingRef.current = false;
+      }, 50);
+    }, 0);
   };
 
   const handleScroll = () => {
+    if (isVideoExpanded || isAnimatingRef.current) return;
     if (carouselRef.current) {
       const container = carouselRef.current;
       const index = Math.round(container.scrollLeft / container.clientWidth);
@@ -179,20 +229,72 @@ function ProjectDetailContent({
   };
 
   useEffect(() => {
+    const isVideo = mediaItems[currentSlideIndex]?.type === 'video';
+    if (isVideo) {
+      isAnimatingRef.current = true;
+      setIsVideoExpanded(true);
+      setTimeout(() => {
+        isAnimatingRef.current = false;
+      }, 500); // Wait for expansion animation to settle
+    } else if (isVideoExpanded) {
+      exitExpandedVideo();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSlideIndex]);
+
+  useEffect(() => {
+    if (isVideoExpanded && isDesktop) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isVideoExpanded, isDesktop]);
+
+  const nextSlide = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!carouselRef.current) return;
+    let nextIndex = currentSlideIndex + 1;
+    if (nextIndex >= mediaItems.length) {
+      nextIndex = 0;
+    }
+    if (isVideoExpanded) setCurrentSlideIndex(nextIndex);
+    carouselRef.current.scrollTo({ left: nextIndex * carouselRef.current.clientWidth, behavior: 'smooth' });
+  };
+
+  const prevSlide = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!carouselRef.current) return;
+    if (currentSlideIndex === 0) return;
+    const prevIndex = currentSlideIndex - 1;
+    if (isVideoExpanded) setCurrentSlideIndex(prevIndex);
+    carouselRef.current.scrollTo({ left: prevIndex * carouselRef.current.clientWidth, behavior: 'smooth' });
+  };
+
+  const goToSlide = (index: number) => {
+    if (isVideoExpanded) setCurrentSlideIndex(index);
+    if (carouselRef.current) {
+      carouselRef.current.scrollTo({ left: index * carouselRef.current.clientWidth, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') {
         prevSlide();
       } else if (e.key === 'ArrowRight') {
         nextSlide();
+      } else if (e.key === 'Escape' && isVideoExpanded && isDesktop) {
+        exitExpandedVideo();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [currentSlideIndex]);
-
-  const isVideoActive = mediaItems[currentSlideIndex]?.type === 'video';
+  }, [currentSlideIndex, isVideoExpanded, isDesktop]);
 
   const maxAvailableHeight = coords.windowHeight * 0.9;
   const maxAvailableWidth = coords.windowWidth * 0.9;
@@ -250,7 +352,7 @@ function ProjectDetailContent({
               <li key={member.id} className="flex items-start space-x-2 font-light opacity-90">
                 <span className="text-space-sparkle font-semibold mt-0.5">•</span>
                 <Link
-                  href={memberRoute(member.id)}
+                  href={`${memberRoute(member.id)}?from=project`}
                   className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
                     isDarkMode ? "text-bright-gray/90" : "text-vintage-charcoal/90"
                   }`}
@@ -269,31 +371,37 @@ function ProjectDetailContent({
   return (
     <div 
       id={`project-detail-${project.id}`}
-      className={`w-full px-4 sm:px-8 py-2 select-none flex flex-col lg:flex-1 lg:min-h-0 h-auto lg:h-full justify-start overflow-y-auto ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}
+      className={`w-full px-4 sm:px-8 py-2 select-none flex flex-col lg:flex-1 lg:min-h-0 h-auto lg:h-full justify-start overflow-y-auto ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}
     >
       <BreadcrumbButton
         label={backLabel}
         className="mt-6 sm:mt-8 mb-4 sm:mb-5"
-        onClick={() => router.back()}
+        onClick={() => {
+          if (isAllWorks) {
+            router.push('/works');
+          } else {
+            router.push(`/works/${encodeURIComponent(filterName)}`);
+          }
+        }}
       />
 
-      <div className={`grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-4 gap-6 lg:flex-1 lg:min-h-0 pb-1 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
+      <div className={`grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-4 gap-6 lg:flex-1 lg:min-h-0 pb-1 ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}>
         
         {/* Carousel & CTA Container */}
-        <div ref={columnRef} className={`lg:col-span-7 lg:order-2 xl:col-span-2 xl:order-3 flex flex-col justify-start lg:h-full lg:min-h-0 space-y-3 ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
+        <div ref={columnRef} className={`lg:col-span-7 lg:order-2 xl:col-span-2 xl:order-3 flex flex-col justify-start lg:h-full lg:min-h-0 space-y-3 ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}>
           
-          <div className={`space-y-3 w-full relative lg:flex-1 lg:min-h-0 flex flex-col justify-start ${isVideoActive && isDesktop ? 'lg:overflow-visible' : 'lg:overflow-hidden'}`}>
+          <div className={`space-y-3 w-full relative lg:flex-1 lg:min-h-0 flex flex-col justify-start ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}>
             
-              {isVideoActive && isDesktop && (
+              {isVideoExpanded && isDesktop && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  
+                  exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
                   className="fixed inset-0 z-[100] cursor-pointer backdrop-blur-sm bg-black/85"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setCurrentSlideIndex(0);
+                    exitExpandedVideo();
                   }}
                 />
               )}
@@ -301,49 +409,31 @@ function ProjectDetailContent({
 
             <div className="relative aspect-video w-full max-h-full">
               <motion.div 
-                className="absolute inset-0 overflow-hidden bg-space-sparkle/10 rounded-lg group flex items-center justify-center cursor-default"
+                className="absolute inset-0 overflow-hidden bg-space-sparkle/10 rounded-lg group/carousel flex items-center justify-center cursor-default"
                 animate={{
-                  width: isVideoActive && isDesktop ? targetWidth : '100%',
-                  height: isVideoActive && isDesktop ? targetHeight : '100%',
-                  x: isVideoActive && isDesktop ? xRelative : 0,
-                  y: isVideoActive && isDesktop ? yRelative : 0,
-                  zIndex: isVideoActive && isDesktop ? 110 : 10,
+                  width: isVideoExpanded && isDesktop ? targetWidth : '100%',
+                  height: isVideoExpanded && isDesktop ? targetHeight : '100%',
+                  x: isVideoExpanded && isDesktop ? xRelative : 0,
+                  y: isVideoExpanded && isDesktop ? yRelative : 0,
+                  zIndex: isVideoExpanded && isDesktop ? 110 : 10,
                 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 120, mass: 0.9 }}
               >
                   <div className="relative w-full h-full overflow-hidden bg-space-sparkle/5">
                     <div 
                       ref={carouselRef}
-                      className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth w-full h-full"
+                      className={`flex snap-x snap-mandatory no-scrollbar scroll-smooth w-full h-full ${isVideoExpanded ? 'overflow-hidden' : 'overflow-x-auto'}`}
                       onScroll={handleScroll}
                     >
                       {mediaItems.map((item, idx) => (
                         <div key={idx} className="flex-none w-full h-full snap-center relative">
                           {item.type === 'video' ? (
                             <div className="relative w-full h-full flex items-center justify-center bg-transparent overflow-hidden">
-                              {(() => {
-                                const embedUrl = getYouTubeEmbedUrl(item.url);
-                                if (embedUrl) {
-                                  return (
-                                    <iframe
-                                      src={embedUrl}
-                                      title="Project Video"
-                                      className={`w-full h-full border-0 ${!isDesktop ? 'pointer-events-none' : ''}`}
-                                      allow="autoplay; encrypted-media; picture-in-picture"
-                                      allowFullScreen
-                                    />
-                                  );
-                                }
-                                return (
-                                  <video 
-                                    src={item.url}
-                                    className="w-full h-full object-cover pointer-events-none"
-                                    autoPlay
-                                    loop
-                                    playsInline
-                                  />
-                                );
-                              })()}
+                              <VideoItem 
+                                url={item.url} 
+                                isPlaying={isDesktop ? isVideoExpanded : currentSlideIndex === idx} 
+                                onPlayingChange={setIsVideoPlaying} 
+                              />
                             </div>
                           ) : (
                             <Image
@@ -362,15 +452,15 @@ function ProjectDetailContent({
                   </div>
                   
                   {/* Left/Right Buttons */}
-                  {currentSlideIndex !== 0 && (
+                  {!isVideoPlaying && currentSlideIndex !== 0 && (
                   <button 
                     onClick={prevSlide}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all md:opacity-0 md:group-hover:opacity-100 opacity-100 cursor-pointer z-10"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all md:opacity-0 md:group-hover/carousel:opacity-100 opacity-100 cursor-pointer z-10"
                   >
                     <ChevronLeft size={20} />
                   </button>
                 )}
-                {(() => {
+                {!isVideoPlaying && (() => {
                   const hasVideo = mediaItems.some(item => item.type === 'video');
                   const isLastImageBeforeVideo = hasVideo && currentSlideIndex === mediaItems.length - 2;
 
@@ -383,31 +473,31 @@ function ProjectDetailContent({
                   return (
                     <button 
                       onClick={nextSlide}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all md:opacity-0 md:group-hover:opacity-100 opacity-100 cursor-pointer z-10"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/70 transition-all md:opacity-0 md:group-hover/carousel:opacity-100 opacity-100 cursor-pointer z-10"
                     >
                       <ChevronRight size={20} />
                     </button>
                   );
                 })()}
-              </motion.div>
-            </div>
 
-            {/* Slider Bullets */}
-            <div className="flex justify-center items-center px-2 shrink-0">
-              <div className="flex items-center space-x-2">
-                {mediaItems.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentSlideIndex(idx)}
-                    className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
-                      currentSlideIndex === idx 
-                        ? 'bg-space-sparkle scale-125' 
-                        : 'bg-space-sparkle/30 hover:bg-space-sparkle/60'
-                    }`}
-                    aria-label={`Go to slide ${idx + 1}`}
-                  />
-                ))}
-              </div>
+                {/* Slider Bullets (Moved inside motion.div) */}
+                <div className="absolute bottom-3 left-0 w-full flex justify-center items-center px-2 z-20 pointer-events-none">
+                  <div className="flex items-center space-x-2 pointer-events-auto">
+                    {mediaItems.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => goToSlide(idx)}
+                        className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
+                          currentSlideIndex === idx 
+                            ? 'bg-space-sparkle scale-125' 
+                            : 'bg-space-sparkle/30 hover:bg-space-sparkle/60'
+                        }`}
+                        aria-label={`Go to slide ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
 
@@ -434,8 +524,8 @@ function ProjectDetailContent({
         {/* High-End Architectural Writeup & Specs */}
         <div 
           className={`lg:col-span-5 lg:order-1 xl:col-span-2 xl:order-1 flex flex-col justify-start lg:h-full lg:min-h-0 py-0.5 ${
-            isVideoActive && isDesktop 
-              ? 'lg:overflow-visible' 
+            isVideoExpanded && isDesktop 
+              ? '!overflow-visible z-50' 
               : 'lg:overflow-y-auto no-scrollbar lg:relative'
           }`}
           style={isXL && coords.columnWidth > 0 ? { height: coords.columnWidth * (9 / 16) } : undefined}

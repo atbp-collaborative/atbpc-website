@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '@/context/ThemeContext';
 import { Accordion } from '@/components/primitives/Accordion';
 import { CheckCircle2 } from 'lucide-react';
@@ -13,6 +13,7 @@ interface ProcessAccordionProps {
 
 export const ProcessAccordion: React.FC<ProcessAccordionProps> = ({ nodes, categoryGroups }) => {
   const { isDarkMode } = useTheme();
+  const [openNodeId, setOpenNodeId] = useState<string | null>(null);
 
   return (
     <div className="w-full flex flex-col space-y-6">
@@ -32,6 +33,8 @@ export const ProcessAccordion: React.FC<ProcessAccordionProps> = ({ nodes, categ
                   title={`Step ${node.stepNumber} - ${node.title}`}
                   isDarkMode={isDarkMode}
                   size="sm"
+                  isOpen={openNodeId === node.id}
+                  onToggle={() => setOpenNodeId(openNodeId === node.id ? null : node.id)}
                 >
                   <div className="pl-6 pr-2 pb-4 pt-1 space-y-4">
                     <div>

@@ -11,6 +11,8 @@ interface AccordionProps {
   defaultOpen?: boolean;
   className?: string;
   children: React.ReactNode;
+  isOpen?: boolean;
+  onToggle?: () => void;
 }
 
 export const Accordion: React.FC<AccordionProps> = ({
@@ -20,15 +22,30 @@ export const Accordion: React.FC<AccordionProps> = ({
   defaultOpen = false,
   className = '',
   children,
+  isOpen: controlledIsOpen,
+  onToggle,
 }) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState(defaultOpen);
+  
+  const isControlled = controlledIsOpen !== undefined;
+  const isOpen = isControlled ? controlledIsOpen : uncontrolledIsOpen;
+
+  const handleToggle = () => {
+    if (onToggle) {
+      onToggle();
+    }
+    if (!isControlled) {
+      setUncontrolledIsOpen((prev) => !prev);
+    }
+  };
+
   const titleSize = size === 'sm' ? 'text-mini' : 'text-body';
   const buttonPadding = size === 'sm' ? 'py-1.5' : 'py-2';
 
   return (
     <div className={`overflow-hidden border-t border-space-sparkle/10 pt-2 ${className}`}>
       <button
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={handleToggle}
         className={`w-full ${buttonPadding} flex items-center text-left focus:outline-none group cursor-pointer`}
       >
         <span className={`${isDarkMode ? 'text-white' : 'text-vintage-charcoal'} mr-3.5 shrink-0 flex items-center justify-center`}>
