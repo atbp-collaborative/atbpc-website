@@ -41,13 +41,10 @@ export const MapPinField: React.FC<MapPinFieldProps> = ({
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     L.tileLayer(
-      isDarkMode
-        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       {
-        attribution: '&copy; OpenStreetMap contributors',
-        subdomains: 'abcd',
-        maxZoom: 20,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
       }
     ).addTo(map);
 
@@ -95,9 +92,20 @@ export const MapPinField: React.FC<MapPinFieldProps> = ({
         </label>
       )}
       <div 
-        className={`w-full h-64 rounded-md overflow-hidden border ${styles.borderColor} shadow-sm transition-colors`}
+        className={`relative w-full h-64 rounded-md overflow-hidden border ${styles.borderColor} shadow-sm transition-colors`}
+        style={{ backgroundColor: isDarkMode ? 'rgb(51, 52, 54)' : 'white' }}
       >
-        <div ref={mapContainerRef} className="w-full h-full z-0" />
+        <style>{`
+          ${isDarkMode ? `
+            .dark-pin-map .leaflet-tile {
+              filter: invert(19%) sepia(6%) saturate(110%) brightness(112%) contrast(128%) !important;
+            }
+            .dark-pin-map {
+              background: rgb(51, 52, 54) !important;
+            }
+          ` : ''}
+        `}</style>
+        <div ref={mapContainerRef} className={`w-full h-full z-0 ${isDarkMode ? 'dark-pin-map' : ''}`} />
       </div>
       <p className="text-micro opacity-60">Click on the map to place a pin.</p>
     </div>

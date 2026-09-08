@@ -100,19 +100,14 @@ export const OfficeMap: React.FC<OfficeMapProps> = ({ isDarkMode }) => {
       map.removeLayer(tileLayerRef.current);
     }
 
-    // CartoDB Tile URL to match our themes
-    const tileUrl = isDarkMode
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+    // Using standard OpenStreetMap tiles to avoid API key requirements
+    const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
-    const attribution = isDarkMode
-      ? '&copy; <a href="https://www.openstreetmap.org/copyright" style="color: #475569;">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" style="color: #475569;">CARTO</a>'
-      : '&copy; <a href="https://www.openstreetmap.org/copyright" style="color: #94a3b8;">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" style="color: #94a3b8;">CARTO</a>';
+    const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
     const newTileLayer = L.tileLayer(tileUrl, {
       attribution,
-      subdomains: 'abcd',
-      maxZoom: 20,
+      maxZoom: 19,
     }).addTo(map);
 
     tileLayerRef.current = newTileLayer;

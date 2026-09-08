@@ -167,7 +167,7 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
         </div>
       </div>
 
-      {renderPersonList('principalDecisionMakers', '1b. Principal Decision Maker', 3, 'Decision Maker')}
+      {renderPersonList('principalDecisionMakers', '1b. Principal Decision Maker', 2, 'Decision Maker')}
       {formData.businessEntity === 'Business' && renderPersonList('authorizedRepresentatives', '1c. Authorized Representative', 1, 'Representative')}
 
       {personToDelete && (

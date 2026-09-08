@@ -35,12 +35,12 @@ export const SelectField: React.FC<SelectFieldProps> = ({
       <div className="relative">
         <select
           name={name}
-          value={value}
+          value={value || ""}
           onChange={(e) => onChange(name, e.target.value)}
           disabled={disabled}
           className={`${selectClass} ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
         >
-          <option value="" disabled>{placeholder}</option>
+          <option value="" disabled hidden>{placeholder}</option>
           {options.map((opt) => {
             const { value: optValue, label: optLabel } = typeof opt === 'string' ? { value: opt, label: opt } : opt;
             return (
