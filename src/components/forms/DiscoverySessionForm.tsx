@@ -2,18 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Map } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-fields';
 import { Button } from '@/components/primitives/buttons/Button';
+import { MultiEntryButton } from '@/components/primitives/buttons/MultiEntryButton';
 import { useFormViewport } from '@/hooks/useFormViewport';
 import { 
   DiscoverySessionFormData, 
   INITIAL_DISCOVERY_DATA, 
-  DISCOVERY_LEFT_FIELDS, 
   discoverySchema 
 } from '@/lib/forms/discovery.schema';
 import { submitDiscoverySession } from '@/services/api.service';
+
+import { ClientDetailsModal } from './DiscoverySession/ClientDetailsModal';
+import { ProjectDetailsModal } from './DiscoverySession/ProjectDetailsModal';
+import { MeetupVenueModal } from './DiscoverySession/MeetupVenueModal';
+import { CalComEmbed } from './DiscoverySession/CalComEmbed';
 
 export const DiscoverySessionForm: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -23,6 +28,11 @@ export const DiscoverySessionForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Modals state
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [isVenueModalOpen, setIsVenueModalOpen] = useState(false);
 
   // Load from local storage on mount
   useEffect(() => {
@@ -48,18 +58,23 @@ export const DiscoverySessionForm: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const isFormValid = discoverySchema.safeParse(formData).success;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleBookingSuccess = async (calData: any) => {
     setIsSubmitting(true);
     try {
-      await submitDiscoverySession(formData);
+      // Merge cal.com date into our formData
+      const submissionData = {
+        ...formData,
+        date: calData.data?.date || '',
+        startTime: calData.data?.startTime || '',
+        endTime: calData.data?.endTime || '',
+        calBookingId: calData.data?.uid
+      };
+      
+      await submitDiscoverySession(submissionData);
       setIsSubmitted(true);
       localStorage.removeItem('discovery-session-form');
     } catch (err) {
       console.error(err);
-      // Mock success if endpoint doesn't exist yet
       setIsSubmitted(true);
       localStorage.removeItem('discovery-session-form');
     } finally {
@@ -76,20 +91,6 @@ export const DiscoverySessionForm: React.FC = () => {
   const fieldStyles = getFieldThemeStyles('neutral', isDarkMode);
   const inputBorderClass = fieldStyles.borderColor;
 
-  const ActionButtons = ({ isTop }: { isTop?: boolean }) => (
-    <div className={`grid grid-cols-1 gap-4 w-full ${isTop ? 'md:w-[50%] md:ml-auto' : ''}`}>
-      <Button type="revolving"
-        htmlType="submit"
-        disabled={isSubmitting || !isFormValid}
-        active={true}
-        title={!isFormValid ? 'Fill in all required fields to continue' : undefined}
-        className={`w-full !bg-space-sparkle !text-bright-gray border-none min-w-0 ${isTop ? '!text-[1.75vw] lg:!text-caption whitespace-nowrap truncate' : ''}`}
-      >
-        {isSubmitting ? 'Submitting...' : 'Schedule Session'}
-      </Button>
-    </div>
-  );
-
   if (!isLoaded) return null; // Avoid hydration mismatch
 
   return (
@@ -104,62 +105,21 @@ export const DiscoverySessionForm: React.FC = () => {
             for project intake, site feasibility & spatial planning consultations
           </p>
         </div>
-        {isHeightConstrained && !isSubmitted && (
-          <div className="hidden md:block w-full md:w-[45%] shrink-0">
-            <ActionButtons isTop />
-          </div>
-        )}
       </div>
 
       <AnimatePresence mode="wait">
         {!isSubmitted ? (
-          <motion.form
+          <motion.div
             key="discovery-form"
-            onSubmit={handleSubmit}
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            className="w-full flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto lg:overflow-hidden px-4 sm:px-8 pb-2"
+            className="w-full flex-1 flex flex-col lg:flex-row gap-6 lg:gap-8 min-h-0 overflow-y-auto lg:overflow-hidden px-4 sm:px-8 pb-2"
           >
-            {/* LEFT COLUMN */}
-            <div className="w-full lg:w-1/2 flex flex-col gap-3 lg:gap-2 justify-start lg:h-full lg:overflow-hidden">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-2">
-                {DISCOVERY_LEFT_FIELDS.map((field) => (
-                  <div key={field.name}>
-                    <FormFieldRenderer
-                      config={field}
-                      value={(formData as any)[field.name]}
-                      onChange={handleChange}
-                      isDarkMode={isDarkMode}
-                      theme="neutral"
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-1">
-                <FormFieldRenderer
-                  config={{ type: 'address', name: 'address', label: 'Project Site Address', required: true }}
-                  value={formData.address}
-                  onChange={handleChange}
-                  isDarkMode={isDarkMode}
-                  theme="neutral"
-                />
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN */}
-            <div className="w-full lg:w-1/2 flex flex-col justify-start gap-2.5 lg:gap-2 lg:h-full lg:overflow-y-auto lg:pr-2">
-              <div className="flex flex-col gap-3 lg:gap-2">
-                <div className="pb-1">
-                  <FormFieldRenderer
-                    config={{ type: 'address', name: 'clientAddress', label: 'Client Address', badge: '!', variant: 'city-region-only' } as any}
-                    value={formData.clientAddress}
-                    onChange={handleChange}
-                    isDarkMode={isDarkMode}
-                    theme="neutral"
-                  />
-                </div>
+            {/* LEFT COLUMN - Form & Modals */}
+            <div className="w-full lg:w-1/3 flex flex-col gap-5 justify-start lg:h-full lg:overflow-y-auto pr-2">
+              
+              <div className="space-y-4">
                 <FormFieldRenderer
                   config={{
                     type: 'select',
@@ -178,75 +138,84 @@ export const DiscoverySessionForm: React.FC = () => {
                   theme="neutral"
                 />
 
-                {formData.meetingType === 'meet-up' && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-3">
-                    <div className="p-4 border rounded-xl bg-space-sparkle/5 border-space-sparkle/20 flex flex-col justify-center">
-                      <span className="text-body font-bold text-space-sparkle mb-1">Meet-up Reminder</span>
-                      <p className="text-caption opacity-80 leading-relaxed">
-                        Charges apply. Different rates apply within and outside Metro Manila.
-                      </p>
-                    </div>
-                    <FormFieldRenderer
-                      config={{ type: 'text', name: 'venue', label: 'Venue', placeholder: 'Enter venue name or address', required: true }}
-                      value={formData.venue}
-                      onChange={handleChange}
-                      isDarkMode={isDarkMode}
-                      theme="neutral"
-                    />
-                    <FormFieldRenderer
-                      config={{ type: 'map-pin', name: 'location', label: 'Location', required: true, note: 'Please pin your preferred meeting location' }}
-                      value={formData.location}
-                      onChange={handleChange}
-                      isDarkMode={isDarkMode}
-                      theme="neutral"
-                    />
-                  </div>
-                )}
-
                 {formData.meetingType === 'online' && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300 p-4 border rounded-xl bg-space-sparkle/5 border-space-sparkle/20 flex flex-col justify-center min-h-[90px]">
-                    <span className="text-body font-bold text-space-sparkle mb-1">Online Meeting Platform</span>
-                    <p className="text-caption opacity-80 leading-relaxed">
-                      Please note that all online discovery sessions are conducted strictly via Microsoft Teams. A meeting link will be sent to your email address once scheduled.
-                      <br /><br />
-                      <strong>Reminder:</strong> 30 minutes maximum only.
-                    </p>
+                  <div className="border border-space-sparkle bg-transparent p-4 rounded-xl flex flex-col justify-center text-left text-caption font-medium min-h-[90px] animate-in fade-in slide-in-from-top-2 duration-300">
+                    <span className="font-bold mb-1">Reminders:</span>
+                    <ul className="list-disc pl-4 space-y-0.5">
+                      <li>Online discovery sessions are conducted strictly via Microsoft Teams. A meeting link will be sent to your email.</li>
+                      <li>Reminder: 30 minutes maximum only.</li>
+                    </ul>
                   </div>
                 )}
-
-                <div className="pt-2 space-y-3">
-                  <FormFieldRenderer
-                    config={{ type: 'date', name: 'date', label: 'Date', required: true } as any}
-                    value={formData.date}
-                    onChange={handleChange}
-                    isDarkMode={isDarkMode}
-                    theme="neutral"
-                  />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <FormFieldRenderer
-                      config={{ type: 'time', name: 'startTime', label: 'Start Time', required: true } as any}
-                      value={formData.startTime}
-                      onChange={handleChange}
-                      isDarkMode={isDarkMode}
-                      theme="neutral"
-                    />
-                    <FormFieldRenderer
-                      config={{ type: 'time', name: 'endTime', label: 'End Time', required: true } as any}
-                      value={formData.endTime}
-                      onChange={handleChange}
-                      isDarkMode={isDarkMode}
-                      theme="neutral"
-                    />
+                {formData.meetingType === 'meet-up' && (
+                  <div className="border border-space-sparkle bg-transparent p-4 rounded-xl flex flex-col justify-center text-left text-caption font-medium min-h-[90px] animate-in fade-in slide-in-from-top-2 duration-300">
+                    <span className="font-bold mb-1">Reminders:</span>
+                    <ul className="list-disc pl-4 space-y-0.5">
+                      <li>Charges apply. Different rates apply within and outside Metro Manila.</li>
+                    </ul>
                   </div>
-                </div>
+                )}
               </div>
 
-              {/* Action Buttons */}
-              <div className={`mt-2 md:mt-8 lg:mt-0 pt-2 md:pt-1 lg:pt-1 ${isHeightConstrained ? 'md:hidden' : ''}`}>
-                <ActionButtons />
+              <div className="space-y-3 pt-2">
+                <MultiEntryButton 
+                  fieldLabel="Client Details"
+                  label={formData.firstName && formData.email ? "Edit Client Details" : "Add Client Details"} 
+                  count={formData.firstName && formData.email ? 1 : 0} 
+                  onClick={() => setIsClientModalOpen(true)} 
+                  isDarkMode={isDarkMode} 
+                />
+
+                <MultiEntryButton 
+                  fieldLabel="Project Details"
+                  label={formData.projectCategory ? "Edit Project Details" : "Add Project Details"} 
+                  count={formData.projectCategory ? 1 : 0} 
+                  onClick={() => setIsProjectModalOpen(true)} 
+                  isDarkMode={isDarkMode} 
+                />
+
+                {formData.meetingType === 'meet-up' && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+                    <MultiEntryButton 
+                      fieldLabel="Venue Details"
+                      label={formData.venue ? "Edit Venue Details" : "Add Venue Details"} 
+                      count={formData.venue ? 1 : 0} 
+                      onClick={() => setIsVenueModalOpen(true)} 
+                      isDarkMode={isDarkMode} 
+                    />
+                  </motion.div>
+                )}
               </div>
             </div>
-          </motion.form>
+
+            {/* RIGHT COLUMN - Cal.com Embed */}
+            <div className="w-full lg:w-2/3 flex flex-col lg:h-full overflow-y-auto no-scrollbar pl-0 lg:pl-4 border-t lg:border-t-0 border-space-sparkle/10 pt-6 lg:pt-0 min-h-[700px] lg:min-h-0">
+              {!formData.meetingType ? (
+                <div className="flex flex-col items-center justify-center h-full opacity-50 min-h-[400px]">
+                  <Map size={48} className="mb-4 text-space-sparkle opacity-50" />
+                  <p className="text-body text-center max-w-sm">Please select a Meeting Type on the left to load the booking calendar.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-2">
+                    <label className="text-caption font-semibold block opacity-90 w-full mb-0.5 text-vintage-charcoal dark:text-bright-gray">Date & Time</label>
+                    <p className="text-micro font-medium opacity-60">Powered by Cal.com</p>
+                  </div>
+                  <div className="relative min-h-[700px] h-fit mb-4 w-full">
+                    {isSubmitting && (
+                      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-4 border-space-sparkle border-t-transparent"></div>
+                      </div>
+                    )}
+                    <CalComEmbed 
+                      formData={formData} 
+                      onBookingSuccess={handleBookingSuccess} 
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.div>
         ) : (
           <motion.div
             key="success-card"
@@ -256,19 +225,43 @@ export const DiscoverySessionForm: React.FC = () => {
             className={`my-auto p-8 rounded-2xl border text-center space-y-4 max-w-md mx-auto ${inputBorderClass}`}
           >
             <CheckCircle size={40} className="mx-auto text-space-sparkle animate-bounce" />
-            <h2 className="text-h2 font-bold tracking-tight">Session Request Received</h2>
+            <h2 className="text-h2 font-bold tracking-tight">Session Scheduled!</h2>
             <p className="text-caption opacity-80 leading-relaxed">
-              Thank you for scheduling a discovery session with us. We will review your request and contact you shortly to confirm the appointment.
+              Thank you for scheduling a discovery session. We've sent a calendar invitation and meeting details to your email address.
             </p>
             <button
               onClick={resetForm}
-              className={`py-2 px-6 rounded-xl border text-caption font-semibold cursor-pointer ${inputBorderClass}`}
+              className={`py-2 px-6 rounded-xl border text-caption font-semibold cursor-pointer transition-colors ${inputBorderClass} ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}
             >
-              Schedule Another Session
+              Book Another Session
             </button>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ClientDetailsModal 
+        isOpen={isClientModalOpen}
+        onClose={() => setIsClientModalOpen(false)}
+        isDarkMode={isDarkMode}
+        formData={formData}
+        handleChange={handleChange}
+      />
+
+      <ProjectDetailsModal 
+        isOpen={isProjectModalOpen}
+        onClose={() => setIsProjectModalOpen(false)}
+        isDarkMode={isDarkMode}
+        formData={formData}
+        handleChange={handleChange}
+      />
+
+      <MeetupVenueModal 
+        isOpen={isVenueModalOpen}
+        onClose={() => setIsVenueModalOpen(false)}
+        isDarkMode={isDarkMode}
+        formData={formData}
+        handleChange={handleChange}
+      />
     </div>
   );
 };

@@ -13,9 +13,12 @@ export interface DiscoverySessionFormData {
   meetingType: 'meet-up' | 'online' | '';
   venue: string;
   location: { lat: number; lng: number; address?: string } | null;
-  date: string;
-  startTime: string;
-  endTime: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+  projectCategory: string;
+  projectTypology: string;
+  projectType: string;
 }
 
 export const INITIAL_DISCOVERY_DATA: DiscoverySessionFormData = {
@@ -33,6 +36,9 @@ export const INITIAL_DISCOVERY_DATA: DiscoverySessionFormData = {
   date: '',
   startTime: '',
   endTime: '',
+  projectCategory: '',
+  projectTypology: '',
+  projectType: '',
 };
 
 export const DISCOVERY_LEFT_FIELDS: FieldConfig[] = [
@@ -66,9 +72,12 @@ export const discoverySchema = z.object({
   meetingType: z.enum(['meet-up', 'online', '']),
   venue: z.string().optional(),
   location: z.any().optional().nullable(),
-  date: z.string().min(1, "Date is required"),
-  startTime: z.string().min(1, "Start Time is required"),
-  endTime: z.string().min(1, "End Time is required"),
+  date: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  projectCategory: z.string().optional(),
+  projectTypology: z.string().optional(),
+  projectType: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.meetingType === '') {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Meeting Type is required", path: ['meetingType'] });
