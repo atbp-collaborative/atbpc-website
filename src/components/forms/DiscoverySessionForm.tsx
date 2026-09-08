@@ -59,6 +59,7 @@ export const DiscoverySessionForm: React.FC = () => {
   };
 
   const handleBookingSuccess = async (calData: any) => {
+    if (isSubmitting) return; // Prevent concurrent submissions
     setIsSubmitting(true);
     try {
       // Merge cal.com date into our formData

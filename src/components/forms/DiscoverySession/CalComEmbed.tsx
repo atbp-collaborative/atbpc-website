@@ -13,36 +13,51 @@ interface Props {
 export const CalComEmbed: React.FC<Props> = ({ formData, onBookingSuccess }) => {
   const { isDarkMode } = useTheme();
 
+  const onBookingSuccessRef = React.useRef(onBookingSuccess);
+
   useEffect(() => {
+    onBookingSuccessRef.current = onBookingSuccess;
+  }, [onBookingSuccess]);
+
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+
     (async function () {
       const cal = await getCalApi();
       cal("ui", { 
         theme: isDarkMode ? "dark" : "light",
         cssVarsPerTheme: {
-          light: {
-            "cal-bg": "#EDEFEF"
-          },
-          dark: {
-            "cal-bg": "#333436"
-          }
+          light: { "cal-bg": "#EDEFEF" },
+          dark: { "cal-bg": "#333436" }
         },
-        styles: { 
-          branding: { 
-            brandColor: isDarkMode ? "#466263" : "#634746"
-          } 
-        }, 
+        styles: { branding: { brandColor: isDarkMode ? "#466263" : "#634746" } }, 
         hideEventTypeDetails: true, 
         layout: "month_view" 
       });
       
+      const callback = (e: any) => {
+        if (onBookingSuccessRef.current) {
+          onBookingSuccessRef.current(e.detail);
+        }
+      };
+      
       cal("on", {
         action: "bookingSuccessful",
-        callback: (e) => {
-          onBookingSuccess(e.detail);
-        },
+        callback,
       });
+
+      cleanup = () => {
+        cal("off", {
+          action: "bookingSuccessful",
+          callback,
+        });
+      };
     })();
-  }, [isDarkMode, onBookingSuccess]);
+
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, [isDarkMode]);
 
   const link = formData.meetingType === 'meet-up' 
     ? "atbpcollaborative/meet-up" 
