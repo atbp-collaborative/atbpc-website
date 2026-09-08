@@ -30,6 +30,7 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
   else if (from === 'managers') breadcrumbLabel = 'Managers';
   else if (from === 'builders') breadcrumbLabel = 'Builders';
   else if (from === 'all') breadcrumbLabel = 'People';
+  else if (from === 'project') breadcrumbLabel = 'Project';
   else if (member.categories && member.categories.length > 0) {
     breadcrumbLabel = member.categories[0].charAt(0).toUpperCase() + member.categories[0].slice(1);
   }

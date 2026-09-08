@@ -174,10 +174,10 @@ const COMPREHENSIVE_COLUMNS = [
   {
     title: 'Comprehensive Design Services',
     paragraphs: [
-      'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
-      'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
-      'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
-      'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
+      'Our design process is rooted in a deep understanding of your vision, lifestyle, and the unique characteristics of your site.',
+      'We integrate architectural planning, interior design, and engineering to create cohesive spaces that are both beautiful and functional.',
+      'As a design-build studio, we prioritize constructability and material intelligence from the very beginning, ensuring that every design decision aligns with your budget and timeline.',
+      'We navigate the complexities of local zoning, building codes, and environmental regulations, streamlining the path to construction.'
     ],
     linkText: 'Learn more about our process in designing',
     href: ROUTES.designingWithValues,
@@ -185,10 +185,10 @@ const COMPREHENSIVE_COLUMNS = [
   {
     title: 'Comprehensive Management Services',
     paragraphs: [
-      'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
-      'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
-      'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
-      'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
+      'Effective project management is the bridge between a great design and a successful build.',
+      'We oversee every phase of the project, from initial cost estimation and value engineering to procurement and scheduling.',
+      'Our team acts as your single point of contact, coordinating with specialized consultants, suppliers, and local authorities to keep the project on track.',
+      'By maintaining rigorous quality control and transparent communication, we mitigate risks and ensure that the final result exceeds expectations.'
     ],
     linkText: 'Understand how we manage projects',
     href: ROUTES.managingWithIntegrity,
@@ -196,10 +196,10 @@ const COMPREHENSIVE_COLUMNS = [
   {
     title: 'Building Construction Services',
     paragraphs: [
-      'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
-      'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
-      'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
-      'fashdiasiudhcyasio7rdfqweuirbgfxiaueqwirbeqwgfkuewbcg qfkuyeqwgfkueqwcqkufegqrjkuyfbgcqjkuyfgekquwyfgyueij kqrwgcfkuyervbuyet',
+      'Construction is where our designs come to life. We bring decades of hands-on experience and a network of trusted craftsmen to every project.',
+      'Our build teams work in tandem with our designers, fostering a collaborative environment that quickly resolves on-site challenges without compromising the design intent.',
+      'We employ advanced construction methodologies and sustainable practices to deliver structures of enduring quality and performance.',
+      'From groundbreaking to final handover, we are committed to safety, efficiency, and unparalleled craftsmanship in every detail.'
     ],
     linkText: 'Validate our capabilities as Builder',
     href: ROUTES.buildingWithCulture,
@@ -225,6 +225,15 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
   const { isDarkMode } = useTheme();
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [openItemId, setOpenItemId] = useState<string | null>(null);
+  const [openCols, setOpenCols] = useState<boolean[]>([true, true, true]);
+
+  const toggleCol = (idx: number) => {
+    setOpenCols(prev => {
+      const next = [...prev];
+      next[idx] = !next[idx];
+      return next;
+    });
+  };
 
   useEffect(() => {
     const checkSize = () => {
@@ -269,9 +278,9 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
         )}
 
         {isPiecework && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 w-full mr-auto overflow-y-visible lg:overflow-y-auto no-scrollbar py-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 w-full lg:h-full lg:min-h-0 mr-auto overflow-y-visible lg:overflow-y-hidden py-2">
             {PIECEWORK_COLUMNS.map((col, colIdx) => (
-              <div key={colIdx} className="flex flex-col space-y-4">
+              <div key={colIdx} className="flex flex-col space-y-4 lg:overflow-y-auto no-scrollbar lg:pr-2">
                 {col.items.map((item, itemIdx) => {
                   const itemId = `piecework-${colIdx}-${itemIdx}`;
                   return (
@@ -293,38 +302,54 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
         {isComprehensive && isLargeScreen && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 w-full mr-auto overflow-y-hidden py-2 h-full min-h-0 flex-1">
             {COMPREHENSIVE_COLUMNS.map((col, colIdx) => (
-              <div key={colIdx} className="flex flex-col h-full min-h-0 justify-between relative">
+              <div key={colIdx} className="flex flex-col h-full min-h-0 justify-start relative">
                 {/* Sticky Heading */}
                 <h3 
-                  className="shrink-0 font-sans text-body sm:text-h3 font-bold tracking-tight leading-tight select-none pb-3 sticky top-0 z-10 break-words"
+                  className="shrink-0 font-sans text-body sm:text-h3 font-bold tracking-tight leading-tight select-none pb-3 sticky top-0 z-10 break-words cursor-pointer flex items-start group"
                   style={{ backgroundColor: isDarkMode ? '#333436' : '#EDEFEF' }}
+                  onClick={() => toggleCol(colIdx)}
                 >
-                  + {col.title}
+                  <span className="font-sans font-bold text-space-sparkle mr-2 text-body sm:text-h3 leading-tight select-none">
+                    {openCols[colIdx] ? '—' : '+'}
+                  </span>
+                  <span className="group-hover:opacity-85 transition-opacity">{col.title}</span>
                 </h3>
                 
                 {/* Scrollable, Snapping Paragraphs Container */}
-                <div className="flex-1 overflow-y-auto snap-y snap-mandatory no-scrollbar space-y-4 py-2 min-h-0">
-                  {col.paragraphs.map((p, pIdx) => (
-                    <div key={pIdx} className="snap-start snap-always py-1">
-                      <p className="text-caption font-light opacity-95 leading-relaxed text-justify break-words">
-                        {p}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Sticky CTA Link */}
-                <div 
-                  className="shrink-0 pt-3 sticky bottom-0 z-10"
-                  style={{ backgroundColor: isDarkMode ? '#333436' : '#EDEFEF' }}
-                >
-                  <Link
-                    href={col.href}
-                    className="font-sans text-caption text-space-sparkle hover:opacity-80 transition-opacity select-none flex items-center break-words"
-                  >
-                    &gt; {col.linkText}
-                  </Link>
-                </div>
+                <AnimatePresence initial={false}>
+                  {openCols[colIdx] && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeInOut' }}
+                      className="flex-1 min-h-0 flex flex-col overflow-hidden"
+                    >
+                      <div className="flex-1 overflow-y-auto snap-y snap-mandatory no-scrollbar py-2 space-y-4">
+                        {col.paragraphs.map((p, pIdx) => (
+                          <div key={pIdx} className="snap-start snap-always py-1 shrink-0">
+                            <p className="text-caption font-light opacity-95 leading-relaxed text-justify break-words">
+                              {p}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Fixed CTA Link below scrollable area */}
+                      <div 
+                        className="shrink-0 pt-3 pb-1 mt-auto"
+                        style={{ backgroundColor: isDarkMode ? '#333436' : '#EDEFEF' }}
+                      >
+                        <Link
+                          href={col.href}
+                          className="font-sans text-caption text-space-sparkle hover:opacity-80 transition-opacity select-none flex items-center break-words"
+                        >
+                          &gt; {col.linkText}
+                        </Link>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ))}
           </div>
@@ -348,16 +373,17 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
         )}
 
         {isConsultationRetainer && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 w-full mr-auto overflow-y-visible lg:overflow-y-auto no-scrollbar py-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 w-full lg:h-full lg:min-h-0 mr-auto overflow-y-visible lg:overflow-y-hidden py-2">
             {CONSULTATION_RETAINER_COLUMNS.map((item, idx) => (
-              <PieceworkAccordionItem
-                key={`${idx}-${isLargeScreen}`}
-                title={item.title}
-                content={item.content}
-                isOpen={isLargeScreen ? true : openItemId === `consult-${idx}`}
-                onToggle={() => setOpenItemId(openItemId === `consult-${idx}` ? null : `consult-${idx}`)}
-                isDarkMode={isDarkMode}
-              />
+              <div key={`${idx}-${isLargeScreen}`} className="lg:overflow-y-auto no-scrollbar lg:pr-2">
+                <PieceworkAccordionItem
+                  title={item.title}
+                  content={item.content}
+                  isOpen={isLargeScreen ? true : openItemId === `consult-${idx}`}
+                  onToggle={() => setOpenItemId(openItemId === `consult-${idx}` ? null : `consult-${idx}`)}
+                  isDarkMode={isDarkMode}
+                />
+              </div>
             ))}
           </div>
         )}
