@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { InfoModal } from '@/components/modals/InfoModal';
 import { FormFieldRenderer } from '@/components/forms/form-fields';
 import { DiscoverySessionFormData } from '@/lib/forms/discovery.schema';
@@ -12,6 +12,25 @@ interface Props {
 }
 
 export const MeetupVenueModal: React.FC<Props> = ({ isOpen, onClose, isDarkMode, formData, handleChange }) => {
+  useEffect(() => {
+    if (!formData.venue || formData.venue.length < 3) return;
+
+    const handler = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.venue)}`);
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const { lat, lon, display_name } = data[0];
+          handleChange('location', { lat: parseFloat(lat), lng: parseFloat(lon), address: display_name });
+        }
+      } catch (e) {
+        console.error('Geocoding failed:', e);
+      }
+    }, 1500);
+
+    return () => clearTimeout(handler);
+  }, [formData.venue]); // Only depend on venue text changes
+
   return (
     <InfoModal
       isOpen={isOpen}

@@ -28,6 +28,18 @@ export const MapPinField: React.FC<MapPinFieldProps> = ({
   // Default to Philippines coordinates if no value
   const initialPos: [number, number] = value ? [value.lat, value.lng] : [14.5995, 120.9842]; // Manila
 
+  const customIcon = React.useMemo(() => L.divIcon({
+    html: `
+      <div class="relative flex items-center justify-center">
+        <div class="relative flex h-5 w-5 items-center justify-center rounded-full shadow-lg border-2 border-white" style="background-color: ${isDarkMode ? '#ffffff' : '#1e293b'};">
+        </div>
+      </div>
+    `,
+    className: 'custom-pin-marker',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  }), [isDarkMode]);
+
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -47,18 +59,6 @@ export const MapPinField: React.FC<MapPinFieldProps> = ({
         maxZoom: 19,
       }
     ).addTo(map);
-
-    const customIcon = L.divIcon({
-      html: `
-        <div class="relative flex items-center justify-center">
-          <div class="relative flex h-5 w-5 items-center justify-center rounded-full shadow-lg border-2 border-white" style="background-color: ${isDarkMode ? '#ffffff' : '#1e293b'};">
-          </div>
-        </div>
-      `,
-      className: 'custom-pin-marker',
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
-    });
 
     if (value) {
       markerRef.current = L.marker([value.lat, value.lng], { icon: customIcon }).addTo(map);
@@ -80,6 +80,22 @@ export const MapPinField: React.FC<MapPinFieldProps> = ({
       mapRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!mapRef.current || !value) return;
+    const currentCenter = mapRef.current.getCenter();
+    const distance = currentCenter.distanceTo([value.lat, value.lng]);
+    
+    // Only move if significantly different to avoid looping when user clicks map
+    if (distance > 10) {
+      mapRef.current.setView([value.lat, value.lng], 16);
+      if (markerRef.current) {
+        markerRef.current.setLatLng([value.lat, value.lng]);
+      } else {
+        markerRef.current = L.marker([value.lat, value.lng], { icon: customIcon }).addTo(mapRef.current);
+      }
+    }
+  }, [value, customIcon]);
 
   return (
     <div className={`flex flex-col space-y-1.5 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>

@@ -91,6 +91,11 @@ export const DiscoverySessionForm: React.FC = () => {
   const fieldStyles = getFieldThemeStyles('neutral', isDarkMode);
   const inputBorderClass = fieldStyles.borderColor;
 
+  // Safe parse to check if form is ready for calendar embed
+  const validationResult = discoverySchema.safeParse(formData);
+  const isProjectDetailsReady = !!formData.projectCategory && !!formData.projectType;
+  const isFormReady = validationResult.success && isProjectDetailsReady;
+
   if (!isLoaded) return null; // Avoid hydration mismatch
 
   return (
@@ -190,10 +195,10 @@ export const DiscoverySessionForm: React.FC = () => {
 
             {/* RIGHT COLUMN - Cal.com Embed */}
             <div className="w-full lg:w-2/3 flex flex-col lg:h-full overflow-y-auto no-scrollbar pl-0 lg:pl-4 border-t lg:border-t-0 border-space-sparkle/10 pt-6 lg:pt-0 min-h-[700px] lg:min-h-0">
-              {!formData.meetingType ? (
+              {!isFormReady ? (
                 <div className="flex flex-col items-center justify-center h-full opacity-50 min-h-[400px]">
                   <Map size={48} className="mb-4 text-space-sparkle opacity-50" />
-                  <p className="text-body text-center max-w-sm">Please select a Meeting Type on the left to load the booking calendar.</p>
+                  <p className="text-body text-center max-w-sm">Please complete all required fields (Client Details, Project Details, Venue) to load the booking calendar.</p>
                 </div>
               ) : (
                 <>
