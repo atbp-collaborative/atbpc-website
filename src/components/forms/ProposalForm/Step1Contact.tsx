@@ -115,15 +115,6 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
                 value={person.email || ''} onChange={(_, val) => handleUpdate(i, 'email', val)} 
                 isDarkMode={isDarkMode} 
               />
-              <div className="md:col-span-2 mt-2">
-                <h4 className="font-sans text-caption font-semibold mb-3 opacity-90">Current Address</h4>
-                <AddressField 
-                  name="address"
-                  value={person.address || EMPTY_PH_ADDRESS} 
-                  onChange={(_, val) => handleUpdate(i, 'address', val)} 
-                  isDarkMode={isDarkMode} 
-                />
-              </div>
             </div>
           </div>
         ))}
@@ -151,20 +142,52 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
 
       <div className="mb-10 w-full">
         <h3 className="font-sans text-caption font-bold mb-4">1a. About the Client</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:items-center">
-          <label className="text-caption font-semibold block opacity-90 lg:pr-4">
-            Will the project be named after a business or a private entity?
-          </label>
-          <div className="w-full">
-            <SelectField
-              name="businessEntity"
-              placeholder="[ Select Client Type ]"
-              options={[
-                { value: 'Private Entity', label: 'Private Entity' },
-                { value: 'Business', label: 'Business' }
-              ]}
-              value={formData.businessEntity || ''}
-              onChange={(name, val) => updateField('businessEntity', val)}
+        <div className="grid grid-cols-1 gap-4 mb-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:items-center">
+            <label className="text-caption font-semibold block opacity-90 lg:pr-4">
+              Will the project be named after a business or a private entity?
+            </label>
+            <div className="w-full">
+              <SelectField
+                name="businessEntity"
+                placeholder="[ Select Client Type ]"
+                options={[
+                  { value: 'Private Entity', label: 'Private Entity' },
+                  { value: 'Business', label: 'Business' }
+                ]}
+                value={formData.businessEntity || ''}
+                onChange={(name, val) => updateField('businessEntity', val)}
+                isDarkMode={isDarkMode}
+              />
+            </div>
+          </div>
+          
+          {formData.businessEntity === 'Business' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <TextField
+                name="businessName"
+                label="Business Name / Registered Name"
+                value={formData.businessName || ''}
+                onChange={(_name, val) => updateField('businessName', val)}
+                isDarkMode={isDarkMode}
+              />
+              <TextField
+                name="landline"
+                type="tel"
+                label="Landline Number"
+                value={formData.landline || ''}
+                onChange={(_name, val) => updateField('landline', val)}
+                isDarkMode={isDarkMode}
+              />
+            </div>
+          )}
+
+          <div className="mt-4">
+            <h4 className="font-sans text-caption font-semibold mb-3 opacity-90">Client Address</h4>
+            <AddressField
+              name="clientAddress"
+              value={formData.clientAddress || EMPTY_PH_ADDRESS}
+              onChange={(_name, val) => updateField('clientAddress', val)}
               isDarkMode={isDarkMode}
             />
           </div>

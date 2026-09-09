@@ -5,7 +5,6 @@ export const personSchema = z.object({
   firstName: z.string().min(1, 'Given name is required'),
   middleName: z.string().optional(),
   lastName: z.string().min(1, 'Last name is required'),
-  address: z.any(),
   title: z.string().optional(),
   contactNo: z.string().min(1, 'Contact number is required'),
   email: z.string().email('Valid email is required'),
@@ -13,6 +12,9 @@ export const personSchema = z.object({
 
 export const proposalSchema = z.object({
   businessEntity: z.string().min(1, 'Business Entity is required'),
+  businessName: z.string().optional(),
+  clientAddress: z.any(),
+  landline: z.string().optional(),
   principalDecisionMakers: z.array(personSchema).min(1, 'At least one principal decision maker is required').max(2),
   authorizedRepresentatives: z.array(personSchema).max(1).optional(),
 
@@ -22,9 +24,9 @@ export const proposalSchema = z.object({
   services: z.string().min(1, 'Services are required'),
   scope: z.string().min(1, 'Scope is required'),
 
-  propertyAreaType: z.string().min(1, 'Property area type is required'),
+  propertyAreaType: z.enum(['tla', 'tua']),
   propertyAreaSize: z.string().min(1, 'Property area size is required'),
-  siteAddress: z.any(),
+  projectAddress: z.any(),
   mapCoordinates: z.object({
     lat: z.number(),
     lng: z.number(),
@@ -55,19 +57,12 @@ export const proposalSchema = z.object({
     size: z.number(),
     content: z.string()
   }).optional(),
-  deedDocument: z.object({
+  dorDocument: z.object({
     name: z.string(),
     type: z.string(),
     size: z.number(),
     content: z.string()
   }).optional(),
-
-  documents: z.array(z.object({
-    name: z.string(),
-    type: z.string(),
-    size: z.number(),
-    content: z.string() // base64
-  })).optional(),
 
   hasProjectManager: z.string().optional(),
   additionalInfo: z.string().optional(),
@@ -90,22 +85,24 @@ export type ProposalFormData = z.infer<typeof proposalSchema>;
 
 export const defaultProposalFormData: ProposalFormData = {
   businessEntity: '',
-  principalDecisionMakers: [{ firstName: '', lastName: '', address: { ...EMPTY_PH_ADDRESS }, contactNo: '', email: '' }] as any,
-  authorizedRepresentatives: [{ firstName: '', lastName: '', address: { ...EMPTY_PH_ADDRESS }, contactNo: '', email: '' }] as any,
+  businessName: '',
+  clientAddress: { ...EMPTY_PH_ADDRESS } as any,
+  landline: '',
+  principalDecisionMakers: [{ firstName: '', lastName: '', contactNo: '', email: '' }] as any,
+  authorizedRepresentatives: [{ firstName: '', lastName: '', contactNo: '', email: '' }] as any,
   category: '',
   typology: '',
   projectType: '',
   services: '',
   scope: '',
-  propertyAreaType: '',
+  propertyAreaType: 'tla',
   propertyAreaSize: '',
-  siteAddress: { ...EMPTY_PH_ADDRESS } as any,
+  projectAddress: { ...EMPTY_PH_ADDRESS } as any,
   mapCoordinates: null,
   constructionBudget: '',
   targetDate: '',
   attachments: [],
   superstitions: '',
-  documents: [],
   hasProjectManager: '',
   additionalInfo: '',
 };

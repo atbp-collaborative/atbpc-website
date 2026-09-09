@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { ProposalFormData } from '@/lib/forms/proposal.schema';
@@ -81,10 +81,10 @@ export const Step4Additional: React.FC<Props> = ({ formData, updateField, isDark
             </div>
             <div className="md:col-span-2">
               <FileUploadField
-                name="deedDocument"
+                name="dorDocument"
                 label="Deed of Restrictions"
                 badge="!"
-                value={formData.deedDocument as any}
+                value={formData.dorDocument as any}
                 onChange={(name, val) => updateField(name as any, val)}
                 isDarkMode={isDarkMode}
                 theme="neutral"

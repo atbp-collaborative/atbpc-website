@@ -15,25 +15,35 @@ export const ProposalEmailTemplate: React.FC<ProposalEmailTemplateProps> = ({ da
           <Heading style={h1}>New Proposal Request</Heading>
 
           <Section style={section}>
-            <Heading style={h2}>1a. Principal Decision Makers</Heading>
+            <Heading style={h2}>1a. About the Client</Heading>
+            <Text><strong>Client Type:</strong> {data.businessEntity}</Text>
+            {data.businessName && <Text><strong>Business Name:</strong> {data.businessName}</Text>}
+            {data.landline && <Text><strong>Landline:</strong> {data.landline}</Text>}
+            {data.clientAddress && (
+              <Text>
+                <strong>Client Address:</strong> {data.clientAddress.addressLine}, {data.clientAddress.barangayName}, {data.clientAddress.cityName}, {data.clientAddress.provinceName}, {data.clientAddress.regionName}, {data.clientAddress.country}
+              </Text>
+            )}
+          </Section>
+
+          <Section style={section}>
+            <Heading style={h2}>1b. Principal Decision Makers</Heading>
             {data.principalDecisionMakers?.map((person, idx) => (
               <div key={idx} style={itemBox}>
                 <Text><strong>Name:</strong> {person.title} {person.firstName} {person.middleName} {person.lastName}</Text>
                 <Text><strong>Email:</strong> {person.email}</Text>
                 <Text><strong>Contact No:</strong> {person.contactNo}</Text>
-                <Text><strong>Address:</strong> {person.address}</Text>
               </div>
             ))}
           </Section>
 
           <Section style={section}>
-            <Heading style={h2}>1b. Authorized Representatives</Heading>
+            <Heading style={h2}>1c. Authorized Representatives</Heading>
             {data.authorizedRepresentatives?.map((person, idx) => (
               <div key={idx} style={itemBox}>
                 <Text><strong>Name:</strong> {person.title} {person.firstName} {person.middleName} {person.lastName}</Text>
                 <Text><strong>Email:</strong> {person.email}</Text>
                 <Text><strong>Contact No:</strong> {person.contactNo}</Text>
-                <Text><strong>Address:</strong> {person.address}</Text>
               </div>
             ))}
           </Section>
@@ -49,7 +59,11 @@ export const ProposalEmailTemplate: React.FC<ProposalEmailTemplateProps> = ({ da
             <Heading style={h2}>3. Property & Budget</Heading>
             <Text><strong>Area Type:</strong> {data.propertyAreaType}</Text>
             <Text><strong>Area Size:</strong> {data.propertyAreaSize}</Text>
-            <Text><strong>Site Address:</strong> {data.siteAddress}</Text>
+            {data.projectAddress && (
+              <Text>
+                <strong>Project Address:</strong> {data.projectAddress.addressLine}, {data.projectAddress.barangayName}, {data.projectAddress.cityName}, {data.projectAddress.provinceName}, {data.projectAddress.regionName}, {data.projectAddress.country}
+              </Text>
+            )}
             <Text><strong>Coordinates:</strong> {data.mapCoordinates ? `${data.mapCoordinates.lat}, ${data.mapCoordinates.lng}` : 'N/A'}</Text>
             <Text><strong>Construction Budget:</strong> {data.constructionBudget}</Text>
             <Text><strong>Target Date:</strong> {data.targetDate}</Text>
@@ -58,6 +72,7 @@ export const ProposalEmailTemplate: React.FC<ProposalEmailTemplateProps> = ({ da
           <Section style={section}>
             <Heading style={h2}>4. Additional Information</Heading>
             <Text><strong>Superstitions:</strong> {data.superstitions}</Text>
+            <Text><strong>Has Project Manager:</strong> {data.hasProjectManager}</Text>
             <Text><strong>Additional Info:</strong> {data.additionalInfo}</Text>
           </Section>
 

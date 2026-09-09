@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -78,9 +78,9 @@ export const ProjectAddressModal: React.FC<ProjectAddressModalProps> = ({
             <div className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-8">
               <div>
                 <AddressField
-                  name="siteAddress"
-                  value={formData.siteAddress || {}}
-                  onChange={(name, val) => updateField('siteAddress', val)}
+                  name="projectAddress"
+                  value={formData.projectAddress || {}}
+                  onChange={(name, val) => updateField('projectAddress', val)}
                   isDarkMode={isDarkMode}
                   variant="full"
                 />

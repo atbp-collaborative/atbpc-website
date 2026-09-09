@@ -1,0 +1,86 @@
+{
+  "businessEntity": "Business",
+  "businessName": "Acme Corp",
+  "clientAddress": {
+    "country": "Philippines",
+    "regionCode": "13",
+    "regionName": "National Capital Region (NCR)",
+    "provinceCode": "1376",
+    "provinceName": "NCR, Fourth District",
+    "cityCode": "137604",
+    "cityName": "City of Makati",
+    "barangayCode": "137604018",
+    "barangayName": "Poblacion",
+    "addressLine": "123 Business Blvd"
+  },
+  "landline": "0281234567",
+  "principalDecisionMakers": [
+    {
+      "firstName": "John",
+      "middleName": "A",
+      "lastName": "Doe",
+      "title": "CEO",
+      "contactNo": "09171234567",
+      "email": "john.doe@example.com"
+    }
+  ],
+  "authorizedRepresentatives": [
+    {
+      "firstName": "Jane",
+      "middleName": "B",
+      "lastName": "Smith",
+      "title": "Manager",
+      "contactNo": "09181234567",
+      "email": "jane.smith@example.com"
+    }
+  ],
+  "category": "Shelter",
+  "typology": "Tiny Living",
+  "projectType": "New Structure",
+  "services": "Comprehensive Services",
+  "scope": "Comprehensive Design Services",
+  "propertyAreaType": "tla",
+  "propertyAreaSize": "150",
+  "projectAddress": {
+    "country": "Philippines",
+    "regionCode": "13",
+    "regionName": "National Capital Region (NCR)",
+    "provinceCode": "1376",
+    "provinceName": "NCR, Fourth District",
+    "cityCode": "137607",
+    "cityName": "Taguig City",
+    "barangayCode": "137607001",
+    "barangayName": "Fort Bonifacio",
+    "addressLine": "789 Property Ave"
+  },
+  "mapCoordinates": {
+    "lat": 14.5547,
+    "lng": 121.0244,
+    "address": "BGC, Taguig, Metro Manila"
+  },
+  "constructionBudget": "4M-6M",
+  "targetDate": "2024-12-01",
+  "attachments": [
+    {
+      "name": "photo.jpg",
+      "type": "image/jpeg",
+      "size": 1024,
+      "content": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    }
+  ],
+  "superstitions": "None",
+  "tctDocument": {
+    "name": "title.pdf",
+    "type": "application/pdf",
+    "size": 2048,
+    "content": "data:application/pdf;base64,JVBERi0xLjcKCjEgMCBvYmogICUgZW50cnkgcG9pbnQKPDwKICAvVHlwZSAvQ2F0YWxvZwogIC9QYWdlcyAyIDAgUgo+PgplbmRvYmoKCjIgMCBvYmoKPDwKICAvVHlwZSAvUGFnZXMKICAvTWVkaWFCb3ggWyAwIDAgMjAwIDIwMCBdCiAgL0NvdW50IDEKICAvS2lkcyBbIDMgMCBSIF0KPj4KZW5kb2JqCgozIDAgb2JqCjw8CiAgL1R5cGUgL1BhZ2UKICAvUGFyZW50IDIgMCBSCiAgL1Jlc291cmNlcyA8PAogICAgL0ZvbnQgPDwKICAgICAgL0YxIDQgMCBSCgkJICAgID4+CiAgPj4KICAvQ29udGVudHMgNSAwIFIKPj4KZW5kb2JqCgo0IDAgb2JqCjw8CiAgL1R5cGUgL0ZvbnQKICAvU3VidHlwZSAvVHlwZTEKICAvQmFzZUZvbnQgL1RpbWVzLVJvbWFuCj4+CmVuZG9iagoKNSAwIG9iago8PAogIC9MZW5ndGggNTEKPj4Kc3RyZWFtCkJUCjcwIDUwIFRECi9GMSAxMiBUZgooSGVsbG8sIHdvcmxkISkgVGoKRVQKZW5kc3RyZWFtCmVuZG9iagoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDEwIDAwMDAwIG4gCjAwMDAwMDAwNjkgMDAwMDAgbiAKMDAwMDAwMDE0MSAwMDAwMCBuIAowMDAwMDAwMjU0IDAwMDAwIG4gCjAwMDAwMDAzNDIgMDAwMDAgbiAKdHJhaWxlcgo8PAogIC9TaXplIDYKICAvUm9vdCAxIDAgUgo+PgpzdGFydHhyZWYKNDQzCiUlRU9GCg=="
+  },
+  "dorDocument": {
+    "name": "dor.pdf",
+    "type": "application/pdf",
+    "size": 2048,
+    "content": "data:application/pdf;base64,JVBERi0xLjcKCjEgMCBvYmogICUgZW50cnkgcG9pbnQKPDwKICAvVHlwZSAvQ2F0YWxvZwogIC9QYWdlcyAyIDAgUgo+PgplbmRvYmoKCjIgMCBvYmoKPDwKICAvVHlwZSAvUGFnZXMKICAvTWVkaWFCb3ggWyAwIDAgMjAwIDIwMCBdCiAgL0NvdW50IDEKICAvS2lkcyBbIDMgMCBSIF0KPj4KZW5kb2JqCgozIDAgb2JqCjw8CiAgL1R5cGUgL1BhZ2UKICAvUGFyZW50IDIgMCBSCiAgL1Jlc291cmNlcyA8PAogICAgL0ZvbnQgPDwKICAgICAgL0YxIDQgMCBSCgkJICAgID4+CiAgPj4KICAvQ29udGVudHMgNSAwIFIKPj4KZW5kb2JqCgo0IDAgb2JqCjw8CiAgL1R5cGUgL0ZvbnQKICAvU3VidHlwZSAvVHlwZTEKICAvQmFzZUZvbnQgL1RpbWVzLVJvbWFuCj4+CmVuZG9iagoKNSAwIG9iago8PAogIC9MZW5ndGggNTEKPj4Kc3RyZWFtCkJUCjcwIDUwIFRECi9GMSAxMiBUZgooSGVsbG8sIHdvcmxkISkgVGoKRVQKZW5kc3RyZWFtCmVuZG9iagoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDEwIDAwMDAwIG4gCjAwMDAwMDAwNjkgMDAwMDAgbiAKMDAwMDAwMDE0MSAwMDAwMCBuIAowMDAwMDAwMjU0IDAwMDAwIG4gCjAwMDAwMDAzNDIgMDAwMDAgbiAKdHJhaWxlcgo8PAogIC9TaXplIDYKICAvUm9vdCAxIDAgUgo+PgpzdGFydHhyZWYKNDQzCiUlRU9GCg=="
+  },
+  "hasProjectManager": "No",
+  "additionalInfo": "Looking forward to working with your team."
+}

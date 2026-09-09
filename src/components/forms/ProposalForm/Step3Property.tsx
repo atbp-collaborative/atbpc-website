@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { ProposalFormData, BUDGET_OPTIONS } from '@/lib/forms/proposal.schema';
@@ -18,7 +18,7 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
   const [showAddressModal, setShowAddressModal] = useState(false);
 
   // Check if address has some values filled to show "Added" count
-  const hasAddress = formData.siteAddress?.regionCode ? 1 : 0;
+  const hasAddress = formData.projectAddress?.regionCode ? 1 : 0;
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -30,14 +30,14 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
       <div className="space-y-10">
         <div>
           <h3 className="font-sans text-caption font-bold mb-4">3a. Property Area</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 items-start">
             <SelectField
               name="propertyAreaType"
               label="Area Type"
               placeholder="[ Select Area Type ]"
               options={[
-                { value: 'TLA', label: 'TLA (for land)' },
-                { value: 'TUA', label: 'TUA (for fit-out)' }
+                { value: 'tla', label: 'TLA (for land)' },
+                { value: 'tua', label: 'TUA (for fit-out)' }
               ]}
               value={formData.propertyAreaType || ''}
               onChange={(name, val) => updateField('propertyAreaType', val)}
@@ -53,9 +53,7 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
               onChange={(name, val) => updateField('propertyAreaSize', val)}
               isDarkMode={isDarkMode}
             />
-          </div>
 
-          <div className="w-full md:w-1/2">
             <MultiEntryButton 
               fieldLabel="Project Address"
               label={hasAddress ? "Edit Project Address" : "Add Project Address"} 
@@ -68,7 +66,7 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
 
         <div>
           <h3 className="font-sans text-caption font-bold mb-4">3b. Your Build Forecast</h3>
-          <div className="w-full md:w-1/2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <SelectField
               name="constructionBudget"
               label={
@@ -89,7 +87,7 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
 
         <div>
           <h3 className="font-sans text-caption font-bold mb-4">3c. Timeline</h3>
-          <div className="w-full md:w-1/2 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <DateField
               name="targetDate"
               label="Target date of start of project"
