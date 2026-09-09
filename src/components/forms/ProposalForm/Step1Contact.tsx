@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { ProposalFormData } from '@/lib/forms/proposal.schema';
 import { TextField } from '@/components/forms/form-fields/TextField';
 import { SelectField } from '@/components/forms/form-fields/SelectField';
+import { AddressField } from '@/components/forms/form-fields/AddressField';
+import { EMPTY_PH_ADDRESS } from '@/components/forms/form-fields/types';
 import { Button } from '@/components/primitives/buttons/Button';
 import { Plus, Trash2, Info } from 'lucide-react';
 
@@ -69,7 +71,7 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
               <button 
                 type="button"
                 onClick={() => handleRemoveClick(i)}
-                className="absolute top-0 right-0 text-red-500 hover:text-red-700 transition-colors"
+                className="absolute top-0 right-0 z-10 p-2 cursor-pointer text-red-500 hover:text-red-700 transition-colors"
                 title={`Remove ${personPrefix.toLowerCase()}`}
               >
                 <Trash2 size={18} />
@@ -113,10 +115,12 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
                 value={person.email || ''} onChange={(_, val) => handleUpdate(i, 'email', val)} 
                 isDarkMode={isDarkMode} 
               />
-              <div className="md:col-span-2">
-                <TextField 
-                  name="address" label="Current Address" 
-                  value={person.address || ''} onChange={(_, val) => handleUpdate(i, 'address', val)} 
+              <div className="md:col-span-2 mt-2">
+                <h4 className="font-sans text-caption font-semibold mb-3 opacity-90">Current Address</h4>
+                <AddressField 
+                  name="address"
+                  value={person.address || EMPTY_PH_ADDRESS} 
+                  onChange={(_, val) => handleUpdate(i, 'address', val)} 
                   isDarkMode={isDarkMode} 
                 />
               </div>
@@ -167,7 +171,7 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
         </div>
       </div>
 
-      {renderPersonList('principalDecisionMakers', '1b. Principal Decision Maker', 2, 'Decision Maker')}
+      {renderPersonList('principalDecisionMakers', '1b. Decision Makers', 2, 'Decision Maker')}
       {formData.businessEntity === 'Business' && renderPersonList('authorizedRepresentatives', '1c. Authorized Representative', 1, 'Representative')}
 
       {personToDelete && (

@@ -1,13 +1,12 @@
-'use client';
+﻿'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ProposalFormData, BUDGET_OPTIONS } from '@/lib/forms/proposal.schema';
 import { TextField } from '@/components/forms/form-fields/TextField';
 import { SelectField } from '@/components/forms/form-fields/SelectField';
 import { DateField } from '@/components/forms/form-fields/DateField';
-import dynamic from 'next/dynamic';
-
-const MapPinField = dynamic(() => import('@/components/forms/form-fields/MapPinField').then((mod) => mod.MapPinField), { ssr: false });
+import { MultiEntryButton } from '@/components/primitives/buttons/MultiEntryButton';
+import { ProjectAddressModal } from './ProjectAddressModal';
 
 interface Props {
   formData: ProposalFormData;
@@ -16,6 +15,11 @@ interface Props {
 }
 
 export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMode }) => {
+  const [showAddressModal, setShowAddressModal] = useState(false);
+
+  // Check if address has some values filled to show "Added" count
+  const hasAddress = formData.siteAddress?.regionCode ? 1 : 0;
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-8">
@@ -26,11 +30,11 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
       <div className="space-y-10">
         <div>
           <h3 className="font-sans text-caption font-bold mb-4">3a. Property Area</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
             <SelectField
               name="propertyAreaType"
               label="Area Type"
-              placeholder="Select Area Type"
+              placeholder="[ Select Area Type ]"
               options={[
                 { value: 'TLA', label: 'TLA (for land)' },
                 { value: 'TUA', label: 'TUA (for fit-out)' }
@@ -38,6 +42,7 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
               value={formData.propertyAreaType || ''}
               onChange={(name, val) => updateField('propertyAreaType', val)}
               isDarkMode={isDarkMode}
+              dense={true}
             />
 
             <TextField
@@ -50,24 +55,13 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
             />
           </div>
 
-          <div className="mb-6">
-            <TextField
-              type="text"
-              name="siteAddress"
-              label="Site Address"
-              value={formData.siteAddress || ''}
-              onChange={(name, val) => updateField('siteAddress', val)}
-              isDarkMode={isDarkMode}
-            />
-          </div>
-
-          <div>
-            <MapPinField
-              name="mapCoordinates"
-              label="Pin on Map"
-              value={formData.mapCoordinates || null}
-              onChange={(name, val) => updateField('mapCoordinates', val)}
-              isDarkMode={isDarkMode}
+          <div className="w-full md:w-1/2">
+            <MultiEntryButton 
+              fieldLabel="Project Address"
+              label={hasAddress ? "Edit Project Address" : "Add Project Address"} 
+              count={hasAddress} 
+              onClick={() => setShowAddressModal(true)} 
+              isDarkMode={isDarkMode} 
             />
           </div>
         </div>
@@ -83,18 +77,19 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
                   <span className="text-xs font-normal opacity-70">How much are you willing to spend on materials? (PHP)</span>
                 </span>
               }
-              placeholder="Select a budget range"
+              placeholder="[ Select Budget Range ]"
               options={BUDGET_OPTIONS}
               value={formData.constructionBudget || ''}
               onChange={(name, val) => updateField('constructionBudget', val)}
               isDarkMode={isDarkMode}
+              dense={true}
             />
           </div>
         </div>
 
         <div>
           <h3 className="font-sans text-caption font-bold mb-4">3c. Timeline</h3>
-          <div className="w-full md:w-1/2">
+          <div className="w-full md:w-1/2 mb-6">
             <DateField
               name="targetDate"
               label="Target date of start of project"
@@ -105,6 +100,14 @@ export const Step3Property: React.FC<Props> = ({ formData, updateField, isDarkMo
           </div>
         </div>
       </div>
+
+      <ProjectAddressModal
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        formData={formData}
+        updateField={updateField}
+        isDarkMode={isDarkMode}
+      />
     </div>
   );
 };

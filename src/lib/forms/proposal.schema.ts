@@ -1,10 +1,11 @@
 import { z } from 'zod';
+import { EMPTY_PH_ADDRESS } from '@/components/forms/form-fields/types';
 
 export const personSchema = z.object({
   firstName: z.string().min(1, 'Given name is required'),
   middleName: z.string().optional(),
   lastName: z.string().min(1, 'Last name is required'),
-  address: z.string().min(1, 'Address is required'),
+  address: z.any(),
   title: z.string().optional(),
   contactNo: z.string().min(1, 'Contact number is required'),
   email: z.string().email('Valid email is required'),
@@ -23,7 +24,7 @@ export const proposalSchema = z.object({
 
   propertyAreaType: z.string().min(1, 'Property area type is required'),
   propertyAreaSize: z.string().min(1, 'Property area size is required'),
-  siteAddress: z.string().min(1, 'Site address is required'),
+  siteAddress: z.any(),
   mapCoordinates: z.object({
     lat: z.number(),
     lng: z.number(),
@@ -89,8 +90,8 @@ export type ProposalFormData = z.infer<typeof proposalSchema>;
 
 export const defaultProposalFormData: ProposalFormData = {
   businessEntity: '',
-  principalDecisionMakers: [{ firstName: '', lastName: '', address: '', contactNo: '', email: '' }] as any,
-  authorizedRepresentatives: [{ firstName: '', lastName: '', address: '', contactNo: '', email: '' }] as any,
+  principalDecisionMakers: [{ firstName: '', lastName: '', address: { ...EMPTY_PH_ADDRESS }, contactNo: '', email: '' }] as any,
+  authorizedRepresentatives: [{ firstName: '', lastName: '', address: { ...EMPTY_PH_ADDRESS }, contactNo: '', email: '' }] as any,
   category: '',
   typology: '',
   projectType: '',
@@ -98,7 +99,7 @@ export const defaultProposalFormData: ProposalFormData = {
   scope: '',
   propertyAreaType: '',
   propertyAreaSize: '',
-  siteAddress: '',
+  siteAddress: { ...EMPTY_PH_ADDRESS } as any,
   mapCoordinates: null,
   constructionBudget: '',
   targetDate: '',
