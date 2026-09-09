@@ -4,22 +4,25 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/primitives/buttons/Button';
-import { FileUploadField } from '@/components/forms/form-fields/FileUploadField';
+import { AddressField } from '@/components/forms/form-fields/AddressField';
+import dynamic from 'next/dynamic';
 import { ProposalFormData } from '@/lib/forms/proposal.schema';
 
-interface ProposalDocumentsModalProps {
+const MapPinField = dynamic(() => import('@/components/forms/form-fields/MapPinField').then((mod) => mod.MapPinField), { ssr: false });
+
+interface ProjectAddressModalProps {
   isOpen: boolean;
   onClose: () => void;
   formData: ProposalFormData;
-  onChange: (name: string, value: any) => void;
+  updateField: (field: keyof ProposalFormData, value: any) => void;
   isDarkMode: boolean;
 }
 
-export const ProposalDocumentsModal: React.FC<ProposalDocumentsModalProps> = ({
+export const ProjectAddressModal: React.FC<ProjectAddressModalProps> = ({
   isOpen,
   onClose,
   formData,
-  onChange,
+  updateField,
   isDarkMode,
 }) => {
   useEffect(() => {
@@ -62,8 +65,8 @@ export const ProposalDocumentsModal: React.FC<ProposalDocumentsModalProps> = ({
             <div className={`flex items-center justify-between px-6 py-5 sticky top-0 z-20 backdrop-blur-md ${isDarkMode ? 'bg-vintage-charcoal/95' : 'bg-white/95'}`}>
               <div className="flex items-center gap-3">
                 <div>
-                  <h2 className="text-h2 font-sans font-bold tracking-tight lowercase">Documents</h2>
-                  <p className="text-mini opacity-60 font-sans uppercase tracking-wider">Upload required legal documents</p>
+                  <h2 className="text-h2 font-sans font-bold tracking-tight lowercase">Project Address</h2>
+                  <p className="text-mini opacity-60 font-sans uppercase tracking-wider">Provide the site location</p>
                 </div>
               </div>
               <button onClick={onClose} className={`p-2 transition-colors cursor-pointer ${isDarkMode ? 'hover:bg-white/10 text-bright-gray/80 hover:text-white' : 'hover:bg-vintage-charcoal/10 text-vintage-charcoal/80 hover:text-vintage-charcoal'}`}>
@@ -72,47 +75,26 @@ export const ProposalDocumentsModal: React.FC<ProposalDocumentsModalProps> = ({
             </div>
 
             {/* Body */}
-            <div className="p-6 sm:p-8 overflow-y-auto flex-1">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="h-28 flex flex-col justify-end">
-                  <FileUploadField
-                    name="tctDocument"
-                    label="TCT / OCT / CCT"
-                    badge="!"
-                    value={formData.tctDocument as any}
-                    onChange={onChange}
-                    isDarkMode={isDarkMode}
-                    theme="neutral"
-                    variant="default"
-                    accept=".pdf"
-                  />
-                </div>
-                <div className="h-28 flex flex-col justify-end">
-                  <FileUploadField
-                    name="lotPlanDocument"
-                    label="Lot Plan / Lease Plan"
-                    badge="!"
-                    value={formData.lotPlanDocument as any}
-                    onChange={onChange}
-                    isDarkMode={isDarkMode}
-                    theme="neutral"
-                    variant="default"
-                    accept=".pdf"
-                  />
-                </div>
-                <div className="h-28 flex flex-col justify-end md:col-span-2">
-                  <FileUploadField
-                    name="deedDocument"
-                    label="Deed of Restrictions"
-                    badge="!"
-                    value={formData.deedDocument as any}
-                    onChange={onChange}
-                    isDarkMode={isDarkMode}
-                    theme="neutral"
-                    variant="default"
-                    accept=".pdf"
-                  />
-                </div>
+            <div className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-8">
+              <div>
+                <AddressField
+                  name="projectAddress"
+                  value={formData.projectAddress || {}}
+                  onChange={(name, val) => updateField('projectAddress', val)}
+                  isDarkMode={isDarkMode}
+                  variant="full"
+                />
+              </div>
+
+              <div>
+                <h3 className="font-sans text-caption font-bold mb-4">Map Location</h3>
+                <MapPinField
+                  name="mapCoordinates"
+                  label="Pin on Map"
+                  value={formData.mapCoordinates || null}
+                  onChange={(name, val) => updateField('mapCoordinates', val)}
+                  isDarkMode={isDarkMode}
+                />
               </div>
             </div>
 

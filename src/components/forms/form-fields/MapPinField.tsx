@@ -123,7 +123,14 @@ export const MapPinField: React.FC<MapPinFieldProps> = ({
         `}</style>
         <div ref={mapContainerRef} className={`w-full h-full z-0 ${isDarkMode ? 'dark-pin-map' : ''}`} />
       </div>
-      <p className="text-micro opacity-60">Click on the map to place a pin.</p>
+      <div className="flex justify-between items-center mt-1">
+        <p className="text-micro opacity-60">Click on the map to place a pin.</p>
+        {value && (
+          <p className="text-micro opacity-80 font-mono">
+            Lat: {value.lat.toFixed(6)}, Lng: {value.lng.toFixed(6)}
+          </p>
+        )}
+      </div>
     </div>
   );
 };

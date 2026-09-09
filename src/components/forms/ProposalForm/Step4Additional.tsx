@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { ProposalFormData } from '@/lib/forms/proposal.schema';
 import { TextAreaField } from '@/components/forms/form-fields/TextAreaField';
 import { MultiFileUploadField } from '@/components/forms/form-fields/MultiFileUploadField';
 import { SelectField } from '@/components/forms/form-fields/SelectField';
-import { ProposalDocumentsModal } from '@/components/modals/ProposalDocumentsModal';
+import { FileUploadField } from '@/components/forms/form-fields/FileUploadField';
 import { getFieldThemeStyles } from '@/components/forms/form-fields/fieldStyles';
 
 interface Props {
@@ -15,17 +15,6 @@ interface Props {
 }
 
 export const Step4Additional: React.FC<Props> = ({ formData, updateField, isDarkMode }) => {
-  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
-  
-  const getDocumentCount = () => {
-    let count = 0;
-    if (formData.tctDocument) count++;
-    if (formData.lotPlanDocument) count++;
-    if (formData.deedDocument) count++;
-    return count;
-  };
-  
-  const uploadedCount = getDocumentCount();
   const fieldStyles = getFieldThemeStyles('neutral', isDarkMode);
 
   return (
@@ -63,26 +52,48 @@ export const Step4Additional: React.FC<Props> = ({ formData, updateField, isDark
 
         <div>
           <h3 className="font-sans text-caption font-bold mb-4">4b. Documents</h3>
-          <div className="space-y-1">
-            <label className={`${fieldStyles.label} truncate`}>
-              Legal Documents
-            </label>
-            <button
-              type="button"
-              onClick={() => setShowDocumentsModal(true)}
-              className={`w-full h-20 p-2 flex flex-col justify-center text-center border rounded-xl cursor-pointer transition-all ${
-                uploadedCount > 0
-                  ? 'border-space-sparkle bg-space-sparkle/5 text-space-sparkle hover:bg-space-sparkle/10'
-                  : fieldStyles.borderColor + ' hover:opacity-80 !bg-white/80 dark:!bg-white/10'
-              }`}
-            >
-              <span className="font-medium font-sans text-caption mb-0.5 tracking-tight">Documents</span>
-              <span className={`text-mini ${uploadedCount > 0 ? 'opacity-90 font-medium' : 'opacity-60'}`}>
-                {uploadedCount > 0 ? `${uploadedCount} Uploaded` : 'Click to Upload'}
-              </span>
-            </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <FileUploadField
+                name="tctDocument"
+                label="TCT / OCT / CCT"
+                badge="!"
+                value={formData.tctDocument as any}
+                onChange={(name, val) => updateField(name as any, val)}
+                isDarkMode={isDarkMode}
+                theme="neutral"
+                variant="compact"
+                accept=".pdf"
+              />
+            </div>
+            <div>
+              <FileUploadField
+                name="lotPlanDocument"
+                label="Lot Plan / Lease Plan"
+                badge="!"
+                value={formData.lotPlanDocument as any}
+                onChange={(name, val) => updateField(name as any, val)}
+                isDarkMode={isDarkMode}
+                theme="neutral"
+                variant="compact"
+                accept=".pdf"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <FileUploadField
+                name="dorDocument"
+                label="Deed of Restrictions"
+                badge="!"
+                value={formData.dorDocument as any}
+                onChange={(name, val) => updateField(name as any, val)}
+                isDarkMode={isDarkMode}
+                theme="neutral"
+                variant="compact"
+                accept=".pdf"
+              />
+            </div>
           </div>
-          <p className="text-xs opacity-60 mt-2 italic">TCT/OCT/CCT, Lot Plan / Lease Plan, Deed of Restriction. PDF only.</p>
+          <p className="text-xs opacity-60 mt-3 italic">TCT/OCT/CCT, Lot Plan / Lease Plan, Deed of Restriction. PDF only.</p>
         </div>
 
         <div>
@@ -96,7 +107,7 @@ export const Step4Additional: React.FC<Props> = ({ formData, updateField, isDark
                   Do you have a Project Manager and/or Builder on board?
                 </span>
               }
-              placeholder="Select Yes or No"
+              placeholder="[ Select ]"
               options={[
                 { value: 'Yes', label: 'Yes' },
                 { value: 'No', label: 'No' }
@@ -123,14 +134,6 @@ export const Step4Additional: React.FC<Props> = ({ formData, updateField, isDark
           )}
         </div>
       </div>
-      
-      <ProposalDocumentsModal
-        isOpen={showDocumentsModal}
-        onClose={() => setShowDocumentsModal(false)}
-        formData={formData}
-        onChange={(name: string, val: any) => updateField(name as any, val)}
-        isDarkMode={isDarkMode}
-      />
     </div>
   );
 };

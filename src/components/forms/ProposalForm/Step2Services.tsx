@@ -29,18 +29,18 @@ export const Step2Services: React.FC<Props> = ({ formData, updateField, isDarkMo
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-8">
-        <h2 className="font-sans text-body font-bold text-space-sparkle mb-2">Step 2. Project Typology & Services</h2>
+        <h2 className="font-sans text-body font-bold text-space-sparkle mb-2">Step 2. Project Typology</h2>
         <p className="text-caption opacity-60">Select the appropriate project classification and the services you require from ATBP Collaborative.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
-          <h3 className="font-sans text-caption font-bold mb-4">2a. Project Typology & Services</h3>
+          <h3 className="font-sans text-caption font-bold mb-4">2a. Project Typology</h3>
           <div className="space-y-4">
             <SelectField
               name="category"
               label="Project Category"
-              placeholder="Select a category"
+              placeholder="[ Select Category ]"
               options={CATEGORY_OPTIONS}
               value={formData.category || ''}
               onChange={handleCategoryChange}
@@ -50,7 +50,7 @@ export const Step2Services: React.FC<Props> = ({ formData, updateField, isDarkMo
             <SelectField
               name="typology"
               label="Project Typology"
-              placeholder={formData.category ? "Select a typology" : "Select a category first"}
+              placeholder="[ Select Typology ]"
               options={currentTypologyOptions}
               value={formData.typology || ''}
               onChange={(name, val) => updateField('typology', val)}
@@ -61,11 +61,12 @@ export const Step2Services: React.FC<Props> = ({ formData, updateField, isDarkMo
             <SelectField
               name="projectType"
               label="Project Type"
-              placeholder="Select project type"
+              placeholder="[ Select Project Type ]"
               options={PROJECT_TYPE_OPTIONS}
               value={formData.projectType || ''}
               onChange={(name, val) => updateField('projectType', val)}
               isDarkMode={isDarkMode}
+              disabled={!formData.typology}
             />
           </div>
         </div>
@@ -76,7 +77,7 @@ export const Step2Services: React.FC<Props> = ({ formData, updateField, isDarkMo
             <SelectField
               name="services"
               label="Services"
-              placeholder="Select a service"
+              placeholder="[ Select Service ]"
               options={SERVICES_OPTIONS}
               value={formData.services || ''}
               onChange={handleServiceChange}
@@ -86,7 +87,7 @@ export const Step2Services: React.FC<Props> = ({ formData, updateField, isDarkMo
             <SelectField
               name="scope"
               label="Scope"
-              placeholder={formData.services ? "Select a scope" : "Select a service first"}
+              placeholder="[ Select Scope ]"
               options={currentScopeOptions}
               value={formData.scope || ''}
               onChange={(name, val) => updateField('scope', val)}

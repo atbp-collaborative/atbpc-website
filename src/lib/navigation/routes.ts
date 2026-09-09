@@ -21,7 +21,7 @@ export const ROUTES = {
   builder: '/contact/partner-with-us/builder',
   consultant: '/contact/partner-with-us/consultant',
   discoverySession: '/contact/case-study-house/discovery-session',
-  requestForProposal: '/contact/case-study-house/request-for-proposal',
+  requestForProposal: '/contact/case-study-house/request-a-proposal',
   comprehensiveServices: '/studio/our-services/comprehensive-services',
   pieceworkServices: '/studio/our-services/piecework-services',
   consultationRetainerServices: '/studio/our-services/consultation-retainer-services',

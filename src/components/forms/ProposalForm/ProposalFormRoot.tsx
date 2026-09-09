@@ -12,6 +12,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { Button } from '@/components/primitives/buttons/Button';
 import { Loader2, ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { toast } from 'sonner';
 
 export const ProposalFormRoot: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -39,9 +40,12 @@ export const ProposalFormRoot: React.FC = () => {
     try {
       await submitProposal(formData);
       setSubmitSuccess(true);
+      toast.success('Proposal submitted successfully!');
       clearForm();
     } catch (err) {
-      setSubmitError('Failed to submit proposal. Please try again later.');
+      const errorMsg = 'Failed to submit proposal. Please try again later.';
+      setSubmitError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }

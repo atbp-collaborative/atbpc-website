@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { ProposalFormData } from '@/lib/forms/proposal.schema';
 import { TextField } from '@/components/forms/form-fields/TextField';
 import { SelectField } from '@/components/forms/form-fields/SelectField';
+import { AddressField } from '@/components/forms/form-fields/AddressField';
+import { EMPTY_PH_ADDRESS } from '@/components/forms/form-fields/types';
 import { Button } from '@/components/primitives/buttons/Button';
 import { Plus, Trash2, Info } from 'lucide-react';
 
@@ -69,7 +71,7 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
               <button 
                 type="button"
                 onClick={() => handleRemoveClick(i)}
-                className="absolute top-0 right-0 text-red-500 hover:text-red-700 transition-colors"
+                className="absolute top-0 right-0 z-10 p-2 cursor-pointer text-red-500 hover:text-red-700 transition-colors"
                 title={`Remove ${personPrefix.toLowerCase()}`}
               >
                 <Trash2 size={18} />
@@ -113,13 +115,6 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
                 value={person.email || ''} onChange={(_, val) => handleUpdate(i, 'email', val)} 
                 isDarkMode={isDarkMode} 
               />
-              <div className="md:col-span-2">
-                <TextField 
-                  name="address" label="Current Address" 
-                  value={person.address || ''} onChange={(_, val) => handleUpdate(i, 'address', val)} 
-                  isDarkMode={isDarkMode} 
-                />
-              </div>
             </div>
           </div>
         ))}
@@ -147,27 +142,59 @@ export const Step1Contact: React.FC<Props> = ({ formData, updateField, isDarkMod
 
       <div className="mb-10 w-full">
         <h3 className="font-sans text-caption font-bold mb-4">1a. About the Client</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:items-center">
-          <label className="text-caption font-semibold block opacity-90 lg:pr-4">
-            Will the project be named after a business or a private entity?
-          </label>
-          <div className="w-full">
-            <SelectField
-              name="businessEntity"
-              placeholder="[ Select Client Type ]"
-              options={[
-                { value: 'Private Entity', label: 'Private Entity' },
-                { value: 'Business', label: 'Business' }
-              ]}
-              value={formData.businessEntity || ''}
-              onChange={(name, val) => updateField('businessEntity', val)}
+        <div className="grid grid-cols-1 gap-4 mb-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:items-center">
+            <label className="text-caption font-semibold block opacity-90 lg:pr-4">
+              Will the project be named after a business or a private entity?
+            </label>
+            <div className="w-full">
+              <SelectField
+                name="businessEntity"
+                placeholder="[ Select Client Type ]"
+                options={[
+                  { value: 'Private Entity', label: 'Private Entity' },
+                  { value: 'Business', label: 'Business' }
+                ]}
+                value={formData.businessEntity || ''}
+                onChange={(name, val) => updateField('businessEntity', val)}
+                isDarkMode={isDarkMode}
+              />
+            </div>
+          </div>
+          
+          {formData.businessEntity === 'Business' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <TextField
+                name="businessName"
+                label="Business Name / Registered Name"
+                value={formData.businessName || ''}
+                onChange={(_name, val) => updateField('businessName', val)}
+                isDarkMode={isDarkMode}
+              />
+              <TextField
+                name="landline"
+                type="tel"
+                label="Landline Number"
+                value={formData.landline || ''}
+                onChange={(_name, val) => updateField('landline', val)}
+                isDarkMode={isDarkMode}
+              />
+            </div>
+          )}
+
+          <div className="mt-4">
+            <h4 className="font-sans text-caption font-semibold mb-3 opacity-90">Client Address</h4>
+            <AddressField
+              name="clientAddress"
+              value={formData.clientAddress || EMPTY_PH_ADDRESS}
+              onChange={(_name, val) => updateField('clientAddress', val)}
               isDarkMode={isDarkMode}
             />
           </div>
         </div>
       </div>
 
-      {renderPersonList('principalDecisionMakers', '1b. Principal Decision Maker', 2, 'Decision Maker')}
+      {renderPersonList('principalDecisionMakers', '1b. Decision Makers', 2, 'Decision Maker')}
       {formData.businessEntity === 'Business' && renderPersonList('authorizedRepresentatives', '1c. Authorized Representative', 1, 'Representative')}
 
       {personToDelete && (

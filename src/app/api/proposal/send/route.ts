@@ -17,17 +17,25 @@ export async function POST(request: Request) {
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     // Format attachments for resend
-    const allFiles = [
-      ...(validatedData.attachments || []),
-      validatedData.tctDocument,
-      validatedData.lotPlanDocument,
-      validatedData.deedDocument,
-      ...(validatedData.documents || [])
-    ].filter((f): f is NonNullable<typeof f> => Boolean(f));
-    const emailAttachments = allFiles.map((file) => ({
-      filename: file.name,
-      content: file.content.split(',')[1], // Remove the data:image/jpeg;base64, prefix
-    }));
+    const emailAttachments: { filename: string; content: string }[] = [];
+
+    const addAttachment = (key: string, file: any) => {
+      if (!file) return;
+      emailAttachments.push({
+        filename: `${key}-${file.name}`,
+        content: file.content.split(',')[1],
+      });
+    };
+
+    addAttachment('tctDocument', validatedData.tctDocument);
+    addAttachment('lotPlanDocument', validatedData.lotPlanDocument);
+    addAttachment('dorDocument', validatedData.dorDocument);
+
+    if (validatedData.attachments) {
+      validatedData.attachments.forEach((file, index) => {
+        addAttachment(`ref_${index}`, file);
+      });
+    }
 
     // Attach a JSON payload too for easy machine reading
     const payloadBuffer = Buffer.from(JSON.stringify(validatedData, null, 2), 'utf-8');

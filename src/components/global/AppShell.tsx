@@ -9,6 +9,7 @@ import { Header } from '@/components/global/Header';
 import { Footer } from '@/components/global/Footer';
 import { MobileDrawer } from '@/components/global/MobileDrawer';
 import { LegalPrivacyModals } from '@/components/modals/LegalPrivacyModals';
+import { Toaster } from 'sonner';
 
 // Paths that keep the ordinary scrollable min-h-screen layout instead of the
 // locked full-viewport h-screen treatment used by the marketing/landing pages.
@@ -103,6 +104,7 @@ function AppShellInner({ children, isUnderConstruction }: { children: ReactNode,
         isPrivacyOpen={isPrivacyModalOpen}
         onPrivacyClose={() => setIsPrivacyModalOpen(false)}
       />
+      <Toaster position="bottom-right" theme={isDarkMode ? 'dark' : 'light'} />
     </div>
   );
 }
