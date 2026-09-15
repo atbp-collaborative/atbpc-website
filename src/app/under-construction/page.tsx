@@ -130,7 +130,7 @@ export default function UnderConstruction() {
         {/* Main Notice */}
         <h1 className="text-lg md:text-3xl font-bold font-sans mb-4 tracking-tight">Hello!</h1>
         <div className="w-3/4 md:w-4/5 text-caption opacity-80 mb-10 font-minor font-light leading-relaxed text-center">
-          <p>We're still working on the finer details and we will be launching in October 2026.</p>
+          <p>We're still working on the finer details and we will be launching in 2026.</p>
           <p>For inquiries, you may reach out through any of these channels.</p>
         </div>
 
