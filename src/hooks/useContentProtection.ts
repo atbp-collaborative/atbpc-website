@@ -49,8 +49,22 @@ export function useContentProtection(enabled: boolean = false) {
       const isCmdOrCtrl = e.metaKey || e.ctrlKey;
       const key = e.key.toLowerCase();
 
-      // Block Save (Ctrl+S / Cmd+S)
-      if (isCmdOrCtrl && key === 's') {
+      // Block Snipping Tool (Win+Shift+S) and Mac Screenshots (Cmd+Shift+3/4/5)
+      if (
+        (e.metaKey && e.shiftKey && key === 's') ||
+        (e.metaKey && e.shiftKey && (key === '3' || key === '4' || key === '5'))
+      ) {
+        e.preventDefault();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText('');
+        }
+        setIsShielded(true);
+        setTimeout(() => setIsShielded(false), 2500);
+        return false;
+      }
+
+      // Block Save (Ctrl+S / Cmd+S) - Ensure it doesn't catch Win+Shift+S by checking shiftKey
+      if (isCmdOrCtrl && key === 's' && !e.shiftKey) {
         e.preventDefault();
         return false;
       }
@@ -90,13 +104,26 @@ export function useContentProtection(enabled: boolean = false) {
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'PrintScreen' || e.key === 'PrtScn' || e.key.toLowerCase() === 'printscreen') {
+      const key = e.key.toLowerCase();
+      if (e.key === 'PrintScreen' || e.key === 'PrtScn' || key === 'printscreen') {
         e.preventDefault();
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText('');
         }
         setIsShielded(true);
         setTimeout(() => setIsShielded(false), 1500);
+      }
+
+      if (
+        (e.metaKey && e.shiftKey && key === 's') ||
+        (e.metaKey && e.shiftKey && (key === '3' || key === '4' || key === '5'))
+      ) {
+        e.preventDefault();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText('');
+        }
+        setIsShielded(true);
+        setTimeout(() => setIsShielded(false), 2500);
       }
     };
 

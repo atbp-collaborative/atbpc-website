@@ -84,17 +84,7 @@ function AppShellInner({ children, isUnderConstruction }: { children: ReactNode,
       )}
 
       {isShielded && (
-        <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-999999 flex flex-col items-center justify-center text-white select-none pointer-events-none p-6 text-center space-y-3">
-          <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center opacity-60">
-            <span className="text-xl font-mono">🔒</span>
-          </div>
-          <p className="text-caption sm:text-body font-bold tracking-widest uppercase opacity-90">
-            Protected Content
-          </p>
-          <p className="text-mini font-light opacity-60 max-w-sm">
-            ATBP Collaborative digital content protection enabled
-          </p>
-        </div>
+        <div className="fixed inset-0 backdrop-blur-3xl z-999999 pointer-events-none transition-all duration-300" />
       )}
 
       <LegalPrivacyModals
