@@ -19,7 +19,7 @@ function AppShellInner({ children, isUnderConstruction }: { children: ReactNode,
   const { isDarkMode, toggleTheme } = useTheme();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isProtectionEnabled, setIsProtectionEnabled] = useState(false);
+  const [isProtectionEnabled, setIsProtectionEnabled] = useState(true);
   const { isShielded } = useContentProtection(isProtectionEnabled);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
