@@ -13,14 +13,15 @@ import {
   Users,
   FolderKanban,
   FileText,
-  ExternalLink,
   LogOut,
   X,
   ShieldCheck,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '@/context/ThemeContext';
-import { ThemeToggle } from '@/components/global/ThemeToggle';
 import { useAdminAuth } from '@/hooks/admin/useAdminAuth';
+import { useAdminNav } from '@/context/AdminNavContext';
+import { AtbpLogo } from '@/components/global/AtbpLogo';
 
 interface AdminSidebarProps {
   isOpen?: boolean;
@@ -54,12 +55,16 @@ const NAV_ITEMS = [
 ];
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({
-  isOpen = false,
+  isOpen,
   onClose,
 }) => {
   const pathname = usePathname();
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode } = useTheme();
   const { user, logout } = useAdminAuth();
+  const adminNav = useAdminNav();
+
+  const activeIsOpen = isOpen ?? adminNav.isMobileDrawerOpen;
+  const activeOnClose = onClose ?? adminNav.closeMobileDrawer;
 
   const sidebarContent = (
     <div className="flex flex-col h-full justify-between">
@@ -67,26 +72,17 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <div className="space-y-6">
         {/* Brand header */}
         <div className="flex items-center justify-between pb-4 border-b border-black/10 dark:border-white/10">
-          <Link href="/admin/dashboard" className="group block">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-none bg-space-sparkle text-bright-gray flex items-center justify-center font-bold text-caption tracking-tighter">
-                ATBP
-              </div>
-              <div>
-                <span className="font-major text-caption font-bold tracking-tight block uppercase">
-                  Collaborative
-                </span>
-                <span className="text-micro font-mono uppercase tracking-widest text-space-sparkle block">
-                  Studio Admin
-                </span>
-              </div>
-            </div>
+          <Link href="/admin/dashboard" className="group block space-y-1.5" onClick={activeOnClose}>
+            <AtbpLogo isDarkMode={isDarkMode} className="h-6 w-auto" />
+            <span className="text-micro font-mono uppercase tracking-widest text-space-sparkle block font-medium">
+              Admin Dashboard
+            </span>
           </Link>
 
-          {onClose && (
+          {activeOnClose && (
             <button
-              onClick={onClose}
-              className="lg:hidden p-1.5 opacity-60 hover:opacity-100 transition-opacity"
+              onClick={activeOnClose}
+              className="lg:hidden p-1.5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
               aria-label="Close sidebar"
             >
               <X size={20} />
@@ -106,7 +102,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={onClose}
+                onClick={activeOnClose}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-caption font-medium transition-all group ${
                   isActive
                     ? 'bg-space-sparkle text-white font-semibold shadow-xs'
@@ -139,27 +135,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </nav>
       </div>
 
-      {/* Bottom section: live links, user profile, theme toggle */}
+      {/* Bottom section: user profile, sign out */}
       <div className="space-y-4 pt-4 border-t border-black/10 dark:border-white/10">
-        {/* Live Site link */}
-        <Link
-          href="/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`flex items-center justify-between px-3 py-2 rounded-lg text-mini border transition-all ${
-            isDarkMode
-              ? 'border-white/10 hover:border-space-sparkle/50 text-bright-gray/80 hover:text-white bg-white/5'
-              : 'border-black/10 hover:border-space-sparkle/50 text-vintage-charcoal/80 hover:text-black bg-black/5'
-          }`}
-        >
-          <span className="flex items-center gap-2">
-            <ExternalLink size={13} className="text-space-sparkle" />
-            <span>View Live Site</span>
-          </span>
-          <span className="text-micro font-mono opacity-50">Public →</span>
-        </Link>
-
-        {/* User Card & Controls */}
+        {/* User Card */}
         <div
           className={`p-3 rounded-lg border flex items-center justify-between gap-2 ${
             isDarkMode
@@ -180,8 +158,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               </p>
             </div>
           </div>
-
-          <ThemeToggle isDarkMode={isDarkMode} onToggle={toggleTheme} className="!w-7 !h-7" />
         </div>
 
         {/* Sign Out Action */}
@@ -191,7 +167,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           className="w-full flex items-center justify-center gap-2 py-2 px-3 text-mini rounded-md text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
         >
           <LogOut size={14} />
-          <span>Sign Out / Switch User</span>
+          <span>Sign Out</span>
         </button>
       </div>
     </div>
@@ -199,9 +175,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   return (
     <>
-      {/* Desktop fixed sidebar */}
+      {/* Desktop fixed & non-scrollable sidebar */}
       <aside
-        className={`hidden lg:flex flex-col w-64 shrink-0 p-5 border-r min-h-screen transition-colors ${
+        className={`hidden lg:flex flex-col w-64 shrink-0 p-5 border-r h-screen sticky top-0 overflow-hidden transition-colors ${
           isDarkMode
             ? 'bg-vintage-charcoal/95 border-white/10 text-bright-gray'
             : 'bg-white border-black/10 text-vintage-charcoal'
@@ -211,23 +187,33 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </aside>
 
       {/* Mobile drawer sidebar */}
-      {isOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs cursor-pointer"
-            onClick={onClose}
-          />
-          <aside
-            className={`fixed inset-y-0 left-0 w-72 p-5 z-10 flex flex-col shadow-2xl transition-colors ${
-              isDarkMode
-                ? 'bg-vintage-charcoal border-r border-white/10 text-bright-gray'
-                : 'bg-white border-r border-black/10 text-vintage-charcoal'
-            }`}
-          >
-            {sidebarContent}
-          </aside>
-        </div>
-      )}
+      <AnimatePresence>
+        {activeIsOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs cursor-pointer"
+              onClick={activeOnClose}
+            />
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+              className={`fixed inset-y-0 left-0 w-72 p-5 z-10 flex flex-col shadow-2xl transition-colors ${
+                isDarkMode
+                  ? 'bg-vintage-charcoal border-r border-white/10 text-bright-gray'
+                  : 'bg-white border-r border-black/10 text-vintage-charcoal'
+              }`}
+            >
+              {sidebarContent}
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

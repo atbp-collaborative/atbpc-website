@@ -9,6 +9,8 @@ import React from 'react';
 import Link from 'next/link';
 import { Menu, ChevronRight, ExternalLink } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
+import { useAdminNav } from '@/context/AdminNavContext';
+import { ThemeToggle } from '@/components/global/ThemeToggle';
 
 interface AdminHeaderProps {
   title: string;
@@ -23,7 +25,10 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   onOpenMobileMenu,
   actions,
 }) => {
-  const { isDarkMode } = useTheme();
+  const { isDarkMode, toggleTheme } = useTheme();
+  const { openMobileDrawer } = useAdminNav();
+
+  const handleOpenMobile = onOpenMobileMenu ?? openMobileDrawer;
 
   return (
     <header
@@ -36,10 +41,10 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       <div className="flex items-center justify-between gap-4">
         {/* Left: Mobile hamburger & breadcrumbs */}
         <div className="flex items-center gap-3">
-          {onOpenMobileMenu && (
+          {handleOpenMobile && (
             <button
               type="button"
-              onClick={onOpenMobileMenu}
+              onClick={handleOpenMobile}
               className="lg:hidden p-2 rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
               aria-label="Open sidebar menu"
             >
@@ -70,9 +75,14 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Actions or quick link */}
+        {/* Right: Actions, Theme Toggle & quick link */}
         <div className="flex items-center gap-2">
           {actions}
+          <ThemeToggle
+            isDarkMode={isDarkMode}
+            onToggle={toggleTheme}
+            className="!w-8 !h-8"
+          />
           <Link
             href="/"
             target="_blank"

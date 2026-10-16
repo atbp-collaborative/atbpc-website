@@ -45,7 +45,7 @@ export default function AdminDashboardPage() {
   const completedProjects = projects.filter((p) => p.status === 'completed').length;
   const ongoingProjects = projects.filter((p) => p.status === 'ongoing').length;
 
-  const cardClass = `p-6 rounded-xl border transition-all ${
+  const cardClass = `p-5 sm:p-6 rounded-xl border transition-all ${
     isDarkMode
       ? 'bg-vintage-charcoal/70 border-white/10 text-bright-gray'
       : 'bg-white border-black/10 text-vintage-charcoal shadow-xs'
@@ -124,7 +124,7 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-black/5 dark:border-white/10 flex items-center justify-between text-mini">
+            <div className="pt-4 border-t border-black/5 dark:border-white/10 flex flex-col sm:flex-row min-[1340px]:flex-row gap-2 justify-between text-mini">
               <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                 <Eye size={13} />
                 <span>{publishedMembers} Published</span>
@@ -161,7 +161,7 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-black/5 dark:border-white/10 flex items-center justify-between text-mini">
+            <div className="pt-4 border-t border-black/5 dark:border-white/10 flex flex-col gap-2 min-[1340px]:flex-row min-[1340px]:items-center min-[1340px]:justify-between text-mini">
               <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 size={13} />
                 <span>{completedProjects} Completed</span>
