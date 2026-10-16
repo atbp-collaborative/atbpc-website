@@ -1,0 +1,608 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+'use client';
+
+import React, { useState } from 'react';
+import Image from 'next/image';
+import {
+  Users,
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  ArrowLeft,
+  Save,
+  UserCheck,
+  Building,
+} from 'lucide-react';
+import { AdminHeader } from '@/components/admin/AdminHeader';
+import { PublicationToggle } from '@/components/admin/PublicationToggle';
+import { ClassificationSelector } from '@/components/admin/ClassificationSelector';
+import { MemberInvolvementManager } from '@/components/admin/MemberInvolvementManager';
+import { ImageManagerField } from '@/components/admin/ImageManagerField';
+import { DynamicListField } from '@/components/admin/DynamicListField';
+import { ConfirmModal } from '@/components/admin/ConfirmModal';
+import { Button } from '@/components/primitives/buttons/Button';
+import {
+  useAdminPeople,
+  PeopleClassificationFilter,
+  VisibilityFilter,
+} from '@/hooks/admin/useAdminPeople';
+import { useAdminProjects } from '@/hooks/admin/useAdminProjects';
+import { useTheme } from '@/context/ThemeContext';
+import { Member, MemberCategory, MemberAffiliation, MemberInvolvement } from '@/types';
+
+type ViewMode = 'list' | 'create' | 'edit';
+
+const EMPTY_MEMBER: Member = {
+  id: '',
+  name: '',
+  role: '',
+  license: '',
+  image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop',
+  bio: '',
+  fullBio: '',
+  affiliations: [],
+  categories: ['designers'],
+  involvement: [],
+  isDraft: false,
+};
+
+export default function AdminPeoplePage() {
+  const { isDarkMode } = useTheme();
+  const {
+    filteredMembers,
+    searchTerm,
+    setSearchTerm,
+    classificationFilter,
+    setClassificationFilter,
+    visibilityFilter,
+    setVisibilityFilter,
+    saveMember,
+    deleteMember,
+    toggleDraft,
+  } = useAdminPeople();
+
+  const { projects: allProjects } = useAdminProjects();
+
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [formData, setFormData] = useState<Member>(EMPTY_MEMBER);
+
+  // Delete modal state
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+
+  const startCreate = () => {
+    setFormData({
+      ...EMPTY_MEMBER,
+      id: 'member-' + Date.now(),
+      categories: ['designers'],
+    });
+    setViewMode('create');
+  };
+
+  const startEdit = (member: Member) => {
+    setFormData({ ...member });
+    setViewMode('edit');
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+  };
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) return;
+
+    // Auto-generate id if blank
+    const cleanId =
+      formData.id.trim() ||
+      formData.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+
+    saveMember({
+      ...formData,
+      id: cleanId,
+    });
+    setViewMode('list');
+  };
+
+  const inputClass = `w-full text-caption px-3.5 py-2 rounded-lg border outline-none transition-all ${
+    isDarkMode
+      ? 'border-bright-gray/20 bg-vintage-charcoal/50 text-white placeholder-bright-gray/40 focus:border-space-sparkle'
+      : 'border-vintage-charcoal/20 bg-white text-vintage-charcoal placeholder-vintage-charcoal/40 focus:border-space-sparkle'
+  }`;
+
+  // ==========================================
+  // RENDER: NON-MODAL FORM VIEW (CREATE / EDIT)
+  // ==========================================
+  if (viewMode === 'create' || viewMode === 'edit') {
+    return (
+      <div className="flex-1 flex flex-col min-h-screen">
+        {/* Sticky Form Action Header */}
+        <div
+          className={`sticky top-0 z-30 px-4 sm:px-8 py-4 border-b backdrop-blur-md flex items-center justify-between gap-4 ${
+            isDarkMode
+              ? 'bg-vintage-charcoal/90 border-white/10 text-bright-gray'
+              : 'bg-white/95 border-black/10 text-vintage-charcoal'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleBackToList}
+              className="p-2 rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+              title="Return to list"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <div>
+              <span className="text-micro font-mono uppercase tracking-wider opacity-60 block">
+                {viewMode === 'create' ? 'New Profile' : 'Editing Profile'}
+              </span>
+              <h2 className="text-body sm:text-h2 font-major font-bold tracking-tight lowercase">
+                {viewMode === 'create' ? 'add team member' : formData.name || 'unnamed member'}
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <PublicationToggle
+              isDraft={Boolean(formData.isDraft)}
+              onToggle={() =>
+                setFormData((prev) => ({ ...prev, isDraft: !prev.isDraft }))
+              }
+            />
+
+            <Button
+              type="ghost"
+              onClick={handleBackToList}
+              className="!py-2 !px-4 text-mini"
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="filled"
+              onClick={handleSave}
+              className="!py-2 !px-5 text-mini font-semibold"
+            >
+              <Save size={14} className="mr-1.5 inline" /> Save Member
+            </Button>
+          </div>
+        </div>
+
+        {/* Full-Page Form Body (Strictly non-modal) */}
+        <form onSubmit={handleSave} className="p-4 sm:p-8 max-w-6xl w-full mx-auto space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Primary Column (Left 2 cols) */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Card 1: Core Identifiers */}
+              <div
+                className={`p-6 rounded-xl border space-y-4 ${
+                  isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+                }`}
+              >
+                <h3 className="text-caption font-semibold uppercase tracking-wider opacity-70 border-b pb-2 border-black/5 dark:border-white/5">
+                  General Information
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, name: e.target.value }))
+                      }
+                      placeholder="e.g. Marchie Teodoro Borja"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Studio Role / Title <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.role}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, role: e.target.value }))
+                      }
+                      placeholder="e.g. Principal Architect & Founder"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      PRC / Professional License (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.license || ''}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, license: e.target.value }))
+                      }
+                      placeholder="e.g. RLA License No. 0054827"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Profile ID / URL Slug
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.id}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, id: e.target.value }))
+                      }
+                      placeholder="e.g. marchie-borja"
+                      className={`${inputClass} font-mono text-mini`}
+                    />
+                    <p className="text-micro opacity-50">
+                      Used for public routing: /studio/our-people/{formData.id || 'slug'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Multi-Classification Selector */}
+              <div
+                className={`p-6 rounded-xl border ${
+                  isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+                }`}
+              >
+                <ClassificationSelector
+                  selected={formData.categories || []}
+                  onChange={(cats) =>
+                    setFormData((prev) => ({ ...prev, categories: cats }))
+                  }
+                />
+              </div>
+
+              {/* Card 3: Biographies */}
+              <div
+                className={`p-6 rounded-xl border space-y-4 ${
+                  isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+                }`}
+              >
+                <h3 className="text-caption font-semibold uppercase tracking-wider opacity-70 border-b pb-2 border-black/5 dark:border-white/5">
+                  Narratives &amp; Bio
+                </h3>
+
+                <div className="space-y-1">
+                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                    Short Bio (Overview Directory)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.bio}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, bio: e.target.value }))
+                    }
+                    placeholder="Brief 1-2 sentence introduction..."
+                    className={inputClass}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                    Full Narrative Biography (Dedicated Page)
+                  </label>
+                  <textarea
+                    rows={6}
+                    value={formData.fullBio}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, fullBio: e.target.value }))
+                    }
+                    placeholder="Comprehensive career and philosophical background..."
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              {/* Card 4: Affiliations Dynamic List */}
+              <div
+                className={`p-6 rounded-xl border ${
+                  isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+                }`}
+              >
+                <DynamicListField
+                  mode="pairs"
+                  label="Affiliations & Credentials"
+                  helperText="Academic institutions, professional associations, and licensing bodies."
+                  items={formData.affiliations || []}
+                  onChange={(affs) =>
+                    setFormData((prev) => ({ ...prev, affiliations: affs as MemberAffiliation[] }))
+                  }
+                  titlePlaceholder="e.g. United Architects of the Philippines (Makati)"
+                  descPlaceholder="e.g. Active member in good standing participating in regular CPD..."
+                />
+              </div>
+
+              {/* Card 5: Project Involvements (Bi-directional link to Projects) */}
+              <div
+                className={`p-6 rounded-xl border ${
+                  isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+                }`}
+              >
+                <MemberInvolvementManager
+                  involvements={formData.involvement || []}
+                  allProjects={allProjects}
+                  onChange={(invs) =>
+                    setFormData((prev) => ({ ...prev, involvement: invs }))
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Secondary Column (Right 1 col: Image & Visibility) */}
+            <div className="space-y-6">
+              {/* Photo Manager */}
+              <div
+                className={`p-6 rounded-xl border space-y-4 ${
+                  isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+                }`}
+              >
+                <ImageManagerField
+                  single={true}
+                  label="Profile Portrait"
+                  helperText="Direct image URL for member avatar."
+                  images={formData.image ? [formData.image] : []}
+                  onChange={(imgs) =>
+                    setFormData((prev) => ({ ...prev, image: imgs[0] || '' }))
+                  }
+                />
+              </div>
+
+              {/* Status and Summary Card */}
+              <div
+                className={`p-6 rounded-xl border space-y-3 ${
+                  isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+                }`}
+              >
+                <span className="text-caption font-semibold uppercase tracking-wider block opacity-70">
+                  Publication Status
+                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-mini">Visibility:</span>
+                  <PublicationToggle
+                    isDraft={Boolean(formData.isDraft)}
+                    onToggle={() =>
+                      setFormData((prev) => ({ ...prev, isDraft: !prev.isDraft }))
+                    }
+                  />
+                </div>
+                <p className="text-micro opacity-60">
+                  {formData.isDraft
+                    ? 'Hidden from /studio/our-people on the public website.'
+                    : 'Visible to all visitors on the public directory.'}
+                </p>
+
+                <div className="pt-3 border-t border-black/10 dark:border-white/10 flex justify-end">
+                  <Button
+                    type="filled"
+                    onClick={handleSave}
+                    fullWidth
+                    className="!py-2.5 text-mini font-semibold"
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // RENDER: DIRECTORY LIST VIEW
+  // ==========================================
+  return (
+    <div className="flex-1 flex flex-col min-h-screen">
+      <AdminHeader
+        title="manage people"
+        breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'People' }]}
+        actions={
+          <Button type="filled" onClick={startCreate} className="!py-2 !px-4 text-mini font-semibold">
+            <Plus size={14} className="mr-1 inline" /> Add Member
+          </Button>
+        }
+      />
+
+      <div className="p-4 sm:p-8 space-y-6 max-w-7xl w-full mx-auto">
+        {/* Filter and Search Bar */}
+        <div
+          className={`p-4 rounded-xl border flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 ${
+            isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+          }`}
+        >
+          {/* Search box */}
+          <div className="relative flex-1 max-w-md">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none"
+            />
+            <input
+              type="text"
+              placeholder="Search by name, role, license..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`${inputClass} pl-9`}
+            />
+          </div>
+
+          {/* Classification Filter Tabs */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {(['all', 'designers', 'managers', 'builders'] as PeopleClassificationFilter[]).map(
+              (cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setClassificationFilter(cat)}
+                  className={`px-3 py-1.5 rounded-lg text-mini font-medium uppercase tracking-wider transition-colors cursor-pointer ${
+                    classificationFilter === cat
+                      ? 'bg-space-sparkle text-white'
+                      : isDarkMode
+                        ? 'hover:bg-white/5 text-bright-gray/70'
+                        : 'hover:bg-black/5 text-vintage-charcoal/70'
+                  }`}
+                >
+                  {cat}
+                </button>
+              )
+            )}
+          </div>
+
+          {/* Visibility Filter (All, Published, Draft) */}
+          <div className="flex items-center gap-1 border-t md:border-t-0 md:border-l pt-3 md:pt-0 md:pl-4 border-black/10 dark:border-white/10">
+            {(['all', 'published', 'draft'] as VisibilityFilter[]).map((vis) => (
+              <button
+                key={vis}
+                onClick={() => setVisibilityFilter(vis)}
+                className={`px-2.5 py-1 rounded text-micro uppercase tracking-wider transition-colors cursor-pointer ${
+                  visibilityFilter === vis
+                    ? 'border border-space-sparkle text-space-sparkle font-semibold'
+                    : 'opacity-50 hover:opacity-100'
+                }`}
+              >
+                {vis}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Members Table / Grid */}
+        <div
+          className={`rounded-xl border overflow-hidden ${
+            isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+          }`}
+        >
+          {filteredMembers.length > 0 ? (
+            <div className="divide-y divide-black/5 dark:divide-white/5">
+              {filteredMembers.map((member) => (
+                <div
+                  key={member.id}
+                  className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
+                    isDarkMode ? 'hover:bg-white/5' : 'hover:bg-black/2'
+                  }`}
+                >
+                  {/* Left: Avatar + Details */}
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
+                      {member.image ? (
+                        <Image
+                          src={member.image}
+                          alt={member.name}
+                          fill
+                          sizes="48px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-space-sparkle/20 text-space-sparkle">
+                          <UserCheck size={20} />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-caption sm:text-body truncate">
+                          {member.name}
+                        </span>
+                        <PublicationToggle
+                          isDraft={Boolean(member.isDraft)}
+                          onToggle={() => toggleDraft(member.id)}
+                          size="sm"
+                        />
+                      </div>
+
+                      <p className="text-mini opacity-70 truncate">{member.role}</p>
+
+                      {/* Classification Chips */}
+                      <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                        {member.categories?.map((c) => (
+                          <span
+                            key={c}
+                            className="text-micro font-mono uppercase px-2 py-0.5 rounded-full bg-space-sparkle/15 text-space-sparkle font-medium"
+                          >
+                            {c}
+                          </span>
+                        ))}
+
+                        {member.involvement && member.involvement.length > 0 && (
+                          <span className="text-micro opacity-50 flex items-center gap-1 ml-1 font-mono">
+                            <Building size={11} /> {member.involvement.length} project(s)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Actions */}
+                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    <Button
+                      type="ghost"
+                      onClick={() => startEdit(member)}
+                      className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
+                    >
+                      <Edit2 size={13} className="mr-1 inline" /> Edit
+                    </Button>
+
+                    <button
+                      type="button"
+                      onClick={() => setMemberToDelete(member)}
+                      className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                      title="Delete profile"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-12 text-center space-y-3">
+              <Users size={32} className="mx-auto opacity-30 text-space-sparkle" />
+              <p className="text-caption opacity-60">No members matched the selected filters.</p>
+              <Button type="filled" onClick={startCreate} className="!py-1.5 !px-4 text-mini">
+                Add New Member
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Confirmation Modal (Exclusively for delete confirmation) */}
+      <ConfirmModal
+        isOpen={Boolean(memberToDelete)}
+        title="Remove Team Member?"
+        description={`Are you sure you want to remove "${memberToDelete?.name}"? Their profile and portfolio involvements will be deleted from the database.`}
+        confirmLabel="Confirm Delete"
+        cancelLabel="Keep Member"
+        isDestructive={true}
+        onCancel={() => setMemberToDelete(null)}
+        onConfirm={() => {
+          if (memberToDelete) {
+            deleteMember(memberToDelete.id);
+            setMemberToDelete(null);
+          }
+        }}
+      />
+    </div>
+  );
+}

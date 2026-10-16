@@ -17,6 +17,7 @@ export interface Project {
   images: string[];
   video?: string;
   status: 'completed' | 'ongoing' | 'schematics';
+  isDraft?: boolean;
   specs: {
     area?: string;
     scope: string;
@@ -70,5 +71,21 @@ export interface Member {
   affiliations: MemberAffiliation[];
   categories: MemberCategory[];
   involvement: MemberInvolvement[];
+  isDraft?: boolean;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  avatarUrl?: string;
+  role: 'superadmin' | 'admin' | 'editor';
+}
+
+export interface StudioWriteups {
+  tagline: string;
+  subSlogan: string;
+  philosophy: string;
+  cultureStatement: string;
 }
 
