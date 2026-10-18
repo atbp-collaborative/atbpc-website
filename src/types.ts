@@ -157,3 +157,101 @@ export interface StudioWriteups {
   cultureStatement: string;
 }
 
+export interface SitePage {
+  id: string;
+  title: string;
+  subtitle: string;
+  heroImageUrl?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  isDraft: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface NavigationCardItem {
+  id: string;
+  hubId: string;
+  cardKey: string;
+  title: string;
+  tagline: string;
+  subtext: string;
+  tags: string[];
+  imageUrl: string;
+  targetHref: string;
+  sortOrder: number;
+  isDraft: boolean;
+}
+
+export interface ServicePillar {
+  title: string;
+  desc: string;
+}
+
+export interface ServiceOffering {
+  id: string;
+  title: string;
+  sectionTag: string;
+  tagline: string;
+  description: string;
+  extraDescription?: string | null;
+  imageUrl?: string | null;
+  subtext: string;
+  pillars: ServicePillar[];
+  contentColumns: unknown[];
+  sortOrder: number;
+  isDraft: boolean;
+}
+
+export interface ProcessPhilosophy {
+  id: string;
+  title: string;
+  sectionTag: string;
+  tagline: string;
+  description: string;
+  extraDescription?: string | null;
+  imageUrl?: string | null;
+  subtext: string;
+  pillars: ServicePillar[];
+  sortOrder: number;
+  isDraft: boolean;
+}
+
+export interface StageGroup {
+  id: string;
+  processPageId: string;
+  name: string;
+  colSpan: number;
+  sortOrder: number;
+  isDraft: boolean;
+  stages?: ProcessStageItem[];
+}
+
+export interface ProcessStageItem {
+  id: string;
+  processPageId: string;
+  stageGroupId?: string | null;
+  stepNumber: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  deliverables: string[];
+  duration: string;
+  sortOrder: number;
+  isDraft: boolean;
+}
+
+export interface HomeSlideItem {
+  id: string;
+  title: string;
+  imageUrl: string;
+  sortOrder: number;
+  isDraft: boolean;
+}
+
+export interface HomepageSlogans {
+  slogans: string[];
+  heroSubtext: string[];
+}
+
+

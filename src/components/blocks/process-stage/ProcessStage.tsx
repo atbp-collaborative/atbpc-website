@@ -123,7 +123,8 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
       <motion.div
         layout
         transition={{ layout: { duration: 0.45, ease: [0.25, 0.1, 0.25, 1] } }}
-        className={`w-full grid grid-cols-7 gap-1 sm:gap-2 text-center tracking-widest lowercase shrink-0 ${
+        style={{ gridTemplateColumns: `repeat(${nodes.length || 7}, minmax(0, 1fr))` }}
+        className={`w-full grid gap-1 sm:gap-2 text-center tracking-widest lowercase shrink-0 ${
           isFlattened ? 'mb-2 sm:mb-2.5' : 'mb-3 sm:mb-4'
         }`}
       >
@@ -183,8 +184,11 @@ export const ProcessStage = ({ nodes, categoryGroups }: ProcessStageProps) => {
           }}
         />
 
-        {/* 7 Timeline Nodes Grid */}
-        <div className="relative z-10 w-full grid grid-cols-7 gap-1 sm:gap-2 md:gap-3 items-center">
+        {/* Timeline Nodes Grid */}
+        <div
+          style={{ gridTemplateColumns: `repeat(${nodes.length || 7}, minmax(0, 1fr))` }}
+          className="relative z-10 w-full grid gap-1 sm:gap-2 md:gap-3 items-center"
+        >
           {nodes.map((node, index) => {
             const isSelected = selectedNodeIndex === index;
             const isNext = selectedNodeIndex !== null && index === selectedNodeIndex + 1;

@@ -202,8 +202,118 @@ CREATE TABLE IF NOT EXISTS public.admin_users (
 
 -- Site Settings & General Info
 CREATE TABLE IF NOT EXISTS public.site_settings (
-    key VARCHAR(100) PRIMARY KEY,                                    -- 'contact_info', 'privacy_policy', 'legal_notices', 'studio_writeups'
+    key VARCHAR(100) PRIMARY KEY,                                    -- 'contact_info', 'privacy_policy', 'legal_notices', 'studio_writeups', 'homepage_slogans'
     content JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ==============================================================================
+-- 5B. CONTENT MANAGEMENT SYSTEM (CMS) ENTITIES
+-- Pages, Navigation Cards, Services, Process Stage Groups, Process Stages, Slides
+-- ==============================================================================
+
+-- 1. Site Pages (Hubs & General Routes with SEO-locked titles/slugs)
+CREATE TABLE IF NOT EXISTS public.site_pages (
+    id VARCHAR(100) PRIMARY KEY,                                     -- SEO LOCKED: 'services-hub', 'process-hub', 'contact-hub', 'case-study-house', 'grow-with-us', 'partner-with-us', 'works'
+    title TEXT NOT NULL,                                             -- SEO LOCKED
+    subtitle TEXT NOT NULL,
+    hero_image_url TEXT,
+    meta_title TEXT,
+    meta_description TEXT,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 2. Navigation Cards (Hub Grid Cards)
+CREATE TABLE IF NOT EXISTS public.navigation_cards (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    hub_id VARCHAR(50) NOT NULL,                                     -- 'studio', 'contact', 'case-study-house', 'grow-with-us', 'partner-with-us', 'services', 'process'
+    card_key VARCHAR(50) NOT NULL UNIQUE,                            -- 'discovery', 'request-proposal', 'locate-map', 'apprenticeship', etc.
+    title TEXT NOT NULL,
+    tagline TEXT NOT NULL,
+    subtext TEXT NOT NULL,
+    tags TEXT[] NOT NULL DEFAULT '{}',
+    image_url TEXT NOT NULL,
+    target_href TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 3. Service Offerings (Comprehensive, Piecework, Consultation/Retainer)
+CREATE TABLE IF NOT EXISTS public.service_offerings (
+    id VARCHAR(50) PRIMARY KEY,                                      -- SEO LOCKED: 'comprehensive-services', 'piecework-services', 'consultation-retainer-services'
+    title TEXT NOT NULL,                                             -- SEO LOCKED
+    section_tag TEXT NOT NULL DEFAULT 'services | kaya',
+    tagline TEXT NOT NULL,
+    description TEXT NOT NULL,
+    extra_description TEXT,
+    image_url TEXT,
+    subtext TEXT NOT NULL,
+    pillars JSONB NOT NULL DEFAULT '[]'::jsonb,                      -- [{ title, desc }]
+    content_columns JSONB NOT NULL DEFAULT '[]'::jsonb,              -- Accordion columns / deliverables
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 4. Process Philosophies (Values, Integrity, Culture)
+CREATE TABLE IF NOT EXISTS public.process_philosophies (
+    id VARCHAR(50) PRIMARY KEY,                                      -- SEO LOCKED: 'designing-with-values', 'managing-with-integrity', 'building-with-culture'
+    title TEXT NOT NULL,                                             -- SEO LOCKED
+    section_tag TEXT NOT NULL DEFAULT 'process | paraán',
+    tagline TEXT NOT NULL,
+    description TEXT NOT NULL,
+    extra_description TEXT,
+    image_url TEXT,
+    subtext TEXT NOT NULL,
+    pillars JSONB NOT NULL DEFAULT '[]'::jsonb,                      -- [{ title, desc }]
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 5. Stage Groups (Dynamic Categories per Process Page)
+CREATE TABLE IF NOT EXISTS public.stage_groups (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    process_page_id VARCHAR(50) NOT NULL REFERENCES public.process_philosophies(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,                                              -- 'guidance', 'experiential', 'presence', etc.
+    col_span INTEGER NOT NULL DEFAULT 4,                             -- Grid column span (e.g. 4 for 3-group row, 6 for 2-group row, 12 for 1-group)
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 6. Process Stages (Dynamic Stages per Process Page and Group)
+CREATE TABLE IF NOT EXISTS public.process_stages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    process_page_id VARCHAR(50) NOT NULL REFERENCES public.process_philosophies(id) ON DELETE CASCADE,
+    stage_group_id UUID REFERENCES public.stage_groups(id) ON DELETE SET NULL,
+    step_number VARCHAR(10) NOT NULL,                                -- '01', '02', '03', ..., '07'
+    title TEXT NOT NULL,                                             -- e.g. 'Discovery Session'
+    subtitle TEXT NOT NULL,
+    description TEXT NOT NULL,
+    deliverables TEXT[] NOT NULL DEFAULT '{}',
+    duration TEXT NOT NULL,                                          -- '1 - 2 Weeks', '15 Years', etc.
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 7. Home Slides (Splash Carousel)
+CREATE TABLE IF NOT EXISTS public.home_slides (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,                                             -- 'Your Home', 'Your Business', 'Your Office'
+    image_url TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -344,6 +454,13 @@ CREATE TRIGGER trg_partner_applications_updated_at BEFORE UPDATE ON public.partn
 CREATE TRIGGER trg_discovery_sessions_updated_at BEFORE UPDATE ON public.discovery_sessions FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER trg_project_proposals_updated_at BEFORE UPDATE ON public.project_proposals FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER trg_site_settings_updated_at BEFORE UPDATE ON public.site_settings FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_site_pages_updated_at BEFORE UPDATE ON public.site_pages FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_navigation_cards_updated_at BEFORE UPDATE ON public.navigation_cards FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_service_offerings_updated_at BEFORE UPDATE ON public.service_offerings FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_process_philosophies_updated_at BEFORE UPDATE ON public.process_philosophies FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_stage_groups_updated_at BEFORE UPDATE ON public.stage_groups FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_process_stages_updated_at BEFORE UPDATE ON public.process_stages FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_home_slides_updated_at BEFORE UPDATE ON public.home_slides FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 -- ==============================================================================
 -- 8. INDEXES FOR PERFORMANCE
@@ -370,6 +487,15 @@ CREATE INDEX IF NOT EXISTS idx_career_applications_status ON public.career_appli
 CREATE INDEX IF NOT EXISTS idx_partner_applications_status ON public.partner_applications(status);
 CREATE INDEX IF NOT EXISTS idx_discovery_sessions_status ON public.discovery_sessions(status);
 CREATE INDEX IF NOT EXISTS idx_project_proposals_status ON public.project_proposals(status);
+
+-- CMS Indexes
+CREATE INDEX IF NOT EXISTS idx_site_pages_is_draft ON public.site_pages(is_draft);
+CREATE INDEX IF NOT EXISTS idx_navigation_cards_hub ON public.navigation_cards(hub_id, is_draft, sort_order);
+CREATE INDEX IF NOT EXISTS idx_service_offerings_is_draft ON public.service_offerings(is_draft, sort_order);
+CREATE INDEX IF NOT EXISTS idx_process_philosophies_is_draft ON public.process_philosophies(is_draft, sort_order);
+CREATE INDEX IF NOT EXISTS idx_stage_groups_page ON public.stage_groups(process_page_id, is_draft, sort_order);
+CREATE INDEX IF NOT EXISTS idx_process_stages_page ON public.process_stages(process_page_id, stage_group_id, is_draft, sort_order);
+CREATE INDEX IF NOT EXISTS idx_home_slides_order ON public.home_slides(is_draft, sort_order);
 
 -- ==============================================================================
 -- 9. RBAC HELPER FUNCTIONS
@@ -418,6 +544,13 @@ ALTER TABLE public.career_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.partner_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.discovery_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.project_proposals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_pages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.navigation_cards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.service_offerings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.process_philosophies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stage_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.process_stages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.home_slides ENABLE ROW LEVEL SECURITY;
 
 -- ------------------------------------------------------------------------------
 -- A. Master Reference Tables (tracks, roles, categories, typologies, contract_types)
@@ -593,6 +726,114 @@ CREATE POLICY "Superadmin can manage site settings"
     TO authenticated
     USING (public.is_superadmin())
     WITH CHECK (public.is_superadmin());
+
+-- ------------------------------------------------------------------------------
+-- E2. Content Management System (CMS) Tables
+-- Public: SELECT published (is_draft = FALSE)
+-- Superadmin: Full CRUD
+-- Admin: CRU on Pages & Philosophies (SEO-locked), CRUD on Stage Groups, Stages, Cards, Slides
+-- Editor: Read-only (including drafts)
+-- ------------------------------------------------------------------------------
+
+-- Site Pages
+CREATE POLICY "Public can view published site pages"
+    ON public.site_pages FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can update site pages"
+    ON public.site_pages FOR UPDATE
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+CREATE POLICY "Superadmin can manage site pages"
+    ON public.site_pages FOR ALL
+    TO authenticated
+    USING (public.is_superadmin())
+    WITH CHECK (public.is_superadmin());
+
+-- Navigation Cards
+CREATE POLICY "Public can view published navigation cards"
+    ON public.navigation_cards FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can manage navigation cards"
+    ON public.navigation_cards FOR ALL
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+CREATE POLICY "Superadmin can delete navigation cards"
+    ON public.navigation_cards FOR DELETE
+    TO authenticated
+    USING (public.is_superadmin());
+
+-- Service Offerings
+CREATE POLICY "Public can view published service offerings"
+    ON public.service_offerings FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can update service offerings"
+    ON public.service_offerings FOR UPDATE
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+CREATE POLICY "Superadmin can manage service offerings"
+    ON public.service_offerings FOR ALL
+    TO authenticated
+    USING (public.is_superadmin())
+    WITH CHECK (public.is_superadmin());
+
+-- Process Philosophies
+CREATE POLICY "Public can view published process philosophies"
+    ON public.process_philosophies FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can update process philosophies"
+    ON public.process_philosophies FOR UPDATE
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+CREATE POLICY "Superadmin can manage process philosophies"
+    ON public.process_philosophies FOR ALL
+    TO authenticated
+    USING (public.is_superadmin())
+    WITH CHECK (public.is_superadmin());
+
+-- Stage Groups (Dynamic Categories per Process Page)
+CREATE POLICY "Public can view published stage groups"
+    ON public.stage_groups FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can manage stage groups"
+    ON public.stage_groups FOR ALL
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+-- Process Stages (Dynamic Stages per Page)
+CREATE POLICY "Public can view published process stages"
+    ON public.process_stages FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can manage process stages"
+    ON public.process_stages FOR ALL
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+-- Home Slides (Splash Carousel)
+CREATE POLICY "Public can view published home slides"
+    ON public.home_slides FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can manage home slides"
+    ON public.home_slides FOR ALL
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
 
 -- ------------------------------------------------------------------------------
 -- F. Inbound Form Submissions
