@@ -22,6 +22,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useAdminAuth } from '@/hooks/admin/useAdminAuth';
 import { useAdminNav } from '@/context/AdminNavContext';
 import { AtbpLogo } from '@/components/global/AtbpLogo';
+import { ThemeToggle } from '@/components/global/ThemeToggle';
 
 interface AdminSidebarProps {
   isOpen?: boolean;
@@ -39,6 +40,12 @@ const NAV_ITEMS = [
     href: '/admin/people',
     icon: Users,
     subtitle: 'our-people/ directory',
+  },
+  {
+    name: 'Manage Roles',
+    href: '/admin/roles',
+    icon: ShieldCheck,
+    subtitle: 'roles, tracks & assignments',
   },
   {
     name: 'Manage Projects',
@@ -59,7 +66,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onClose,
 }) => {
   const pathname = usePathname();
-  const { isDarkMode } = useTheme();
+  const { isDarkMode, toggleTheme } = useTheme();
   const { user, logout } = useAdminAuth();
   const adminNav = useAdminNav();
 
@@ -79,15 +86,18 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </span>
           </Link>
 
-          {activeOnClose && (
-            <button
-              onClick={activeOnClose}
-              className="lg:hidden p-1.5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
-              aria-label="Close sidebar"
-            >
-              <X size={20} />
-            </button>
-          )}
+          <div className="flex items-center gap-2 lg:hidden">
+            <ThemeToggle isDarkMode={isDarkMode} onToggle={toggleTheme} className="!w-8 !h-8" />
+            {activeOnClose && (
+              <button
+                onClick={activeOnClose}
+                className="p-1.5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+                aria-label="Close sidebar"
+              >
+                <X size={20} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Navigation list */}

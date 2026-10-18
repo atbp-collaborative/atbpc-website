@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Member, Project, AdminUser, StudioWriteups } from '@/types';
+import { Member, Project, AdminUser, StudioWriteups, Role } from '@/types';
 import { MEMBERS_DATA } from '@/lib/dummy-data/works/members';
 import { PROJECTS_DATA } from '@/lib/dummy-data/works/projects';
+import { INITIAL_ROLES_DATA } from '@/lib/dummy-data/roles/roles-data';
 import { CONTACT_INFO, ContactInfo } from '@/lib/dummy-data/contact/contact-info';
 import { privacyPolicyModalData } from '@/lib/modals/privacy-policy';
 import { legalModalData } from '@/lib/modals/legal';
@@ -14,6 +15,7 @@ import { ModalData } from '@/lib/modals/types';
 const STORAGE_KEYS = {
   MEMBERS: 'atbp_admin_members_v1',
   PROJECTS: 'atbp_admin_projects_v1',
+  ROLES: 'atbp_admin_roles_v1',
   CONTACT: 'atbp_admin_contact_v1',
   PRIVACY: 'atbp_admin_privacy_v1',
   LEGAL: 'atbp_admin_legal_v1',
@@ -74,6 +76,10 @@ export function initializeAdminStorage(): void {
       isDraft: idx === PROJECTS_DATA.length - 1,
     }));
     setStored(STORAGE_KEYS.PROJECTS, seededProjects);
+  }
+
+  if (!localStorage.getItem(STORAGE_KEYS.ROLES)) {
+    setStored(STORAGE_KEYS.ROLES, INITIAL_ROLES_DATA);
   }
 
   if (!localStorage.getItem(STORAGE_KEYS.CONTACT)) {
@@ -402,6 +408,100 @@ export function clearAdminSession(): void {
 }
 
 // ==========================================
+// ROLES CRUD & ASSIGNMENTS
+// ==========================================
+
+export function getRoles(): Role[] {
+  initializeAdminStorage();
+  return getStored<Role[]>(STORAGE_KEYS.ROLES, INITIAL_ROLES_DATA);
+}
+
+export function getRoleById(id: string): Role | undefined {
+  const roles = getRoles();
+  return roles.find((r) => r.id === id);
+}
+
+export function saveRole(role: Role): Role {
+  const roles = getRoles();
+  const existingIdx = roles.findIndex((r) => r.id === role.id);
+  let updatedRoles: Role[];
+
+  if (existingIdx >= 0) {
+    updatedRoles = [...roles];
+    updatedRoles[existingIdx] = role;
+  } else {
+    updatedRoles = [role, ...roles];
+  }
+
+  setStored(STORAGE_KEYS.ROLES, updatedRoles);
+  return role;
+}
+
+export function deleteRole(id: string): void {
+  const roles = getRoles();
+  const updatedRoles = roles.filter((r) => r.id !== id);
+  setStored(STORAGE_KEYS.ROLES, updatedRoles);
+
+  // Also remove from any member currently assigned to this role
+  const members = getMembers();
+  let modified = false;
+  const updatedMembers = members.map((m) => {
+    if (m.roles && m.roles.includes(id)) {
+      modified = true;
+      return {
+        ...m,
+        roles: m.roles.filter((rId) => rId !== id),
+      };
+    }
+    return m;
+  });
+
+  if (modified) {
+    setStored(STORAGE_KEYS.MEMBERS, updatedMembers);
+  }
+}
+
+export function toggleRoleDraft(id: string): Role | null {
+  const roles = getRoles();
+  const target = roles.find((r) => r.id === id);
+  if (!target) return null;
+
+  target.isDraft = !target.isDraft;
+  saveRole(target);
+  return target;
+}
+
+export function assignRoleToMember(memberId: string, roleId: string): void {
+  const members = getMembers();
+  const member = members.find((m) => m.id === memberId);
+  if (!member) return;
+
+  const currentRoles = member.roles || [];
+  if (!currentRoles.includes(roleId)) {
+    member.roles = [...currentRoles, roleId];
+    saveMember(member);
+  }
+}
+
+export function unassignRoleFromMember(memberId: string, roleId: string): void {
+  const members = getMembers();
+  const member = members.find((m) => m.id === memberId);
+  if (!member || !member.roles) return;
+
+  member.roles = member.roles.filter((r) => r !== roleId);
+  saveMember(member);
+}
+
+export function setMemberRoles(memberId: string, roleIds: string[]): void {
+  const members = getMembers();
+  const member = members.find((m) => m.id === memberId);
+  if (!member) return;
+
+  member.roles = roleIds;
+  saveMember(member);
+}
+
+// ==========================================
 // RESET TO SYSTEM DEFAULTS
 // ==========================================
 
@@ -409,6 +509,7 @@ export function resetAdminStorageToDefaults(): void {
   if (!isClient()) return;
   localStorage.removeItem(STORAGE_KEYS.MEMBERS);
   localStorage.removeItem(STORAGE_KEYS.PROJECTS);
+  localStorage.removeItem(STORAGE_KEYS.ROLES);
   localStorage.removeItem(STORAGE_KEYS.CONTACT);
   localStorage.removeItem(STORAGE_KEYS.PRIVACY);
   localStorage.removeItem(STORAGE_KEYS.LEGAL);

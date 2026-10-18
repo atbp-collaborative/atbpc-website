@@ -19,11 +19,13 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
+  ShieldCheck,
 } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { Button } from '@/components/primitives/buttons/Button';
 import { useAdminPeople } from '@/hooks/admin/useAdminPeople';
 import { useAdminProjects } from '@/hooks/admin/useAdminProjects';
+import { useAdminRoles } from '@/hooks/admin/useAdminRoles';
 import { useAdminGeneralInfo } from '@/hooks/admin/useAdminGeneralInfo';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -31,6 +33,7 @@ export default function AdminDashboardPage() {
   const { isDarkMode } = useTheme();
   const { members } = useAdminPeople();
   const { projects } = useAdminProjects();
+  const { roles } = useAdminRoles();
   const { contactInfo, privacyPolicy, legalNotices } = useAdminGeneralInfo();
 
   // Metrics
@@ -86,6 +89,14 @@ export default function AdminDashboardPage() {
                 <Plus size={14} className="mr-1 inline" /> Manage People
               </Button>
             </Link>
+            <Link href="/admin/roles">
+              <Button
+                type={isDarkMode ? 'outline' : 'filled'}
+                className="!py-2 !px-4 text-mini"
+              >
+                <ShieldCheck size={14} className="mr-1 inline" /> Manage Roles
+              </Button>
+            </Link>
             <Link href="/admin/projects">
               <Button
                 type={isDarkMode ? 'outline' : 'filled'}
@@ -98,7 +109,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Primary Metric Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* People Card */}
           <div className={cardClass}>
             <div className="flex items-center justify-between mb-4">
@@ -132,6 +143,41 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
                 <EyeOff size={13} />
                 <span>{draftMembers} Drafts</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Roles Card */}
+          <div className={cardClass}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 rounded-lg bg-space-sparkle/15 text-space-sparkle flex items-center justify-center">
+                <ShieldCheck size={20} />
+              </div>
+              <Link
+                href="/admin/roles"
+                className="text-micro font-semibold text-space-sparkle hover:underline flex items-center gap-1"
+              >
+                <span>Manage</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+
+            <div className="space-y-1 mb-4">
+              <span className="text-micro uppercase font-mono tracking-wider opacity-60">
+                Studio Roles
+              </span>
+              <div className="flex items-baseline gap-3">
+                <span className="text-hero font-bold font-major">{roles.length}</span>
+                <span className="text-mini opacity-60">catalog roles</span>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-black/5 dark:border-white/10 flex flex-col sm:flex-row min-[1340px]:flex-row gap-2 justify-between text-mini">
+              <div className="flex items-center gap-1.5 text-space-sparkle">
+                <span>{roles.filter((r) => r.track === 'professionals').length} Pro Tracks</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
+                <span>{roles.filter((r) => r.track === 'internship').length} Internships</span>
               </div>
             </div>
           </div>

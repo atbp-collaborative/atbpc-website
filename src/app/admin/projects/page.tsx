@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import {
   FolderKanban,
@@ -21,6 +21,7 @@ import {
   Clock,
   CheckCircle2,
   Users,
+  RotateCcw,
 } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { PublicationToggle } from '@/components/admin/PublicationToggle';
@@ -87,6 +88,26 @@ const PROJECT_STATUSES: ('completed' | 'ongoing' | 'schematics')[] = [
   'schematics',
 ];
 
+const PROJECT_FILTER_CATEGORIES = ['all', 'Shelter', 'Livelihood', 'Community'] as const;
+
+const TYPOLOGY_MAP: Record<string, string[]> = {
+  Shelter: ['Tiny Living', 'Multi-Generational', 'Vacation Homes'],
+  Livelihood: ['Food & Beverage', 'Retail & Lifestyle', 'Workspaces'],
+  Community: ['Shared Spaces', 'Shared Places', 'Sacred Structures'],
+};
+
+const ALL_TYPOLOGIES = [
+  'Tiny Living',
+  'Multi-Generational',
+  'Vacation Homes',
+  'Food & Beverage',
+  'Retail & Lifestyle',
+  'Workspaces',
+  'Shared Spaces',
+  'Shared Places',
+  'Sacred Structures',
+];
+
 export default function AdminProjectsPage() {
   const { isDarkMode } = useTheme();
   const {
@@ -100,6 +121,8 @@ export default function AdminProjectsPage() {
     setVisibilityFilter,
     categoryFilter,
     setCategoryFilter,
+    typologyFilter,
+    setTypologyFilter,
     saveProject,
     deleteProject,
     toggleDraft,
@@ -108,25 +131,42 @@ export default function AdminProjectsPage() {
     disassociateMember,
   } = useAdminProjects();
 
+  const availableTypologies =
+    categoryFilter !== 'all' && TYPOLOGY_MAP[categoryFilter]
+      ? TYPOLOGY_MAP[categoryFilter]
+      : ALL_TYPOLOGIES;
+
   const { members: allMembers } = useAdminPeople();
 
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [formData, setFormData] = useState<Project>(EMPTY_PROJECT);
+  const initialDataRef = useRef<Project>(EMPTY_PROJECT);
 
-  // Delete modal state
+  // Modal states
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
   const startCreate = () => {
-    setFormData({
+    const newProj: Project = {
       ...EMPTY_PROJECT,
       id: 'project-' + Date.now(),
-    });
+    };
+    initialDataRef.current = newProj;
+    setFormData(newProj);
     setViewMode('create');
   };
 
   const startEdit = (proj: Project) => {
+    initialDataRef.current = { ...proj };
     setFormData({ ...proj });
     setViewMode('edit');
+  };
+
+  const isDirty = useMemo(() => {
+    return JSON.stringify(formData) !== JSON.stringify(initialDataRef.current);
+  }, [formData]);
+
+  const handleResetDefaults = () => {
+    setFormData({ ...initialDataRef.current });
   };
 
   const handleBackToList = () => {
@@ -144,10 +184,13 @@ export default function AdminProjectsPage() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '');
 
-    saveProject({
+    const projectToSave = {
       ...formData,
       id: cleanId,
-    });
+    };
+
+    saveProject(projectToSave);
+    initialDataRef.current = projectToSave;
     setViewMode('list');
   };
 
@@ -192,30 +235,25 @@ export default function AdminProjectsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <PublicationToggle
-              isDraft={Boolean(formData.isDraft)}
-              onToggle={() =>
-                setFormData((prev) => ({ ...prev, isDraft: !prev.isDraft }))
-              }
-            />
+          {isDirty && (
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button
+                type="ghost"
+                onClick={handleResetDefaults}
+                className="!py-2 !px-3 sm:!px-4 text-mini"
+              >
+                <RotateCcw size={13} className="mr-1.5 inline" /> Reset Defaults
+              </Button>
 
-            <Button
-              type="ghost"
-              onClick={handleBackToList}
-              className="!py-2 !px-4 text-mini"
-            >
-              Cancel
-            </Button>
-
-            <Button
-              type="filled"
-              onClick={handleSave}
-              className="!py-2 !px-5 text-mini font-semibold"
-            >
-              <Save size={14} className="mr-1.5 inline" /> Save Project
-            </Button>
-          </div>
+              <Button
+                type="filled"
+                onClick={handleSave}
+                className="!py-2 !px-4 sm:!px-5 text-mini font-semibold"
+              >
+                <Save size={14} className="mr-1.5 inline" /> Save Project
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Full-Page Form Body (Strictly non-modal) */}
@@ -583,18 +621,70 @@ export default function AdminProjectsPage() {
                     ? 'Staged in draft mode. Hidden from public portfolio.'
                     : 'Published and showcased on public /works pages.'}
                 </p>
+              </div>
 
-                <div className="pt-3 border-t border-black/10 dark:border-white/10 flex justify-end">
+              {/* Dedicated Actions Div for Unsaved Changes */}
+              {isDirty && (
+                <div
+                  className={`p-6 rounded-xl border space-y-3 transition-all ${
+                    isDarkMode
+                      ? 'bg-vintage-charcoal/80 border-space-sparkle/40 ring-1 ring-space-sparkle/20'
+                      : 'bg-white border-space-sparkle/40 shadow-sm ring-1 ring-space-sparkle/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-caption font-semibold uppercase tracking-wider block text-space-sparkle">
+                      Unsaved Changes
+                    </span>
+                    <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  </div>
+                  <p className="text-micro opacity-60">
+                    You have modified this project. Save to apply or reset to discard changes.
+                  </p>
+
+                  <div className="space-y-2 pt-2">
+                    <Button
+                      type="filled"
+                      onClick={handleSave}
+                      fullWidth
+                      className="!py-2.5 text-mini font-semibold"
+                    >
+                      <Save size={14} className="mr-1.5 inline" /> Save Changes
+                    </Button>
+                    <Button
+                      type="ghost"
+                      onClick={handleResetDefaults}
+                      fullWidth
+                      className="!py-2 text-mini border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
+                    >
+                      <RotateCcw size={13} className="mr-1.5 inline" /> Reset Defaults
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {viewMode === 'edit' && (
+                <div
+                  className={`p-6 rounded-xl border space-y-3 ${
+                    isDarkMode ? 'bg-red-500/5 border-red-500/20' : 'bg-red-50 border-red-200'
+                  }`}
+                >
+                  <span className="text-caption font-semibold uppercase tracking-wider block text-red-600 dark:text-red-400">
+                    Danger Zone
+                  </span>
+                  <p className="text-micro opacity-70">
+                    Permanently delete this project portfolio item and all associated specs and photos.
+                  </p>
                   <Button
-                    type="filled"
-                    onClick={handleSave}
+                    type="ghost"
+                    onClick={() => setProjectToDelete(formData)}
                     fullWidth
-                    className="!py-2.5 text-mini font-semibold"
+                    className="!py-2 text-mini border border-red-500/30 text-red-500 hover:bg-red-500/10 cursor-pointer"
                   >
-                    Save Changes
+                    <Trash2 size={14} className="mr-1.5 inline" /> Delete Project
                   </Button>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </form>
@@ -620,59 +710,117 @@ export default function AdminProjectsPage() {
       <div className="p-4 sm:p-8 space-y-6 max-w-7xl w-full mx-auto">
         {/* Filter and Search Bar */}
         <div
-          className={`p-4 rounded-xl border flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 ${
+          className={`p-4 rounded-xl border space-y-3.5 ${
             isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
           }`}
         >
-          {/* Search box */}
-          <div className="relative flex-1 max-w-md">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none"
-            />
-            <input
-              type="text"
-              placeholder="Search by title, location, category..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={`${inputClass} pl-9`}
-            />
+          {/* Top Row: Search box, Status Filter, Visibility Filter */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            {/* Search box */}
+            <div className="relative flex-1 max-w-md">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none"
+              />
+              <input
+                type="text"
+                placeholder="Search by title, location, category..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={`${inputClass} pl-9`}
+              />
+            </div>
+
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Status Filter Tabs */}
+              <div className="p-1 rounded-lg border border-black/10 dark:border-white/10 flex items-center gap-1 flex-wrap">
+                {(['all', 'completed', 'ongoing', 'schematics'] as ProjectStatusFilter[]).map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setStatusFilter(st)}
+                    className={`px-3 py-1.5 rounded-md text-mini font-medium uppercase tracking-wider transition-colors cursor-pointer ${
+                      statusFilter === st
+                        ? 'bg-space-sparkle text-white'
+                        : isDarkMode
+                          ? 'hover:bg-white/5 text-bright-gray/70'
+                          : 'hover:bg-black/5 text-vintage-charcoal/70'
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+
+              {/* Visibility Filter (All, Published, Draft) */}
+              <div className="flex items-center gap-1 border-l pl-3 border-black/10 dark:border-white/10">
+                {(['all', 'published', 'draft'] as VisibilityFilter[]).map((vis) => (
+                  <button
+                    key={vis}
+                    onClick={() => setVisibilityFilter(vis)}
+                    className={`px-2.5 py-1 rounded text-micro uppercase tracking-wider transition-colors cursor-pointer ${
+                      visibilityFilter === vis
+                        ? 'border border-space-sparkle text-space-sparkle font-semibold'
+                        : 'opacity-50 hover:opacity-100'
+                    }`}
+                  >
+                    {vis}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* Status Filter Tabs */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {(['all', 'completed', 'ongoing', 'schematics'] as ProjectStatusFilter[]).map((st) => (
-              <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1.5 rounded-lg text-mini font-medium uppercase tracking-wider transition-colors cursor-pointer ${
-                  statusFilter === st
-                    ? 'bg-space-sparkle text-white'
-                    : isDarkMode
-                      ? 'hover:bg-white/5 text-bright-gray/70'
-                      : 'hover:bg-black/5 text-vintage-charcoal/70'
-                }`}
-              >
-                {st}
-              </button>
-            ))}
-          </div>
+          {/* Bottom Row: Category & Typology Filters */}
+          <div className="pt-3 border-t border-black/5 dark:border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-mini">
+            {/* Category Tabs */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-micro font-mono uppercase tracking-wider opacity-60 mr-1">
+                Category:
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {PROJECT_FILTER_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      setCategoryFilter(cat);
+                      setTypologyFilter('all');
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-mini font-medium uppercase tracking-wider transition-colors cursor-pointer border ${
+                      categoryFilter === cat
+                        ? 'bg-space-sparkle text-white border-space-sparkle'
+                        : isDarkMode
+                          ? 'border-gray-600 hover:bg-white/5 text-bright-gray/80'
+                          : 'border-gray-300 hover:bg-black/5 text-vintage-charcoal/80'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          {/* Visibility Filter (All, Published, Draft) */}
-          <div className="flex items-center gap-1 border-t md:border-t-0 md:border-l pt-3 md:pt-0 md:pl-4 border-black/10 dark:border-white/10">
-            {(['all', 'published', 'draft'] as VisibilityFilter[]).map((vis) => (
-              <button
-                key={vis}
-                onClick={() => setVisibilityFilter(vis)}
-                className={`px-2.5 py-1 rounded text-micro uppercase tracking-wider transition-colors cursor-pointer ${
-                  visibilityFilter === vis
-                    ? 'border border-space-sparkle text-space-sparkle font-semibold'
-                    : 'opacity-50 hover:opacity-100'
+            {/* Typology Filter Selector */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-micro font-mono uppercase tracking-wider opacity-60 mr-1">
+                Typology:
+              </span>
+              <select
+                value={typologyFilter}
+                onChange={(e) => setTypologyFilter(e.target.value)}
+                className={`text-mini px-3 py-1.5 rounded-lg border outline-none cursor-pointer transition-colors ${
+                  isDarkMode
+                    ? 'border-gray-600 bg-vintage-charcoal text-bright-gray'
+                    : 'border-gray-300 bg-white text-vintage-charcoal'
                 }`}
               >
-                {vis}
-              </button>
-            ))}
+                <option value="all">All Typologies</option>
+                {availableTypologies.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -712,14 +860,6 @@ export default function AdminProjectsPage() {
                         <span className="px-2 py-0.5 rounded text-micro uppercase tracking-wider font-semibold font-mono backdrop-blur-md bg-black/60 text-white">
                           {project.status}
                         </span>
-
-                        <div className="pointer-events-auto">
-                          <PublicationToggle
-                            isDraft={Boolean(project.isDraft)}
-                            onToggle={() => toggleDraft(project.id)}
-                            size="sm"
-                          />
-                        </div>
                       </div>
                     </div>
 
@@ -756,8 +896,8 @@ export default function AdminProjectsPage() {
                     </div>
                   </div>
 
-                  {/* Actions Row */}
-                  <div className="p-4 pt-0 flex items-center justify-between gap-2 border-t border-black/5 dark:border-white/5 mt-2">
+                  {/* Actions Row (pt-[4px] creates 4px space between border-t and edit button) */}
+                  <div className="p-4 pt-[4px] flex items-center justify-between gap-2 border-t border-black/5 dark:border-white/5 mt-2">
                     <Button
                       type="ghost"
                       onClick={() => startEdit(project)}
@@ -766,14 +906,15 @@ export default function AdminProjectsPage() {
                       <Edit2 size={13} className="mr-1 inline" /> Edit
                     </Button>
 
-                    <button
-                      type="button"
-                      onClick={() => setProjectToDelete(project)}
-                      className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
-                      title="Delete project"
+                    <span
+                      className={`px-2 py-0.5 rounded text-micro font-mono uppercase tracking-wider font-semibold ${
+                        project.isDraft
+                          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                          : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                      }`}
                     >
-                      <Trash2 size={15} />
-                    </button>
+                      {project.isDraft ? 'Draft' : 'Published'}
+                    </span>
                   </div>
                 </div>
               );
@@ -803,6 +944,7 @@ export default function AdminProjectsPage() {
           if (projectToDelete) {
             deleteProject(projectToDelete.id);
             setProjectToDelete(null);
+            setViewMode('list');
           }
         }}
       />

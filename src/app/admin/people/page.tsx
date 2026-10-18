@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import {
   Users,
@@ -17,6 +17,9 @@ import {
   Save,
   UserCheck,
   Building,
+  List,
+  LayoutGrid,
+  RotateCcw,
 } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { PublicationToggle } from '@/components/admin/PublicationToggle';
@@ -36,6 +39,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { Member, MemberCategory, MemberAffiliation, MemberInvolvement } from '@/types';
 
 type ViewMode = 'list' | 'create' | 'edit';
+type DisplayMode = 'list' | 'grid';
 
 const EMPTY_MEMBER: Member = {
   id: '',
@@ -69,23 +73,36 @@ export default function AdminPeoplePage() {
   const { projects: allProjects } = useAdminProjects();
 
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('list');
   const [formData, setFormData] = useState<Member>(EMPTY_MEMBER);
+  const initialDataRef = useRef<Member>(EMPTY_MEMBER);
 
-  // Delete modal state
+  // Modal states
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
 
   const startCreate = () => {
-    setFormData({
+    const newMember: Member = {
       ...EMPTY_MEMBER,
       id: 'member-' + Date.now(),
       categories: ['designers'],
-    });
+    };
+    initialDataRef.current = newMember;
+    setFormData(newMember);
     setViewMode('create');
   };
 
   const startEdit = (member: Member) => {
+    initialDataRef.current = { ...member };
     setFormData({ ...member });
     setViewMode('edit');
+  };
+
+  const isDirty = useMemo(() => {
+    return JSON.stringify(formData) !== JSON.stringify(initialDataRef.current);
+  }, [formData]);
+
+  const handleResetDefaults = () => {
+    setFormData({ ...initialDataRef.current });
   };
 
   const handleBackToList = () => {
@@ -104,10 +121,13 @@ export default function AdminPeoplePage() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '');
 
-    saveMember({
+    const memberToSave = {
       ...formData,
       id: cleanId,
-    });
+    };
+
+    saveMember(memberToSave);
+    initialDataRef.current = memberToSave;
     setViewMode('list');
   };
 
@@ -150,30 +170,25 @@ export default function AdminPeoplePage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <PublicationToggle
-              isDraft={Boolean(formData.isDraft)}
-              onToggle={() =>
-                setFormData((prev) => ({ ...prev, isDraft: !prev.isDraft }))
-              }
-            />
+          {isDirty && (
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button
+                type="ghost"
+                onClick={handleResetDefaults}
+                className="!py-2 !px-3 sm:!px-4 text-mini"
+              >
+                <RotateCcw size={13} className="mr-1.5 inline" /> Reset Defaults
+              </Button>
 
-            <Button
-              type="ghost"
-              onClick={handleBackToList}
-              className="!py-2 !px-4 text-mini"
-            >
-              Cancel
-            </Button>
-
-            <Button
-              type="filled"
-              onClick={handleSave}
-              className="!py-2 !px-5 text-mini font-semibold"
-            >
-              <Save size={14} className="mr-1.5 inline" /> Save Member
-            </Button>
-          </div>
+              <Button
+                type="filled"
+                onClick={handleSave}
+                className="!py-2 !px-4 sm:!px-5 text-mini font-semibold"
+              >
+                <Save size={14} className="mr-1.5 inline" /> Save Member
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Full-Page Form Body (Strictly non-modal) */}
@@ -391,18 +406,70 @@ export default function AdminPeoplePage() {
                     ? 'Hidden from /studio/our-people on the public website.'
                     : 'Visible to all visitors on the public directory.'}
                 </p>
+              </div>
 
-                <div className="pt-3 border-t border-black/10 dark:border-white/10 flex justify-end">
+              {/* Dedicated Actions Div for Unsaved Changes */}
+              {isDirty && (
+                <div
+                  className={`p-6 rounded-xl border space-y-3 transition-all ${
+                    isDarkMode
+                      ? 'bg-vintage-charcoal/80 border-space-sparkle/40 ring-1 ring-space-sparkle/20'
+                      : 'bg-white border-space-sparkle/40 shadow-sm ring-1 ring-space-sparkle/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-caption font-semibold uppercase tracking-wider block text-space-sparkle">
+                      Unsaved Changes
+                    </span>
+                    <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  </div>
+                  <p className="text-micro opacity-60">
+                    You have modified this profile. Save to apply or reset to discard changes.
+                  </p>
+
+                  <div className="space-y-2 pt-2">
+                    <Button
+                      type="filled"
+                      onClick={handleSave}
+                      fullWidth
+                      className="!py-2.5 text-mini font-semibold"
+                    >
+                      <Save size={14} className="mr-1.5 inline" /> Save Changes
+                    </Button>
+                    <Button
+                      type="ghost"
+                      onClick={handleResetDefaults}
+                      fullWidth
+                      className="!py-2 text-mini border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
+                    >
+                      <RotateCcw size={13} className="mr-1.5 inline" /> Reset Defaults
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {viewMode === 'edit' && (
+                <div
+                  className={`p-6 rounded-xl border space-y-3 ${
+                    isDarkMode ? 'bg-red-500/5 border-red-500/20' : 'bg-red-50 border-red-200'
+                  }`}
+                >
+                  <span className="text-caption font-semibold uppercase tracking-wider block text-red-600 dark:text-red-400">
+                    Danger Zone
+                  </span>
+                  <p className="text-micro opacity-70">
+                    Permanently delete this member profile and all associated project affiliations.
+                  </p>
                   <Button
-                    type="filled"
-                    onClick={handleSave}
+                    type="ghost"
+                    onClick={() => setMemberToDelete(formData)}
                     fullWidth
-                    className="!py-2.5 text-mini font-semibold"
+                    className="!py-2 text-mini border border-red-500/30 text-red-500 hover:bg-red-500/10 cursor-pointer"
                   >
-                    Save Changes
+                    <Trash2 size={14} className="mr-1.5 inline" /> Delete Member Profile
                   </Button>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </form>
@@ -419,7 +486,11 @@ export default function AdminPeoplePage() {
         title="manage people"
         breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'People' }]}
         actions={
-          <Button type="filled" onClick={startCreate} className="!py-2 !px-4 text-mini font-semibold">
+          <Button
+            type="filled"
+            onClick={startCreate}
+            className="hidden md:inline-flex !py-2 !px-4 text-mini font-semibold"
+          >
             <Plus size={14} className="mr-1 inline" /> Add Member
           </Button>
         }
@@ -447,19 +518,19 @@ export default function AdminPeoplePage() {
             />
           </div>
 
-          {/* Classification Filter Tabs */}
+          {/* Classification Filter Tabs with thin light grey border */}
           <div className="flex items-center gap-1.5 flex-wrap">
             {(['all', 'designers', 'managers', 'builders'] as PeopleClassificationFilter[]).map(
               (cat) => (
                 <button
                   key={cat}
                   onClick={() => setClassificationFilter(cat)}
-                  className={`px-3 py-1.5 rounded-lg text-mini font-medium uppercase tracking-wider transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-mini font-medium uppercase tracking-wider transition-colors cursor-pointer border ${
                     classificationFilter === cat
-                      ? 'bg-space-sparkle text-white'
+                      ? 'bg-space-sparkle text-white border-space-sparkle'
                       : isDarkMode
-                        ? 'hover:bg-white/5 text-bright-gray/70'
-                        : 'hover:bg-black/5 text-vintage-charcoal/70'
+                        ? 'border-gray-600 hover:bg-white/5 text-bright-gray/80'
+                        : 'border-gray-300 hover:bg-black/5 text-vintage-charcoal/80'
                   }`}
                 >
                   {cat}
@@ -484,107 +555,240 @@ export default function AdminPeoplePage() {
               </button>
             ))}
           </div>
+
+          {/* View Mode Switcher: List vs Grid */}
+          <div className="flex items-center gap-1 border-t md:border-t-0 md:border-l pt-3 md:pt-0 md:pl-4 border-black/10 dark:border-white/10">
+            <button
+              type="button"
+              onClick={() => setDisplayMode('list')}
+              title="List View"
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                displayMode === 'list'
+                  ? 'bg-space-sparkle text-white'
+                  : isDarkMode
+                    ? 'hover:bg-white/10 text-bright-gray/70'
+                    : 'hover:bg-black/5 text-vintage-charcoal/70'
+              }`}
+            >
+              <List size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setDisplayMode('grid')}
+              title="Grid View"
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                displayMode === 'grid'
+                  ? 'bg-space-sparkle text-white'
+                  : isDarkMode
+                    ? 'hover:bg-white/10 text-bright-gray/70'
+                    : 'hover:bg-black/5 text-vintage-charcoal/70'
+              }`}
+            >
+              <LayoutGrid size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Add Member Action (between search/filter and list) */}
+        <div className="md:hidden">
+          <Button
+            type="filled"
+            onClick={startCreate}
+            fullWidth
+            className="!py-2.5 text-mini font-semibold shadow-xs"
+          >
+            <Plus size={14} className="mr-1 inline" /> Add Member
+          </Button>
         </div>
 
         {/* Members Table / Grid */}
-        <div
-          className={`rounded-xl border overflow-hidden ${
-            isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
-          }`}
-        >
-          {filteredMembers.length > 0 ? (
-            <div className="divide-y divide-black/5 dark:divide-white/5">
+        {filteredMembers.length > 0 ? (
+          displayMode === 'list' ? (
+            <div
+              className={`rounded-xl border overflow-hidden ${
+                isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+              }`}
+            >
+              <div className="divide-y divide-black/5 dark:divide-white/5">
+                {filteredMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
+                      isDarkMode ? 'hover:bg-white/5' : 'hover:bg-black/2'
+                    }`}
+                  >
+                    {/* Left: Avatar + Details */}
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
+                        {member.image ? (
+                          <Image
+                            src={member.image}
+                            alt={member.name}
+                            fill
+                            sizes="48px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-space-sparkle/20 text-space-sparkle">
+                            <UserCheck size={20} />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-caption sm:text-body truncate">
+                            {member.name}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded text-micro font-mono uppercase tracking-wider font-semibold ${
+                              member.isDraft
+                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                            }`}
+                          >
+                            {member.isDraft ? 'Draft' : 'Published'}
+                          </span>
+                        </div>
+
+                        <p className="text-mini opacity-70 truncate">{member.role}</p>
+
+                        {/* Classification Chips */}
+                        <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                          {member.categories?.map((c) => (
+                            <span
+                              key={c}
+                              className="text-micro font-mono uppercase px-2 py-0.5 rounded-full bg-space-sparkle/15 text-space-sparkle font-medium"
+                            >
+                              {c}
+                            </span>
+                          ))}
+
+                          {member.involvement && member.involvement.length > 0 && (
+                            <span className="text-micro opacity-50 flex items-center gap-1 ml-1 font-mono">
+                              <Building size={11} /> {member.involvement.length} project(s)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Actions */}
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <Button
+                        type="ghost"
+                        onClick={() => startEdit(member)}
+                        className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
+                      >
+                        <Edit2 size={13} className="mr-1 inline" /> Edit
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredMembers.map((member) => (
                 <div
                   key={member.id}
-                  className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
-                    isDarkMode ? 'hover:bg-white/5' : 'hover:bg-black/2'
+                  className={`p-5 rounded-xl border flex flex-col justify-between transition-all ${
+                    isDarkMode
+                      ? 'bg-vintage-charcoal/60 border-white/10 hover:border-space-sparkle/50 hover:bg-white/5'
+                      : 'bg-white border-black/10 hover:border-space-sparkle/50 shadow-xs hover:shadow-sm'
                   }`}
                 >
-                  {/* Left: Avatar + Details */}
-                  <div className="flex items-center gap-4 min-w-0 flex-1">
-                    <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
-                      {member.image ? (
-                        <Image
-                          src={member.image}
-                          alt={member.name}
-                          fill
-                          sizes="48px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-space-sparkle/20 text-space-sparkle">
-                          <UserCheck size={20} />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-1 min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-caption sm:text-body truncate">
-                          {member.name}
-                        </span>
-                        <PublicationToggle
-                          isDraft={Boolean(member.isDraft)}
-                          onToggle={() => toggleDraft(member.id)}
-                          size="sm"
-                        />
-                      </div>
-
-                      <p className="text-mini opacity-70 truncate">{member.role}</p>
-
-                      {/* Classification Chips */}
-                      <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                        {member.categories?.map((c) => (
-                          <span
-                            key={c}
-                            className="text-micro font-mono uppercase px-2 py-0.5 rounded-full bg-space-sparkle/15 text-space-sparkle font-medium"
-                          >
-                            {c}
-                          </span>
-                        ))}
-
-                        {member.involvement && member.involvement.length > 0 && (
-                          <span className="text-micro opacity-50 flex items-center gap-1 ml-1 font-mono">
-                            <Building size={11} /> {member.involvement.length} project(s)
-                          </span>
+                  <div>
+                    {/* Top bar: Avatar & Status Badge */}
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
+                        {member.image ? (
+                          <Image
+                            src={member.image}
+                            alt={member.name}
+                            fill
+                            sizes="64px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-space-sparkle/20 text-space-sparkle">
+                            <UserCheck size={24} />
+                          </div>
                         )}
                       </div>
+
+                      <span
+                        className={`px-2.5 py-0.5 rounded text-micro font-mono uppercase tracking-wider font-semibold ${
+                          member.isDraft
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                            : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                        }`}
+                      >
+                        {member.isDraft ? 'Draft' : 'Published'}
+                      </span>
+                    </div>
+
+                    {/* Name and Role */}
+                    <div className="space-y-1 mb-3">
+                      <h3 className="font-bold text-body truncate" title={member.name}>
+                        {member.name}
+                      </h3>
+                      <p className="text-mini opacity-70 line-clamp-1">{member.role}</p>
+                    </div>
+
+                    {/* Bio snippet if available */}
+                    {member.bio && (
+                      <p className="text-micro opacity-60 line-clamp-2 mb-3">
+                        {member.bio}
+                      </p>
+                    )}
+
+                    {/* Classification Chips */}
+                    <div className="flex items-center gap-1.5 flex-wrap mb-4">
+                      {member.categories?.map((c) => (
+                        <span
+                          key={c}
+                          className="text-micro font-mono uppercase px-2 py-0.5 rounded-full bg-space-sparkle/15 text-space-sparkle font-medium"
+                        >
+                          {c}
+                        </span>
+                      ))}
+
+                      {member.involvement && member.involvement.length > 0 && (
+                        <span className="text-micro opacity-50 flex items-center gap-1 font-mono">
+                          <Building size={11} /> {member.involvement.length} project(s)
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Right: Actions */}
-                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                  {/* Card Footer: Edit Button */}
+                  <div className="pt-3 border-t border-black/5 dark:border-white/5 flex justify-end">
                     <Button
                       type="ghost"
                       onClick={() => startEdit(member)}
-                      className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
+                      className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle w-full justify-center"
                     >
-                      <Edit2 size={13} className="mr-1 inline" /> Edit
+                      <Edit2 size={13} className="mr-1 inline" /> Edit Member
                     </Button>
-
-                    <button
-                      type="button"
-                      onClick={() => setMemberToDelete(member)}
-                      className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
-                      title="Delete profile"
-                    >
-                      <Trash2 size={15} />
-                    </button>
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="p-12 text-center space-y-3">
-              <Users size={32} className="mx-auto opacity-30 text-space-sparkle" />
-              <p className="text-caption opacity-60">No members matched the selected filters.</p>
-              <Button type="filled" onClick={startCreate} className="!py-1.5 !px-4 text-mini">
-                Add New Member
-              </Button>
-            </div>
-          )}
-        </div>
+          )
+        ) : (
+          <div
+            className={`rounded-xl border p-12 text-center space-y-3 ${
+              isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+            }`}
+          >
+            <Users size={32} className="mx-auto opacity-30 text-space-sparkle" />
+            <p className="text-caption opacity-60">No members matched the selected filters.</p>
+            <Button type="filled" onClick={startCreate} className="!py-1.5 !px-4 text-mini">
+              Add New Member
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Confirmation Modal (Exclusively for delete confirmation) */}
@@ -600,6 +804,7 @@ export default function AdminPeoplePage() {
           if (memberToDelete) {
             deleteMember(memberToDelete.id);
             setMemberToDelete(null);
+            setViewMode('list');
           }
         }}
       />

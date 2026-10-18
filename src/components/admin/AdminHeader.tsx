@@ -78,11 +78,13 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         {/* Right: Actions, Theme Toggle & quick link */}
         <div className="flex items-center gap-2">
           {actions}
-          <ThemeToggle
-            isDarkMode={isDarkMode}
-            onToggle={toggleTheme}
-            className="!w-8 !h-8"
-          />
+          <div className="hidden lg:flex items-center">
+            <ThemeToggle
+              isDarkMode={isDarkMode}
+              onToggle={toggleTheme}
+              className="!w-8 !h-8"
+            />
+          </div>
           <Link
             href="/"
             target="_blank"

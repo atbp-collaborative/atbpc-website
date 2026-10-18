@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 
 export type ProjectStatusFilter = 'all' | 'completed' | 'ongoing' | 'schematics';
 export type VisibilityFilter = 'all' | 'published' | 'draft';
+export type ProjectCategoryFilter = 'all' | 'Shelter' | 'Livelihood' | 'Community';
 
 export function useAdminProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -28,6 +29,7 @@ export function useAdminProjects() {
   const [statusFilter, setStatusFilter] = useState<ProjectStatusFilter>('all');
   const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [typologyFilter, setTypologyFilter] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(() => {
@@ -72,9 +74,20 @@ export function useAdminProjects() {
         project.mainCategory === categoryFilter ||
         project.category === categoryFilter;
 
-      return matchesSearch && matchesStatus && matchesVisibility && matchesCategory;
+      const matchesTypology =
+        typologyFilter === 'all' ||
+        project.category === typologyFilter ||
+        project.subcategory === typologyFilter;
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesVisibility &&
+        matchesCategory &&
+        matchesTypology
+      );
     });
-  }, [projects, searchTerm, statusFilter, visibilityFilter, categoryFilter]);
+  }, [projects, searchTerm, statusFilter, visibilityFilter, categoryFilter, typologyFilter]);
 
   const saveProject = useCallback((projectData: Project) => {
     const saved = saveProjectStorage(projectData);
@@ -135,6 +148,8 @@ export function useAdminProjects() {
     setVisibilityFilter,
     categoryFilter,
     setCategoryFilter,
+    typologyFilter,
+    setTypologyFilter,
     isLoading,
     refresh,
     saveProject,

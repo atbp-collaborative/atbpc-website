@@ -54,6 +54,19 @@ export interface MemberInvolvement {
 }
 
 export type MemberCategory = 'designers' | 'managers' | 'builders';
+export type RoleCategory = MemberCategory;
+export type RoleTrack = 'internship' | 'professionals';
+
+export interface Role {
+  id: string;
+  title: string;
+  code?: string;
+  category: RoleCategory;
+  track: RoleTrack;
+  department?: string;
+  description?: string;
+  isDraft?: boolean;
+}
 
 export interface MemberAffiliation {
   title: string;
@@ -64,6 +77,7 @@ export interface Member {
   id: string;
   name: string;
   role: string;
+  roles?: string[];
   license?: string;
   image: string;
   bio: string;
