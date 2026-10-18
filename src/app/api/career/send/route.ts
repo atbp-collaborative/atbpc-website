@@ -5,9 +5,31 @@ import * as React from 'react';
 import { CareerEmailTemplate } from '@/components/emails/CareerEmailTemplate';
 import { careerSchema } from '@/lib/forms/career.schema';
 
+import { checkRateLimit, isHoneypotTriggered } from '@/lib/security/rate-limit';
+
 export async function POST(request: Request) {
   try {
+    // 1. IP Rate Limiting Check
+    const rateCheck = checkRateLimit(request);
+    if (!rateCheck.success) {
+      return NextResponse.json(
+        { error: 'Too many submissions. Please wait a few minutes before trying again.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateCheck.retryAfterSeconds),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
+
+    // 2. Honeypot Spam Defense Check
+    if (isHoneypotTriggered(body)) {
+      console.warn('[Honeypot] Trapped automated bot submission in career form.');
+      return NextResponse.json({ success: true, message: 'Application received' });
+    }
     
     // Validate the request body
     const validatedData = careerSchema.parse(body);

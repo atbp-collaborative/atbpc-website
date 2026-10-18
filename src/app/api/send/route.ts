@@ -6,6 +6,8 @@ import { NotificationEmailTemplate } from '@/components/emails/NotificationEmail
 
 
 
+import { checkRateLimit, isHoneypotTriggered } from '@/lib/security/rate-limit';
+
 const emailSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email address'),
@@ -14,7 +16,27 @@ const emailSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    // 1. IP Rate Limiting Check
+    const rateCheck = checkRateLimit(request);
+    if (!rateCheck.success) {
+      return NextResponse.json(
+        { error: 'Too many submissions. Please wait a few minutes before trying again.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateCheck.retryAfterSeconds),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
+
+    // 2. Honeypot Spam Defense Check
+    if (isHoneypotTriggered(body)) {
+      console.warn('[Honeypot] Trapped automated bot submission in general contact form.');
+      return NextResponse.json({ success: true, message: 'Message received' });
+    }
     
     // Validate the request body
     const validatedData = emailSchema.parse(body);

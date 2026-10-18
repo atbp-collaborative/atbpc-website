@@ -9,16 +9,25 @@ import { WORKS_CATEGORIES } from '@/lib/dummy-data/works/works';
 import { getSitePagesData } from '@/services/dummy-data.service';
 import { SitePage } from '@/types';
 
+import { ProjectCardSkeleton } from '@/components/primitives/skeletons/ProjectCardSkeleton';
+
 export default function WorksPage() {
   const [pageInfo, setPageInfo] = React.useState<SitePage | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
   const router = useRouter();
 
   React.useEffect(() => {
-    getSitePagesData().then((pages) => {
-      const p = pages.find((page) => page.id === 'works');
-      if (p) setPageInfo(p);
-    });
+    getSitePagesData()
+      .then((pages) => {
+        const p = pages.find((page) => page.id === 'works');
+        if (p) setPageInfo(p);
+      })
+      .finally(() => setIsLoading(false));
   }, []);
+
+  if (isLoading) {
+    return <ProjectCardSkeleton />;
+  }
 
   if (pageInfo && pageInfo.isDraft) {
     return (

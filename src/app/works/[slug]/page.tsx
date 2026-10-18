@@ -8,14 +8,52 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (slug && slug !== 'All') {
     const project = await getProjectById(slug);
     if (project) {
-      const category = project.mainCategory || project.category || 'Works';
-      return { title: `ATBPC | ${category}` };
+      const title = `${project.title} | ATBP Collaborative`;
+      const description = project.description || project.fullWriteup?.slice(0, 160) || 'Architectural project by ATBP Collaborative.';
+      const coverImage = project.images && project.images.length > 0 ? project.images[0] : '/charcoal-logo.png';
+
+      return {
+        title,
+        description,
+        openGraph: {
+          title,
+          description,
+          url: `/works/${slug}`,
+          type: 'article',
+          images: [
+            {
+              url: coverImage,
+              alt: project.title,
+            },
+          ],
+        },
+        twitter: {
+          card: 'summary_large_image',
+          title,
+          description,
+          images: [coverImage],
+        },
+      };
     }
-    // If it's a category filter slug
-    return { title: `ATBPC | ${slug}` };
+
+    // Category filter slug (e.g. Shelter, Livelihood, Community)
+    const categoryTitle = `${slug} Works | ATBP Collaborative`;
+    const categoryDesc = `Explore our curated portfolio of ${slug} architectural and interior projects.`;
+    return {
+      title: categoryTitle,
+      description: categoryDesc,
+      openGraph: {
+        title: categoryTitle,
+        description: categoryDesc,
+        url: `/works/${slug}`,
+      },
+    };
   }
   
-  return { title: 'ATBPC | Works' };
+  return {
+    title: 'Works Portfolio | ATBP Collaborative',
+    description: 'Selected architecture, construction administration, and interior design works.',
+  };
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {

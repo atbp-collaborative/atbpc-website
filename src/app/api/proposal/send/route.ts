@@ -5,11 +5,33 @@ import * as React from 'react';
 import { ProposalEmailTemplate } from '@/components/emails/ProposalEmailTemplate';
 import { proposalSchema } from '@/lib/forms/proposal.schema';
 
+import { checkRateLimit, isHoneypotTriggered } from '@/lib/security/rate-limit';
+
 export const maxDuration = 60; // Increase timeout for large file uploads if needed
 
 export async function POST(request: Request) {
   try {
+    // 1. IP Rate Limiting Check
+    const rateCheck = checkRateLimit(request);
+    if (!rateCheck.success) {
+      return NextResponse.json(
+        { error: 'Too many submissions. Please wait a few minutes before trying again.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateCheck.retryAfterSeconds),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
+
+    // 2. Honeypot Spam Defense Check
+    if (isHoneypotTriggered(body)) {
+      console.warn('[Honeypot] Trapped automated bot submission in proposal form.');
+      return NextResponse.json({ success: true, message: 'Proposal request received' });
+    }
     
     // Validate the request body
     const validatedData = proposalSchema.parse(body);
