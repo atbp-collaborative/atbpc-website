@@ -147,10 +147,10 @@ export async function getHomepageSlogansData(): Promise<HomepageSlogans> {
   return getHomepageSlogans();
 }
 
-export async function getMembers(): Promise<Member[]> {
+export async function getMembers(includeDrafts: boolean = false): Promise<Member[]> {
   if (shouldQuerySupabase()) {
     try {
-      const people = await getPeopleFromSupabase();
+      const people = await getPeopleFromSupabase(includeDrafts);
       if (people && people.length > 0) return people;
     } catch (err) {
       console.warn('[DataService] Supabase getMembers failed, falling back to mock data:', err);
@@ -171,10 +171,10 @@ export async function getMemberById(id: string): Promise<Member | undefined> {
   return MEMBERS_DATA.find((member) => member.id === id);
 }
 
-export async function getProjects(): Promise<Project[]> {
+export async function getProjects(includeDrafts: boolean = false): Promise<Project[]> {
   if (shouldQuerySupabase()) {
     try {
-      const projects = await getProjectsFromSupabase();
+      const projects = await getProjectsFromSupabase(includeDrafts);
       if (projects && projects.length > 0) return projects;
     } catch (err) {
       console.warn('[DataService] Supabase getProjects failed, falling back to mock data:', err);

@@ -44,9 +44,14 @@ type ViewMode = 'list' | 'create' | 'edit';
 
 const EMPTY_PROJECT: Project = {
   id: '',
+  projectCode: '2601',
   title: '',
   category: 'Multi-Generational',
   mainCategory: 'Shelter',
+  categoryId: 'Shelter',
+  typologyId: 'multi-generational',
+  contractTypeId: 'comprehensive-design',
+  floorAreaSqm: 250,
   subcategory: 'Multi-Generational',
   location: 'Metro Manila, Philippines',
   year: '2026',
@@ -85,8 +90,12 @@ const PROJECT_FILTER_CATEGORIES = ['all', 'Shelter', 'Livelihood', 'Community'] 
 export default function AdminProjectsPage() {
   const { isDarkMode } = useTheme();
   const {
+    projects,
     filteredProjects,
     allCategories,
+    categories,
+    typologies,
+    contractTypes,
     searchTerm,
     setSearchTerm,
     statusFilter,
@@ -120,9 +129,24 @@ export default function AdminProjectsPage() {
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
   const startCreate = () => {
+    // Generate next code in YYNN format (e.g. 2601)
+    const curYear = new Date().getFullYear().toString().slice(-2);
+    const existingCodes = (projects || [])
+      .map((p) => p.projectCode)
+      .filter((c): c is string => Boolean(c && c.startsWith(curYear)));
+    let nextNum = 1;
+    if (existingCodes.length > 0) {
+      const nums = existingCodes
+        .map((c) => parseInt(c.slice(2), 10))
+        .filter((n) => !isNaN(n));
+      if (nums.length > 0) nextNum = Math.max(...nums) + 1;
+    }
+    const nextCode = `${curYear}${nextNum.toString().padStart(2, '0')}`;
+
     const newProj: Project = {
       ...EMPTY_PROJECT,
       id: 'project-' + Date.now(),
+      projectCode: nextCode,
     };
     initialDataRef.current = newProj;
     setFormData(newProj);
@@ -130,8 +154,24 @@ export default function AdminProjectsPage() {
   };
 
   const startEdit = (proj: Project) => {
-    initialDataRef.current = { ...proj };
-    setFormData({ ...proj });
+    const areaNum =
+      proj.floorAreaSqm ||
+      (proj.specs?.area
+        ? parseFloat(proj.specs.area.replace(/[^0-9.]/g, '')) || undefined
+        : undefined);
+    const catId = proj.categoryId || proj.mainCategory || 'Shelter';
+    const editProj: Project = {
+      ...EMPTY_PROJECT,
+      ...proj,
+      projectCode: proj.projectCode || '',
+      categoryId: catId,
+      mainCategory: catId,
+      typologyId: proj.typologyId || proj.subcategory || 'multi-generational',
+      contractTypeId: proj.contractTypeId || 'comprehensive-design',
+      floorAreaSqm: areaNum,
+    };
+    initialDataRef.current = { ...editProj };
+    setFormData({ ...editProj });
     setViewMode('edit');
   };
 
@@ -246,6 +286,44 @@ export default function AdminProjectsPage() {
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Project Code (YYNN) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.projectCode || ''}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, projectCode: e.target.value.trim() }))
+                      }
+                      placeholder="e.g. 2601"
+                      className={`${inputClass} font-mono font-semibold`}
+                    />
+                    <p className="text-micro opacity-50">
+                      Studio standard: YYNN (e.g. 2601: year 26, project #01).
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Project ID / URL Slug <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.id}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, id: e.target.value }))
+                      }
+                      placeholder="e.g. multi-generational-1"
+                      className={`${inputClass} font-mono text-mini`}
+                    />
+                    <p className="text-micro opacity-50">
+                      Public path: /works/{formData.id || 'slug'}
+                    </p>
+                  </div>
+
                   <div className="space-y-1 sm:col-span-2">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
                       Project Title <span className="text-red-500">*</span>
@@ -262,20 +340,31 @@ export default function AdminProjectsPage() {
                     />
                   </div>
 
+                  {/* Dynamic Category & Typology Cascading Dropdowns */}
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Main Category
+                      Main Category (Pillar) <span className="text-red-500">*</span>
                     </label>
                     <select
-                      value={formData.mainCategory || 'Shelter'}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, mainCategory: e.target.value }))
-                      }
+                      value={formData.categoryId || formData.mainCategory || 'Shelter'}
+                      onChange={(e) => {
+                        const newCat = e.target.value;
+                        const typologiesForCat = typologies.filter((t) => t.categoryId === newCat);
+                        const firstTypology = typologiesForCat[0];
+                        setFormData((prev) => ({
+                          ...prev,
+                          categoryId: newCat,
+                          mainCategory: newCat,
+                          typologyId: firstTypology ? firstTypology.id : '',
+                          subcategory: firstTypology ? firstTypology.name : '',
+                          category: firstTypology ? firstTypology.name : '',
+                        }));
+                      }}
                       className={inputClass}
                     >
-                      {MAIN_CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name} ({cat.tagline})
                         </option>
                       ))}
                     </select>
@@ -283,21 +372,60 @@ export default function AdminProjectsPage() {
 
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Typology / Subcategory
+                      Project Typology (Cascading) <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      value={formData.category}
-                      onChange={(e) =>
+                    <select
+                      value={formData.typologyId || ''}
+                      onChange={(e) => {
+                        const typId = e.target.value;
+                        const found = typologies.find((t) => t.id === typId);
                         setFormData((prev) => ({
                           ...prev,
-                          category: e.target.value,
-                          subcategory: e.target.value,
-                        }))
-                      }
-                      placeholder="e.g. Vacation Homes, Tiny Living"
+                          typologyId: typId,
+                          subcategory: found ? found.name : typId,
+                          category: found ? found.name : typId,
+                        }));
+                      }}
                       className={inputClass}
-                    />
+                    >
+                      {typologies
+                        .filter((t) => t.categoryId === (formData.categoryId || formData.mainCategory || 'Shelter'))
+                        .map((typ) => (
+                          <option key={typ.id} value={typ.id}>
+                            {typ.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  {/* Contract Type / Scope of Services */}
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Governing Contract Type / Engagement Model
+                    </label>
+                    <select
+                      value={formData.contractTypeId || ''}
+                      onChange={(e) => {
+                        const cId = e.target.value;
+                        const found = contractTypes.find((c) => c.id === cId);
+                        setFormData((prev) => ({
+                          ...prev,
+                          contractTypeId: cId,
+                          specs: {
+                            ...prev.specs,
+                            scope: found ? `${found.name} (${found.contractModel})` : prev.specs?.scope || '',
+                          },
+                        }));
+                      }}
+                      className={inputClass}
+                    >
+                      <option value="">-- Choose Contract Engagement Model --</option>
+                      {contractTypes.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} — {c.contractModel} ({c.code})
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="space-y-1">
@@ -373,24 +501,6 @@ export default function AdminProjectsPage() {
                       ))}
                     </select>
                   </div>
-
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Project ID / URL Slug
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.id}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, id: e.target.value }))
-                      }
-                      placeholder="e.g. multi-generational-1"
-                      className={`${inputClass} font-mono text-mini`}
-                    />
-                    <p className="text-micro opacity-50">
-                      Public path: /works/{formData.id || 'slug'}
-                    </p>
-                  </div>
                 </div>
               </div>
 
@@ -463,20 +573,33 @@ export default function AdminProjectsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Floor Area
+                      Floor Area (sqm)
                     </label>
-                    <input
-                      type="text"
-                      value={formData.specs?.area || ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          specs: { ...prev.specs, area: e.target.value },
-                        }))
-                      }
-                      placeholder="e.g. 140 sqm"
-                      className={inputClass}
-                    />
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.floorAreaSqm !== undefined ? formData.floorAreaSqm : ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const num = val ? parseFloat(val) : undefined;
+                          setFormData((prev) => ({
+                            ...prev,
+                            floorAreaSqm: num,
+                            specs: {
+                              ...prev.specs,
+                              area: num !== undefined ? `${num} sqm` : '',
+                            },
+                          }));
+                        }}
+                        placeholder="e.g. 250"
+                        className={`${inputClass} pr-12`}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-mini opacity-40 font-mono pointer-events-none">
+                        sqm
+                      </span>
+                    </div>
                   </div>
 
                   <div className="space-y-1">
@@ -840,9 +963,16 @@ export default function AdminProjectsPage() {
                     {/* Card Content */}
                     <div className="p-5 space-y-3">
                       <div>
-                        <span className="text-micro font-mono uppercase tracking-wider text-space-sparkle block">
-                          {project.category || project.mainCategory}
-                        </span>
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          {project.projectCode && (
+                            <span className="text-micro font-mono font-bold px-1.5 py-0.5 rounded bg-space-sparkle/15 text-space-sparkle">
+                              {project.projectCode}
+                            </span>
+                          )}
+                          <span className="text-micro font-mono uppercase tracking-wider text-space-sparkle block">
+                            {project.category || project.mainCategory}
+                          </span>
+                        </div>
                         <h3 className="font-bold text-caption sm:text-body line-clamp-1">
                           {project.title}
                         </h3>

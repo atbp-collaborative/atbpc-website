@@ -6,9 +6,13 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Project } from '@/types';
+import { Project, ProjectCategoryItem, ProjectTypologyItem, ContractTypeItem } from '@/types';
+import { getProjects as getProjectsFromDataService } from '@/services/dummy-data.service';
 import {
-  getProjects,
+  getProjects as getProjectsStorage,
+  getProjectCategories,
+  getProjectTypologies,
+  getContractTypes,
   saveProject as saveProjectStorage,
   deleteProject as deleteProjectStorage,
   toggleProjectDraft as toggleProjectDraftStorage,
@@ -17,6 +21,11 @@ import {
   disassociateMemberFromProject,
   ProjectTeamMemberEntry,
 } from '@/services/mock/adminMockStorage';
+import {
+  saveProjectAction,
+  deleteProjectAction,
+  toggleProjectDraftAction,
+} from '@/app/actions/admin-mutations';
 import { toast } from 'sonner';
 
 export type ProjectStatusFilter = 'all' | 'completed' | 'ongoing' | 'schematics';
@@ -32,11 +41,18 @@ export function useAdminProjects() {
   const [typologyFilter, setTypologyFilter] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
     setIsLoading(true);
-    const data = getProjects();
-    setProjects(data);
-    setIsLoading(false);
+    try {
+      const data = await getProjectsFromDataService(true);
+      setProjects(data);
+    } catch (err) {
+      console.warn('Failed to fetch projects from Supabase, falling back to local storage:', err);
+      const data = getProjectsStorage();
+      setProjects(data);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -58,9 +74,9 @@ export function useAdminProjects() {
       const matchesSearch =
         !term ||
         project.title.toLowerCase().includes(term) ||
-        project.location.toLowerCase().includes(term) ||
+        (typeof project.location === 'string' && project.location.toLowerCase().includes(term)) ||
         (project.category && project.category.toLowerCase().includes(term)) ||
-        (project.year && project.year.toLowerCase().includes(term));
+        (project.year && String(project.year).toLowerCase().includes(term));
 
       const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
 
@@ -89,8 +105,16 @@ export function useAdminProjects() {
     });
   }, [projects, searchTerm, statusFilter, visibilityFilter, categoryFilter, typologyFilter]);
 
-  const saveProject = useCallback((projectData: Project) => {
-    const saved = saveProjectStorage(projectData);
+  const saveProject = useCallback(async (projectData: Project) => {
+    saveProjectStorage(projectData);
+
+    const res = await saveProjectAction(projectData);
+    if (!res.success) {
+      toast.error(`Database error: ${res.error}`);
+      return projectData;
+    }
+
+    const saved = res.data || projectData;
     setProjects((prev) => {
       const idx = prev.findIndex((p) => p.id === saved.id);
       if (idx >= 0) {
@@ -100,24 +124,39 @@ export function useAdminProjects() {
       }
       return [saved, ...prev];
     });
-    toast.success(`Project "${saved.title}" saved successfully`);
+    toast.success(`Project "${saved.title}" saved successfully to database`);
     return saved;
   }, []);
 
-  const deleteProject = useCallback((id: string) => {
+  const deleteProject = useCallback(async (id: string) => {
     const target = projects.find((p) => p.id === id);
     deleteProjectStorage(id);
     setProjects((prev) => prev.filter((p) => p.id !== id));
-    toast.success(`Project "${target?.title || id}" removed`);
+
+    const res = await deleteProjectAction(id);
+    if (!res.success) {
+      toast.error(`Database error: ${res.error}`);
+      return;
+    }
+    toast.success(`Project "${target?.title || id}" removed from database`);
   }, [projects]);
 
-  const toggleDraft = useCallback((id: string) => {
-    const updated = toggleProjectDraftStorage(id);
-    if (updated) {
-      setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, isDraft: updated.isDraft } : p)));
-      toast.info(`Project status set to ${updated.isDraft ? 'Draft' : 'Published'}`);
+  const toggleDraft = useCallback(async (id: string) => {
+    const target = projects.find((p) => p.id === id);
+    const newDraftState = !target?.isDraft;
+
+    toggleProjectDraftStorage(id);
+    setProjects((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, isDraft: newDraftState } : p))
+    );
+
+    const res = await toggleProjectDraftAction(id, newDraftState);
+    if (!res.success) {
+      toast.error(`Database error: ${res.error}`);
+      return;
     }
-  }, []);
+    toast.info(`Project status set to ${newDraftState ? 'Draft' : 'Published'}`);
+  }, [projects]);
 
   const getTeamForProject = useCallback((projectId: string): ProjectTeamMemberEntry[] => {
     return getTeamMembersForProject(projectId);
@@ -150,6 +189,9 @@ export function useAdminProjects() {
     setCategoryFilter,
     typologyFilter,
     setTypologyFilter,
+    categories: useMemo(() => getProjectCategories(), []),
+    typologies: useMemo(() => getProjectTypologies(), []),
+    contractTypes: useMemo(() => getContractTypes(), []),
     isLoading,
     refresh,
     saveProject,

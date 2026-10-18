@@ -6,13 +6,22 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Member, MemberCategory } from '@/types';
+import { Member, MemberCategory, Track } from '@/types';
 import {
-  getMembers,
+  getMembers as getMembersFromDataService,
+} from '@/services/dummy-data.service';
+import {
+  getMembers as getMembersStorage,
+  getTracks,
   saveMember as saveMemberStorage,
   deleteMember as deleteMemberStorage,
   toggleMemberDraft as toggleMemberDraftStorage,
 } from '@/services/mock/adminMockStorage';
+import {
+  savePersonAction,
+  deletePersonAction,
+  togglePersonDraftAction,
+} from '@/app/actions/admin-mutations';
 import { toast } from 'sonner';
 
 export type PeopleClassificationFilter = 'all' | MemberCategory;
@@ -25,11 +34,27 @@ export function useAdminPeople() {
   const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>('all');
   const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
     setIsLoading(true);
-    const data = getMembers();
-    setMembers(data);
-    setIsLoading(false);
+    try {
+      const data = await getMembersFromDataService(true);
+      setMembers(data);
+
+      // Check if user created any local members before live Supabase sync
+      const local = getMembersStorage();
+      for (const m of local) {
+        if (!data.some((dbM) => dbM.id === m.id || dbM.name.toLowerCase() === m.name.toLowerCase())) {
+          console.log(`[useAdminPeople] Syncing local member "${m.name}" to Supabase...`);
+          await savePersonAction(m);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch people from Supabase, falling back to local storage:', err);
+      const data = getMembersStorage();
+      setMembers(data);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -61,8 +86,17 @@ export function useAdminPeople() {
     });
   }, [members, searchTerm, classificationFilter, visibilityFilter]);
 
-  const saveMember = useCallback((memberData: Member) => {
-    const saved = saveMemberStorage(memberData);
+  const saveMember = useCallback(async (memberData: Member) => {
+    // Keep local storage synchronized as backup
+    saveMemberStorage(memberData);
+
+    const res = await savePersonAction(memberData);
+    if (!res.success) {
+      toast.error(`Database error: ${res.error}`);
+      return memberData;
+    }
+
+    const saved = res.data || memberData;
     setMembers((prev) => {
       const idx = prev.findIndex((m) => m.id === saved.id);
       if (idx >= 0) {
@@ -72,24 +106,39 @@ export function useAdminPeople() {
       }
       return [saved, ...prev];
     });
-    toast.success(`Member "${saved.name}" saved successfully`);
+    toast.success(`Member "${saved.name}" saved successfully to database`);
     return saved;
   }, []);
 
-  const deleteMember = useCallback((id: string) => {
+  const deleteMember = useCallback(async (id: string) => {
     const target = members.find((m) => m.id === id);
     deleteMemberStorage(id);
     setMembers((prev) => prev.filter((m) => m.id !== id));
-    toast.success(`Member "${target?.name || id}" removed`);
+
+    const res = await deletePersonAction(id);
+    if (!res.success) {
+      toast.error(`Database error: ${res.error}`);
+      return;
+    }
+    toast.success(`Member "${target?.name || id}" removed from database`);
   }, [members]);
 
-  const toggleDraft = useCallback((id: string) => {
-    const updated = toggleMemberDraftStorage(id);
-    if (updated) {
-      setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, isDraft: updated.isDraft } : m)));
-      toast.info(`Member status set to ${updated.isDraft ? 'Draft' : 'Published'}`);
+  const toggleDraft = useCallback(async (id: string) => {
+    const target = members.find((m) => m.id === id);
+    const newDraftState = !target?.isDraft;
+
+    toggleMemberDraftStorage(id);
+    setMembers((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, isDraft: newDraftState } : m))
+    );
+
+    const res = await togglePersonDraftAction(id, newDraftState);
+    if (!res.success) {
+      toast.error(`Database error: ${res.error}`);
+      return;
     }
-  }, []);
+    toast.info(`Member status set to ${newDraftState ? 'Draft' : 'Published'}`);
+  }, [members]);
 
   return {
     members,
@@ -100,6 +149,7 @@ export function useAdminPeople() {
     setClassificationFilter,
     visibilityFilter,
     setVisibilityFilter,
+    tracks: useMemo(() => getTracks(), []),
     isLoading,
     refresh,
     saveMember,

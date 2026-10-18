@@ -13,6 +13,7 @@ import {
   Users,
   FolderKanban,
   FileText,
+  Layers,
   LogOut,
   X,
   ShieldCheck,
@@ -52,6 +53,12 @@ const NAV_ITEMS = [
     href: '/admin/projects',
     icon: FolderKanban,
     subtitle: 'works/ portfolio',
+  },
+  {
+    name: 'Manage Content',
+    href: '/admin/content',
+    icon: Layers,
+    subtitle: 'pages, stages, services & CMS',
   },
   {
     name: 'Manage General Info',

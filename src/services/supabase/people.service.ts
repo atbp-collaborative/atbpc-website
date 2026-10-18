@@ -8,8 +8,8 @@ function formatFullName(first: string, middle: string | null | undefined, last: 
   return `${first.trim()} ${last.trim()}`;
 }
 
-export async function getPeopleFromSupabase(): Promise<Member[]> {
-  const { data: people, error } = await supabasePublic
+export async function getPeopleFromSupabase(includeDrafts: boolean = false): Promise<Member[]> {
+  let query = supabasePublic
     .from('people')
     .select(`
       *,
@@ -21,8 +21,13 @@ export async function getPeopleFromSupabase(): Promise<Member[]> {
         project:projects(id, project_title)
       )
     `)
-    .eq('is_draft', false)
     .order('display_order', { ascending: true });
+
+  if (!includeDrafts) {
+    query = query.eq('is_draft', false);
+  }
+
+  const { data: people, error } = await query;
 
   if (error || !people) {
     console.error('Error fetching people from Supabase:', error);

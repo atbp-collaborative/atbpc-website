@@ -20,6 +20,7 @@ import {
   associateMemberToProject as associateMemberToProjectStorage,
   disassociateMemberFromProject as disassociateMemberFromProjectStorage,
 } from '@/services/mock/adminMockStorage';
+import { saveRoleAction, deleteRoleAction } from '@/app/actions/admin-mutations';
 import { memberHasRole } from '@/lib/roles/role-helpers';
 import { toast } from 'sonner';
 
@@ -183,8 +184,16 @@ export function useAdminRoles() {
   }, [members, selectedProjectId, categoryFilter, searchTerm]);
 
   // CRUD for Roles
-  const saveRole = useCallback((roleData: Role) => {
-    const saved = saveRoleStorage(roleData);
+  const saveRole = useCallback(async (roleData: Role) => {
+    saveRoleStorage(roleData);
+
+    const res = await saveRoleAction(roleData);
+    if (!res.success) {
+      toast.error(`Database error: ${res.error}`);
+      return roleData;
+    }
+
+    const saved = res.data || roleData;
     setRoles((prev) => {
       const idx = prev.findIndex((r) => r.id === saved.id);
       if (idx >= 0) {
@@ -194,11 +203,11 @@ export function useAdminRoles() {
       }
       return [saved, ...prev];
     });
-    toast.success(`Role "${saved.title}" saved successfully`);
+    toast.success(`Role "${saved.title}" saved successfully to database`);
     return saved;
   }, []);
 
-  const deleteRole = useCallback((id: string) => {
+  const deleteRole = useCallback(async (id: string) => {
     const target = roles.find((r) => r.id === id);
     deleteRoleStorage(id);
     setRoles((prev) => prev.filter((r) => r.id !== id));
@@ -214,7 +223,13 @@ export function useAdminRoles() {
         return m;
       })
     );
-    toast.success(`Role "${target?.title || id}" removed`);
+
+    const res = await deleteRoleAction(id);
+    if (!res.success) {
+      toast.error(`Database error: ${res.error}`);
+      return;
+    }
+    toast.success(`Role "${target?.title || id}" removed from database`);
   }, [roles]);
 
   const toggleDraft = useCallback((id: string) => {

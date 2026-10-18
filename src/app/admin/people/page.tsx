@@ -45,11 +45,27 @@ type DisplayMode = 'list' | 'grid';
 const EMPTY_MEMBER: Member = {
   id: '',
   name: '',
+  firstName: '',
+  middleName: '',
+  lastName: '',
+  pseudonym: '',
+  pronouns: '',
+  titles: '',
   role: '',
+  primaryRoleId: '',
+  trackId: 'PROF',
   license: '',
+  professionalLicenseTitle: '',
+  licenseNumber: '',
   image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop',
   bio: '',
   fullBio: '',
+  personalEmail: '',
+  contactNumber: '',
+  portfolioUrl: '',
+  dateOfHiring: '',
+  dateOfSeparation: '',
+  isCurrentlyHired: true,
   affiliations: [],
   categories: ['designers'],
   involvement: [],
@@ -66,6 +82,7 @@ export default function AdminPeoplePage() {
     setClassificationFilter,
     visibilityFilter,
     setVisibilityFilter,
+    tracks,
     saveMember,
     deleteMember,
     toggleDraft,
@@ -107,8 +124,49 @@ export default function AdminPeoplePage() {
   };
 
   const startEdit = (member: Member) => {
-    initialDataRef.current = { ...member };
-    setFormData({ ...member });
+    // Populate atomic names if missing
+    let fName = member.firstName || '';
+    let mName = member.middleName || '';
+    let lName = member.lastName || '';
+    if (!fName && member.name) {
+      const parts = member.name.trim().split(/\s+/);
+      if (parts.length === 1) {
+        fName = parts[0];
+      } else if (parts.length === 2) {
+        fName = parts[0];
+        lName = parts[1];
+      } else {
+        fName = parts[0];
+        mName = parts.slice(1, -1).join(' ');
+        lName = parts[parts.length - 1];
+      }
+    }
+
+    const matchedRole = allRoles.find((r) => r.id === member.primaryRoleId || r.title === member.role);
+
+    const editData: Member = {
+      ...EMPTY_MEMBER,
+      ...member,
+      firstName: fName,
+      middleName: mName,
+      lastName: lName,
+      pseudonym: member.pseudonym || '',
+      pronouns: member.pronouns || '',
+      titles: member.titles || '',
+      primaryRoleId: matchedRole ? matchedRole.id : member.primaryRoleId || '',
+      role: matchedRole ? matchedRole.title : member.role,
+      trackId: member.trackId || 'PROF',
+      professionalLicenseTitle: member.professionalLicenseTitle || (member.license && isNaN(Number(member.license)) ? member.license : ''),
+      licenseNumber: member.licenseNumber || (member.license && !isNaN(Number(member.license)) ? member.license : ''),
+      personalEmail: member.personalEmail || '',
+      contactNumber: member.contactNumber || '',
+      portfolioUrl: member.portfolioUrl || '',
+      dateOfHiring: member.dateOfHiring || '',
+      dateOfSeparation: member.dateOfSeparation || '',
+      isCurrentlyHired: member.isCurrentlyHired !== undefined ? member.isCurrentlyHired : true,
+    };
+    initialDataRef.current = { ...editData };
+    setFormData({ ...editData });
     setViewMode('edit');
   };
 
@@ -221,46 +279,153 @@ export default function AdminPeoplePage() {
                   General Information
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1 sm:col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Full Name <span className="text-red-500">*</span>
+                      First Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       required
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, name: e.target.value }))
-                      }
-                      placeholder="e.g. Marchie Teodoro Borja"
+                      value={formData.firstName || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const m = formData.middleName || '';
+                        const l = formData.lastName || '';
+                        const fullName = [val.trim(), m.trim(), l.trim()].filter(Boolean).join(' ');
+                        setFormData((prev) => ({ ...prev, firstName: val, name: fullName }));
+                      }}
+                      placeholder="e.g. Marchie"
                       className={inputClass}
                     />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Studio Role / Title <span className="text-red-500">*</span>
+                      Middle Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.middleName || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const f = formData.firstName || '';
+                        const l = formData.lastName || '';
+                        const fullName = [f.trim(), val.trim(), l.trim()].filter(Boolean).join(' ');
+                        setFormData((prev) => ({ ...prev, middleName: val, name: fullName }));
+                      }}
+                      placeholder="e.g. Teodoro"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.lastName || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const f = formData.firstName || '';
+                        const m = formData.middleName || '';
+                        const fullName = [f.trim(), m.trim(), val.trim()].filter(Boolean).join(' ');
+                        setFormData((prev) => ({ ...prev, lastName: val, name: fullName }));
+                      }}
+                      placeholder="e.g. Borja"
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Studio Nickname / Pseudonym
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.pseudonym || ''}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, pseudonym: e.target.value }))}
+                      placeholder="e.g. Archie"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Prefix Titles
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.titles || ''}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, titles: e.target.value }))}
+                      placeholder="e.g. Arch., Engr., IDr."
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Pronouns
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.pronouns || ''}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, pronouns: e.target.value }))}
+                      placeholder="e.g. He/Him, She/Her, They/Them"
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Studio Track <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.trackId || 'PROF'}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, trackId: e.target.value }))}
+                      className={inputClass}
+                    >
+                      {tracks.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} ({t.code})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Primary Studio Role <span className="text-red-500">*</span>
                     </label>
                     <select
                       required
-                      value={formData.role}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, role: e.target.value }))
-                      }
+                      value={formData.primaryRoleId || formData.role}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const matched = allRoles.find((r) => r.id === val || r.title === val);
+                        setFormData((prev) => ({
+                          ...prev,
+                          primaryRoleId: matched ? matched.id : val,
+                          role: matched ? matched.title : val,
+                        }));
+                      }}
                       className={inputClass}
                     >
                       <option value="">-- Choose Studio Role --</option>
-                      {/* Preserve custom role if not in preset roles */}
-                      {formData.role &&
-                        !allRoles.some((r) => r.title === formData.role) && (
-                          <option value={formData.role}>{formData.role} (Current / Custom)</option>
-                        )}
+                      {formData.role && !allRoles.some((r) => r.id === formData.primaryRoleId || r.title === formData.role) && (
+                        <option value={formData.role}>{formData.role} (Custom)</option>
+                      )}
                       {designerRoles.length > 0 && (
                         <optgroup label="Designers">
                           {designerRoles.map((r) => (
-                            <option key={r.id} value={r.title}>
-                              {r.title}
+                            <option key={r.id} value={r.id}>
+                              {r.title} ({r.code || 'ROLE'})
                             </option>
                           ))}
                         </optgroup>
@@ -268,8 +433,8 @@ export default function AdminPeoplePage() {
                       {managerRoles.length > 0 && (
                         <optgroup label="Managers">
                           {managerRoles.map((r) => (
-                            <option key={r.id} value={r.title}>
-                              {r.title}
+                            <option key={r.id} value={r.id}>
+                              {r.title} ({r.code || 'ROLE'})
                             </option>
                           ))}
                         </optgroup>
@@ -277,28 +442,13 @@ export default function AdminPeoplePage() {
                       {builderRoles.length > 0 && (
                         <optgroup label="Builders">
                           {builderRoles.map((r) => (
-                            <option key={r.id} value={r.title}>
-                              {r.title}
+                            <option key={r.id} value={r.id}>
+                              {r.title} ({r.code || 'ROLE'})
                             </option>
                           ))}
                         </optgroup>
                       )}
                     </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      PRC / Professional License (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.license || ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, license: e.target.value }))
-                      }
-                      placeholder="e.g. 0054827"
-                      className={inputClass}
-                    />
                   </div>
 
                   <div className="space-y-1 sm:col-span-2">
@@ -317,6 +467,162 @@ export default function AdminPeoplePage() {
                     <p className="text-micro opacity-50">
                       Used for public routing: /studio/our-people/{formData.id || 'slug'}
                     </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Professional Licensure */}
+              <div
+                className={`p-6 rounded-xl border space-y-4 ${
+                  isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+                }`}
+              >
+                <h3 className="text-caption font-semibold uppercase tracking-wider opacity-70 border-b pb-2 border-black/5 dark:border-white/5">
+                  Professional Licensure
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      License Title (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.professionalLicenseTitle || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          professionalLicenseTitle: val,
+                          license: prev.licenseNumber ? `${val} ${prev.licenseNumber}`.trim() : val,
+                        }));
+                      }}
+                      placeholder="e.g. RLA, RMP, CE"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      License Registration Number (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.licenseNumber || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          licenseNumber: val,
+                          license: prev.professionalLicenseTitle ? `${prev.professionalLicenseTitle} ${val}`.trim() : val,
+                        }));
+                      }}
+                      placeholder="e.g. 0054827"
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Employment Status & Dates */}
+              <div
+                className={`p-6 rounded-xl border space-y-4 ${
+                  isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+                }`}
+              >
+                <h3 className="text-caption font-semibold uppercase tracking-wider opacity-70 border-b pb-2 border-black/5 dark:border-white/5">
+                  Employment &amp; Engagement
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Employment Status
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, isCurrentlyHired: !prev.isCurrentlyHired }))}
+                      className={`w-full py-2 px-3 rounded-lg text-mini font-semibold uppercase tracking-wider transition-colors border cursor-pointer ${
+                        formData.isCurrentlyHired
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                          : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                      }`}
+                    >
+                      {formData.isCurrentlyHired ? '● Currently Hired' : '○ Separated / Alumni'}
+                    </button>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Date of Hiring
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.dateOfHiring || ''}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, dateOfHiring: e.target.value }))}
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Date of Separation
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.dateOfSeparation || ''}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, dateOfSeparation: e.target.value }))}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4: Contact & Channels */}
+              <div
+                className={`p-6 rounded-xl border space-y-4 ${
+                  isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+                }`}
+              >
+                <h3 className="text-caption font-semibold uppercase tracking-wider opacity-70 border-b pb-2 border-black/5 dark:border-white/5">
+                  Contact &amp; Profiles
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Personal Email
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.personalEmail || ''}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, personalEmail: e.target.value }))}
+                      placeholder="e.g. marchie@example.com"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Contact Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.contactNumber || ''}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, contactNumber: e.target.value }))}
+                      placeholder="e.g. +63 917 123 4567"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Portfolio / External URL
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.portfolioUrl || ''}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, portfolioUrl: e.target.value }))}
+                      placeholder="e.g. https://marchieborja.com"
+                      className={inputClass}
+                    />
                   </div>
                 </div>
               </div>

@@ -5,13 +5,14 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Shield, Save } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { Role, RoleCategory, RoleTrack } from '@/types';
 import { Button } from '@/components/primitives/buttons/Button';
 import { formatCategoryLabel, formatTrackLabel } from '@/lib/roles/role-helpers';
+import { getTracks } from '@/services/mock/adminMockStorage';
 
 interface RoleFormModalProps {
   isOpen: boolean;
@@ -26,8 +27,10 @@ const EMPTY_ROLE: Role = {
   code: '',
   category: 'designers',
   track: 'professionals',
+  trackId: 'PROF',
   department: '',
   description: '',
+  isActive: true,
   isDraft: false,
 };
 
@@ -38,12 +41,18 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
   onClose,
 }) => {
   const { isDarkMode } = useTheme();
+  const tracks = useMemo(() => getTracks(), []);
   const [formData, setFormData] = useState<Role>(EMPTY_ROLE);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (role) {
-      setFormData({ ...role });
+      setFormData({
+        ...EMPTY_ROLE,
+        ...role,
+        trackId: role.trackId || (role.track === 'professionals' ? 'PROF' : 'INTERN_CHED_240'),
+        isActive: role.isActive !== undefined ? role.isActive : !role.isDraft,
+      });
     } else {
       setFormData({
         ...EMPTY_ROLE,
@@ -158,14 +167,14 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-caption font-semibold">
-                    Role Code <span className="text-micro font-normal opacity-60">(Optional)</span>
+                    Role Code <span className="text-micro font-normal opacity-60">(e.g. HRDT-07)</span>
                   </label>
                   <input
                     type="text"
                     value={formData.code || ''}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                     placeholder="e.g. HRDT-07"
-                    className={inputBaseClass}
+                    className={`${inputBaseClass} font-mono`}
                   />
                 </div>
 
@@ -202,19 +211,53 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
 
                 <div className="space-y-1">
                   <label className="text-caption font-semibold">
-                    Track <span className="text-space-sparkle">*</span>
+                    Studio Track <span className="text-space-sparkle">*</span>
                   </label>
                   <select
-                    value={formData.track}
-                    onChange={(e) =>
-                      setFormData({ ...formData, track: e.target.value as RoleTrack })
-                    }
+                    value={formData.trackId || 'PROF'}
+                    onChange={(e) => {
+                      const tId = e.target.value;
+                      const matched = tracks.find((t) => t.id === tId);
+                      setFormData({
+                        ...formData,
+                        trackId: tId,
+                        track: matched && matched.trackType === 'professional' ? 'professionals' : 'internship',
+                      });
+                    }}
                     className={inputBaseClass}
                   >
-                    <option value="professionals">Professionals</option>
-                    <option value="internship">Internship / Apprenticeship</option>
+                    {tracks.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} ({t.code})
+                      </option>
+                    ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Active Status Toggle */}
+              <div className="flex items-center justify-between p-3 rounded-lg border border-black/10 dark:border-white/10">
+                <div>
+                  <span className="text-caption font-semibold block">Role Status</span>
+                  <span className="text-micro opacity-60">Control role availability across studio assignments</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      isActive: prev.isActive !== undefined ? !prev.isActive : false,
+                      isDraft: prev.isActive !== undefined ? prev.isActive : true,
+                    }))
+                  }
+                  className={`px-3 py-1.5 rounded-lg text-mini font-semibold uppercase tracking-wider transition-colors border cursor-pointer ${
+                    formData.isActive !== false
+                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                      : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                  }`}
+                >
+                  {formData.isActive !== false ? '● Active' : '○ Inactive / Draft'}
+                </button>
               </div>
 
               {/* Description */}

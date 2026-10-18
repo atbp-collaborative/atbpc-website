@@ -3,10 +3,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+export interface ProjectMediaItem {
+  id?: string;
+  mediaUrl: string;
+  caption?: string;
+  isCover?: boolean;
+  sortOrder?: number;
+}
+
 export interface Project {
   id: string;
+  projectCode?: string; // YYNN format, e.g. 2601
   title: string;
   category: string;
+  categoryId?: string;
+  typologyId?: string;
+  contractTypeId?: string;
+  floorAreaSqm?: number;
   mainCategory?: 'Shelter' | 'Livelihood' | 'Community' | 'Residential' | 'Commercial' | 'Institutional' | string;
   subcategory?: string;
   location: string;
@@ -15,6 +28,7 @@ export interface Project {
   description: string;
   fullWriteup: string;
   images: string[];
+  media?: ProjectMediaItem[];
   video?: string;
   status: 'completed' | 'ongoing' | 'schematics';
   isDraft?: boolean;
@@ -25,6 +39,7 @@ export interface Project {
     materials?: string[];
   };
 }
+
 
 export interface SurveyResponse {
   name: string;
@@ -100,8 +115,10 @@ export interface Role {
   code?: string;
   category: RoleCategory;
   track: RoleTrack;
+  trackId?: string;
   department?: string;
   description?: string;
+  isActive?: boolean;
   isDraft?: boolean;
 }
 
@@ -114,7 +131,7 @@ export interface Member {
   id: string;
   name: string;
   firstName?: string;
-  middleName?: string;
+  middleName?: string | null;
   lastName?: string;
   pseudonym?: string;
   pronouns?: string;

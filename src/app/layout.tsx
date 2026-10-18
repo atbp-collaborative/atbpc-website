@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { AppShell } from '@/components/global/AppShell';
+import { getSitePagesData } from '@/services/dummy-data.service';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -19,11 +20,12 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const headersList = await headers();
   const isUnderConstruction = headersList.get('x-under-construction') === 'true';
+  const sitePages = await getSitePagesData();
 
   return (
     <html lang="en">
       <body>
-        <AppShell isUnderConstruction={isUnderConstruction}>{children}</AppShell>
+        <AppShell isUnderConstruction={isUnderConstruction} sitePages={sitePages}>{children}</AppShell>
       </body>
     </html>
   );

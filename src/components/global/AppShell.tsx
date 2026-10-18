@@ -10,12 +10,21 @@ import { Footer } from '@/components/global/Footer';
 import { MobileDrawer } from '@/components/global/MobileDrawer';
 import { LegalPrivacyModals } from '@/components/modals/LegalPrivacyModals';
 import { Toaster } from 'sonner';
+import { SitePage } from '@/types';
 
 // Paths that keep the ordinary scrollable min-h-screen layout instead of the
 // locked full-viewport h-screen treatment used by the marketing/landing pages.
 const SCROLLABLE_PATHS = ['/our-services', '/under-construction'];
 
-function AppShellInner({ children, isUnderConstruction }: { children: ReactNode, isUnderConstruction?: boolean }) {
+function AppShellInner({
+  children,
+  isUnderConstruction,
+  sitePages,
+}: {
+  children: ReactNode;
+  isUnderConstruction?: boolean;
+  sitePages?: SitePage[];
+}) {
   const { isDarkMode, toggleTheme } = useTheme();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -56,7 +65,11 @@ function AppShellInner({ children, isUnderConstruction }: { children: ReactNode,
     >
       {!hideHeader && (
         <Suspense fallback={null}>
-          <Header isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
+          <Header
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+            sitePages={sitePages}
+          />
         </Suspense>
       )}
 
@@ -64,6 +77,7 @@ function AppShellInner({ children, isUnderConstruction }: { children: ReactNode,
         <MobileDrawer 
           isMobileMenuOpen={isMobileMenuOpen} 
           setIsMobileMenuOpen={setIsMobileMenuOpen}
+          sitePages={sitePages}
           isProtectionEnabled={isProtectionEnabled}
           onToggleProtection={() => setIsProtectionEnabled((prev) => !prev)}
           onOpenLegal={() => setIsLegalModalOpen(true)}
@@ -100,10 +114,20 @@ function AppShellInner({ children, isUnderConstruction }: { children: ReactNode,
   );
 }
 
-export function AppShell({ children, isUnderConstruction }: { children: ReactNode, isUnderConstruction?: boolean }) {
+export function AppShell({
+  children,
+  isUnderConstruction,
+  sitePages,
+}: {
+  children: ReactNode;
+  isUnderConstruction?: boolean;
+  sitePages?: SitePage[];
+}) {
   return (
     <ThemeProvider>
-      <AppShellInner isUnderConstruction={isUnderConstruction}>{children}</AppShellInner>
+      <AppShellInner isUnderConstruction={isUnderConstruction} sitePages={sitePages}>
+        {children}
+      </AppShellInner>
     </ThemeProvider>
   );
 }

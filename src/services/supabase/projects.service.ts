@@ -1,8 +1,8 @@
 import { supabasePublic } from '@/lib/supabase/public';
 import { Project } from '@/types';
 
-export async function getProjectsFromSupabase(): Promise<Project[]> {
-  const { data: projects, error } = await supabasePublic
+export async function getProjectsFromSupabase(includeDrafts: boolean = false): Promise<Project[]> {
+  let query = supabasePublic
     .from('projects')
     .select(`
       *,
@@ -11,8 +11,13 @@ export async function getProjectsFromSupabase(): Promise<Project[]> {
       typology:project_typologies(id, name),
       contract:contract_types(id, name)
     `)
-    .eq('is_draft', false)
     .order('sort_order', { ascending: true });
+
+  if (!includeDrafts) {
+    query = query.eq('is_draft', false);
+  }
+
+  const { data: projects, error } = await query;
 
   if (error || !projects) {
     console.error('Error fetching projects from Supabase:', error);

@@ -3,7 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Member, Project, AdminUser, StudioWriteups, Role } from '@/types';
+import {
+  Member,
+  Project,
+  AdminUser,
+  StudioWriteups,
+  Role,
+  Track,
+  ProjectCategoryItem,
+  ProjectTypologyItem,
+  ContractTypeItem,
+} from '@/types';
 import { MEMBERS_DATA } from '@/lib/dummy-data/works/members';
 import { PROJECTS_DATA } from '@/lib/dummy-data/works/projects';
 import { INITIAL_ROLES_DATA } from '@/lib/dummy-data/roles/roles-data';
@@ -16,6 +26,10 @@ const STORAGE_KEYS = {
   MEMBERS: 'atbp_admin_members_v1',
   PROJECTS: 'atbp_admin_projects_v1',
   ROLES: 'atbp_admin_roles_v1',
+  TRACKS: 'atbp_admin_tracks_v1',
+  CATEGORIES: 'atbp_admin_categories_v1',
+  TYPOLOGIES: 'atbp_admin_typologies_v1',
+  CONTRACT_TYPES: 'atbp_admin_contract_types_v1',
   CONTACT: 'atbp_admin_contact_v1',
   PRIVACY: 'atbp_admin_privacy_v1',
   LEGAL: 'atbp_admin_legal_v1',
@@ -502,6 +516,117 @@ export function setMemberRoles(memberId: string, roleIds: string[]): void {
 }
 
 // ==========================================
+// TRACKS, CATEGORIES, TYPOLOGIES, CONTRACT TYPES
+// ==========================================
+
+export const INITIAL_TRACKS_DATA: Track[] = [
+  {
+    id: 'PROF',
+    code: 'PROF',
+    name: 'Professional Practice',
+    trackType: 'professional',
+    requiredHours: null,
+    governingBody: 'PRC / BOA / Internal',
+    description: 'Full-time licensed and experienced studio professionals directing design, engineering, and construction.',
+    sortOrder: 10,
+  },
+  {
+    id: 'INTERN_CHED_240',
+    code: 'INT-CHED',
+    name: 'Curriculum-based Architecture Intern',
+    trackType: 'internship',
+    requiredHours: 240,
+    governingBody: 'CHED CMO No. 104, Series of 2017',
+    description: 'Academic internship for undergraduate architecture students completing curriculum requirements.',
+    sortOrder: 20,
+  },
+  {
+    id: 'INTERN_VOC',
+    code: 'INT-VOC',
+    name: 'Vocational Technical Intern',
+    trackType: 'internship',
+    requiredHours: 300,
+    governingBody: 'TESDA',
+    description: 'Vocational technical hands-on internship for National Certificate (NC) holders.',
+    sortOrder: 30,
+  },
+  {
+    id: 'APPRENTICE_ALE_3840',
+    code: 'APP-ALE',
+    name: 'Diversified Architectural Experience (ALE)',
+    trackType: 'apprenticeship',
+    requiredHours: 3840,
+    governingBody: 'PRC-BOA',
+    description: 'PRC-mandated 3,840 logbook hours under registered and licensed architects qualifying for the ALE.',
+    sortOrder: 40,
+  },
+];
+
+export const INITIAL_PROJECT_CATEGORIES: ProjectCategoryItem[] = [
+  {
+    id: 'Shelter',
+    name: 'Shelter',
+    tagline: 'for the way you live',
+    heroImageUrl: 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/categories/shelter.jpg',
+    sortOrder: 1,
+  },
+  {
+    id: 'Livelihood',
+    name: 'Livelihood',
+    tagline: 'where passion takes form',
+    heroImageUrl: 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/categories/livelihood.jpg',
+    sortOrder: 2,
+  },
+  {
+    id: 'Community',
+    name: 'Community',
+    tagline: 'spaces that connect us',
+    heroImageUrl: 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/categories/community.jpg',
+    sortOrder: 3,
+  },
+];
+
+export const INITIAL_PROJECT_TYPOLOGIES: ProjectTypologyItem[] = [
+  { id: 'tiny-living', categoryId: 'Shelter', name: 'Tiny Living', description: 'Compact, high-efficiency micro-dwellings and optimized tropical living spaces.', sortOrder: 10 },
+  { id: 'multi-generational', categoryId: 'Shelter', name: 'Multi-Generational', description: 'Cohesive, flexible residential compounds accommodating multi-tier family living.', sortOrder: 20 },
+  { id: 'vacation-homes', categoryId: 'Shelter', name: 'Vacation Homes', description: 'Tranquil retreat residences and tropical lifestyle estates focused on nature immersion.', sortOrder: 30 },
+  { id: 'food-and-beverage', categoryId: 'Livelihood', name: 'Food & Beverage', description: 'Specialty cafes, restaurants, and experiential culinary retail environments.', sortOrder: 40 },
+  { id: 'retail-and-lifestyle', categoryId: 'Livelihood', name: 'Retail & Lifestyle', description: 'Bespoke brand boutiques, concept stores, and commercial lifestyle spaces.', sortOrder: 50 },
+  { id: 'workspaces', categoryId: 'Livelihood', name: 'Workspaces', description: 'Collaborative corporate offices, agile production studios, and tech headquarters.', sortOrder: 60 },
+  { id: 'shared-spaces', categoryId: 'Community', name: 'Shared Spaces', description: 'Civic hubs, communal pavilions, and neighborhood activity center architecture.', sortOrder: 70 },
+  { id: 'shared-places', categoryId: 'Community', name: 'Shared Places', description: 'Urban parks, multi-use public grounds, and pedestrian gathering places.', sortOrder: 80 },
+  { id: 'sacred-structures', categoryId: 'Community', name: 'Sacred Structures', description: 'Chapels, contemplative sanctuaries, and heritage spiritual assemblies.', sortOrder: 90 },
+];
+
+export const INITIAL_CONTRACT_TYPES: ContractTypeItem[] = [
+  { id: 'comprehensive-design', code: 'SCOPE-COMP-DESIGN', name: 'Comprehensive Design Services', serviceTier: 'comprehensive', contractModel: 'Design-Build (Turnkey)', description: 'End-to-end design covering architectural, structural, MEPFS, and statutory permits.', sortOrder: 10 },
+  { id: 'comprehensive-management', code: 'SCOPE-COMP-MGMT', name: 'Comprehensive Management Services', serviceTier: 'comprehensive', contractModel: 'Construction Management', description: 'Critical path oversight, procurement direction, and subcontractor supervision.', sortOrder: 20 },
+  { id: 'building-construction', code: 'SCOPE-BUILD-CONST', name: 'Building Construction Services', serviceTier: 'construction', contractModel: 'Turnkey Construction', description: 'Ground-up general contracting, civil works, and turn-key structural execution.', sortOrder: 30 },
+  { id: 'piecework-interiors', code: 'SCOPE-PIECE-INT', name: 'Architectural Interiors & Detailing', serviceTier: 'piecework', contractModel: 'Unit-Rate Deliverables', description: 'Bespoke interior fit-out, joinery detailing, and material finish schedules.', sortOrder: 40 },
+  { id: 'consultation-retainer', code: 'SCOPE-CONSULT-RETAIN', name: 'Consultation & Retainer Services', serviceTier: 'consultation', contractModel: 'Strategic Advisory Retainer', description: 'Ongoing architectural consulting, portfolio feasibility, and client-rep audits.', sortOrder: 50 },
+];
+
+export function getTracks(): Track[] {
+  initializeAdminStorage();
+  return getStored<Track[]>(STORAGE_KEYS.TRACKS, INITIAL_TRACKS_DATA);
+}
+
+export function getProjectCategories(): ProjectCategoryItem[] {
+  initializeAdminStorage();
+  return getStored<ProjectCategoryItem[]>(STORAGE_KEYS.CATEGORIES, INITIAL_PROJECT_CATEGORIES);
+}
+
+export function getProjectTypologies(): ProjectTypologyItem[] {
+  initializeAdminStorage();
+  return getStored<ProjectTypologyItem[]>(STORAGE_KEYS.TYPOLOGIES, INITIAL_PROJECT_TYPOLOGIES);
+}
+
+export function getContractTypes(): ContractTypeItem[] {
+  initializeAdminStorage();
+  return getStored<ContractTypeItem[]>(STORAGE_KEYS.CONTRACT_TYPES, INITIAL_CONTRACT_TYPES);
+}
+
+// ==========================================
 // RESET TO SYSTEM DEFAULTS
 // ==========================================
 
@@ -510,9 +635,14 @@ export function resetAdminStorageToDefaults(): void {
   localStorage.removeItem(STORAGE_KEYS.MEMBERS);
   localStorage.removeItem(STORAGE_KEYS.PROJECTS);
   localStorage.removeItem(STORAGE_KEYS.ROLES);
+  localStorage.removeItem(STORAGE_KEYS.TRACKS);
+  localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
+  localStorage.removeItem(STORAGE_KEYS.TYPOLOGIES);
+  localStorage.removeItem(STORAGE_KEYS.CONTRACT_TYPES);
   localStorage.removeItem(STORAGE_KEYS.CONTACT);
   localStorage.removeItem(STORAGE_KEYS.PRIVACY);
   localStorage.removeItem(STORAGE_KEYS.LEGAL);
   localStorage.removeItem(STORAGE_KEYS.WRITEUPS);
   initializeAdminStorage();
 }
+
