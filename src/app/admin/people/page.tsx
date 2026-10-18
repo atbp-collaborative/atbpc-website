@@ -35,6 +35,7 @@ import {
   VisibilityFilter,
 } from '@/hooks/admin/useAdminPeople';
 import { useAdminProjects } from '@/hooks/admin/useAdminProjects';
+import { useAdminRoles } from '@/hooks/admin/useAdminRoles';
 import { useTheme } from '@/context/ThemeContext';
 import { Member, MemberCategory, MemberAffiliation, MemberInvolvement } from '@/types';
 
@@ -71,6 +72,20 @@ export default function AdminPeoplePage() {
   } = useAdminPeople();
 
   const { projects: allProjects } = useAdminProjects();
+  const { roles: allRoles } = useAdminRoles();
+
+  const designerRoles = useMemo(
+    () => allRoles.filter((r) => r.category === 'designers'),
+    [allRoles]
+  );
+  const managerRoles = useMemo(
+    () => allRoles.filter((r) => r.category === 'managers'),
+    [allRoles]
+  );
+  const builderRoles = useMemo(
+    () => allRoles.filter((r) => r.category === 'builders'),
+    [allRoles]
+  );
 
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [displayMode, setDisplayMode] = useState<DisplayMode>('list');
@@ -227,16 +242,48 @@ export default function AdminPeoplePage() {
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
                       Studio Role / Title <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
+                    <select
                       required
                       value={formData.role}
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, role: e.target.value }))
                       }
-                      placeholder="e.g. Principal Architect & Founder"
                       className={inputClass}
-                    />
+                    >
+                      <option value="">-- Choose Studio Role --</option>
+                      {/* Preserve custom role if not in preset roles */}
+                      {formData.role &&
+                        !allRoles.some((r) => r.title === formData.role) && (
+                          <option value={formData.role}>{formData.role} (Current / Custom)</option>
+                        )}
+                      {designerRoles.length > 0 && (
+                        <optgroup label="Designers">
+                          {designerRoles.map((r) => (
+                            <option key={r.id} value={r.title}>
+                              {r.title}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {managerRoles.length > 0 && (
+                        <optgroup label="Managers">
+                          {managerRoles.map((r) => (
+                            <option key={r.id} value={r.title}>
+                              {r.title}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {builderRoles.length > 0 && (
+                        <optgroup label="Builders">
+                          {builderRoles.map((r) => (
+                            <option key={r.id} value={r.title}>
+                              {r.title}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </select>
                   </div>
 
                   <div className="space-y-1">
@@ -249,7 +296,7 @@ export default function AdminPeoplePage() {
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, license: e.target.value }))
                       }
-                      placeholder="e.g. RLA License No. 0054827"
+                      placeholder="e.g. 0054827"
                       className={inputClass}
                     />
                   </div>
@@ -357,6 +404,7 @@ export default function AdminPeoplePage() {
                 <MemberInvolvementManager
                   involvements={formData.involvement || []}
                   allProjects={allProjects}
+                  allRoles={allRoles}
                   onChange={(invs) =>
                     setFormData((prev) => ({ ...prev, involvement: invs }))
                   }
@@ -375,7 +423,7 @@ export default function AdminPeoplePage() {
                 <ImageManagerField
                   single={true}
                   label="Profile Portrait"
-                  helperText="Direct image URL for member avatar."
+                  helperText="Upload a high-resolution portrait photograph."
                   images={formData.image ? [formData.image] : []}
                   onChange={(imgs) =>
                     setFormData((prev) => ({ ...prev, image: imgs[0] || '' }))

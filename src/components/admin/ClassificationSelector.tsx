@@ -34,29 +34,12 @@ export const ClassificationSelector: React.FC<ClassificationSelectorProps> = ({
     }
   };
 
-  const handleSelectAll = () => {
-    if (selected.length === CLASSIFICATIONS.length) {
-      onChange([]);
-    } else {
-      onChange(CLASSIFICATIONS.map((c) => c.key));
-    }
-  };
-
-  const isAllSelected = selected.length === CLASSIFICATIONS.length;
-
   return (
     <div className={`space-y-2 ${className}`}>
       <div className="flex items-center justify-between">
         <label className="text-caption font-semibold opacity-90">
           Professional Classifications <span className="text-red-500">*</span>
         </label>
-        <button
-          type="button"
-          onClick={handleSelectAll}
-          className="text-mini underline opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
-        >
-          {isAllSelected ? 'Deselect All' : 'Select All Classifications'}
-        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">

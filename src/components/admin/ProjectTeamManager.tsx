@@ -5,10 +5,10 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { Member } from '@/types';
-import { ProjectTeamMemberEntry } from '@/services/mock/adminMockStorage';
+import { Member, Role } from '@/types';
+import { ProjectTeamMemberEntry, getRoles } from '@/services/mock/adminMockStorage';
 import { Plus, Trash2, UserCheck, Briefcase } from 'lucide-react';
 import { Button } from '@/components/primitives/buttons/Button';
 import { useTheme } from '@/context/ThemeContext';
@@ -17,6 +17,7 @@ interface ProjectTeamManagerProps {
   projectId: string;
   team: ProjectTeamMemberEntry[];
   allMembers: Member[];
+  allRoles?: Role[];
   onAssociate: (memberId: string, roleInProject: string, description: string) => void;
   onDisassociate: (memberId: string) => void;
 }
@@ -25,13 +26,32 @@ export const ProjectTeamManager: React.FC<ProjectTeamManagerProps> = ({
   projectId,
   team = [],
   allMembers = [],
+  allRoles,
   onAssociate,
   onDisassociate,
 }) => {
   const { isDarkMode } = useTheme();
   const [selectedMemberId, setSelectedMemberId] = useState<string>('');
-  const [roleInProject, setRoleInProject] = useState<string>('');
+  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
+  const [customRole, setCustomRole] = useState<string>('');
   const [description, setDescription] = useState<string>('');
+
+  const rolesList = useMemo(() => {
+    return allRoles && allRoles.length > 0 ? allRoles : getRoles();
+  }, [allRoles]);
+
+  const designerRoles = useMemo(
+    () => rolesList.filter((r) => r.category === 'designers'),
+    [rolesList]
+  );
+  const managerRoles = useMemo(
+    () => rolesList.filter((r) => r.category === 'managers'),
+    [rolesList]
+  );
+  const builderRoles = useMemo(
+    () => rolesList.filter((r) => r.category === 'builders'),
+    [rolesList]
+  );
 
   // Members not yet assigned to this project
   const availableMembers = allMembers.filter(
@@ -40,9 +60,19 @@ export const ProjectTeamManager: React.FC<ProjectTeamManagerProps> = ({
 
   const handleAdd = () => {
     if (!selectedMemberId) return;
-    onAssociate(selectedMemberId, roleInProject.trim() || 'Contributor', description.trim());
+
+    let roleTitle = 'Contributor';
+    if (selectedRoleId === '__custom__') {
+      roleTitle = customRole.trim() || 'Contributor';
+    } else if (selectedRoleId) {
+      const foundRole = rolesList.find((r) => r.id === selectedRoleId || r.title === selectedRoleId);
+      roleTitle = foundRole ? foundRole.title : selectedRoleId;
+    }
+
+    onAssociate(selectedMemberId, roleTitle, description.trim());
     setSelectedMemberId('');
-    setRoleInProject('');
+    setSelectedRoleId('');
+    setCustomRole('');
     setDescription('');
   };
 
@@ -72,9 +102,7 @@ export const ProjectTeamManager: React.FC<ProjectTeamManagerProps> = ({
             <div
               key={t.memberId}
               className={`p-3.5 rounded-lg border flex items-center justify-between gap-3 ${
-                isDarkMode
-                  ? 'bg-white/5 border-white/10'
-                  : 'bg-black/5 border-black/10'
+                isDarkMode ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'
               }`}
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -84,6 +112,7 @@ export const ProjectTeamManager: React.FC<ProjectTeamManagerProps> = ({
                       src={t.memberImage}
                       alt={t.memberName}
                       fill
+                      unoptimized
                       sizes="40px"
                       className="object-cover"
                     />
@@ -100,11 +129,11 @@ export const ProjectTeamManager: React.FC<ProjectTeamManagerProps> = ({
                     <span className="text-micro opacity-60 truncate">({t.memberRole})</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-mini text-space-sparkle">
-                    <Briefcase size={12} className="shrink-0" />
-                    <span className="font-medium truncate">{t.roleInProject}</span>
+                    <Briefcase size={11} className="shrink-0" />
+                    <span className="font-medium">{t.roleInProject}</span>
                   </div>
                   {t.description && (
-                    <p className="text-micro opacity-60 truncate">{t.description}</p>
+                    <p className="text-micro opacity-60 leading-relaxed truncate">{t.description}</p>
                   )}
                 </div>
               </div>
@@ -113,7 +142,7 @@ export const ProjectTeamManager: React.FC<ProjectTeamManagerProps> = ({
                 type="button"
                 onClick={() => onDisassociate(t.memberId)}
                 className="p-1.5 text-red-500 hover:bg-red-500/10 rounded transition-colors cursor-pointer shrink-0"
-                title="Disassociate member from project"
+                title="Remove collaborator"
               >
                 <Trash2 size={15} />
               </button>
@@ -126,7 +155,7 @@ export const ProjectTeamManager: React.FC<ProjectTeamManagerProps> = ({
         </div>
       )}
 
-      {/* Add Member block (strictly non-modal) */}
+      {/* Add new assignment block */}
       <div
         className={`p-4 rounded-lg border space-y-3 ${
           isDarkMode
@@ -159,17 +188,61 @@ export const ProjectTeamManager: React.FC<ProjectTeamManagerProps> = ({
 
           <div>
             <label className="text-micro uppercase tracking-wider block opacity-70 mb-1">
-              Role in this Project
+              Role in this Project (from Manage Roles)
+            </label>
+            <select
+              value={selectedRoleId}
+              onChange={(e) => setSelectedRoleId(e.target.value)}
+              className={inputBaseClass}
+            >
+              <option value="">-- Choose Role from Manage Roles --</option>
+              {designerRoles.length > 0 && (
+                <optgroup label="Designers">
+                  {designerRoles.map((r) => (
+                    <option key={r.id} value={r.title}>
+                      {r.title}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {managerRoles.length > 0 && (
+                <optgroup label="Managers">
+                  {managerRoles.map((r) => (
+                    <option key={r.id} value={r.title}>
+                      {r.title}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {builderRoles.length > 0 && (
+                <optgroup label="Builders">
+                  {builderRoles.map((r) => (
+                    <option key={r.id} value={r.title}>
+                      {r.title}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <option value="__custom__">✍️ Other / Custom Role...</option>
+            </select>
+          </div>
+        </div>
+
+        {selectedRoleId === '__custom__' && (
+          <div>
+            <label className="text-micro uppercase tracking-wider block opacity-70 mb-1">
+              Custom Role Title
             </label>
             <input
               type="text"
               placeholder="e.g. Lead Interior Designer, Site Engineer"
-              value={roleInProject}
-              onChange={(e) => setRoleInProject(e.target.value)}
+              value={customRole}
+              onChange={(e) => setCustomRole(e.target.value)}
               className={inputBaseClass}
+              autoFocus
             />
           </div>
-        </div>
+        )}
 
         <div>
           <label className="text-micro uppercase tracking-wider block opacity-70 mb-1">
@@ -188,10 +261,10 @@ export const ProjectTeamManager: React.FC<ProjectTeamManagerProps> = ({
           <Button
             type="filled"
             onClick={handleAdd}
-            disabled={!selectedMemberId}
+            disabled={!selectedMemberId || (selectedRoleId === '__custom__' && !customRole.trim())}
             className="!py-1.5 !px-4 text-mini"
           >
-            <Plus size={13} className="mr-1 inline" /> Assign to Project
+            <Plus size={13} className="mr-1 inline" /> Assign Member
           </Button>
         </div>
       </div>

@@ -38,6 +38,7 @@ import {
 import { useAdminPeople } from '@/hooks/admin/useAdminPeople';
 import { useTheme } from '@/context/ThemeContext';
 import { Project } from '@/types';
+import { MAIN_CATEGORIES, TYPOLOGY_MAP, ALL_TYPOLOGIES } from '@/lib/projects/project-constants';
 
 type ViewMode = 'list' | 'create' | 'edit';
 
@@ -67,15 +68,6 @@ const EMPTY_PROJECT: Project = {
   isDraft: false,
 };
 
-const MAIN_CATEGORIES = [
-  'Shelter',
-  'Livelihood',
-  'Community',
-  'Residential',
-  'Commercial',
-  'Institutional',
-];
-
 const CLIENT_TYPES: ('Mid-Income' | 'Mid-High-Income' | 'High-Income')[] = [
   'Mid-Income',
   'Mid-High-Income',
@@ -89,24 +81,6 @@ const PROJECT_STATUSES: ('completed' | 'ongoing' | 'schematics')[] = [
 ];
 
 const PROJECT_FILTER_CATEGORIES = ['all', 'Shelter', 'Livelihood', 'Community'] as const;
-
-const TYPOLOGY_MAP: Record<string, string[]> = {
-  Shelter: ['Tiny Living', 'Multi-Generational', 'Vacation Homes'],
-  Livelihood: ['Food & Beverage', 'Retail & Lifestyle', 'Workspaces'],
-  Community: ['Shared Spaces', 'Shared Places', 'Sacred Structures'],
-};
-
-const ALL_TYPOLOGIES = [
-  'Tiny Living',
-  'Multi-Generational',
-  'Vacation Homes',
-  'Food & Beverage',
-  'Retail & Lifestyle',
-  'Workspaces',
-  'Shared Spaces',
-  'Shared Places',
-  'Sacred Structures',
-];
 
 export default function AdminProjectsPage() {
   const { isDarkMode } = useTheme();

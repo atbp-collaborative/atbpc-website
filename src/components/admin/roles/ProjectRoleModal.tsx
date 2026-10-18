@@ -5,19 +5,26 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, FolderKanban, Save } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { Project, Member } from '@/types';
+import { Project, Member, Role } from '@/types';
 import { ProjectRoleEntry } from '@/hooks/admin/useAdminRoles';
 import { Button } from '@/components/primitives/buttons/Button';
+import {
+  MAIN_CATEGORIES,
+  TYPOLOGY_MAP,
+  getTypologiesForCategory,
+} from '@/lib/projects/project-constants';
+import { getRoles } from '@/services/mock/adminMockStorage';
 
 interface ProjectRoleModalProps {
   isOpen: boolean;
   entry: ProjectRoleEntry | null;
   projects: Project[];
   members: Member[];
+  allRoles?: Role[];
   onSave: (memberId: string, projectId: string, roleInProject: string, description: string) => void;
   onClose: () => void;
 }
@@ -27,31 +34,107 @@ export const ProjectRoleModal: React.FC<ProjectRoleModalProps> = ({
   entry,
   projects,
   members,
+  allRoles,
   onSave,
   onClose,
 }) => {
   const { isDarkMode } = useTheme();
 
+  // Cascading project selection
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedTypology, setSelectedTypology] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState('');
+
+  // Member & Role state
   const [selectedMemberId, setSelectedMemberId] = useState('');
-  const [roleInProject, setRoleInProject] = useState('');
+  const [selectedRoleId, setSelectedRoleId] = useState('');
+  const [customRole, setCustomRole] = useState('');
   const [description, setDescription] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const rolesList = useMemo(() => {
+    return allRoles && allRoles.length > 0 ? allRoles : getRoles();
+  }, [allRoles]);
+
+  const designerRoles = useMemo(
+    () => rolesList.filter((r) => r.category === 'designers'),
+    [rolesList]
+  );
+  const managerRoles = useMemo(
+    () => rolesList.filter((r) => r.category === 'managers'),
+    [rolesList]
+  );
+  const builderRoles = useMemo(
+    () => rolesList.filter((r) => r.category === 'builders'),
+    [rolesList]
+  );
+
+  const availableTypologies = useMemo(() => {
+    return getTypologiesForCategory(selectedCategory);
+  }, [selectedCategory]);
+
+  const filteredProjects = useMemo(() => {
+    return projects.filter((p) => {
+      const projCat =
+        p.mainCategory ||
+        Object.keys(TYPOLOGY_MAP).find((cat) =>
+          TYPOLOGY_MAP[cat].includes(p.category) ||
+          (p.subcategory && TYPOLOGY_MAP[cat].includes(p.subcategory))
+        ) ||
+        '';
+
+      if (
+        selectedCategory &&
+        selectedCategory !== 'all' &&
+        projCat.toLowerCase() !== selectedCategory.toLowerCase()
+      ) {
+        return false;
+      }
+
+      const projTyp = p.subcategory || p.category || '';
+      if (
+        selectedTypology &&
+        selectedTypology !== 'all' &&
+        projTyp.toLowerCase() !== selectedTypology.toLowerCase()
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [projects, selectedCategory, selectedTypology]);
 
   useEffect(() => {
     if (entry) {
       setSelectedProjectId(entry.projectId);
       setSelectedMemberId(entry.memberId);
-      setRoleInProject(entry.roleInProject);
+      const isKnown = rolesList.some((r) => r.title === entry.roleInProject);
+      if (isKnown) {
+        setSelectedRoleId(entry.roleInProject);
+        setCustomRole('');
+      } else {
+        setSelectedRoleId('__custom__');
+        setCustomRole(entry.roleInProject);
+      }
       setDescription(entry.description || '');
+
+      // Infer project category and typology if entry exists
+      const proj = projects.find((p) => p.id === entry.projectId);
+      if (proj) {
+        setSelectedCategory(proj.mainCategory || '');
+        setSelectedTypology(proj.subcategory || proj.category || '');
+      }
     } else {
+      setSelectedCategory('');
+      setSelectedTypology('');
       setSelectedProjectId(projects[0]?.id || '');
       setSelectedMemberId(members[0]?.id || '');
-      setRoleInProject('');
+      setSelectedRoleId('');
+      setCustomRole('');
       setDescription('');
     }
     setErrors({});
-  }, [entry, projects, members, isOpen]);
+  }, [entry, projects, members, rolesList, isOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -71,7 +154,11 @@ export const ProjectRoleModal: React.FC<ProjectRoleModalProps> = ({
     const newErrors: Record<string, string> = {};
     if (!selectedProjectId) newErrors.project = 'Please select a project';
     if (!selectedMemberId) newErrors.member = 'Please select a team member';
-    if (!roleInProject.trim()) newErrors.role = 'Role in project is required';
+    if (!selectedRoleId) {
+      newErrors.role = 'Role in project is required';
+    } else if (selectedRoleId === '__custom__' && !customRole.trim()) {
+      newErrors.role = 'Please specify a custom role title';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -79,7 +166,16 @@ export const ProjectRoleModal: React.FC<ProjectRoleModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    onSave(selectedMemberId, selectedProjectId, roleInProject.trim(), description.trim());
+
+    let roleTitle = 'Contributor';
+    if (selectedRoleId === '__custom__') {
+      roleTitle = customRole.trim() || 'Contributor';
+    } else if (selectedRoleId) {
+      const foundRole = rolesList.find((r) => r.id === selectedRoleId || r.title === selectedRoleId);
+      roleTitle = foundRole ? foundRole.title : selectedRoleId;
+    }
+
+    onSave(selectedMemberId, selectedProjectId, roleTitle, description.trim());
     onClose();
   };
 
@@ -138,10 +234,56 @@ export const ProjectRoleModal: React.FC<ProjectRoleModalProps> = ({
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Category & Typology Selectors (disabled if editing existing entry) */}
+              {!entry && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-micro uppercase tracking-wider block opacity-70">
+                      Category
+                    </label>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => {
+                        setSelectedCategory(e.target.value);
+                        setSelectedTypology('');
+                      }}
+                      className={inputBaseClass}
+                    >
+                      <option value="">-- All Categories --</option>
+                      {MAIN_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro uppercase tracking-wider block opacity-70">
+                      Typology
+                    </label>
+                    <select
+                      value={selectedTypology}
+                      onChange={(e) => setSelectedTypology(e.target.value)}
+                      className={inputBaseClass}
+                    >
+                      <option value="">-- All Typologies --</option>
+                      {availableTypologies.map((typ) => (
+                        <option key={typ} value={typ}>
+                          {typ}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
               {/* Project selector */}
               <div className="space-y-1">
                 <label className="text-caption font-semibold flex items-center justify-between">
-                  <span>Project <span className="text-space-sparkle">*</span></span>
+                  <span>
+                    Project <span className="text-space-sparkle">*</span>
+                  </span>
                   {errors.project && (
                     <span className="text-micro text-red-500">{errors.project}</span>
                   )}
@@ -152,9 +294,10 @@ export const ProjectRoleModal: React.FC<ProjectRoleModalProps> = ({
                   onChange={(e) => setSelectedProjectId(e.target.value)}
                   className={`${inputBaseClass} ${entry ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
-                  {projects.map((proj) => (
+                  <option value="">-- Choose Project ({filteredProjects.length}) --</option>
+                  {filteredProjects.map((proj) => (
                     <option key={proj.id} value={proj.id}>
-                      {proj.title} ({proj.category})
+                      {proj.title} ({proj.year || proj.category})
                     </option>
                   ))}
                 </select>
@@ -163,7 +306,9 @@ export const ProjectRoleModal: React.FC<ProjectRoleModalProps> = ({
               {/* Person selector */}
               <div className="space-y-1">
                 <label className="text-caption font-semibold flex items-center justify-between">
-                  <span>Team Member <span className="text-space-sparkle">*</span></span>
+                  <span>
+                    Team Member <span className="text-space-sparkle">*</span>
+                  </span>
                   {errors.member && (
                     <span className="text-micro text-red-500">{errors.member}</span>
                   )}
@@ -182,23 +327,68 @@ export const ProjectRoleModal: React.FC<ProjectRoleModalProps> = ({
                 </select>
               </div>
 
-              {/* Role in Project */}
+              {/* Role in Project (from Manage Roles) */}
               <div className="space-y-1">
                 <label className="text-caption font-semibold flex items-center justify-between">
-                  <span>Role in Project <span className="text-space-sparkle">*</span></span>
+                  <span>
+                    Role in Project <span className="text-space-sparkle">*</span>
+                  </span>
                   {errors.role && (
                     <span className="text-micro text-red-500">{errors.role}</span>
                   )}
                 </label>
-                <input
-                  type="text"
-                  value={roleInProject}
-                  onChange={(e) => setRoleInProject(e.target.value)}
-                  placeholder="e.g. Lead Principal Architect, Site Foreman, Design Consultant"
+                <select
+                  value={selectedRoleId}
+                  onChange={(e) => setSelectedRoleId(e.target.value)}
                   className={inputBaseClass}
-                  autoFocus
-                />
+                >
+                  <option value="">-- Choose Role from Manage Roles --</option>
+                  {designerRoles.length > 0 && (
+                    <optgroup label="Designers">
+                      {designerRoles.map((r) => (
+                        <option key={r.id} value={r.title}>
+                          {r.title}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {managerRoles.length > 0 && (
+                    <optgroup label="Managers">
+                      {managerRoles.map((r) => (
+                        <option key={r.id} value={r.title}>
+                          {r.title}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {builderRoles.length > 0 && (
+                    <optgroup label="Builders">
+                      {builderRoles.map((r) => (
+                        <option key={r.id} value={r.title}>
+                          {r.title}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  <option value="__custom__">✍️ Other / Custom Role...</option>
+                </select>
               </div>
+
+              {selectedRoleId === '__custom__' && (
+                <div className="space-y-1">
+                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-70">
+                    Custom Role Title <span className="text-space-sparkle">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={customRole}
+                    onChange={(e) => setCustomRole(e.target.value)}
+                    placeholder="e.g. Lead Principal Architect, Site Foreman, Design Consultant"
+                    className={inputBaseClass}
+                    autoFocus
+                  />
+                </div>
+              )}
 
               {/* Scope & Description */}
               <div className="space-y-1">

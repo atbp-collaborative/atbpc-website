@@ -314,6 +314,7 @@ export default function AdminRolesPage() {
         entry={editingProjectRoleEntry}
         projects={projects}
         members={members}
+        allRoles={roles}
         onSave={associateMemberToProject}
         onClose={() => setIsProjectRoleModalOpen(false)}
       />
