@@ -53,6 +53,43 @@ export interface MemberInvolvement {
   description: string;
 }
 
+export interface Track {
+  id: string;
+  code: string;
+  name: string;
+  trackType: 'professional' | 'internship' | 'apprenticeship';
+  requiredHours?: number | null;
+  governingBody?: string;
+  description?: string;
+  sortOrder?: number;
+}
+
+export interface ProjectCategoryItem {
+  id: string;
+  name: string;
+  tagline: string;
+  heroImageUrl?: string;
+  sortOrder?: number;
+}
+
+export interface ProjectTypologyItem {
+  id: string;
+  categoryId: string;
+  name: string;
+  description?: string;
+  sortOrder?: number;
+}
+
+export interface ContractTypeItem {
+  id: string;
+  code: string;
+  name: string;
+  serviceTier: 'comprehensive' | 'piecework' | 'consultation' | 'construction';
+  contractModel: string;
+  description?: string;
+  sortOrder?: number;
+}
+
 export type MemberCategory = 'designers' | 'managers' | 'builders';
 export type RoleCategory = MemberCategory;
 export type RoleTrack = 'internship' | 'professionals';
@@ -76,16 +113,33 @@ export interface MemberAffiliation {
 export interface Member {
   id: string;
   name: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  pseudonym?: string;
+  pronouns?: string;
+  titles?: string;
   role: string;
   roles?: string[];
+  primaryRoleId?: string;
+  trackId?: string;
   license?: string;
+  professionalLicenseTitle?: string;
+  licenseNumber?: string;
   image: string;
   bio: string;
   fullBio: string;
+  personalEmail?: string;
+  contactNumber?: string;
+  portfolioUrl?: string;
+  dateOfHiring?: string;
+  dateOfSeparation?: string | null;
+  isCurrentlyHired?: boolean;
   affiliations: MemberAffiliation[];
   categories: MemberCategory[];
   involvement: MemberInvolvement[];
   isDraft?: boolean;
+  displayOrder?: number;
 }
 
 export interface AdminUser {
