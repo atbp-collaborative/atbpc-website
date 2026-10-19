@@ -30,7 +30,7 @@ export async function getPeopleFromSupabase(includeDrafts: boolean = false): Pro
   const { data: people, error } = await query;
 
   if (error || !people) {
-    console.error('Error fetching people from Supabase:', error);
+    console.error('Error fetching people from Supabase:', error?.message || error?.details || error || 'No people found');
     throw error || new Error('No people found');
   }
 

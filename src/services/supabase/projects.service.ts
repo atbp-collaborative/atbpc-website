@@ -20,7 +20,7 @@ export async function getProjectsFromSupabase(includeDrafts: boolean = false): P
   const { data: projects, error } = await query;
 
   if (error || !projects) {
-    console.error('Error fetching projects from Supabase:', error);
+    console.error('Error fetching projects from Supabase:', error?.message || error?.details || error || 'No projects found');
     throw error || new Error('No projects found');
   }
 
