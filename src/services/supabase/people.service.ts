@@ -15,9 +15,7 @@ export async function getPeopleFromSupabase(includeDrafts: boolean = false): Pro
       *,
       credentials:person_credentials(*),
       involvements:project_contributors(
-        project_id,
-        role_in_project,
-        contribution_narrative,
+        *,
         project:projects(id, slug, project_title)
       )
     `)
@@ -47,6 +45,7 @@ export async function getPeopleFromSupabase(includeDrafts: boolean = false): Pro
       projectSlug: inv.project?.slug || inv.project_id,
       projectTitle: inv.project?.project_title || inv.project_id,
       roleInProject: inv.role_in_project,
+      projectRoleIds: inv.project_role_ids || [],
       description: inv.contribution_narrative || '',
     }));
 
@@ -60,6 +59,10 @@ export async function getPeopleFromSupabase(includeDrafts: boolean = false): Pro
       pronouns: p.pronouns,
       titles: p.titles,
       role: p.titles ? `${p.titles} ${p.last_name}` : p.last_name,
+      roles: p.other_role_ids || [],
+      otherRoleIds: p.other_role_ids || [],
+      primaryRoleId: p.primary_role_id || undefined,
+      trackId: p.track_id || 'PROF',
       license: p.license_number || p.professional_license_title || undefined,
       professionalLicenseTitle: p.professional_license_title,
       licenseNumber: p.license_number,
@@ -68,7 +71,9 @@ export async function getPeopleFromSupabase(includeDrafts: boolean = false): Pro
       fullBio: p.full_bio,
       personalEmail: p.personal_email,
       contactNumber: p.contact_number,
+      addressDetails: p.address_details || undefined,
       portfolioUrl: p.portfolio_url,
+      externalUrl: p.external_url || undefined,
       dateOfHiring: p.date_of_hiring,
       dateOfSeparation: p.date_of_separation,
       isCurrentlyHired: p.is_currently_hired,
@@ -82,15 +87,13 @@ export async function getPeopleFromSupabase(includeDrafts: boolean = false): Pro
 }
 
 export async function getPersonByIdFromSupabase(id: string): Promise<Member | null> {
-  const { data: p, error } = await supabasePublic
+    const { data: p, error } = await supabasePublic
     .from('people')
     .select(`
       *,
       credentials:person_credentials(*),
       involvements:project_contributors(
-        project_id,
-        role_in_project,
-        contribution_narrative,
+        *,
         project:projects(id, slug, project_title)
       )
     `)
@@ -116,6 +119,7 @@ export async function getPersonByIdFromSupabase(id: string): Promise<Member | nu
     projectSlug: inv.project?.slug || inv.project_id,
     projectTitle: inv.project?.project_title || inv.project_id,
     roleInProject: inv.role_in_project,
+    projectRoleIds: inv.project_role_ids || [],
     description: inv.contribution_narrative || '',
   }));
 
@@ -129,6 +133,10 @@ export async function getPersonByIdFromSupabase(id: string): Promise<Member | nu
     pronouns: p.pronouns,
     titles: p.titles,
     role: p.titles ? `${p.titles} ${p.last_name}` : p.last_name,
+    roles: p.other_role_ids || [],
+    otherRoleIds: p.other_role_ids || [],
+    primaryRoleId: p.primary_role_id || undefined,
+    trackId: p.track_id || 'PROF',
     license: p.license_number || p.professional_license_title || undefined,
     professionalLicenseTitle: p.professional_license_title,
     licenseNumber: p.license_number,
@@ -137,7 +145,9 @@ export async function getPersonByIdFromSupabase(id: string): Promise<Member | nu
     fullBio: p.full_bio,
     personalEmail: p.personal_email,
     contactNumber: p.contact_number,
+    addressDetails: p.address_details || undefined,
     portfolioUrl: p.portfolio_url,
+    externalUrl: p.external_url || undefined,
     dateOfHiring: p.date_of_hiring,
     dateOfSeparation: p.date_of_separation,
     isCurrentlyHired: p.is_currently_hired,

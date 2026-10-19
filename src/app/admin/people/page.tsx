@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Users,
@@ -29,6 +29,11 @@ import { ImageManagerField } from '@/components/admin/ImageManagerField';
 import { DynamicListField } from '@/components/admin/DynamicListField';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { Button } from '@/components/primitives/buttons/Button';
+import { ComboboxMultiSelect } from '@/components/admin/ComboboxMultiSelect';
+import { AddressField } from '@/components/forms/form-fields/AddressField';
+import { EMPTY_PH_ADDRESS } from '@/components/forms/form-fields/types';
+import { generateMemberSlug } from '@/lib/people/slug-helpers';
+import { getLicensesFromSupabase } from '@/services/supabase/licenses.service';
 import {
   useAdminPeople,
   PeopleClassificationFilter,
@@ -37,7 +42,8 @@ import {
 import { useAdminProjects } from '@/hooks/admin/useAdminProjects';
 import { useAdminRoles } from '@/hooks/admin/useAdminRoles';
 import { useTheme } from '@/context/ThemeContext';
-import { Member, MemberCategory, MemberAffiliation, MemberInvolvement } from '@/types';
+import { Member, MemberCategory, MemberAffiliation, MemberInvolvement, License } from '@/types';
+import { toast } from 'sonner';
 
 type ViewMode = 'list' | 'create' | 'edit';
 type DisplayMode = 'list' | 'grid';
@@ -52,6 +58,8 @@ const EMPTY_MEMBER: Member = {
   pronouns: '',
   titles: '',
   role: '',
+  roles: [],
+  otherRoleIds: [],
   primaryRoleId: '',
   trackId: 'PROF',
   license: '',
@@ -62,7 +70,9 @@ const EMPTY_MEMBER: Member = {
   fullBio: '',
   personalEmail: '',
   contactNumber: '',
+  addressDetails: { ...EMPTY_PH_ADDRESS },
   portfolioUrl: '',
+  externalUrl: '',
   dateOfHiring: '',
   dateOfSeparation: '',
   isCurrentlyHired: true,
@@ -108,14 +118,24 @@ export default function AdminPeoplePage() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('list');
   const [formData, setFormData] = useState<Member>(EMPTY_MEMBER);
   const initialDataRef = useRef<Member>(EMPTY_MEMBER);
+  const [licenses, setLicenses] = useState<License[]>([]);
+
+  useEffect(() => {
+    getLicensesFromSupabase().then((data) => {
+      if (data && data.length > 0) setLicenses(data);
+    });
+  }, []);
 
   // Modal states
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
 
   const startCreate = () => {
+    const today = new Date().toISOString().split('T')[0];
     const newMember: Member = {
       ...EMPTY_MEMBER,
-      id: 'member-' + Date.now(),
+      id: '',
+      dateOfHiring: today,
+      addressDetails: { ...EMPTY_PH_ADDRESS },
       categories: ['designers'],
     };
     initialDataRef.current = newMember;
@@ -155,13 +175,17 @@ export default function AdminPeoplePage() {
       titles: member.titles || '',
       primaryRoleId: matchedRole ? matchedRole.id : member.primaryRoleId || '',
       role: matchedRole ? matchedRole.title : member.role,
+      roles: member.roles || member.otherRoleIds || [],
+      otherRoleIds: member.otherRoleIds || member.roles || [],
       trackId: member.trackId || 'PROF',
       professionalLicenseTitle: member.professionalLicenseTitle || (member.license && isNaN(Number(member.license)) ? member.license : ''),
       licenseNumber: member.licenseNumber || (member.license && !isNaN(Number(member.license)) ? member.license : ''),
       personalEmail: member.personalEmail || '',
       contactNumber: member.contactNumber || '',
+      addressDetails: member.addressDetails ? { ...EMPTY_PH_ADDRESS, ...member.addressDetails } : { ...EMPTY_PH_ADDRESS },
       portfolioUrl: member.portfolioUrl || '',
-      dateOfHiring: member.dateOfHiring || '',
+      externalUrl: member.externalUrl || '',
+      dateOfHiring: member.dateOfHiring || new Date().toISOString().split('T')[0],
       dateOfSeparation: member.dateOfSeparation || '',
       isCurrentlyHired: member.isCurrentlyHired !== undefined ? member.isCurrentlyHired : true,
     };
@@ -184,19 +208,43 @@ export default function AdminPeoplePage() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) return;
 
-    // Auto-generate id if blank
+    if (!formData.firstName?.trim() || !formData.lastName?.trim()) {
+      toast.error('First Name and Last Name are required.');
+      return;
+    }
+    if (!formData.pronouns?.trim()) {
+      toast.error('Please select pronouns.');
+      return;
+    }
+    if (!formData.personalEmail?.trim()) {
+      toast.error('Personal Email is required.');
+      return;
+    }
+    if (!formData.contactNumber?.trim()) {
+      toast.error('Contact Number is required.');
+      return;
+    }
+    if (!formData.categories || formData.categories.length === 0) {
+      toast.error('Please select at least one professional classification.');
+      return;
+    }
+
     const cleanId =
       formData.id.trim() ||
-      formData.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
+      generateMemberSlug(formData.firstName, formData.lastName) ||
+      'member-' + Date.now();
 
-    const memberToSave = {
+    const fullName = [formData.firstName.trim(), formData.middleName?.trim(), formData.lastName.trim()]
+      .filter(Boolean)
+      .join(' ');
+
+    const memberToSave: Member = {
       ...formData,
       id: cleanId,
+      name: fullName,
+      roles: formData.otherRoleIds || formData.roles || [],
+      otherRoleIds: formData.otherRoleIds || formData.roles || [],
     };
 
     saveMember(memberToSave);
@@ -293,9 +341,15 @@ export default function AdminPeoplePage() {
                         const m = formData.middleName || '';
                         const l = formData.lastName || '';
                         const fullName = [val.trim(), m.trim(), l.trim()].filter(Boolean).join(' ');
-                        setFormData((prev) => ({ ...prev, firstName: val, name: fullName }));
+                        const newSlug = generateMemberSlug(val, l);
+                        setFormData((prev) => ({
+                          ...prev,
+                          firstName: val,
+                          name: fullName,
+                          id: newSlug,
+                        }));
                       }}
-                      placeholder="e.g. Marchie"
+                      placeholder="Kim"
                       className={inputClass}
                     />
                   </div>
@@ -314,7 +368,7 @@ export default function AdminPeoplePage() {
                         const fullName = [f.trim(), val.trim(), l.trim()].filter(Boolean).join(' ');
                         setFormData((prev) => ({ ...prev, middleName: val, name: fullName }));
                       }}
-                      placeholder="e.g. Teodoro"
+                      placeholder="Chi"
                       className={inputClass}
                     />
                   </div>
@@ -332,9 +386,15 @@ export default function AdminPeoplePage() {
                         const f = formData.firstName || '';
                         const m = formData.middleName || '';
                         const fullName = [f.trim(), m.trim(), val.trim()].filter(Boolean).join(' ');
-                        setFormData((prev) => ({ ...prev, lastName: val, name: fullName }));
+                        const newSlug = generateMemberSlug(f, val);
+                        setFormData((prev) => ({
+                          ...prev,
+                          lastName: val,
+                          name: fullName,
+                          id: newSlug,
+                        }));
                       }}
-                      placeholder="e.g. Borja"
+                      placeholder="Dela Cruz"
                       className={inputClass}
                     />
                   </div>
@@ -343,57 +403,64 @@ export default function AdminPeoplePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Studio Nickname / Pseudonym
+                      Pseudonym
                     </label>
                     <input
                       type="text"
                       value={formData.pseudonym || ''}
                       onChange={(e) => setFormData((prev) => ({ ...prev, pseudonym: e.target.value }))}
-                      placeholder="e.g. Archie"
+                      placeholder="Kim"
                       className={inputClass}
                     />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Prefix Titles
+                      Prefix/Titles
                     </label>
                     <input
                       type="text"
                       value={formData.titles || ''}
                       onChange={(e) => setFormData((prev) => ({ ...prev, titles: e.target.value }))}
-                      placeholder="e.g. Arch., Engr., IDr."
+                      placeholder="Ar."
                       className={inputClass}
                     />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Pronouns
+                      Pronouns <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
+                    <select
+                      required
                       value={formData.pronouns || ''}
                       onChange={(e) => setFormData((prev) => ({ ...prev, pronouns: e.target.value }))}
-                      placeholder="e.g. He/Him, She/Her, They/Them"
                       className={inputClass}
-                    />
+                    >
+                      <option value="">[ Select Pronouns ]</option>
+                      <option value="He/Him">He/Him</option>
+                      <option value="She/Her">She/Her</option>
+                      <option value="They/Them">They/Them</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
+                    </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Studio Track <span className="text-red-500">*</span>
+                      Career Track <span className="text-red-500">*</span>
                     </label>
                     <select
+                      required
                       value={formData.trackId || 'PROF'}
                       onChange={(e) => setFormData((prev) => ({ ...prev, trackId: e.target.value }))}
                       className={inputClass}
                     >
+                      <option value="">[ Select Career Track ]</option>
                       {tracks.map((t) => (
                         <option key={t.id} value={t.id}>
-                          {t.name} ({t.code})
+                          {t.name}
                         </option>
                       ))}
                     </select>
@@ -405,7 +472,7 @@ export default function AdminPeoplePage() {
                     </label>
                     <select
                       required
-                      value={formData.primaryRoleId || formData.role}
+                      value={formData.primaryRoleId || ''}
                       onChange={(e) => {
                         const val = e.target.value;
                         const matched = allRoles.find((r) => r.id === val || r.title === val);
@@ -417,10 +484,7 @@ export default function AdminPeoplePage() {
                       }}
                       className={inputClass}
                     >
-                      <option value="">-- Choose Studio Role --</option>
-                      {formData.role && !allRoles.some((r) => r.id === formData.primaryRoleId || r.title === formData.role) && (
-                        <option value={formData.role}>{formData.role} (Custom)</option>
-                      )}
+                      <option value="">[ Select Role ]</option>
                       {designerRoles.length > 0 && (
                         <optgroup label="Designers">
                           {designerRoles.map((r) => (
@@ -453,19 +517,44 @@ export default function AdminPeoplePage() {
 
                   <div className="space-y-1 sm:col-span-2">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Profile ID / URL Slug
+                      Other Studio Role
+                    </label>
+                    <ComboboxMultiSelect
+                      options={allRoles.map((r) => ({
+                        id: r.id,
+                        label: r.title,
+                        sublabel: r.code,
+                        category: r.category,
+                      }))}
+                      selectedIds={formData.otherRoleIds || []}
+                      onChange={(ids) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          otherRoleIds: ids,
+                          roles: ids,
+                        }))
+                      }
+                      placeholder="[ Select Role ]"
+                      searchPlaceholder="Search studio roles..."
+                    />
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      URL Slug <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
+                      required
                       value={formData.id}
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, id: e.target.value }))
                       }
-                      placeholder="e.g. marchie-borja"
+                      placeholder="first-last"
                       className={`${inputClass} font-mono text-mini`}
                     />
                     <p className="text-micro opacity-50">
-                      Used for public routing: /studio/our-people/{formData.id || 'slug'}
+                      Used for public routing: /studio/our-people/{formData.id || 'first-last'}
                     </p>
                   </div>
                 </div>
@@ -483,10 +572,9 @@ export default function AdminPeoplePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      License Title (Optional)
+                      License Title
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={formData.professionalLicenseTitle || ''}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -496,14 +584,20 @@ export default function AdminPeoplePage() {
                           license: prev.licenseNumber ? `${val} ${prev.licenseNumber}`.trim() : val,
                         }));
                       }}
-                      placeholder="e.g. RLA, RMP, CE"
                       className={inputClass}
-                    />
+                    >
+                      <option value="">[ Select License ]</option>
+                      {licenses.map((lic) => (
+                        <option key={lic.id} value={lic.title}>
+                          {lic.title} {lic.abbreviation ? `(${lic.abbreviation})` : ''}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      License Registration Number (Optional)
+                      Registration Number
                     </label>
                     <input
                       type="text"
@@ -513,10 +607,12 @@ export default function AdminPeoplePage() {
                         setFormData((prev) => ({
                           ...prev,
                           licenseNumber: val,
-                          license: prev.professionalLicenseTitle ? `${prev.professionalLicenseTitle} ${val}`.trim() : val,
+                          license: prev.professionalLicenseTitle
+                            ? `${prev.professionalLicenseTitle} ${val}`.trim()
+                            : val,
                         }));
                       }}
-                      placeholder="e.g. 0054827"
+                      placeholder="0012345"
                       className={inputClass}
                     />
                   </div>
@@ -535,11 +631,16 @@ export default function AdminPeoplePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Employment Status
+                      Employment Status <span className="text-red-500">*</span>
                     </label>
                     <button
                       type="button"
-                      onClick={() => setFormData((prev) => ({ ...prev, isCurrentlyHired: !prev.isCurrentlyHired }))}
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          isCurrentlyHired: !prev.isCurrentlyHired,
+                        }))
+                      }
                       className={`w-full py-2 px-3 rounded-lg text-mini font-semibold uppercase tracking-wider transition-colors border cursor-pointer ${
                         formData.isCurrentlyHired
                           ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
@@ -552,10 +653,11 @@ export default function AdminPeoplePage() {
 
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Date of Hiring
+                      Date of Hiring <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
+                      required
                       value={formData.dateOfHiring || ''}
                       onChange={(e) => setFormData((prev) => ({ ...prev, dateOfHiring: e.target.value }))}
                       className={inputClass}
@@ -570,64 +672,102 @@ export default function AdminPeoplePage() {
                       type="date"
                       value={formData.dateOfSeparation || ''}
                       onChange={(e) => setFormData((prev) => ({ ...prev, dateOfSeparation: e.target.value }))}
+                      placeholder="-- dd,yyyy"
                       className={inputClass}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Card 4: Contact & Channels */}
+              {/* Card 4: Contact Details & Cascading Address */}
               <div
                 className={`p-6 rounded-xl border space-y-4 ${
                   isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
                 }`}
               >
                 <h3 className="text-caption font-semibold uppercase tracking-wider opacity-70 border-b pb-2 border-black/5 dark:border-white/5">
-                  Contact &amp; Profiles
+                  Contact Details
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Personal Email
+                      Personal Email <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
+                      required
                       value={formData.personalEmail || ''}
                       onChange={(e) => setFormData((prev) => ({ ...prev, personalEmail: e.target.value }))}
-                      placeholder="e.g. marchie@example.com"
+                      placeholder="kim_delacruz@example.com"
                       className={inputClass}
                     />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Contact Number
+                      Contact Number <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="tel"
+                      required
                       value={formData.contactNumber || ''}
                       onChange={(e) => setFormData((prev) => ({ ...prev, contactNumber: e.target.value }))}
-                      placeholder="e.g. +63 917 123 4567"
+                      placeholder="+63 917 123 4567"
                       className={inputClass}
                     />
                   </div>
+                </div>
 
+                {/* Cascading Address Field (matching Grow With Us / Partner With Us) */}
+                <div className="pt-2 border-t border-black/5 dark:border-white/5">
+                  <AddressField
+                    name="address"
+                    label={
+                      <span className="text-micro font-semibold uppercase tracking-wider block opacity-80 mb-2">
+                        Address
+                      </span>
+                    }
+                    value={formData.addressDetails || EMPTY_PH_ADDRESS}
+                    onChange={(_name, val) =>
+                      setFormData((prev) => ({ ...prev, addressDetails: val }))
+                    }
+                    isDarkMode={isDarkMode}
+                    variant="full"
+                    columns={2}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-black/5 dark:border-white/5">
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Portfolio / External URL
+                      Portfolio
                     </label>
                     <input
                       type="url"
                       value={formData.portfolioUrl || ''}
                       onChange={(e) => setFormData((prev) => ({ ...prev, portfolioUrl: e.target.value }))}
-                      placeholder="e.g. https://marchieborja.com"
+                      placeholder="https://example.com"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      External URL
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.externalUrl || ''}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, externalUrl: e.target.value }))}
+                      placeholder="https://example.com"
                       className={inputClass}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Card 2: Multi-Classification Selector */}
+              {/* Card 5: Multi-Classification Selector */}
               <div
                 className={`p-6 rounded-xl border ${
                   isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
@@ -641,7 +781,7 @@ export default function AdminPeoplePage() {
                 />
               </div>
 
-              {/* Card 3: Biographies */}
+              {/* Card 6: Biographies */}
               <div
                 className={`p-6 rounded-xl border space-y-4 ${
                   isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
@@ -653,7 +793,7 @@ export default function AdminPeoplePage() {
 
                 <div className="space-y-1">
                   <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Short Bio (Overview Directory)
+                    Short Biography
                   </label>
                   <textarea
                     rows={2}
@@ -661,14 +801,14 @@ export default function AdminPeoplePage() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, bio: e.target.value }))
                     }
-                    placeholder="Brief 1-2 sentence introduction..."
+                    placeholder="Member of ATBP Collaborative"
                     className={inputClass}
                   />
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Full Narrative Biography (Dedicated Page)
+                    Full Biography
                   </label>
                   <textarea
                     rows={6}
@@ -710,7 +850,6 @@ export default function AdminPeoplePage() {
                 <MemberInvolvementManager
                   involvements={formData.involvement || []}
                   allProjects={allProjects}
-                  allRoles={allRoles}
                   onChange={(invs) =>
                     setFormData((prev) => ({ ...prev, involvement: invs }))
                   }

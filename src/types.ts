@@ -67,7 +67,25 @@ export interface MemberInvolvement {
   projectSlug?: string;
   projectTitle: string;
   roleInProject: string;
+  projectRoleIds?: string[];
   description: string;
+}
+
+export interface License {
+  id: string;
+  title: string;
+  abbreviation?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface ProjectRole {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  sortOrder?: number;
+  isActive?: boolean;
 }
 
 export interface Track {
@@ -140,6 +158,7 @@ export interface Member {
   titles?: string;
   role: string;
   roles?: string[];
+  otherRoleIds?: string[];
   primaryRoleId?: string;
   trackId?: string;
   license?: string;
@@ -150,7 +169,9 @@ export interface Member {
   fullBio: string;
   personalEmail?: string;
   contactNumber?: string;
+  addressDetails?: import('@/components/forms/form-fields/types').PhAddress;
   portfolioUrl?: string;
+  externalUrl?: string;
   dateOfHiring?: string;
   dateOfSeparation?: string | null;
   isCurrentlyHired?: boolean;

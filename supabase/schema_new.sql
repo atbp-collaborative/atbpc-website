@@ -52,6 +52,29 @@ CREATE TABLE IF NOT EXISTS public.roles (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Licenses: Professional Licensure Reference Table
+CREATE TABLE IF NOT EXISTS public.licenses (
+    id VARCHAR(50) PRIMARY KEY,
+    title TEXT NOT NULL UNIQUE,
+    abbreviation VARCHAR(20),
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Project Roles: Specific Scope Contribution Roles (Separate from Studio Roles)
+CREATE TABLE IF NOT EXISTS public.project_roles (
+    id VARCHAR(50) PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Project Categories: The 3 Core Pillars
 CREATE TABLE IF NOT EXISTS public.project_categories (
     id VARCHAR(50) PRIMARY KEY,                                      -- 'Shelter', 'Livelihood', 'Community'
@@ -108,6 +131,9 @@ CREATE TABLE IF NOT EXISTS public.people (
     personal_email TEXT,
     contact_number TEXT,
     portfolio_url TEXT,
+    external_url TEXT,
+    address_details JSONB NOT NULL DEFAULT '{}'::jsonb,
+    other_role_ids TEXT[] NOT NULL DEFAULT '{}',
     short_bio TEXT NOT NULL,
     full_bio TEXT NOT NULL,
     profile_photo_url TEXT NOT NULL,
@@ -180,6 +206,7 @@ CREATE TABLE IF NOT EXISTS public.project_contributors (
     project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
     person_id VARCHAR(100) NOT NULL REFERENCES public.people(id) ON DELETE CASCADE,
     role_in_project TEXT NOT NULL,                                   -- e.g. 'Lead Principal Architect'
+    project_role_ids TEXT[] NOT NULL DEFAULT '{}',                   -- references public.project_roles(id)
     contribution_narrative TEXT,                                     -- specific contribution description
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

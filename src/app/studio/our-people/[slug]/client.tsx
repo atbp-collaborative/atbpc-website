@@ -86,6 +86,33 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
                 {member.role}
               </span>
             </div>
+
+            {(member.portfolioUrl || member.externalUrl) && (
+              <div className="flex items-center gap-3 pt-1 text-mini">
+                {member.portfolioUrl && (
+                  <a
+                    href={member.portfolioUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-space-sparkle hover:underline inline-flex items-center gap-0.5 font-medium"
+                  >
+                    <span>Portfolio</span>
+                    <ArrowUpRight size={11} />
+                  </a>
+                )}
+                {member.externalUrl && (
+                  <a
+                    href={member.externalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-space-sparkle hover:underline inline-flex items-center gap-0.5 font-medium"
+                  >
+                    <span>External Link</span>
+                    <ArrowUpRight size={11} />
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Scrollable text and accordions wrapper */}

@@ -13,6 +13,8 @@ import {
   ProjectCategoryItem,
   ProjectTypologyItem,
   ContractTypeItem,
+  License,
+  ProjectRole,
 } from '@/types';
 import { MEMBERS_DATA } from '@/lib/dummy-data/works/members';
 import { PROJECTS_DATA } from '@/lib/dummy-data/works/projects';
@@ -30,6 +32,8 @@ const STORAGE_KEYS = {
   CATEGORIES: 'atbp_admin_categories_v1',
   TYPOLOGIES: 'atbp_admin_typologies_v1',
   CONTRACT_TYPES: 'atbp_admin_contract_types_v1',
+  LICENSES: 'atbp_admin_licenses_v1',
+  PROJECT_ROLES: 'atbp_admin_project_roles_v1',
   CONTACT: 'atbp_admin_contact_v1',
   PRIVACY: 'atbp_admin_privacy_v1',
   LEGAL: 'atbp_admin_legal_v1',
@@ -608,9 +612,42 @@ export const INITIAL_CONTRACT_TYPES: ContractTypeItem[] = [
   { id: 'consultation-retainer', code: 'SCOPE-CONSULT-RETAIN', name: 'Consultation & Retainer Services', serviceTier: 'consultation', contractModel: 'Strategic Advisory Retainer', description: 'Ongoing architectural consulting, portfolio feasibility, and client-rep audits.', sortOrder: 50 },
 ];
 
+export const INITIAL_LICENSES_DATA: License[] = [
+  { id: 'lic-arch', title: 'Architect', abbreviation: 'RLA', sortOrder: 10, isActive: true },
+  { id: 'lic-int-des', title: 'Interior Designer', abbreviation: 'IDr', sortOrder: 20, isActive: true },
+  { id: 'lic-master-plumb', title: 'Master Plumber', abbreviation: 'RMP', sortOrder: 30, isActive: true },
+  { id: 'lic-master-elec', title: 'Master Electrician', abbreviation: 'RME', sortOrder: 40, isActive: true },
+  { id: 'lic-cpa', title: 'Accountant', abbreviation: 'CPA', sortOrder: 50, isActive: true },
+  { id: 'lic-civil-eng', title: 'Civil Engineer', abbreviation: 'CE', sortOrder: 60, isActive: true },
+  { id: 'lic-struct-eng', title: 'Structural Engineer', abbreviation: 'SE', sortOrder: 70, isActive: true },
+  { id: 'lic-sanitary-eng', title: 'Sanitary Engineer', abbreviation: 'SanE', sortOrder: 80, isActive: true },
+  { id: 'lic-reg-elec-eng', title: 'Registered Electrical Engineer', abbreviation: 'REE', sortOrder: 90, isActive: true },
+  { id: 'lic-prof-elec-eng', title: 'Professional Electrical Engineer', abbreviation: 'PEE', sortOrder: 100, isActive: true },
+  { id: 'lic-mech-eng', title: 'Mechanical Engineer', abbreviation: 'ME', sortOrder: 110, isActive: true },
+];
+
+export const INITIAL_PROJECT_ROLES_DATA: ProjectRole[] = [
+  { id: 'proj-role-arch-design', code: 'PR-ARCH', name: 'Architectural Design', description: 'Spatial programming, schematic concepts, exterior massing, and construction drawings.', sortOrder: 10, isActive: true },
+  { id: 'proj-role-cost-est', code: 'PR-COST', name: 'Cost Estimates', description: 'Bill of quantities, cost feasibility, material takeoffs, and procurement budget control.', sortOrder: 20, isActive: true },
+  { id: 'proj-role-elec-sys', code: 'PR-ELEC', name: 'Electrical Systems', description: 'Power distribution, lighting fixture layout, auxiliary communication, and solar load calculations.', sortOrder: 30, isActive: true },
+  { id: 'proj-role-plumb-sys', code: 'PR-PLUMB', name: 'Plumbing Systems', description: 'Sanitary piping, domestic potable water supply, rainwater catchment, and drainage routing.', sortOrder: 40, isActive: true },
+  { id: 'proj-role-bim-lead', code: 'PR-BIM', name: 'BIM Lead', description: 'Building information modeling coordination, 3D clash detection, and parametric Revit/IFC execution.', sortOrder: 50, isActive: true },
+  { id: 'proj-role-arch-rend', code: 'PR-REND', name: 'Architectural Renderer', description: 'Photorealistic visual simulation, lighting ambiance studies, material texture mapping, and animations.', sortOrder: 60, isActive: true },
+];
+
 export function getTracks(): Track[] {
   initializeAdminStorage();
   return getStored<Track[]>(STORAGE_KEYS.TRACKS, INITIAL_TRACKS_DATA);
+}
+
+export function getLicenses(): License[] {
+  initializeAdminStorage();
+  return getStored<License[]>(STORAGE_KEYS.LICENSES, INITIAL_LICENSES_DATA);
+}
+
+export function getProjectRoles(): ProjectRole[] {
+  initializeAdminStorage();
+  return getStored<ProjectRole[]>(STORAGE_KEYS.PROJECT_ROLES, INITIAL_PROJECT_ROLES_DATA);
 }
 
 export function getProjectCategories(): ProjectCategoryItem[] {

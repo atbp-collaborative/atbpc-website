@@ -130,7 +130,7 @@ export const DynamicListField: React.FC<DynamicListFieldProps> = (props) => {
   } = props;
 
   const handleAddPair = () => {
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim() || !newDesc.trim()) return;
     onChange([...items, { title: newTitle.trim(), description: newDesc.trim() }]);
     setNewTitle('');
     setNewDesc('');
@@ -201,7 +201,7 @@ export const DynamicListField: React.FC<DynamicListFieldProps> = (props) => {
           <Button
             type="filled"
             onClick={handleAddPair}
-            disabled={!newTitle.trim()}
+            disabled={!newTitle.trim() || !newDesc.trim()}
             className="!py-1.5 !px-3 text-mini"
           >
             <Plus size={13} className="mr-1 inline" /> Add Entry

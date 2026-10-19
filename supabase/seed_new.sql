@@ -12,6 +12,31 @@ INSERT INTO public.tracks (id, code, name, track_type, required_hours, governing
 ('APPRENTICE_ALE_3840', 'APP-ALE', 'Diversified Architectural Experience (ALE)', 'apprenticeship', 3840, 'PRC-BOA', 'PRC-mandated 3,840 logbook hours under registered and licensed architects qualifying for the ALE.', 40)
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, track_type = EXCLUDED.track_type, required_hours = EXCLUDED.required_hours, governing_body = EXCLUDED.governing_body, description = EXCLUDED.description, sort_order = EXCLUDED.sort_order;
 
+-- 1B. LICENSES
+INSERT INTO public.licenses (id, title, abbreviation, sort_order) VALUES
+('lic-arch', 'Architect', 'RLA', 10),
+('lic-int-des', 'Interior Designer', 'IDr', 20),
+('lic-master-plumb', 'Master Plumber', 'RMP', 30),
+('lic-master-elec', 'Master Electrician', 'RME', 40),
+('lic-cpa', 'Accountant', 'CPA', 50),
+('lic-civil-eng', 'Civil Engineer', 'CE', 60),
+('lic-struct-eng', 'Structural Engineer', 'SE', 70),
+('lic-sanitary-eng', 'Sanitary Engineer', 'SanE', 80),
+('lic-reg-elec-eng', 'Registered Electrical Engineer', 'REE', 90),
+('lic-prof-elec-eng', 'Professional Electrical Engineer', 'PEE', 100),
+('lic-mech-eng', 'Mechanical Engineer', 'ME', 110)
+ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, abbreviation = EXCLUDED.abbreviation, sort_order = EXCLUDED.sort_order;
+
+-- 1C. PROJECT ROLES (Separate Scope Contribution Roles)
+INSERT INTO public.project_roles (id, code, name, description, sort_order) VALUES
+('proj-role-arch-design', 'PR-ARCH', 'Architectural Design', 'Spatial programming, schematic concepts, exterior massing, and construction drawings.', 10),
+('proj-role-cost-est', 'PR-COST', 'Cost Estimates', 'Bill of quantities, cost feasibility, material takeoffs, and procurement budget control.', 20),
+('proj-role-elec-sys', 'PR-ELEC', 'Electrical Systems', 'Power distribution, lighting fixture layout, auxiliary communication, and solar load calculations.', 30),
+('proj-role-plumb-sys', 'PR-PLUMB', 'Plumbing Systems', 'Sanitary piping, domestic potable water supply, rainwater catchment, and drainage routing.', 40),
+('proj-role-bim-lead', 'PR-BIM', 'BIM Lead', 'Building information modeling coordination, 3D clash detection, and parametric Revit/IFC execution.', 50),
+('proj-role-arch-rend', 'PR-REND', 'Architectural Renderer', 'Photorealistic visual simulation, lighting ambiance studies, material texture mapping, and animations.', 60)
+ON CONFLICT (id) DO UPDATE SET code = EXCLUDED.code, name = EXCLUDED.name, description = EXCLUDED.description, sort_order = EXCLUDED.sort_order;
+
 -- 2. PROJECT CATEGORIES (3 Core Pillars)
 INSERT INTO public.project_categories (id, name, tagline, hero_image_url, sort_order) VALUES
 ('Shelter', 'Shelter', 'for the way you live', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/categories/shelter.jpg', 1),
