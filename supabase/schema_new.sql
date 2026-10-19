@@ -135,7 +135,8 @@ CREATE TABLE IF NOT EXISTS public.person_credentials (
 
 -- Projects (Works Portfolio & Case Studies)
 CREATE TABLE IF NOT EXISTS public.projects (
-    id VARCHAR(100) PRIMARY KEY,                                     -- slug e.g. 'urban-living-1'
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug VARCHAR(100) NOT NULL UNIQUE,                               -- readable slug e.g. 'urban-living-1'
     project_code VARCHAR(50) NOT NULL UNIQUE,                        -- e.g. 'PRJ-2021-001'
     project_title TEXT NOT NULL,
     year VARCHAR(4) NOT NULL,                                        -- e.g. '2026'
@@ -164,7 +165,7 @@ CREATE TABLE IF NOT EXISTS public.projects (
 -- Project Media: Gallery Images & Showcase Videos
 CREATE TABLE IF NOT EXISTS public.project_media (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id VARCHAR(100) NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
     media_type TEXT NOT NULL DEFAULT 'image' CHECK (media_type IN ('image', 'video')),
     url TEXT NOT NULL,
     caption TEXT,
@@ -176,7 +177,7 @@ CREATE TABLE IF NOT EXISTS public.project_media (
 -- Project Contributors: Bi-Directional Association between Projects and People
 CREATE TABLE IF NOT EXISTS public.project_contributors (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id VARCHAR(100) NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
     person_id VARCHAR(100) NOT NULL REFERENCES public.people(id) ON DELETE CASCADE,
     role_in_project TEXT NOT NULL,                                   -- e.g. 'Lead Principal Architect'
     contribution_narrative TEXT,                                     -- specific contribution description
@@ -894,49 +895,72 @@ INSERT INTO storage.buckets (id, name, public) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Public bucket: portfolio-media
+DROP POLICY IF EXISTS "Public can read portfolio media" ON storage.objects;
 CREATE POLICY "Public can read portfolio media"
     ON storage.objects FOR SELECT
     USING (bucket_id = 'portfolio-media');
 
+DROP POLICY IF EXISTS "Admins and Editors can upload portfolio media" ON storage.objects;
 CREATE POLICY "Admins and Editors can upload portfolio media"
     ON storage.objects FOR INSERT
     TO authenticated
     WITH CHECK (bucket_id = 'portfolio-media' AND public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
 
+DROP POLICY IF EXISTS "Admins and Editors can update portfolio media" ON storage.objects;
 CREATE POLICY "Admins and Editors can update portfolio media"
     ON storage.objects FOR UPDATE
     TO authenticated
     USING (bucket_id = 'portfolio-media' AND public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
 
+DROP POLICY IF EXISTS "Only Superadmin can delete portfolio media" ON storage.objects;
 CREATE POLICY "Only Superadmin can delete portfolio media"
     ON storage.objects FOR DELETE
     TO authenticated
     USING (bucket_id = 'portfolio-media' AND public.is_superadmin());
 
 -- Private Intake Buckets: Public can upload during form submissions, Admins can read
+DROP POLICY IF EXISTS "Public can upload career documents" ON storage.objects;
 CREATE POLICY "Public can upload career documents"
     ON storage.objects FOR INSERT
     WITH CHECK (bucket_id = 'career-documents');
 
+DROP POLICY IF EXISTS "Admins can view career documents" ON storage.objects;
 CREATE POLICY "Admins can view career documents"
     ON storage.objects FOR SELECT
     TO authenticated
     USING (bucket_id = 'career-documents' AND public.get_current_admin_role() IN ('superadmin', 'admin'));
 
+DROP POLICY IF EXISTS "Public can upload partner documents" ON storage.objects;
 CREATE POLICY "Public can upload partner documents"
     ON storage.objects FOR INSERT
     WITH CHECK (bucket_id = 'partner-documents');
 
+DROP POLICY IF EXISTS "Admins can view partner documents" ON storage.objects;
 CREATE POLICY "Admins can view partner documents"
     ON storage.objects FOR SELECT
     TO authenticated
     USING (bucket_id = 'partner-documents' AND public.get_current_admin_role() IN ('superadmin', 'admin'));
 
+DROP POLICY IF EXISTS "Public can upload proposal documents" ON storage.objects;
 CREATE POLICY "Public can upload proposal documents"
     ON storage.objects FOR INSERT
     WITH CHECK (bucket_id = 'proposal-documents');
 
+DROP POLICY IF EXISTS "Admins can view proposal documents" ON storage.objects;
 CREATE POLICY "Admins can view proposal documents"
     ON storage.objects FOR SELECT
     TO authenticated
     USING (bucket_id = 'proposal-documents' AND public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+-- ==============================================================================
+-- 12. ROLE PRIVILEGES & PERMISSIONS (Crucial for Supabase API access)
+-- ==============================================================================
+GRANT USAGE, CREATE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO postgres, anon, authenticated, service_role;
+

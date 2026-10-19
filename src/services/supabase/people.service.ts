@@ -18,7 +18,7 @@ export async function getPeopleFromSupabase(includeDrafts: boolean = false): Pro
         project_id,
         role_in_project,
         contribution_narrative,
-        project:projects(id, project_title)
+        project:projects(id, slug, project_title)
       )
     `)
     .order('display_order', { ascending: true });
@@ -44,6 +44,7 @@ export async function getPeopleFromSupabase(includeDrafts: boolean = false): Pro
 
     const involvement = (p.involvements || []).map((inv: any) => ({
       projectId: inv.project_id,
+      projectSlug: inv.project?.slug || inv.project_id,
       projectTitle: inv.project?.project_title || inv.project_id,
       roleInProject: inv.role_in_project,
       description: inv.contribution_narrative || '',
@@ -90,7 +91,7 @@ export async function getPersonByIdFromSupabase(id: string): Promise<Member | nu
         project_id,
         role_in_project,
         contribution_narrative,
-        project:projects(id, project_title)
+        project:projects(id, slug, project_title)
       )
     `)
     .eq('id', id)
@@ -112,6 +113,7 @@ export async function getPersonByIdFromSupabase(id: string): Promise<Member | nu
 
   const involvement = (p.involvements || []).map((inv: any) => ({
     projectId: inv.project_id,
+    projectSlug: inv.project?.slug || inv.project_id,
     projectTitle: inv.project?.project_title || inv.project_id,
     roleInProject: inv.role_in_project,
     description: inv.contribution_narrative || '',

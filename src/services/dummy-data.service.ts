@@ -192,5 +192,5 @@ export async function getProjectById(id: string): Promise<Project | undefined> {
       console.warn(`[DataService] Supabase getProjectById(${id}) failed, falling back to mock data:`, err);
     }
   }
-  return PROJECTS_DATA.find((project) => project.id === id);
+  return PROJECTS_DATA.find((project) => project.id === id || (project.slug && project.slug === id));
 }

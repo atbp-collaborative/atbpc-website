@@ -18,6 +18,7 @@ import { getContactInfo } from '@/services/dummy-data.service';
 import { ContactInfo } from '@/lib/dummy-data/contact/contact-info';
 import { useFormViewport } from '@/hooks/useFormViewport';
 import { Button } from '@/components/primitives/buttons/Button';
+import { PagePublishGate } from '@/components/global/PagePublishGate';
 
 function VintageTelephoneIcon({ size = 14, className = '' }: { size?: number | string; className?: string }) {
   return (
@@ -95,9 +96,10 @@ export default function ContactInfoPage() {
   const viberCleanNumber = encodeURIComponent(CONTACT_INFO.mobile.replace(/\s+/g, ''));
 
   return (
-    <div 
-      className="w-full h-full overflow-y-auto lg:overflow-hidden flex flex-col lg:flex-row items-stretch select-none relative"
-    >
+    <PagePublishGate slug="contact/case-study-house/contact-info">
+      <div 
+        className="w-full h-full overflow-y-auto lg:overflow-hidden flex flex-col lg:flex-row items-stretch select-none relative"
+      >
       <div className="w-full lg:w-1/2 min-h-[40vh] lg:min-h-0 lg:h-full relative shrink-0">
         <OfficeMap isDarkMode={isDarkMode} />
       </div>
@@ -276,5 +278,6 @@ export default function ContactInfoPage() {
 
       </div>
     </div>
+    </PagePublishGate>
   );
 }

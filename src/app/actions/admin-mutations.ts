@@ -20,6 +20,13 @@ import {
   HomeSlideItem,
   HomepageSlogans,
 } from '@/types';
+import {
+  isUuid,
+  generateProjectSlug,
+  normalizeCategoryId,
+  normalizeTypologyId,
+  normalizeContractTypeId,
+} from '@/lib/projects/project-helpers';
 
 // ==============================================================================
 // 1. PEOPLE MUTATIONS
@@ -192,22 +199,49 @@ export async function saveProjectAction(project: Project) {
   try {
     const supabase = getAdminClient();
 
-    const id =
-      project.id ||
-      project.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
+    // 1. Maintain UUID Primary Key
+    // If it's already a valid UUID, preserve it.
+    // If it's a temporary client ID (e.g. 'project-1234') or empty, generate a new UUID.
+    // If it's a legacy non-UUID text ID, keep it to avoid breaking pre-migration tables.
+    const isExistingUuid = isUuid(project.id);
+    const isTempId = !project.id || project.id.startsWith('project-');
+    const id = isExistingUuid ? project.id : isTempId ? crypto.randomUUID() : project.id;
+
+    // 2. Generate or preserve a clean, human-readable slug (guaranteed never a UUID)
+    const slug = generateProjectSlug(project.slug || project.title, project.year);
+
+    // 3. Normalize Foreign Keys to match Postgres constraints
+    const categoryId = normalizeCategoryId(project.categoryId || project.mainCategory);
+    const typologyId = normalizeTypologyId(project.typologyId || project.subcategory || project.category);
+    const contractTypeId = normalizeContractTypeId(project.contractTypeId);
+
+    // 4. Preserve existing project_code on update to prevent unique constraint collisions
+    let projectCode = project.projectCode;
+    if (!projectCode) {
+      const { data: existingPrj } = await supabase
+        .from('projects')
+        .select('project_code')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (existingPrj?.project_code) {
+        projectCode = existingPrj.project_code;
+      } else {
+        const curYear = new Date().getFullYear().toString().slice(-2);
+        projectCode = `PRJ-${project.year || new Date().getFullYear()}-${Math.floor(100 + Math.random() * 899)}`;
+      }
+    }
 
     const pAny = project as any;
-    const projectPayload = {
+    const projectPayload: any = {
       id,
-      project_code: project.projectCode || `26${Math.floor(10 + Math.random() * 89)}`,
+      slug,
+      project_code: projectCode,
       project_title: project.title,
       year: String(project.year || new Date().getFullYear()),
-      category_id: project.categoryId || project.mainCategory || 'Shelter',
-      typology_id: project.typologyId || (project.category ? project.category.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'tiny-living'),
-      contract_type_id: project.contractTypeId || null,
+      category_id: categoryId,
+      typology_id: typologyId,
+      contract_type_id: contractTypeId,
       client_type: project.clientType || 'Mid-Income',
       status: project.status || 'ongoing',
       location_name: typeof project.location === 'string' ? project.location : pAny.location?.name || 'Metro Manila, Philippines',
@@ -231,7 +265,14 @@ export async function saveProjectAction(project: Project) {
       updated_at: new Date().toISOString(),
     };
 
-    const { error: prjError } = await supabase.from('projects').upsert(projectPayload);
+    let { error: prjError } = await supabase.from('projects').upsert(projectPayload);
+
+    // Fault-tolerance: if the Supabase database does not yet have the 'slug' column before migration, retry without it
+    if (prjError && prjError.message?.includes('column "slug" of relation "projects" does not exist')) {
+      const { slug: _removed, ...payloadWithoutSlug } = projectPayload;
+      const retry = await supabase.from('projects').upsert(payloadWithoutSlug);
+      prjError = retry.error;
+    }
 
     if (prjError) {
       console.error('[saveProjectAction] Supabase projects error:', prjError);
@@ -275,7 +316,18 @@ export async function saveProjectAction(project: Project) {
     revalidatePath('/admin/projects');
     revalidatePath('/', 'layout');
 
-    return { success: true, data: { ...project, id } };
+    return {
+      success: true,
+      data: {
+        ...project,
+        id,
+        slug,
+        projectCode,
+        categoryId,
+        typologyId,
+        contractTypeId: contractTypeId || undefined,
+      },
+    };
   } catch (err: any) {
     console.error('[saveProjectAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to save project' };
@@ -285,7 +337,12 @@ export async function saveProjectAction(project: Project) {
 export async function deleteProjectAction(id: string) {
   try {
     const supabase = getAdminClient();
-    const { error } = await supabase.from('projects').delete().eq('id', id);
+    let { error } = await supabase.from('projects').delete().eq('id', id);
+
+    if (error && !isUuid(id)) {
+      const retry = await supabase.from('projects').delete().eq('slug', id);
+      error = retry.error;
+    }
 
     if (error) {
       console.error('[deleteProjectAction] Error:', error);
@@ -306,10 +363,18 @@ export async function deleteProjectAction(id: string) {
 export async function toggleProjectDraftAction(id: string, isDraft: boolean) {
   try {
     const supabase = getAdminClient();
-    const { error } = await supabase
+    let { error } = await supabase
       .from('projects')
       .update({ is_draft: isDraft, updated_at: new Date().toISOString() })
       .eq('id', id);
+
+    if (error && !isUuid(id)) {
+      const retry = await supabase
+        .from('projects')
+        .update({ is_draft: isDraft, updated_at: new Date().toISOString() })
+        .eq('slug', id);
+      error = retry.error;
+    }
 
     if (error) {
       console.error('[toggleProjectDraftAction] Error:', error);

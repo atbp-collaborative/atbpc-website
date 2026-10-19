@@ -61,53 +61,111 @@ export async function getSitePageById(id: string): Promise<SitePage | null> {
 
 function getFallbackSitePages(): SitePage[] {
   return [
+    // 1. studio/our-services subpages
     {
-      id: 'services-hub',
-      title: 'our services',
-      subtitle: 'Discover our flexible contract types and comprehensive architectural capabilities tailored to your project scale and scope.',
+      id: 'studio/our-services/comprehensive-services',
+      title: 'comprehensive services',
+      subtitle: 'full-lifecycle architectural design, technical engineering, & turnkey delivery',
+      heroImageUrl: '/images/hero_modern_villa_1783495183350.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'studio/our-services/piecework-services',
+      title: 'piecework services',
+      subtitle: 'targeted architectural, engineering, or modular consulting scopes',
       heroImageUrl: '/images/studio_services_img_1785469964556.jpg',
       isDraft: false,
     },
     {
-      id: 'process-hub',
-      title: 'our process',
-      subtitle: 'Purpose-built responses for one-of-a-kind briefs',
-      heroImageUrl: '/images/studio_process_img_1785469980353.jpg',
+      id: 'studio/our-services/consultation-retainer-services',
+      title: 'consultation & retainer services',
+      subtitle: 'on-call technical advisory, peer reviews, and ongoing design management',
+      heroImageUrl: '/images/production_drawings_1783495233053.jpg',
       isDraft: false,
     },
+
+    // 2. studio/our-process subpages
     {
-      id: 'contact-hub',
-      title: 'contact & channels',
-      subtitle: 'Inquiries, physical visits, collaborations and careers',
-      heroImageUrl: '/images/contact_headquarters_img_1785470005846.jpg',
-      isDraft: false,
-    },
-    {
-      id: 'case-study-house',
-      title: 'the case study house',
-      subtitle: 'explore case study house project types and collaborative offerings',
+      id: 'studio/our-process/designing-with-values',
+      title: 'designing with values',
+      subtitle: 'purpose-driven spatial concepts anchored in environmental & social context',
       heroImageUrl: '/images/contact_case_study_house_img_1785469986420.jpg',
       isDraft: false,
     },
     {
-      id: 'grow-with-us',
-      title: 'grow with us',
-      subtitle: 'careers, apprenticeships & internships',
-      heroImageUrl: '/images/studio_people_img_1785469993286.jpg',
+      id: 'studio/our-process/managing-with-integrity',
+      title: 'managing with integrity',
+      subtitle: 'uncompromising fiscal clarity, transparent procurement & rigorous oversight',
+      heroImageUrl: '/images/contact_headquarters_img_1785470005846.jpg',
       isDraft: false,
     },
     {
-      id: 'partner-with-us',
-      title: 'partner with us',
-      subtitle: 'trade contractors, engineering specialists & material suppliers',
+      id: 'studio/our-process/building-with-culture',
+      title: 'building with culture',
+      subtitle: 'synthesizing regional craftsmanship with modern architectural technology',
+      heroImageUrl: '/images/studio_process_img_1785469980353.jpg',
+      isDraft: false,
+    },
+
+    // 3. contact/case-study-house subpages
+    {
+      id: 'contact/case-study-house/discovery-session',
+      title: 'schedule a discovery session',
+      subtitle: 'for project intake, site feasibility & spatial planning consultations',
+      heroImageUrl: '/images/studio_services_img_1785469964556.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'contact/case-study-house/request-a-proposal',
+      title: 'request a proposal',
+      subtitle: 'for official cost estimates and formal project proposals',
       heroImageUrl: '/images/production_drawings_1783495233053.jpg',
       isDraft: false,
     },
     {
-      id: 'works',
-      title: 'gawâ',
-      subtitle: 'a curated portfolio of shelter, livelihood, and community architecture across the Philippines.',
-      heroImageUrl: '/images/hero_modern_villa_1783495183350.jpg',
+      id: 'contact/case-study-house/contact-info',
+      title: 'studio hours & location',
+      subtitle: 'headquarters, physical visits, interactive map & contact coordinates',
+      heroImageUrl: '/images/contact_headquarters_img_1785470005846.jpg',
+      isDraft: false,
+    },
+
+    // 4. contact/grow-with-us subpages
+    {
+      id: 'contact/grow-with-us/apprenticeship-programs',
+      title: 'apprenticeship programs',
+      subtitle: 'for on-the-job training requirements & licensure mentorship',
+      heroImageUrl: '/images/studio_people_img_1785469993286.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'contact/grow-with-us/regular-programs',
+      title: 'regular programs',
+      subtitle: 'for licensed architects, project directors & design practitioners',
+      heroImageUrl: '/images/production_drawings_1783495233053.jpg',
+      isDraft: false,
+    },
+
+    // 5. contact/partner-with-us subpages
+    {
+      id: 'contact/partner-with-us/supplier',
+      title: 'suppliers',
+      subtitle: 'for material suppliers & trade product specifications',
+      heroImageUrl: '/images/kiosk_coffee_bar_1783495252161.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'contact/partner-with-us/consultant',
+      title: 'consultants',
+      subtitle: 'for engineering & specialty technical consultants',
+      heroImageUrl: '/images/contact_headquarters_img_1785470005846.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'contact/partner-with-us/builder',
+      title: 'builders',
+      subtitle: 'for trade contractors & specialty builders',
+      heroImageUrl: '/images/studio_process_img_1785469980353.jpg',
       isDraft: false,
     },
   ];

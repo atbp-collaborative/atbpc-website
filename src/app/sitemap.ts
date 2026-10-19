@@ -64,7 +64,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     projectEntries = projects
       .filter((p) => !p.isDraft)
       .map((project) => ({
-        url: `${baseUrl}/works/${project.id}`,
+        url: `${baseUrl}/works/${project.slug || project.id}`,
         lastModified: currentDate,
         changeFrequency: 'monthly' as const,
         priority: 0.8,

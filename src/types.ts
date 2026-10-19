@@ -12,7 +12,8 @@ export interface ProjectMediaItem {
 }
 
 export interface Project {
-  id: string;
+  id: string; // UUID primary key (or slug fallback for mock data)
+  slug?: string; // Human-readable URL slug e.g. 'urban-living-1'
   projectCode?: string; // YYNN format, e.g. 2601
   title: string;
   category: string;
@@ -63,6 +64,7 @@ export interface Service {
 
 export interface MemberInvolvement {
   projectId: string;
+  projectSlug?: string;
   projectTitle: string;
   roleInProject: string;
   description: string;

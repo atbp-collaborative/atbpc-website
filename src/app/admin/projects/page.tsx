@@ -39,11 +39,20 @@ import { useAdminPeople } from '@/hooks/admin/useAdminPeople';
 import { useTheme } from '@/context/ThemeContext';
 import { Project } from '@/types';
 import { MAIN_CATEGORIES, TYPOLOGY_MAP, ALL_TYPOLOGIES } from '@/lib/projects/project-constants';
+import {
+  isUuid,
+  generateProjectSlug,
+  normalizeCategoryId,
+  normalizeTypologyId,
+  normalizeContractTypeId,
+  getTypologyName,
+} from '@/lib/projects/project-helpers';
 
 type ViewMode = 'list' | 'create' | 'edit';
 
 const EMPTY_PROJECT: Project = {
   id: '',
+  slug: '',
   projectCode: '2601',
   title: '',
   category: 'Multi-Generational',
@@ -145,8 +154,13 @@ export default function AdminProjectsPage() {
 
     const newProj: Project = {
       ...EMPTY_PROJECT,
-      id: 'project-' + Date.now(),
+      id: crypto.randomUUID(),
+      slug: '',
       projectCode: nextCode,
+      categoryId: 'Shelter',
+      mainCategory: 'Shelter',
+      typologyId: 'multi-generational',
+      contractTypeId: 'comprehensive-design',
     };
     initialDataRef.current = newProj;
     setFormData(newProj);
@@ -159,15 +173,24 @@ export default function AdminProjectsPage() {
       (proj.specs?.area
         ? parseFloat(proj.specs.area.replace(/[^0-9.]/g, '')) || undefined
         : undefined);
-    const catId = proj.categoryId || proj.mainCategory || 'Shelter';
+    const catId = normalizeCategoryId(proj.categoryId || proj.mainCategory);
+    const typId = normalizeTypologyId(proj.typologyId || proj.subcategory || proj.category);
+    const typName = getTypologyName(typId);
+    const contractId = normalizeContractTypeId(proj.contractTypeId || proj.specs?.scope);
+    const readableSlug = proj.slug || (!isUuid(proj.id) ? proj.id : generateProjectSlug(proj.title, proj.year));
+
     const editProj: Project = {
       ...EMPTY_PROJECT,
       ...proj,
+      id: proj.id,
+      slug: readableSlug,
       projectCode: proj.projectCode || '',
       categoryId: catId,
       mainCategory: catId,
-      typologyId: proj.typologyId || proj.subcategory || 'multi-generational',
-      contractTypeId: proj.contractTypeId || 'comprehensive-design',
+      typologyId: typId,
+      category: typName,
+      subcategory: typName,
+      contractTypeId: contractId || 'comprehensive-design',
       floorAreaSqm: areaNum,
     };
     initialDataRef.current = { ...editProj };
@@ -191,16 +214,26 @@ export default function AdminProjectsPage() {
     e.preventDefault();
     if (!formData.title.trim()) return;
 
-    const cleanId =
-      formData.id.trim() ||
-      formData.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
+    // Maintain UUID for primary key (generate if empty or temp)
+    const effectiveId = isUuid(formData.id) ? formData.id : crypto.randomUUID();
 
-    const projectToSave = {
+    // Generate human-readable slug (never a UUID)
+    const effectiveSlug = generateProjectSlug(formData.slug || formData.title, formData.year);
+
+    const catId = normalizeCategoryId(formData.categoryId || formData.mainCategory);
+    const typId = normalizeTypologyId(formData.typologyId || formData.subcategory);
+    const typName = getTypologyName(typId);
+
+    const projectToSave: Project = {
       ...formData,
-      id: cleanId,
+      id: effectiveId,
+      slug: effectiveSlug,
+      categoryId: catId,
+      mainCategory: catId,
+      typologyId: typId,
+      category: typName,
+      subcategory: typName,
+      contractTypeId: normalizeContractTypeId(formData.contractTypeId) || undefined,
     };
 
     saveProject(projectToSave);
@@ -307,21 +340,30 @@ export default function AdminProjectsPage() {
 
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Project ID / URL Slug <span className="text-red-500">*</span>
+                      URL Slug (Human-Readable) <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       required
-                      value={formData.id}
+                      value={formData.slug || ''}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, id: e.target.value }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          slug: e.target.value
+                            .toLowerCase()
+                            .replace(/[^a-z0-9-]+/g, '-')
+                            .replace(/^-+|-+$/g, ''),
+                        }))
                       }
                       placeholder="e.g. multi-generational-1"
                       className={`${inputClass} font-mono text-mini`}
                     />
-                    <p className="text-micro opacity-50">
-                      Public path: /works/{formData.id || 'slug'}
-                    </p>
+                    <div className="flex items-center justify-between text-micro opacity-60">
+                      <span>Public path: /works/{formData.slug || generateProjectSlug(formData.title, formData.year)}</span>
+                      {isUuid(formData.id) && (
+                        <span className="font-mono text-[10px] opacity-75">UUID: {formData.id.slice(0, 8)}...</span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-1 sm:col-span-2">
@@ -332,9 +374,14 @@ export default function AdminProjectsPage() {
                       type="text"
                       required
                       value={formData.title}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, title: e.target.value }))
-                      }
+                      onChange={(e) => {
+                        const newTitle = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          title: newTitle,
+                          slug: prev.slug ? prev.slug : generateProjectSlug(newTitle, prev.year),
+                        }));
+                      }}
                       placeholder="e.g. Multi-Generational Residence 1"
                       className={inputClass}
                     />
@@ -346,18 +393,20 @@ export default function AdminProjectsPage() {
                       Main Category (Pillar) <span className="text-red-500">*</span>
                     </label>
                     <select
-                      value={formData.categoryId || formData.mainCategory || 'Shelter'}
+                      value={normalizeCategoryId(formData.categoryId || formData.mainCategory)}
                       onChange={(e) => {
-                        const newCat = e.target.value;
+                        const newCat = normalizeCategoryId(e.target.value);
                         const typologiesForCat = typologies.filter((t) => t.categoryId === newCat);
                         const firstTypology = typologiesForCat[0];
+                        const newTypId = firstTypology ? firstTypology.id : 'tiny-living';
+                        const newTypName = firstTypology ? firstTypology.name : getTypologyName(newTypId);
                         setFormData((prev) => ({
                           ...prev,
                           categoryId: newCat,
                           mainCategory: newCat,
-                          typologyId: firstTypology ? firstTypology.id : '',
-                          subcategory: firstTypology ? firstTypology.name : '',
-                          category: firstTypology ? firstTypology.name : '',
+                          typologyId: newTypId,
+                          subcategory: newTypName,
+                          category: newTypName,
                         }));
                       }}
                       className={inputClass}
@@ -375,21 +424,22 @@ export default function AdminProjectsPage() {
                       Project Typology (Cascading) <span className="text-red-500">*</span>
                     </label>
                     <select
-                      value={formData.typologyId || ''}
+                      value={normalizeTypologyId(formData.typologyId || formData.subcategory)}
                       onChange={(e) => {
-                        const typId = e.target.value;
+                        const typId = normalizeTypologyId(e.target.value);
                         const found = typologies.find((t) => t.id === typId);
+                        const typName = found ? found.name : getTypologyName(typId);
                         setFormData((prev) => ({
                           ...prev,
                           typologyId: typId,
-                          subcategory: found ? found.name : typId,
-                          category: found ? found.name : typId,
+                          subcategory: typName,
+                          category: typName,
                         }));
                       }}
                       className={inputClass}
                     >
                       {typologies
-                        .filter((t) => t.categoryId === (formData.categoryId || formData.mainCategory || 'Shelter'))
+                        .filter((t) => t.categoryId === normalizeCategoryId(formData.categoryId || formData.mainCategory))
                         .map((typ) => (
                           <option key={typ.id} value={typ.id}>
                             {typ.name}

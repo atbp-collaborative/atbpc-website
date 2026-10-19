@@ -172,14 +172,16 @@ export function getProjects(): Project[] {
   return getStored<Project[]>(STORAGE_KEYS.PROJECTS, PROJECTS_DATA);
 }
 
-export function getProjectById(id: string): Project | undefined {
+export function getProjectById(identifier: string): Project | undefined {
   const projects = getProjects();
-  return projects.find((p) => p.id === id);
+  return projects.find((p) => p.id === identifier || (p.slug && p.slug === identifier));
 }
 
 export function saveProject(project: Project): Project {
   const projects = getProjects();
-  const existingIdx = projects.findIndex((p) => p.id === project.id);
+  const existingIdx = projects.findIndex(
+    (p) => p.id === project.id || (Boolean(p.slug && project.slug) && p.slug === project.slug)
+  );
 
   let updatedProjects: Project[];
   if (existingIdx >= 0) {

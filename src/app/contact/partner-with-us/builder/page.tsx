@@ -3,6 +3,7 @@
 import React from 'react';
 import { PartnerApplicationForm } from '@/components/forms/PartnerApplicationForm';
 import { builderConditionsData } from '@/lib/modals/partner-conditions';
+import { PagePublishGate } from '@/components/global/PagePublishGate';
 
 export default function BuilderPage() {
   const specialties = [
@@ -15,21 +16,21 @@ export default function BuilderPage() {
     'Civil Works & Site Infrastructure',
   ];
 
-
-
   const conditionsContent = builderConditionsData;
 
   return (
-    <PartnerApplicationForm
-      variant="builder"
-      title="be our partner builder"
-      subtitle="we need to know if you share the same values, integrity and culture."
-      specialties={specialties}
-      successTitle="Builder Registration Submitted"
-      successMessage="Thank you for applying as a partner builder with ATBP Collaborative. Our project directorate will review your PCAB credentials, sample contract, and site capabilities."
-      submitAnotherLabel="Submit Another Application"
-      conditionsTitle="General Conditions for Builder Partnership"
-      conditionsContent={conditionsContent}
-    />
+    <PagePublishGate slug="contact/partner-with-us/builder">
+      <PartnerApplicationForm
+        variant="builder"
+        title="be our partner builder"
+        subtitle="we need to know if you share the same values, integrity and culture."
+        specialties={specialties}
+        successTitle="Builder Registration Submitted"
+        successMessage="Thank you for applying as a partner builder with ATBP Collaborative. Our project directorate will review your PCAB credentials, sample contract, and site capabilities."
+        submitAnotherLabel="Submit Another Application"
+        conditionsTitle="General Conditions for Builder Partnership"
+        conditionsContent={conditionsContent}
+      />
+    </PagePublishGate>
   );
 }

@@ -121,13 +121,13 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
                 <div className="pb-2 pt-1 text-mini space-y-2 pl-[30px] pr-1">
                   <ul className="space-y-1.5">
                     {member.involvement.map((inv) => {
-                      const project = projects.find(p => p.id === inv.projectId);
+                      const project = projects.find(p => p.id === inv.projectId || (p.slug && p.slug === inv.projectId));
                       return (
                         <li key={inv.projectId} className="flex items-start space-x-2 font-light opacity-90">
                           <span className="text-space-sparkle font-semibold mt-0.5">•</span>
                           {project ? (
                             <Link
-                              href={projectRoute(project.id)}
+                              href={projectRoute(project.slug || project.id)}
                               className={`text-left hover:text-space-sparkle hover:underline transition-all focus:outline-none cursor-pointer flex items-center gap-1 font-medium ${
                                 isDarkMode ? "text-bright-gray/90" : "text-vintage-charcoal/90"
                               }`}
@@ -194,14 +194,14 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
                 </h2>
                 <ul className="space-y-3">
                   {member.involvement.map((inv) => {
-                    const project = projects.find(p => p.id === inv.projectId);
+                    const project = projects.find(p => p.id === inv.projectId || (p.slug && p.slug === inv.projectId));
                     return (
                       <li key={inv.projectId} className="flex items-start space-x-2.5 font-light">
                         <span className="text-space-sparkle font-semibold mt-0.5 text-mini">•</span>
                         <div className="flex flex-col space-y-0.5 flex-1">
                           {project ? (
                             <Link
-                              href={projectRoute(project.id)}
+                              href={projectRoute(project.slug || project.id)}
                               className={`group text-mini font-medium hover:text-space-sparkle transition-all focus:outline-none cursor-pointer inline-flex items-center gap-1.5 ${
                                 isDarkMode ? 'text-bright-gray' : 'text-vintage-charcoal'
                               }`}

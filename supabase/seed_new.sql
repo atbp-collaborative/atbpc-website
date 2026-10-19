@@ -197,7 +197,7 @@ INSERT INTO public.person_credentials (person_id, title, description, sort_order
 
 -- 8. PROJECTS (Works Portfolio)
 INSERT INTO public.projects (
-    id, project_code, project_title, year, category_id, typology_id, contract_type_id,
+    slug, project_code, project_title, year, category_id, typology_id, contract_type_id,
     client_type, status, location_name, address_details, coordinates, floor_area_sqm,
     property_area_type, duration, materials, description, full_writeup, youtube_video_url,
     is_featured, is_draft, sort_order
@@ -243,7 +243,7 @@ INSERT INTO public.projects (
 ('sacred-structures-39', 'PRJ-2020-039', 'Sacred Structures Project 2', '2020', 'Community', 'sacred-structures', 'comprehensive-design', 'High-Income', 'completed', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 259, 'tua', '24 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Sacred Structures project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Sacred Structures Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 380),
 ('shared-spaces-40', 'PRJ-2024-040', 'Shared Spaces Project 1', '2024', 'Community', 'shared-spaces', 'comprehensive-design', 'High-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 335, 'tua', '7 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Shared Spaces project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Shared Spaces Project 1. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 390),
 ('shared-spaces-41', 'PRJ-2022-041', 'Shared Spaces Project 2', '2022', 'Community', 'shared-spaces', 'comprehensive-design', 'Mid-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 315, 'tua', '20 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Shared Spaces project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Shared Spaces Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 400)
-ON CONFLICT (id) DO UPDATE SET 
+ON CONFLICT (slug) DO UPDATE SET 
     project_code = EXCLUDED.project_code, project_title = EXCLUDED.project_title, year = EXCLUDED.year,
     category_id = EXCLUDED.category_id, typology_id = EXCLUDED.typology_id, contract_type_id = EXCLUDED.contract_type_id,
     client_type = EXCLUDED.client_type, status = EXCLUDED.status, location_name = EXCLUDED.location_name,
@@ -252,7 +252,8 @@ ON CONFLICT (id) DO UPDATE SET
     youtube_video_url = EXCLUDED.youtube_video_url, is_featured = EXCLUDED.is_featured, is_draft = EXCLUDED.is_draft, sort_order = EXCLUDED.sort_order, updated_at = NOW();
 
 -- 9. PROJECT MEDIA
-INSERT INTO public.project_media (project_id, media_type, url, caption, is_cover, sort_order) VALUES
+WITH raw_media (project_slug, media_type, url, caption, is_cover, sort_order) AS (
+VALUES
 ('urban-living-1', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Multi-Generational Project 1 - View 1', TRUE, 0),
 ('urban-living-1', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Multi-Generational Project 1 - View 2', FALSE, 10),
 ('urban-living-1', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Multi-Generational Project 1 - View 3', FALSE, 20),
@@ -568,10 +569,16 @@ INSERT INTO public.project_media (project_id, media_type, url, caption, is_cover
 ('shared-spaces-41', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Shared Spaces Project 2 - View 6', FALSE, 50),
 ('shared-spaces-41', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Shared Spaces Project 2 - View 7', FALSE, 60),
 ('shared-spaces-41', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Shared Spaces Project 2 - View 8', FALSE, 70),
-('shared-spaces-41', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Shared Spaces Project 2 - Video Tour', FALSE, 999);
+('shared-spaces-41', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Shared Spaces Project 2 - Video Tour', FALSE, 999)
+)
+INSERT INTO public.project_media (project_id, media_type, url, caption, is_cover, sort_order)
+SELECT p.id, rm.media_type, rm.url, rm.caption, rm.is_cover, rm.sort_order
+FROM raw_media rm
+JOIN public.projects p ON p.slug = rm.project_slug;
 
 -- 10. PROJECT CONTRIBUTORS
-INSERT INTO public.project_contributors (project_id, person_id, role_in_project, contribution_narrative, sort_order) VALUES
+WITH raw_contributors (project_slug, person_id, role_in_project, contribution_narrative, sort_order) AS (
+VALUES
 ('urban-living-1', 'marchie-borja', 'Lead Principal Architect', 'Envisioned the passive cooling strategies, concrete-wood aesthetic balance, and overall spatial zoning parameters.', 0),
 ('retail---lifestyle-18', 'marchie-borja', 'Principal Concept Designer', 'Sculpted the sand-textured plaster arches and guided the tactile materials selection to contrast with structural steel.', 0),
 ('Vacation Homes-6', 'marchie-borja', 'Design Advisor', 'Consulted on spatial layout optimization and wood panel continuity layout.', 0),
@@ -606,6 +613,11 @@ INSERT INTO public.project_contributors (project_id, person_id, role_in_project,
 ('vacation-homes-14', 'miguel-torres', 'Site Supervisor', 'Coordinated labor allocation and sequencing to keep the build on schedule.', 0),
 ('retail---lifestyle-19', 'kristelle-del-rosario', 'Cost Estimator', 'Prepared material take-offs and detailed cost estimates ahead of the construction budget approval.', 0),
 ('build---sell-homes-23', 'kristelle-del-rosario', 'Quantity Surveyor', 'Tracked actual spend against budget throughout construction and flagged cost variances early.', 0)
+)
+INSERT INTO public.project_contributors (project_id, person_id, role_in_project, contribution_narrative, sort_order)
+SELECT p.id, rc.person_id, rc.role_in_project, rc.contribution_narrative, rc.sort_order
+FROM raw_contributors rc
+JOIN public.projects p ON p.slug = rc.project_slug
 ON CONFLICT (project_id, person_id) DO UPDATE SET 
     role_in_project = EXCLUDED.role_in_project, contribution_narrative = EXCLUDED.contribution_narrative;
 

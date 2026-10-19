@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useRef, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
+import { SitePagesProvider } from '@/context/SitePagesContext';
 import { useContentProtection } from '@/hooks/useContentProtection';
 import { markNavigated } from '@/lib/navigation/nav-history';
 import { Header } from '@/components/global/Header';
@@ -125,9 +126,11 @@ export function AppShell({
 }) {
   return (
     <ThemeProvider>
-      <AppShellInner isUnderConstruction={isUnderConstruction} sitePages={sitePages}>
-        {children}
-      </AppShellInner>
+      <SitePagesProvider sitePages={sitePages}>
+        <AppShellInner isUnderConstruction={isUnderConstruction} sitePages={sitePages}>
+          {children}
+        </AppShellInner>
+      </SitePagesProvider>
     </ThemeProvider>
   );
 }

@@ -1,0 +1,1746 @@
+-- ==============================================================================
+-- ATBP COLLABORATIVE: COMPLETE CLEAN DATABASE RESET SCRIPT
+-- ==============================================================================
+-- WARNING: This script drops the public schema and recreates everything from scratch.
+-- It resolves all foreign key constraint conflicts, sets up UUID primary keys for projects,
+-- human-readable slugs for routing, and restores all schema tables, RLS policies,
+-- role permissions, and seed data with ZERO dependency errors.
+-- ==============================================================================
+
+-- 0. RESET PUBLIC SCHEMA
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
+
+-- Grant standard permissions to Supabase roles
+GRANT USAGE, CREATE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO postgres, anon, authenticated, service_role;
+
+
+-- ==============================================================================
+-- ATBP Collaborative - Supabase PostgreSQL Normalized Schema (schema_new.sql)
+-- Complete consolidated schema with RBAC, employment tracking, and form ingestion.
+-- ==============================================================================
+
+-- 1. EXTENSIONS
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ==============================================================================
+-- 2. HELPER FUNCTIONS & TRIGGERS FOR TIMESTAMPS
+-- ==============================================================================
+
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ==============================================================================
+-- 3. MASTER / REFERENCE TABLES (Superadmin Managed)
+-- ==============================================================================
+
+-- Tracks: Professional & Internship Framework
+CREATE TABLE IF NOT EXISTS public.tracks (
+    id VARCHAR(50) PRIMARY KEY,                                      -- e.g. 'PROF', 'INTERN_CHED_240', 'APPRENTICE_ALE_3840'
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name TEXT NOT NULL,                                              -- e.g. 'Professional Practice', 'Curriculum-based Internship'
+    track_type TEXT NOT NULL CHECK (track_type IN ('professional', 'internship', 'apprenticeship')),
+    required_hours INTEGER NULL,                                     -- e.g. 240, 3840, NULL
+    governing_body TEXT,                                             -- e.g. 'PRC-BOA', 'CHED', 'TESDA', 'Internal'
+    description TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Roles: Studio Positions across Design, Management, & Construction
+CREATE TABLE IF NOT EXISTS public.roles (
+    id VARCHAR(50) PRIMARY KEY,                                      -- e.g. 'role-hrdt-03'
+    role_code VARCHAR(50) NOT NULL UNIQUE,                           -- e.g. 'HRDT-03', 'HROA-02', 'APP-ALE'
+    role_title TEXT NOT NULL,                                        -- e.g. 'Junior Architect', 'Site Foreman'
+    category TEXT NOT NULL CHECK (category IN ('designers', 'managers', 'builders')),
+    track_id VARCHAR(50) REFERENCES public.tracks(id) ON DELETE RESTRICT,
+    department TEXT NOT NULL,                                        -- e.g. 'Production Team (Design & Technical)'
+    role_description TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Project Categories: The 3 Core Pillars
+CREATE TABLE IF NOT EXISTS public.project_categories (
+    id VARCHAR(50) PRIMARY KEY,                                      -- 'Shelter', 'Livelihood', 'Community'
+    name TEXT NOT NULL,                                              -- 'Shelter', 'Livelihood', 'Community'
+    tagline TEXT NOT NULL,                                           -- 'for the way you live', etc.
+    hero_image_url TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Project Typologies: Hierarchical Subcategories
+CREATE TABLE IF NOT EXISTS public.project_typologies (
+    id VARCHAR(50) PRIMARY KEY,                                      -- 'tiny-living', 'multi-generational', etc.
+    category_id VARCHAR(50) NOT NULL REFERENCES public.project_categories(id) ON DELETE RESTRICT,
+    name TEXT NOT NULL,                                              -- 'Tiny Living', 'Multi-Generational', etc.
+    description TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Contract Types: Service Scopes & Procurement Models
+CREATE TABLE IF NOT EXISTS public.contract_types (
+    id VARCHAR(50) PRIMARY KEY,                                      -- 'comprehensive-design', 'piecework', etc.
+    code VARCHAR(50) NOT NULL UNIQUE,                                -- 'SCOPE-COMP-01', 'SCOPE-PIECE-01', etc.
+    name TEXT NOT NULL,                                              -- 'Comprehensive Design Services', etc.
+    service_tier TEXT NOT NULL CHECK (service_tier IN ('comprehensive', 'piecework', 'consultation', 'construction')),
+    contract_model TEXT NOT NULL,                                    -- 'Design-Build', 'Design-Bid-Build', 'Retainer', etc.
+    description TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ==============================================================================
+-- 4. CORE BUSINESS ENTITIES (PEOPLE, PROJECTS, INVOLVEMENTS)
+-- ==============================================================================
+
+-- People (Directory, Studio Regulars, Apprentices, and Leadership)
+CREATE TABLE IF NOT EXISTS public.people (
+    id VARCHAR(100) PRIMARY KEY,                                     -- slug e.g. 'marchie-borja'
+    first_name TEXT NOT NULL,
+    middle_name TEXT,
+    last_name TEXT NOT NULL,
+    pseudonym TEXT,
+    pronouns TEXT,                                                   -- e.g. 'He/Him', 'She/Her'
+    titles TEXT,                                                     -- e.g. 'Arch.', 'Engr.', 'IDr.'
+    primary_role_id VARCHAR(50) REFERENCES public.roles(id) ON DELETE SET NULL,
+    track_id VARCHAR(50) REFERENCES public.tracks(id) ON DELETE SET NULL,
+    categories TEXT[] NOT NULL DEFAULT '{}',                         -- ['designers', 'managers', 'builders']
+    professional_license_title TEXT,                                 -- e.g. 'RLA', 'RMP', 'CE'
+    license_number TEXT,                                             -- e.g. '0054827'
+    personal_email TEXT,
+    contact_number TEXT,
+    portfolio_url TEXT,
+    short_bio TEXT NOT NULL,
+    full_bio TEXT NOT NULL,
+    profile_photo_url TEXT NOT NULL,
+    
+    -- Employment & Separation Tracking
+    date_of_hiring DATE NOT NULL DEFAULT CURRENT_DATE,
+    date_of_separation DATE NULL,
+    is_currently_hired BOOLEAN NOT NULL DEFAULT TRUE,
+    
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Credentials / Affiliations (Child table for degrees, affiliations, accreditations)
+CREATE TABLE IF NOT EXISTS public.person_credentials (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    person_id VARCHAR(100) NOT NULL REFERENCES public.people(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Projects (Works Portfolio & Case Studies)
+CREATE TABLE IF NOT EXISTS public.projects (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug VARCHAR(100) NOT NULL UNIQUE,                               -- readable slug e.g. 'urban-living-1'
+    project_code VARCHAR(50) NOT NULL UNIQUE,                        -- e.g. 'PRJ-2021-001'
+    project_title TEXT NOT NULL,
+    year VARCHAR(4) NOT NULL,                                        -- e.g. '2026'
+    category_id VARCHAR(50) NOT NULL REFERENCES public.project_categories(id) ON DELETE RESTRICT,
+    typology_id VARCHAR(50) NOT NULL REFERENCES public.project_typologies(id) ON DELETE RESTRICT,
+    contract_type_id VARCHAR(50) REFERENCES public.contract_types(id) ON DELETE SET NULL,
+    client_type TEXT NOT NULL DEFAULT 'Mid-Income' CHECK (client_type IN ('Mid-Income', 'Mid-High-Income', 'High-Income')),
+    status TEXT NOT NULL DEFAULT 'ongoing' CHECK (status IN ('schematics', 'ongoing', 'completed')),
+    location_name TEXT NOT NULL,                                     -- e.g. 'Metro Manila, Philippines'
+    address_details JSONB NOT NULL DEFAULT '{}'::jsonb,              -- { regionCode, cityCode, barangayCode, street }
+    coordinates JSONB,                                               -- { lat: 14.5, lng: 121.0 }
+    floor_area_sqm NUMERIC NULL,                                     -- numeric area in sqm
+    property_area_type TEXT NOT NULL DEFAULT 'tua' CHECK (property_area_type IN ('tla', 'tua')),
+    duration TEXT,                                                   -- e.g. '9 Months'
+    materials TEXT[] NOT NULL DEFAULT '{}',                          -- ['Concrete', 'Wood', 'Steel', 'Glass']
+    description TEXT NOT NULL,                                       -- short overview
+    full_writeup TEXT NOT NULL,                                      -- detailed case study narrative
+    youtube_video_url TEXT,
+    is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Project Media: Gallery Images & Showcase Videos
+CREATE TABLE IF NOT EXISTS public.project_media (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+    media_type TEXT NOT NULL DEFAULT 'image' CHECK (media_type IN ('image', 'video')),
+    url TEXT NOT NULL,
+    caption TEXT,
+    is_cover BOOLEAN NOT NULL DEFAULT FALSE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Project Contributors: Bi-Directional Association between Projects and People
+CREATE TABLE IF NOT EXISTS public.project_contributors (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+    person_id VARCHAR(100) NOT NULL REFERENCES public.people(id) ON DELETE CASCADE,
+    role_in_project TEXT NOT NULL,                                   -- e.g. 'Lead Principal Architect'
+    contribution_narrative TEXT,                                     -- specific contribution description
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(project_id, person_id)
+);
+
+-- ==============================================================================
+-- 5. ADMIN USERS & RBAC (Superadmin, Admin, Editor)
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.admin_users (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT NOT NULL UNIQUE,
+    full_name TEXT NOT NULL,
+    avatar_url TEXT,
+    role TEXT NOT NULL DEFAULT 'editor' CHECK (role IN ('superadmin', 'admin', 'editor')),
+    person_id VARCHAR(100) REFERENCES public.people(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Site Settings & General Info
+CREATE TABLE IF NOT EXISTS public.site_settings (
+    key VARCHAR(100) PRIMARY KEY,                                    -- 'contact_info', 'privacy_policy', 'legal_notices', 'studio_writeups', 'homepage_slogans'
+    content JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ==============================================================================
+-- 5B. CONTENT MANAGEMENT SYSTEM (CMS) ENTITIES
+-- Pages, Navigation Cards, Services, Process Stage Groups, Process Stages, Slides
+-- ==============================================================================
+
+-- 1. Site Pages (Hubs & General Routes with SEO-locked titles/slugs)
+CREATE TABLE IF NOT EXISTS public.site_pages (
+    id VARCHAR(100) PRIMARY KEY,                                     -- SEO LOCKED: 'services-hub', 'process-hub', 'contact-hub', 'case-study-house', 'grow-with-us', 'partner-with-us', 'works'
+    title TEXT NOT NULL,                                             -- SEO LOCKED
+    subtitle TEXT NOT NULL,
+    hero_image_url TEXT,
+    meta_title TEXT,
+    meta_description TEXT,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 2. Navigation Cards (Hub Grid Cards)
+CREATE TABLE IF NOT EXISTS public.navigation_cards (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    hub_id VARCHAR(50) NOT NULL,                                     -- 'studio', 'contact', 'case-study-house', 'grow-with-us', 'partner-with-us', 'services', 'process'
+    card_key VARCHAR(50) NOT NULL UNIQUE,                            -- 'discovery', 'request-proposal', 'locate-map', 'apprenticeship', etc.
+    title TEXT NOT NULL,
+    tagline TEXT NOT NULL,
+    subtext TEXT NOT NULL,
+    tags TEXT[] NOT NULL DEFAULT '{}',
+    image_url TEXT NOT NULL,
+    target_href TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 3. Service Offerings (Comprehensive, Piecework, Consultation/Retainer)
+CREATE TABLE IF NOT EXISTS public.service_offerings (
+    id VARCHAR(50) PRIMARY KEY,                                      -- SEO LOCKED: 'comprehensive-services', 'piecework-services', 'consultation-retainer-services'
+    title TEXT NOT NULL,                                             -- SEO LOCKED
+    section_tag TEXT NOT NULL DEFAULT 'services | kaya',
+    tagline TEXT NOT NULL,
+    description TEXT NOT NULL,
+    extra_description TEXT,
+    image_url TEXT,
+    subtext TEXT NOT NULL,
+    pillars JSONB NOT NULL DEFAULT '[]'::jsonb,                      -- [{ title, desc }]
+    content_columns JSONB NOT NULL DEFAULT '[]'::jsonb,              -- Accordion columns / deliverables
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 4. Process Philosophies (Values, Integrity, Culture)
+CREATE TABLE IF NOT EXISTS public.process_philosophies (
+    id VARCHAR(50) PRIMARY KEY,                                      -- SEO LOCKED: 'designing-with-values', 'managing-with-integrity', 'building-with-culture'
+    title TEXT NOT NULL,                                             -- SEO LOCKED
+    section_tag TEXT NOT NULL DEFAULT 'process | paraán',
+    tagline TEXT NOT NULL,
+    description TEXT NOT NULL,
+    extra_description TEXT,
+    image_url TEXT,
+    subtext TEXT NOT NULL,
+    pillars JSONB NOT NULL DEFAULT '[]'::jsonb,                      -- [{ title, desc }]
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 5. Stage Groups (Dynamic Categories per Process Page)
+CREATE TABLE IF NOT EXISTS public.stage_groups (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    process_page_id VARCHAR(50) NOT NULL REFERENCES public.process_philosophies(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,                                              -- 'guidance', 'experiential', 'presence', etc.
+    col_span INTEGER NOT NULL DEFAULT 4,                             -- Grid column span (e.g. 4 for 3-group row, 6 for 2-group row, 12 for 1-group)
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 6. Process Stages (Dynamic Stages per Process Page and Group)
+CREATE TABLE IF NOT EXISTS public.process_stages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    process_page_id VARCHAR(50) NOT NULL REFERENCES public.process_philosophies(id) ON DELETE CASCADE,
+    stage_group_id UUID REFERENCES public.stage_groups(id) ON DELETE SET NULL,
+    step_number VARCHAR(10) NOT NULL,                                -- '01', '02', '03', ..., '07'
+    title TEXT NOT NULL,                                             -- e.g. 'Discovery Session'
+    subtitle TEXT NOT NULL,
+    description TEXT NOT NULL,
+    deliverables TEXT[] NOT NULL DEFAULT '{}',
+    duration TEXT NOT NULL,                                          -- '1 - 2 Weeks', '15 Years', etc.
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 7. Home Slides (Splash Carousel)
+CREATE TABLE IF NOT EXISTS public.home_slides (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,                                             -- 'Your Home', 'Your Business', 'Your Office'
+    image_url TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ==============================================================================
+-- 6. INBOUND SUBMISSIONS (Form Ingestion)
+-- ==============================================================================
+
+-- Grow With Us: Career & Internship Applications
+CREATE TABLE IF NOT EXISTS public.career_applications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    program_type TEXT NOT NULL CHECK (program_type IN ('internship', 'apprenticeship', 'studioRegulars')),
+    department TEXT NOT NULL,
+    role_applied_id VARCHAR(50) REFERENCES public.roles(id) ON DELETE SET NULL,
+    role_applied_title TEXT NOT NULL,
+    first_name TEXT NOT NULL,
+    pseudonym TEXT NOT NULL,
+    middle_name TEXT,
+    last_name TEXT NOT NULL,
+    pronouns TEXT NOT NULL,
+    titles TEXT,
+    email TEXT NOT NULL,
+    contact_number TEXT NOT NULL,
+    address JSONB NOT NULL DEFAULT '{}'::jsonb,
+    facebook_url TEXT,
+    instagram_url TEXT,
+    portfolio_link TEXT,
+    cover_video_link TEXT,
+    resume_file_url TEXT,
+    emergency_contact JSONB NOT NULL DEFAULT '{}'::jsonb,
+    academic_contacts JSONB NOT NULL DEFAULT '{}'::jsonb,
+    attached_documents JSONB NOT NULL DEFAULT '{}'::jsonb,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'under_review', 'shortlisted', 'accepted', 'rejected')),
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Partner With Us: Builder, Consultant, and Supplier Inquiries
+CREATE TABLE IF NOT EXISTS public.partner_applications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    variant TEXT NOT NULL CHECK (variant IN ('builder', 'consultant', 'supplier')),
+    company_name TEXT NOT NULL,
+    category_or_specialty TEXT,
+    intent_message TEXT NOT NULL,
+    representative_first_name TEXT NOT NULL,
+    representative_pseudonym TEXT NOT NULL,
+    representative_middle_name TEXT,
+    representative_last_name TEXT NOT NULL,
+    representative_pronouns TEXT NOT NULL,
+    representative_titles TEXT,
+    addresses JSONB NOT NULL DEFAULT '[]'::jsonb,
+    contacts JSONB NOT NULL DEFAULT '[]'::jsonb,
+    emails JSONB NOT NULL DEFAULT '[]'::jsonb,
+    website_url TEXT,
+    facebook_url TEXT,
+    instagram_url TEXT,
+    profile_link TEXT,
+    map_link TEXT,
+    license_link TEXT,
+    registration_documents JSONB NOT NULL DEFAULT '{}'::jsonb,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'under_review', 'approved', 'rejected')),
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Discovery Session Bookings
+CREATE TABLE IF NOT EXISTS public.discovery_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT,
+    first_name TEXT NOT NULL,
+    middle_name TEXT,
+    last_name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    contact_number TEXT NOT NULL,
+    client_address JSONB NOT NULL DEFAULT '{}'::jsonb,
+    project_site_address JSONB NOT NULL DEFAULT '{}'::jsonb,
+    project_category VARCHAR(50) REFERENCES public.project_categories(id) ON DELETE SET NULL,
+    project_typology VARCHAR(50) REFERENCES public.project_typologies(id) ON DELETE SET NULL,
+    project_type TEXT,
+    meeting_type TEXT NOT NULL CHECK (meeting_type IN ('meet-up', 'online')),
+    venue TEXT,
+    coordinates JSONB,
+    cal_booking_id TEXT,
+    booking_date DATE,
+    start_time TIME,
+    end_time TIME,
+    status TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'conducted', 'cancelled')),
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Request a Proposal Inquiries
+CREATE TABLE IF NOT EXISTS public.project_proposals (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    business_entity TEXT NOT NULL,
+    business_name TEXT,
+    client_address JSONB NOT NULL DEFAULT '{}'::jsonb,
+    landline TEXT,
+    principal_decision_makers JSONB NOT NULL DEFAULT '[]'::jsonb,
+    authorized_representatives JSONB NOT NULL DEFAULT '[]'::jsonb,
+    category_id VARCHAR(50) REFERENCES public.project_categories(id) ON DELETE SET NULL,
+    typology_id VARCHAR(50) REFERENCES public.project_typologies(id) ON DELETE SET NULL,
+    project_type TEXT NOT NULL,
+    services TEXT NOT NULL,
+    scope TEXT NOT NULL,
+    property_area_type TEXT NOT NULL DEFAULT 'tla' CHECK (property_area_type IN ('tla', 'tua')),
+    property_area_size TEXT NOT NULL,
+    project_site_address JSONB NOT NULL DEFAULT '{}'::jsonb,
+    coordinates JSONB,
+    construction_budget TEXT NOT NULL,
+    target_date DATE,
+    superstitions TEXT,
+    has_project_manager TEXT,
+    additional_info TEXT,
+    documents JSONB NOT NULL DEFAULT '{}'::jsonb,
+    status TEXT NOT NULL DEFAULT 'inquiry' CHECK (status IN ('inquiry', 'proposal_sent', 'contract_signed', 'declined', 'closed')),
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ==============================================================================
+-- 7. TRIGGERS FOR UPDATED_AT
+-- ==============================================================================
+
+CREATE TRIGGER trg_tracks_updated_at BEFORE UPDATE ON public.tracks FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_roles_updated_at BEFORE UPDATE ON public.roles FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_project_categories_updated_at BEFORE UPDATE ON public.project_categories FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_project_typologies_updated_at BEFORE UPDATE ON public.project_typologies FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_contract_types_updated_at BEFORE UPDATE ON public.contract_types FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_people_updated_at BEFORE UPDATE ON public.people FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_projects_updated_at BEFORE UPDATE ON public.projects FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_admin_users_updated_at BEFORE UPDATE ON public.admin_users FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_career_applications_updated_at BEFORE UPDATE ON public.career_applications FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_partner_applications_updated_at BEFORE UPDATE ON public.partner_applications FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_discovery_sessions_updated_at BEFORE UPDATE ON public.discovery_sessions FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_project_proposals_updated_at BEFORE UPDATE ON public.project_proposals FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_site_settings_updated_at BEFORE UPDATE ON public.site_settings FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_site_pages_updated_at BEFORE UPDATE ON public.site_pages FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_navigation_cards_updated_at BEFORE UPDATE ON public.navigation_cards FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_service_offerings_updated_at BEFORE UPDATE ON public.service_offerings FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_process_philosophies_updated_at BEFORE UPDATE ON public.process_philosophies FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_stage_groups_updated_at BEFORE UPDATE ON public.stage_groups FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_process_stages_updated_at BEFORE UPDATE ON public.process_stages FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER trg_home_slides_updated_at BEFORE UPDATE ON public.home_slides FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- ==============================================================================
+-- 8. INDEXES FOR PERFORMANCE
+-- ==============================================================================
+
+CREATE INDEX IF NOT EXISTS idx_people_is_draft ON public.people(is_draft);
+CREATE INDEX IF NOT EXISTS idx_people_is_currently_hired ON public.people(is_currently_hired);
+CREATE INDEX IF NOT EXISTS idx_people_categories ON public.people USING GIN(categories);
+CREATE INDEX IF NOT EXISTS idx_people_primary_role ON public.people(primary_role_id);
+CREATE INDEX IF NOT EXISTS idx_people_track ON public.people(track_id);
+
+CREATE INDEX IF NOT EXISTS idx_projects_is_draft ON public.projects(is_draft);
+CREATE INDEX IF NOT EXISTS idx_projects_status ON public.projects(status);
+CREATE INDEX IF NOT EXISTS idx_projects_category ON public.projects(category_id);
+CREATE INDEX IF NOT EXISTS idx_projects_typology ON public.projects(typology_id);
+CREATE INDEX IF NOT EXISTS idx_projects_contract_type ON public.projects(contract_type_id);
+
+CREATE INDEX IF NOT EXISTS idx_project_contributors_project ON public.project_contributors(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_contributors_person ON public.project_contributors(person_id);
+CREATE INDEX IF NOT EXISTS idx_project_media_project ON public.project_media(project_id);
+CREATE INDEX IF NOT EXISTS idx_person_credentials_person ON public.person_credentials(person_id);
+
+CREATE INDEX IF NOT EXISTS idx_career_applications_status ON public.career_applications(status);
+CREATE INDEX IF NOT EXISTS idx_partner_applications_status ON public.partner_applications(status);
+CREATE INDEX IF NOT EXISTS idx_discovery_sessions_status ON public.discovery_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_project_proposals_status ON public.project_proposals(status);
+
+-- CMS Indexes
+CREATE INDEX IF NOT EXISTS idx_site_pages_is_draft ON public.site_pages(is_draft);
+CREATE INDEX IF NOT EXISTS idx_navigation_cards_hub ON public.navigation_cards(hub_id, is_draft, sort_order);
+CREATE INDEX IF NOT EXISTS idx_service_offerings_is_draft ON public.service_offerings(is_draft, sort_order);
+CREATE INDEX IF NOT EXISTS idx_process_philosophies_is_draft ON public.process_philosophies(is_draft, sort_order);
+CREATE INDEX IF NOT EXISTS idx_stage_groups_page ON public.stage_groups(process_page_id, is_draft, sort_order);
+CREATE INDEX IF NOT EXISTS idx_process_stages_page ON public.process_stages(process_page_id, stage_group_id, is_draft, sort_order);
+CREATE INDEX IF NOT EXISTS idx_home_slides_order ON public.home_slides(is_draft, sort_order);
+
+-- ==============================================================================
+-- 9. RBAC HELPER FUNCTIONS
+-- ==============================================================================
+
+CREATE OR REPLACE FUNCTION public.get_current_admin_role()
+RETURNS TEXT
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT role FROM public.admin_users WHERE id = auth.uid();
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_superadmin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT EXISTS (
+        SELECT 1 FROM public.admin_users
+        WHERE id = auth.uid() AND role = 'superadmin'
+    );
+$$;
+
+-- ==============================================================================
+-- 10. ROW LEVEL SECURITY (RLS) POLICIES
+-- ==============================================================================
+
+ALTER TABLE public.tracks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.project_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.project_typologies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contract_types ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.people ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.person_credentials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.project_media ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.project_contributors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.career_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.partner_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.discovery_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.project_proposals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_pages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.navigation_cards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.service_offerings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.process_philosophies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stage_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.process_stages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.home_slides ENABLE ROW LEVEL SECURITY;
+
+-- ------------------------------------------------------------------------------
+-- A. Master Reference Tables (tracks, roles, categories, typologies, contract_types)
+-- Public can READ. Superadmin can CRUD.
+-- ------------------------------------------------------------------------------
+
+-- Tracks
+CREATE POLICY "Public can view tracks" ON public.tracks FOR SELECT USING (TRUE);
+CREATE POLICY "Superadmin can manage tracks" ON public.tracks FOR ALL TO authenticated USING (public.is_superadmin()) WITH CHECK (public.is_superadmin());
+
+-- Roles
+CREATE POLICY "Public can view active roles" ON public.roles FOR SELECT USING (TRUE);
+CREATE POLICY "Superadmin can manage roles" ON public.roles FOR ALL TO authenticated USING (public.is_superadmin()) WITH CHECK (public.is_superadmin());
+
+-- Project Categories
+CREATE POLICY "Public can view project categories" ON public.project_categories FOR SELECT USING (TRUE);
+CREATE POLICY "Superadmin can manage project categories" ON public.project_categories FOR ALL TO authenticated USING (public.is_superadmin()) WITH CHECK (public.is_superadmin());
+
+-- Project Typologies
+CREATE POLICY "Public can view project typologies" ON public.project_typologies FOR SELECT USING (TRUE);
+CREATE POLICY "Superadmin can manage project typologies" ON public.project_typologies FOR ALL TO authenticated USING (public.is_superadmin()) WITH CHECK (public.is_superadmin());
+
+-- Contract Types
+CREATE POLICY "Public can view contract types" ON public.contract_types FOR SELECT USING (TRUE);
+CREATE POLICY "Superadmin can manage contract types" ON public.contract_types FOR ALL TO authenticated USING (public.is_superadmin()) WITH CHECK (public.is_superadmin());
+
+-- ------------------------------------------------------------------------------
+-- B. People & Credentials
+-- Public: SELECT published (is_draft = FALSE)
+-- Superadmin: Full CRUD
+-- Admin: CRU (Create, Read, Update)
+-- Editor: Read-only
+-- ------------------------------------------------------------------------------
+
+-- People
+CREATE POLICY "Public can view published people"
+    ON public.people FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can create people"
+    ON public.people FOR INSERT
+    TO authenticated
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+CREATE POLICY "Admin and Superadmin can update people"
+    ON public.people FOR UPDATE
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+CREATE POLICY "Only Superadmin can delete people"
+    ON public.people FOR DELETE
+    TO authenticated
+    USING (public.is_superadmin());
+
+-- Person Credentials
+CREATE POLICY "Public can view credentials of published people"
+    ON public.person_credentials FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.people
+            WHERE public.people.id = person_credentials.person_id
+            AND (public.people.is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'))
+        )
+    );
+
+CREATE POLICY "Admin and Superadmin can manage credentials"
+    ON public.person_credentials FOR ALL
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+-- ------------------------------------------------------------------------------
+-- C. Projects & Media
+-- Public: SELECT published (is_draft = FALSE)
+-- Superadmin: Full CRUD
+-- Admin: CRU (Create, Read, Update)
+-- Editor: CRU (Create, Read, Update)
+-- ------------------------------------------------------------------------------
+
+-- Projects
+CREATE POLICY "Public can view published projects"
+    ON public.projects FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Superadmin, Admin, and Editor can create projects"
+    ON public.projects FOR INSERT
+    TO authenticated
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Superadmin, Admin, and Editor can update projects"
+    ON public.projects FOR UPDATE
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Only Superadmin can delete projects"
+    ON public.projects FOR DELETE
+    TO authenticated
+    USING (public.is_superadmin());
+
+-- Project Media
+CREATE POLICY "Public can view media of published projects"
+    ON public.project_media FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.projects
+            WHERE public.projects.id = project_media.project_id
+            AND (public.projects.is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'))
+        )
+    );
+
+CREATE POLICY "Superadmin, Admin, and Editor can manage project media"
+    ON public.project_media FOR ALL
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+-- ------------------------------------------------------------------------------
+-- D. Project Contributors (Join Table)
+-- Public: SELECT involvements for published projects
+-- Superadmin: Full CRUD
+-- Admin: CRU
+-- Editor: CRU (assigning existing people to projects)
+-- ------------------------------------------------------------------------------
+
+CREATE POLICY "Public can view contributors of published projects"
+    ON public.project_contributors FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.projects
+            WHERE public.projects.id = project_contributors.project_id
+            AND (public.projects.is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'))
+        )
+    );
+
+CREATE POLICY "Superadmin, Admin, and Editor can create project involvements"
+    ON public.project_contributors FOR INSERT
+    TO authenticated
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Superadmin, Admin, and Editor can update project involvements"
+    ON public.project_contributors FOR UPDATE
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Superadmin and Admin can remove project involvements"
+    ON public.project_contributors FOR DELETE
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+-- ------------------------------------------------------------------------------
+-- E. Site Settings (General Info)
+-- Public: SELECT
+-- Superadmin: Full CRUD
+-- Admin: Read, Update
+-- Editor: Read-only
+-- ------------------------------------------------------------------------------
+
+CREATE POLICY "Public can read site settings"
+    ON public.site_settings FOR SELECT
+    USING (TRUE);
+
+CREATE POLICY "Admin and Superadmin can update site settings"
+    ON public.site_settings FOR UPDATE
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+CREATE POLICY "Superadmin can manage site settings"
+    ON public.site_settings FOR ALL
+    TO authenticated
+    USING (public.is_superadmin())
+    WITH CHECK (public.is_superadmin());
+
+-- ------------------------------------------------------------------------------
+-- E2. Content Management System (CMS) Tables
+-- Public: SELECT published (is_draft = FALSE)
+-- Superadmin: Full CRUD
+-- Admin: CRU on Pages & Philosophies (SEO-locked), CRUD on Stage Groups, Stages, Cards, Slides
+-- Editor: Read-only (including drafts)
+-- ------------------------------------------------------------------------------
+
+-- Site Pages
+CREATE POLICY "Public can view published site pages"
+    ON public.site_pages FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can update site pages"
+    ON public.site_pages FOR UPDATE
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+CREATE POLICY "Superadmin can manage site pages"
+    ON public.site_pages FOR ALL
+    TO authenticated
+    USING (public.is_superadmin())
+    WITH CHECK (public.is_superadmin());
+
+-- Navigation Cards
+CREATE POLICY "Public can view published navigation cards"
+    ON public.navigation_cards FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can manage navigation cards"
+    ON public.navigation_cards FOR ALL
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+CREATE POLICY "Superadmin can delete navigation cards"
+    ON public.navigation_cards FOR DELETE
+    TO authenticated
+    USING (public.is_superadmin());
+
+-- Service Offerings
+CREATE POLICY "Public can view published service offerings"
+    ON public.service_offerings FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can update service offerings"
+    ON public.service_offerings FOR UPDATE
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+CREATE POLICY "Superadmin can manage service offerings"
+    ON public.service_offerings FOR ALL
+    TO authenticated
+    USING (public.is_superadmin())
+    WITH CHECK (public.is_superadmin());
+
+-- Process Philosophies
+CREATE POLICY "Public can view published process philosophies"
+    ON public.process_philosophies FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can update process philosophies"
+    ON public.process_philosophies FOR UPDATE
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+CREATE POLICY "Superadmin can manage process philosophies"
+    ON public.process_philosophies FOR ALL
+    TO authenticated
+    USING (public.is_superadmin())
+    WITH CHECK (public.is_superadmin());
+
+-- Stage Groups (Dynamic Categories per Process Page)
+CREATE POLICY "Public can view published stage groups"
+    ON public.stage_groups FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can manage stage groups"
+    ON public.stage_groups FOR ALL
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+-- Process Stages (Dynamic Stages per Page)
+CREATE POLICY "Public can view published process stages"
+    ON public.process_stages FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can manage process stages"
+    ON public.process_stages FOR ALL
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+-- Home Slides (Splash Carousel)
+CREATE POLICY "Public can view published home slides"
+    ON public.home_slides FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can manage home slides"
+    ON public.home_slides FOR ALL
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+-- ------------------------------------------------------------------------------
+-- F. Inbound Form Submissions
+-- Public: INSERT (submit forms)
+-- Admin & Superadmin: SELECT, UPDATE (review and process)
+-- Superadmin: DELETE
+-- ------------------------------------------------------------------------------
+
+-- Career Applications
+CREATE POLICY "Public can submit career applications" ON public.career_applications FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "Admin and Superadmin can view career applications" ON public.career_applications FOR SELECT TO authenticated USING (public.get_current_admin_role() IN ('superadmin', 'admin'));
+CREATE POLICY "Admin and Superadmin can update career applications" ON public.career_applications FOR UPDATE TO authenticated USING (public.get_current_admin_role() IN ('superadmin', 'admin'));
+CREATE POLICY "Superadmin can delete career applications" ON public.career_applications FOR DELETE TO authenticated USING (public.is_superadmin());
+
+-- Partner Applications
+CREATE POLICY "Public can submit partner applications" ON public.partner_applications FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "Admin and Superadmin can view partner applications" ON public.partner_applications FOR SELECT TO authenticated USING (public.get_current_admin_role() IN ('superadmin', 'admin'));
+CREATE POLICY "Admin and Superadmin can update partner applications" ON public.partner_applications FOR UPDATE TO authenticated USING (public.get_current_admin_role() IN ('superadmin', 'admin'));
+CREATE POLICY "Superadmin can delete partner applications" ON public.partner_applications FOR DELETE TO authenticated USING (public.is_superadmin());
+
+-- Discovery Sessions
+CREATE POLICY "Public can schedule discovery sessions" ON public.discovery_sessions FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "Admin and Superadmin can view discovery sessions" ON public.discovery_sessions FOR SELECT TO authenticated USING (public.get_current_admin_role() IN ('superadmin', 'admin'));
+CREATE POLICY "Admin and Superadmin can update discovery sessions" ON public.discovery_sessions FOR UPDATE TO authenticated USING (public.get_current_admin_role() IN ('superadmin', 'admin'));
+CREATE POLICY "Superadmin can delete discovery sessions" ON public.discovery_sessions FOR DELETE TO authenticated USING (public.is_superadmin());
+
+-- Project Proposals
+CREATE POLICY "Public can submit project proposals" ON public.project_proposals FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "Admin and Superadmin can view project proposals" ON public.project_proposals FOR SELECT TO authenticated USING (public.get_current_admin_role() IN ('superadmin', 'admin'));
+CREATE POLICY "Admin and Superadmin can update project proposals" ON public.project_proposals FOR UPDATE TO authenticated USING (public.get_current_admin_role() IN ('superadmin', 'admin'));
+CREATE POLICY "Superadmin can delete project proposals" ON public.project_proposals FOR DELETE TO authenticated USING (public.is_superadmin());
+
+-- ------------------------------------------------------------------------------
+-- G. Admin Users (Account Roles)
+-- Superadmin only for management. Admin users can view their own profile.
+-- ------------------------------------------------------------------------------
+
+CREATE POLICY "Users can read own admin profile"
+    ON public.admin_users FOR SELECT
+    TO authenticated
+    USING (id = auth.uid() OR public.is_superadmin());
+
+CREATE POLICY "Superadmin has full control over admin users"
+    ON public.admin_users FOR ALL
+    TO authenticated
+    USING (public.is_superadmin())
+    WITH CHECK (public.is_superadmin());
+
+-- ==============================================================================
+-- 11. STORAGE BUCKETS SETUP & SECURITY POLICIES
+-- ==============================================================================
+
+INSERT INTO storage.buckets (id, name, public) VALUES
+    ('portfolio-media', 'portfolio-media', TRUE),
+    ('career-documents', 'career-documents', FALSE),
+    ('partner-documents', 'partner-documents', FALSE),
+    ('proposal-documents', 'proposal-documents', FALSE)
+ON CONFLICT (id) DO NOTHING;
+
+-- Public bucket: portfolio-media
+DROP POLICY IF EXISTS "Public can read portfolio media" ON storage.objects;
+CREATE POLICY "Public can read portfolio media"
+    ON storage.objects FOR SELECT
+    USING (bucket_id = 'portfolio-media');
+
+DROP POLICY IF EXISTS "Admins and Editors can upload portfolio media" ON storage.objects;
+CREATE POLICY "Admins and Editors can upload portfolio media"
+    ON storage.objects FOR INSERT
+    TO authenticated
+    WITH CHECK (bucket_id = 'portfolio-media' AND public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+DROP POLICY IF EXISTS "Admins and Editors can update portfolio media" ON storage.objects;
+CREATE POLICY "Admins and Editors can update portfolio media"
+    ON storage.objects FOR UPDATE
+    TO authenticated
+    USING (bucket_id = 'portfolio-media' AND public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+DROP POLICY IF EXISTS "Only Superadmin can delete portfolio media" ON storage.objects;
+CREATE POLICY "Only Superadmin can delete portfolio media"
+    ON storage.objects FOR DELETE
+    TO authenticated
+    USING (bucket_id = 'portfolio-media' AND public.is_superadmin());
+
+-- Private Intake Buckets: Public can upload during form submissions, Admins can read
+DROP POLICY IF EXISTS "Public can upload career documents" ON storage.objects;
+CREATE POLICY "Public can upload career documents"
+    ON storage.objects FOR INSERT
+    WITH CHECK (bucket_id = 'career-documents');
+
+DROP POLICY IF EXISTS "Admins can view career documents" ON storage.objects;
+CREATE POLICY "Admins can view career documents"
+    ON storage.objects FOR SELECT
+    TO authenticated
+    USING (bucket_id = 'career-documents' AND public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+DROP POLICY IF EXISTS "Public can upload partner documents" ON storage.objects;
+CREATE POLICY "Public can upload partner documents"
+    ON storage.objects FOR INSERT
+    WITH CHECK (bucket_id = 'partner-documents');
+
+DROP POLICY IF EXISTS "Admins can view partner documents" ON storage.objects;
+CREATE POLICY "Admins can view partner documents"
+    ON storage.objects FOR SELECT
+    TO authenticated
+    USING (bucket_id = 'partner-documents' AND public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+DROP POLICY IF EXISTS "Public can upload proposal documents" ON storage.objects;
+CREATE POLICY "Public can upload proposal documents"
+    ON storage.objects FOR INSERT
+    WITH CHECK (bucket_id = 'proposal-documents');
+
+DROP POLICY IF EXISTS "Admins can view proposal documents" ON storage.objects;
+CREATE POLICY "Admins can view proposal documents"
+    ON storage.objects FOR SELECT
+    TO authenticated
+    USING (bucket_id = 'proposal-documents' AND public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+-- ==============================================================================
+-- 12. ROLE PRIVILEGES & PERMISSIONS (Crucial for Supabase API access)
+-- ==============================================================================
+GRANT USAGE, CREATE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO postgres, anon, authenticated, service_role;
+
+
+
+-- ==============================================================================
+-- SEED DATA SECTION
+-- ==============================================================================
+
+-- ==============================================================================
+-- ATBP Collaborative - Supabase Complete Normalized Seed Data (seed_new.sql)
+-- Consolidates tracks, roles, categories, typologies, contract types,
+-- people, credentials, projects, media, contributors, and site settings.
+-- ==============================================================================
+
+-- 1. TRACKS
+INSERT INTO public.tracks (id, code, name, track_type, required_hours, governing_body, description, sort_order) VALUES
+('PROF', 'PROF', 'Professional Practice', 'professional', NULL, 'PRC / BOA / Internal', 'Full-time licensed and experienced studio professionals directing design, engineering, and construction.', 10),
+('INTERN_CHED_240', 'INT-CHED', 'Curriculum-based Architecture Intern', 'internship', 240, 'CHED CMO No. 104, Series of 2017', 'Academic internship for undergraduate architecture students completing curriculum requirements.', 20),
+('INTERN_VOC', 'INT-VOC', 'Vocational Technical Intern', 'internship', 300, 'TESDA', 'Vocational technical hands-on internship for National Certificate (NC) holders.', 30),
+('APPRENTICE_ALE_3840', 'APP-ALE', 'Diversified Architectural Experience (ALE)', 'apprenticeship', 3840, 'PRC-BOA', 'PRC-mandated 3,840 logbook hours under registered and licensed architects qualifying for the ALE.', 40)
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, track_type = EXCLUDED.track_type, required_hours = EXCLUDED.required_hours, governing_body = EXCLUDED.governing_body, description = EXCLUDED.description, sort_order = EXCLUDED.sort_order;
+
+-- 2. PROJECT CATEGORIES (3 Core Pillars)
+INSERT INTO public.project_categories (id, name, tagline, hero_image_url, sort_order) VALUES
+('Shelter', 'Shelter', 'for the way you live', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/categories/shelter.jpg', 1),
+('Livelihood', 'Livelihood', 'where passion takes form', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/categories/livelihood.jpg', 2),
+('Community', 'Community', 'we share & communicate', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/categories/community.jpg', 3)
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, tagline = EXCLUDED.tagline, hero_image_url = EXCLUDED.hero_image_url, sort_order = EXCLUDED.sort_order;
+
+-- 3. PROJECT TYPOLOGIES (9 Typologies)
+INSERT INTO public.project_typologies (id, category_id, name, description, sort_order) VALUES
+('tiny-living', 'Shelter', 'Tiny Living', 'Compact, high-efficiency micro-dwellings and optimized tropical living spaces.', 10),
+('multi-generational', 'Shelter', 'Multi-Generational', 'Cohesive, flexible residential compounds accommodating multi-tier family living.', 20),
+('vacation-homes', 'Shelter', 'Vacation Homes', 'Tranquil retreat residences and tropical lifestyle estates focused on nature immersion.', 30),
+('food-and-beverage', 'Livelihood', 'Food & Beverage', 'Specialty cafes, restaurants, and experiential culinary retail environments.', 40),
+('retail-and-lifestyle', 'Livelihood', 'Retail & Lifestyle', 'Bespoke brand boutiques, concept stores, and commercial lifestyle spaces.', 50),
+('workspaces', 'Livelihood', 'Workspaces', 'Collaborative corporate offices, agile production studios, and tech headquarters.', 60),
+('shared-spaces', 'Community', 'Shared Spaces', 'Civic hubs, communal pavilions, and neighborhood activity center architecture.', 70),
+('shared-places', 'Community', 'Shared Places', 'Urban parks, multi-use public grounds, and pedestrian gathering places.', 80),
+('sacred-structures', 'Community', 'Sacred Structures', 'Chapels, contemplative sanctuaries, and heritage spiritual assemblies.', 90)
+ON CONFLICT (id) DO UPDATE SET category_id = EXCLUDED.category_id, name = EXCLUDED.name, description = EXCLUDED.description, sort_order = EXCLUDED.sort_order;
+
+-- 4. CONTRACT TYPES
+INSERT INTO public.contract_types (id, code, name, service_tier, contract_model, description, sort_order) VALUES
+('comprehensive-design', 'SCOPE-COMP-DESIGN', 'Comprehensive Design Services', 'comprehensive', 'Design-Build (Turnkey)', 'End-to-end design covering architectural, structural, MEPFS, and statutory permits.', 10),
+('comprehensive-management', 'SCOPE-COMP-MGMT', 'Comprehensive Management Services', 'comprehensive', 'Construction Management', 'Critical path oversight, procurement direction, and subcontractor supervision.', 20),
+('building-construction', 'SCOPE-BUILD-CONST', 'Building Construction Services', 'construction', 'Turnkey Construction', 'Ground-up general contracting, civil works, and turn-key structural execution.', 30),
+('piecework-interiors', 'SCOPE-PIECE-INT', 'Architectural Interiors & Detailing', 'piecework', 'Unit-Rate Deliverables', 'Bespoke interior fit-out, joinery detailing, and material finish schedules.', 40),
+('consultation-retainer', 'SCOPE-CONSULT-RETAIN', 'Consultation & Retainer Services', 'consultation', 'Strategic Advisory Retainer', 'Ongoing architectural consulting, portfolio feasibility, and client-rep audits.', 50)
+ON CONFLICT (id) DO UPDATE SET code = EXCLUDED.code, name = EXCLUDED.name, service_tier = EXCLUDED.service_tier, contract_model = EXCLUDED.contract_model, description = EXCLUDED.description, sort_order = EXCLUDED.sort_order;
+
+-- 5. ROLES
+INSERT INTO public.roles (id, role_code, role_title, category, track_id, department, role_description, is_active, sort_order) VALUES
+('role-hroa-02', 'HROA-02', 'Administrative Assistant', 'managers', 'PROF', 'Admin Team (Finance, Marketing, Coordination)', 'Supports document tracking, meeting minutes, client correspondence, and studio coordination schedules.', TRUE, 0),
+('role-hroa-03', 'HROA-03', 'Administrative Officer', 'managers', 'PROF', 'Admin Team (Finance, Marketing, Coordination)', 'Oversees day-to-day administrative logistics, vendor records, and corporate regulatory compliance filings.', TRUE, 10),
+('role-hroa-04', 'HROA-04', 'Associate Administrator', 'managers', 'PROF', 'Admin Team (Finance, Marketing, Coordination)', 'Manages financial documentation, payroll interfaces, corporate records, and internal client accounting operations.', TRUE, 20),
+('role-hrdt-03', 'HRDT-03', 'Junior Architect', 'designers', 'PROF', 'Production Team (Design & Technical)', 'Produces architectural working drawings, 3D visualization studies, and municipal permit application packages.', TRUE, 30),
+('role-hrdt-05', 'HRDT-05', 'Junior Designer', 'designers', 'PROF', 'Production Team (Design & Technical)', 'Assists with spatial mockups, mood boards, color specifications, and interior layout documentation.', TRUE, 40),
+('role-hrdt-06', 'HRDT-06', 'Junior Engineer', 'builders', 'PROF', 'Production Team (Design & Technical)', 'Coordinates structural and MEPFS drawings against architectural blueprints and assists with engineering estimates.', TRUE, 50),
+('role-hrdt-07', 'HRDT-07', 'Senior Architect', 'designers', 'PROF', 'Production Team (Design & Technical)', 'Leads design package development, technical detailing, code compliance verification, and client design reviews.', TRUE, 60),
+('role-hrdt-08', 'HRDT-08', 'Senior Designer', 'designers', 'PROF', 'Production Team (Design & Technical)', 'Directs bespoke joinery design, finish palettes, lighting integration, and spatial sequencing.', TRUE, 70),
+('role-hrdt-09', 'HRDT-09', 'Senior Engineer', 'builders', 'PROF', 'Production Team (Design & Technical)', 'Conducts engineering structural reviews, MEPFS clash detection, and construction technical support.', TRUE, 80),
+('role-hrdt-10', 'HRDT-10', 'Project Manager', 'managers', 'PROF', 'Production Team (Design & Technical)', 'Supervises critical path milestones, budget allocations, contractor coordination, and handover schedules.', TRUE, 90),
+('role-hrgm-01', 'HRGM-01', 'Helper', 'builders', 'PROF', 'Construction Team (Supervision, Manpower)', 'Performs general site assistance, materials staging, safety housekeeping, and tradesperson support.', TRUE, 100),
+('role-hrgm-02', 'HRGM-02', 'General Specialist', 'builders', 'PROF', 'Construction Team (Supervision, Manpower)', 'Executes versatile construction tasks across concrete, masonry, rough carpentry, and site finishing works.', TRUE, 110),
+('role-hrgm-03', 'HRGM-03', 'Skilled Specialist', 'builders', 'PROF', 'Construction Team (Supervision, Manpower)', 'Specializes in high-precision trades including custom formwork, polished screed, metal joinery, and tiling.', TRUE, 120),
+('role-hrgm-04', 'HRGM-04', 'Skilled Operator', 'builders', 'PROF', 'Construction Team (Supervision, Manpower)', 'Operates heavy and specialized machinery including concrete mixers, hoist systems, and fabrication tools safely.', TRUE, 130),
+('role-hrgm-05', 'HRGM-05', 'Site Foreman', 'builders', 'PROF', 'Construction Team (Supervision, Manpower)', 'Directs on-site daily manpower, enforces quality control and OH&S standards, and reports directly to Project Managers.', TRUE, 140),
+('role-hrgm-06', 'HRGM-06', 'Construction Manager', 'managers', 'PROF', 'Construction Team (Supervision, Manpower)', 'Directs overall jobsite operations, subcontractor trade contracts, logistical staging, and progress inspections.', TRUE, 150),
+('role-int-ched', 'INT-CHED', 'Curriculum-based Architecture Intern', 'designers', 'INTERN_CHED_240', 'Apprenticeship & Academic Programs', 'Structured internship under CHED CMO No. 104, Series of 2017 focusing on design research, drafting, and studio mentorship.', TRUE, 160),
+('role-int-voc', 'INT-VOC', 'Vocational Technical Intern', 'builders', 'INTERN_VOC', 'Vocational Training Programs', 'Hands-on technical production internship for National Certificate (NC) holders reinforcing carpentry, steel, and site skills.', TRUE, 170),
+('role-app-ale', 'APP-ALE', 'Diversified Architectural Experience Apprentice', 'designers', 'APPRENTICE_ALE_3840', 'Apprenticeship & Academic Programs', 'PRC-mandated 3,840 logbook hours under registered and licensed architects covering contract documents, site supervision, and design.', TRUE, 180),
+('role-int-pm', 'INT-PM', 'Project Management & Coordination Intern', 'managers', 'INTERN_CHED_240', 'Studio Operations & Management', 'Assists senior project managers with site procurement scheduling, bill of quantities review, and subcontractor tracking.', TRUE, 190),
+('role-app-eng', 'APP-ENG', 'Site Engineering Apprentice', 'builders', 'INTERN_CHED_240', 'Construction Directorate', 'Field trainee gaining hands-on exposure to structural concrete pours, rebar inspection, and MEPFS rough-in verification.', TRUE, 200),
+('role-bld-01', 'BLD-01', 'General Building Contractor', 'builders', 'PROF', 'Partner Builder Directorate', 'PCAB-licensed prime contractors executing ground-up residential, commercial, and institutional building projects.', TRUE, 210),
+('role-bld-02', 'BLD-02', 'Architectural Fit-Out & Joinery Specialist', 'builders', 'PROF', 'Partner Builder Directorate', 'Fabricators and contractors specializing in bespoke millwork, cabinetry, acoustic paneling, and interior turn-key fit-outs.', TRUE, 220),
+('role-bld-03', 'BLD-03', 'Structural Steel & Concrete Framing Contractor', 'builders', 'PROF', 'Partner Builder Directorate', 'Contractors specializing in heavy structural steel erection, cast-in-place post-tensioned concrete, and foundation piling.', TRUE, 230),
+('role-bld-04', 'BLD-04', 'MEPFS Contractor', 'builders', 'PROF', 'Partner Builder Directorate', 'Certified trade specialists for mechanical HVAC, electrical substations, sanitary master plumbing, and fire suppression systems.', TRUE, 240),
+('role-bld-05', 'BLD-05', 'Specialized Modular & Pod Construction Partner', 'builders', 'PROF', 'Partner Builder Directorate', 'Prefabricated bathroom pods, modular timber frames, and off-site assembly construction partners.', TRUE, 250),
+('role-bld-06', 'BLD-06', 'Facade, Enclosure & Curtain Wall Contractor', 'builders', 'PROF', 'Partner Builder Directorate', 'Specialists in double-glazed curtain walls, sun louver systems, ACP cladding, and weather-sealed building envelopes.', TRUE, 260),
+('role-bld-07', 'BLD-07', 'Civil Works & Site Infrastructure Contractor', 'builders', 'PROF', 'Partner Builder Directorate', 'Earthwork excavation, retaining walls, stormwater drainage, roadway paving, and civil utilities development.', TRUE, 270),
+('role-cst-01', 'CST-01', 'Structural Engineering Consultant', 'builders', 'PROF', 'Engineering & Specialist Consultants', 'Licensed Civil/Structural Engineers providing structural analysis, seismic resilience simulations, and foundation calculations.', TRUE, 280),
+('role-cst-02', 'CST-02', 'MEPFS Engineering Consultant', 'builders', 'PROF', 'Engineering & Specialist Consultants', 'Professional Mechanical, Electrical, and Sanitary Engineers preparing signed and sealed MEPFS design schematics.', TRUE, 290),
+('role-cst-03', 'CST-03', 'Environmental & Sustainability Consultant', 'designers', 'PROF', 'Engineering & Specialist Consultants', 'Advisors on LEED/BERDE green certification, passive shading orientation, carbon accounting, and rainwater harvesting.', TRUE, 300),
+('role-cst-04', 'CST-04', 'Geology & Geotechnical Engineering Consultant', 'builders', 'PROF', 'Engineering & Specialist Consultants', 'Soil boring test specialists, slope stability analysts, and seismic liquefaction assessment experts.', TRUE, 310),
+('role-cst-05', 'CST-05', 'Acoustics Engineering Consultant', 'designers', 'PROF', 'Engineering & Specialist Consultants', 'Sound isolation, reverberation control, and audio-visual spatial acoustic engineering specialists.', TRUE, 320),
+('role-cst-06', 'CST-06', 'Lighting Design Consultant', 'designers', 'PROF', 'Engineering & Specialist Consultants', 'Architectural lighting design specialists sculpting daytime/nighttime illuminance, luminaire schedules, and circadian scenes.', TRUE, 330),
+('role-cst-07', 'CST-07', 'Quantity Surveying & Cost Management Consultant', 'managers', 'PROF', 'Engineering & Specialist Consultants', 'Independent cost managers offering third-party bill of quantities, tender analysis, and milestone payment auditing.', TRUE, 340),
+('role-cst-08', 'CST-08', 'Facade & Building Physics Consultant', 'designers', 'PROF', 'Engineering & Specialist Consultants', 'Thermal envelope modeling, wind tunnel pressure testing, and fenestration moisture-proofing specialists.', TRUE, 350),
+('role-cst-09', 'CST-09', 'Heritage & Urban Planning Consultant', 'designers', 'PROF', 'Engineering & Specialist Consultants', 'Conservation architects and urban planners advising on historic restoration protocols and municipal master plans.', TRUE, 360),
+('role-stu-01', 'STU-01', 'Principal Architect & Founder', 'designers', 'PROF', 'Studio Directorate', 'Founding leadership championing studio design philosophy, architectural license governance, and master planning.', TRUE, 370),
+('role-stu-02', 'STU-02', 'HR & Finance Director', 'managers', 'PROF', 'Corporate Operations', 'Oversees organizational personnel pipelines, financial allocations, compliance, and partnership administration.', TRUE, 380),
+('role-stu-03', 'STU-03', 'Technical Director & Partner', 'builders', 'PROF', 'Technical Directorate', 'Oversees MEPFS system integration, master plumbing, code verification, and high-precision technical delivery.', TRUE, 390),
+('role-stu-04', 'STU-04', 'Lead Architectural Designer', 'designers', 'PROF', 'Design Studio', 'Spearheads schematic massing, concept design narratives, material articulation, and residential studio projects.', TRUE, 400),
+('role-stu-05', 'STU-05', 'Construction & Site Operations Head', 'builders', 'PROF', 'Construction Directorate', 'Coordinates field construction managers, quality benchmarks, safety compliance, and site manpower deployment.', TRUE, 410),
+('role-stu-06', 'STU-06', 'Senior Interior Architect', 'designers', 'PROF', 'Interior Architecture Studio', 'Curates interior spatial zoning, bespoke furniture fabrication, and high-end residential interior detailing.', TRUE, 420),
+('role-stu-07', 'STU-07', 'Landscape & Environmental Planner', 'designers', 'PROF', 'Environmental Design Practice', 'Integrates endemic tropical flora, biophilic courtyards, terrain contours, and storm mitigation landscapes.', TRUE, 430),
+('role-stu-08', 'STU-08', 'Senior Structural & Civil Consultant', 'builders', 'PROF', 'Engineering Directorate', 'Leads structural framing design, foundation systems, seismic load calculations, and site soil evaluation.', TRUE, 440),
+('role-stu-09', 'STU-09', 'MEPFS Engineering Director', 'builders', 'PROF', 'Engineering Directorate', 'Supervises mechanical air conditioning, clean power distribution, clean water supply, and life safety systems.', TRUE, 450),
+('role-stu-10', 'STU-10', 'Senior Quantity Surveyor', 'managers', 'PROF', 'Cost & Estimating', 'Directs detailed bills of quantities, subcontractor payment certificates, value engineering, and variance tracking.', TRUE, 460)
+ON CONFLICT (id) DO UPDATE SET role_code = EXCLUDED.role_code, role_title = EXCLUDED.role_title, category = EXCLUDED.category, track_id = EXCLUDED.track_id, department = EXCLUDED.department, role_description = EXCLUDED.role_description, is_active = EXCLUDED.is_active, sort_order = EXCLUDED.sort_order;
+
+-- 6. PEOPLE (Studio Personnel & Directory)
+INSERT INTO public.people (
+    id, first_name, middle_name, last_name, pseudonym, pronouns, titles,
+    primary_role_id, track_id, categories, professional_license_title, license_number,
+    personal_email, contact_number, portfolio_url, short_bio, full_bio, profile_photo_url,
+    date_of_hiring, date_of_separation, is_currently_hired, is_draft, display_order
+) VALUES
+('marchie-borja', 'Marchie', 'Teodoro', 'Borja', 'Marchie', 'He/Him', 'Arch.', 'role-stu-01', 'PROF', '{"designers","managers","builders"}'::text[], 'RLA', '0054827', 'marchie-borja@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/marchie-borja', 'Licensed Architect, UAP Makati Chapter Member, and Lecturer. Specialist in interdisciplinary design studies.', 'Marchie Teodoro Borja is a registered, licensed, and recognized professional Filipino architect by the Professional Regulation Commission (PRC) - Board of Architecture. He is an active member in good standing with the Integrated and Accredited Professional Organization of Architects (IAPOA) under the United Architects of the Philippines (UAP) Makati Chapter.
+
+A proud graduate of National University-Manila with extensive specialization in Interdisciplinary Design Studies from the prestigious SoFA Design Institute. Beyond full-time practice, he serves as an Industry Professional Lecturer and Faculty Member across various CHED-recognized universities, fostering local design culture. His design philosophy fundamentally embraces structural efficiency, spatial poetry, and cultural truth.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/marchie-borja.jpg', '2020-01-15'::date, NULL, TRUE, FALSE, 0),
+('jhoanna-ramos', 'Jhoanna Marie', 'V.', 'Ramos', 'Jhoanna Marie', 'She/Her', 'Ms.', 'role-stu-02', 'PROF', '{"managers"}'::text[], 'Corporate Treasurer & Partner', 'Corporate Treasurer & Partner', 'jhoanna-ramos@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/jhoanna-ramos', 'Co-Founding Partner supervising Human Resources, organizational alignment, and fiscal administration.', 'Jhoanna Marie V. Ramos acts as the foundational administrative anchor of ATBP Collaborative. As the HR & Finance Director and Corporate Treasurer, she oversees the studio''s operational workflows, contract negotiations, progressive budget pipelines, and administrative transparency.
+
+Her dedication to meticulous financial schedules and human resources ensure that client-builder relationships remain smooth, on-budget, and legally sound, safeguarding project concentration and maintaining strict professional compliance across all execution steps.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/jhoanna-ramos.jpg', '2021-02-15'::date, NULL, TRUE, FALSE, 10),
+('adrian-mores', 'Adrian', 'Ta-ay', 'Mores', 'Adrian', 'He/Him', 'Arch. / RMP', 'role-stu-03', 'PROF', '{"managers","builders"}'::text[], 'RLA / RMP', '0045492', 'adrian-mores@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/adrian-mores', 'Licensed Architect and Registered Master Plumber. Technical Director and Corporate Secretary ensuring execution precision.', 'Adrian Ta-ay Mores is a multi-licensed professional specializing in complex building systems, structural coordination, and code compliance. Serving as Technical Director and Corporate Secretary of ATBP Collaborative, he bridges the gap between conceptual design and high-precision execution.
+
+His expertise in architectural drafting standards, master plumbing design, and MEPFS system integration makes him the primary technical anchor for the studio''s high-density fit-outs, commercial retail projects, and modular structural envelopes.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/adrian-mores.jpg', '2022-03-15'::date, NULL, TRUE, FALSE, 20),
+('nikka-oliveros', 'Nikka', 'Jane', 'Oliveros', 'Nikka', 'She/Her', 'Arch.', 'role-hrdt-07', 'PROF', '{"designers"}'::text[], 'RLA', '0055109', 'nikka-oliveros@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/nikka-oliveros', 'Associate Architect delivering layout blueprints, design studies, and construction document sets.', 'Nikka Jane Oliveros is an exceptionally detail-oriented professional architect focusing on space planning, material schedules, and precise construction documentation. As Associate Architect at ATBP Collaborative, she drives the drafting pipeline from initial schematic sketches to permit-ready contract document sets.
+
+Her research-informed approach to interior textures, tropical planning, and local zoning laws allows the studio to deliver aesthetic, high-density residential solutions and fluid retail spaces while upholding absolute regulatory standards.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/nikka-oliveros.jpg', '2023-04-15'::date, NULL, TRUE, FALSE, 30),
+('mark-ramos', 'Mark', 'Joseph', 'Ramos', 'Mark', 'He/Him', 'Mr.', 'role-hrdt-07', 'PROF', '{"designers"}'::text[], 'RLA', 'Associate Partner', 'mark-ramos@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/mark-ramos', 'Experienced BIM Specialist and Lead Architectural Draftsman, optimizing Revit/BIM standards.', 'Mark Joseph Ramos is an expert in Building Information Modeling (BIM) and digital architecture workflows. With over eight years of experience, he leads the digital drafting division at ATBP Collaborative, ensuring precise coordination across structural, mechanical, and architectural systems.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/mark-ramos.jpg', '2020-05-15'::date, NULL, TRUE, FALSE, 40),
+('maria-santos', 'Maria', 'Clara', 'Santos', 'Maria', 'She/Her', 'IDr.', 'role-hrdt-07', 'PROF', '{"designers"}'::text[], 'LID', 'LID License No. 0008431', 'maria-santos@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/maria-santos', 'Registered Interior Designer specializing in bespoke high-end residential fit-outs and materials curation.', 'Maria Clara Santos is a registered and licensed interior designer in the Philippines. She heads the space curation and interior materials department, working closely with the design team to blend local craft with contemporary minimalist spatial layouts.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/maria-santos.jpg', '2021-06-15'::date, NULL, TRUE, FALSE, 50),
+('christian-alipio', 'Christian', NULL, 'Alipio', 'Christian', 'He/Him', 'Engr.', 'role-hrdt-10', 'PROF', '{"managers","builders"}'::text[], 'RCE', 'RCE License No. 0098412', 'christian-alipio@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/christian-alipio', 'Registered Civil Engineer managing site execution, construction scheduling, and compliance.', 'Christian Alipio is a licensed civil engineer specializing in turnkey project management and site implementation. He directs on-site operations for ATBP Collaborative, coordinating subcontractors and ensuring structural integrity, material standards, and workplace safety.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/christian-alipio.jpg', '2022-07-15'::date, NULL, TRUE, FALSE, 60),
+('hannah-villanueva', 'Hannah', 'Zarsaga', 'Villanueva', 'Hannah', 'She/Her', 'Ms.', 'role-hrdt-07', 'PROF', '{"managers"}'::text[], 'RLA', 'Operations & Administrative Lead', 'hannah-villanueva@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/hannah-villanueva', 'Manages client onboarding, contract timelines, and day-to-day studio operations across active projects.', 'Hannah Zarsaga Villanueva oversees the client-facing side of ATBP Collaborative, from first-consultation scheduling through contract signing and progress reporting. She keeps every active engagement moving on a clear timeline, translating design and construction milestones into plain updates clients can act on.
+
+Her background in operations management means she also owns the studio''s internal scheduling systems, vendor onboarding, and administrative compliance, ensuring the design and build teams can focus on execution without workflow bottlenecks.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/hannah-villanueva.jpg', '2023-08-15'::date, NULL, TRUE, FALSE, 70),
+('ernest-bambico', 'Ernest', 'Bataller', 'Bambico', 'Ernest', 'He/Him', 'Arch.', 'role-hrdt-07', 'PROF', '{"designers","builders"}'::text[], 'RLA', '0061204', 'ernest-bambico@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/ernest-bambico', 'Licensed Architect bridging design intent and buildability through detailed construction drawings and site checks.', 'Ernest Bataller Bambico is a licensed architect who works at the intersection of design and construction, developing the detailed drawings that keep concept designs buildable and code-compliant. He regularly visits active sites to verify that executed work matches design intent before sign-off.
+
+His dual fluency in design software and construction sequencing makes him a key liaison between the studio''s design team and its on-site contractors, catching conflicts early and resolving them without slowing down the build.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/ernest-bambico.jpg', '2020-09-15'::date, NULL, TRUE, FALSE, 80),
+('john-dave-aquino', 'John Dave', 'Lacaba', 'Aquino', 'John Dave', 'He/Him', 'Arch.', 'role-hrdt-07', 'PROF', '{"designers","builders"}'::text[], 'RLA', '0058873', 'john-dave-aquino@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/john-dave-aquino', 'Licensed Architect handling both schematic design and hands-on fabrication oversight for modular builds.', 'John Dave Lacaba Aquino is a licensed architect specializing in design-build delivery, where the same team that designs a space also oversees its fabrication and assembly. He develops schematic concepts through to shop-ready drawings, then stays involved through fabrication and installation.
+
+This end-to-end involvement lets him make real-time material and joinery decisions on-site, keeping design intent intact even when field conditions call for adjustments.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/john-dave-aquino.jpg', '2021-01-15'::date, NULL, TRUE, FALSE, 90),
+('rafael-bautista', 'Rafael', 'Miguel', 'Bautista', 'Rafael', 'He/Him', 'Engr.', 'role-app-eng', 'PROF', '{"builders"}'::text[], 'RCE', 'RCE License No. 0102337', 'rafael-bautista@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/rafael-bautista', 'Registered Civil Engineer overseeing structural execution, formworks, and day-to-day site safety.', 'Rafael Miguel Bautista is a licensed civil engineer responsible for structural execution on active sites, from formwork inspection to concrete pour quality control. He works alongside construction managers to keep crews on schedule without compromising structural standards.
+
+His focus on jobsite safety protocols and material testing gives the studio a consistent quality checkpoint between the engineering drawings and what actually gets built.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/rafael-bautista.jpg', '2022-02-15'::date, NULL, TRUE, FALSE, 100),
+('patricia-yumang', 'Patricia', 'Anne', 'Yumang', 'Patricia', 'She/Her', 'Arch.', 'role-hrdt-03', 'PROF', '{"designers"}'::text[], 'RLA', '0064910', 'patricia-yumang@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/patricia-yumang', 'Licensed Architect supporting schematic design studies, material research, and presentation drawings.', 'Patricia Anne Yumang supports the design team across early-stage schematic studies, material research, and client presentation drawings. She has a particular interest in passive tropical design strategies and spends much of her research time studying local material availability and craft techniques.
+
+As a newer member of the studio, she works closely with senior architects to translate design direction into polished concept boards and preliminary layouts ready for client review.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/patricia-yumang.jpg', '2023-03-15'::date, NULL, TRUE, FALSE, 110),
+('andrea-fernandez', 'Andrea', 'Nicole', 'Fernandez', 'Andrea', 'She/Her', 'Arch.', 'role-hrdt-07', 'PROF', '{"designers","managers"}'::text[], 'RLA', '0067452', 'andrea-fernandez@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/andrea-fernandez', 'Licensed Architect steering design direction and creative quality control across the studio''s active projects.', 'Andrea Nicole Fernandez sets and safeguards the design language across every active engagement at ATBP Collaborative, reviewing concept development at each major milestone before it reaches the client. She works directly with project architects to keep material choices, spatial logic, and detailing consistent with the studio''s design philosophy.
+
+Beyond project-level review, she also mentors junior design staff and runs the internal design critique sessions that keep the studio''s creative standards sharp across a growing project load.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/andrea-fernandez.jpg', '2020-04-15'::date, NULL, TRUE, FALSE, 120),
+('miguel-torres', 'Miguel', 'Angelo', 'Torres', 'Miguel', 'He/Him', 'Mr.', 'role-hrdt-07', 'PROF', '{"builders"}'::text[], 'RLA', 'Certified Construction Supervisor', 'miguel-torres@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/miguel-torres', 'Oversees day-to-day crew work, materials handling, and jobsite safety across active construction sites.', 'Miguel Angelo Torres runs the daily rhythm of ATBP Collaborative''s active construction sites, coordinating crew schedules, materials deliveries, and safety briefings before work begins each day. He is the first point of contact for on-site issues, escalating design conflicts to the project architects while keeping the build moving.
+
+His hands-on experience across residential and commercial builds gives him a practical read on sequencing and labor allocation that keeps projects on schedule without sacrificing workmanship.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/miguel-torres.jpg', '2021-05-15'::date, NULL, TRUE, FALSE, 130),
+('kristelle-del-rosario', 'Kristelle Anne', 'Del', 'Rosario', 'Kristelle Anne', 'She/Her', 'Ms.', 'role-hrdt-07', 'PROF', '{"managers","builders"}'::text[], 'RLA', 'Registered Quantity Surveyor', 'kristelle-del-rosario@atbpcollaborative.com', '+63 917 123 4567', 'https://portfolio.atbpcollaborative.com/kristelle-del-rosario', 'Prepares cost estimates, material take-offs, and budget tracking across design and construction phases.', 'Kristelle Anne Del Rosario translates design drawings into detailed material take-offs and cost estimates, giving both the studio and its clients a clear picture of budget exposure before ground is broken. She tracks actual spend against estimate throughout construction, flagging variances early enough for the team to adjust.
+
+Her close coordination with both the design and construction teams means cost control decisions are grounded in what is actually buildable, not just what is on paper.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/people/kristelle-del-rosario.jpg', '2022-06-15'::date, NULL, TRUE, FALSE, 140)
+ON CONFLICT (id) DO UPDATE SET 
+    first_name = EXCLUDED.first_name, middle_name = EXCLUDED.middle_name, last_name = EXCLUDED.last_name,
+    pseudonym = EXCLUDED.pseudonym, pronouns = EXCLUDED.pronouns, titles = EXCLUDED.titles,
+    primary_role_id = EXCLUDED.primary_role_id, track_id = EXCLUDED.track_id, categories = EXCLUDED.categories,
+    professional_license_title = EXCLUDED.professional_license_title, license_number = EXCLUDED.license_number,
+    personal_email = EXCLUDED.personal_email, contact_number = EXCLUDED.contact_number, portfolio_url = EXCLUDED.portfolio_url,
+    short_bio = EXCLUDED.short_bio, full_bio = EXCLUDED.full_bio, profile_photo_url = EXCLUDED.profile_photo_url,
+    date_of_hiring = EXCLUDED.date_of_hiring, is_currently_hired = EXCLUDED.is_currently_hired, is_draft = EXCLUDED.is_draft, display_order = EXCLUDED.display_order, updated_at = NOW();
+
+-- 7. PERSON CREDENTIALS
+INSERT INTO public.person_credentials (person_id, title, description, sort_order) VALUES
+('marchie-borja', 'National University-Manila Alumnus', 'Earned a Bachelor of Science in Architecture, establishing foundational expertise in sustainable planning and structural tectonics.', 0),
+('marchie-borja', 'SoFA Design Institute Alumnus', 'Completed specialized coursework in Interdisciplinary Design Studies, bridging spatial poetry and modern furniture craft.', 10),
+('marchie-borja', 'Active Member, United Architects of the Philippines (Makati Chapter)', 'Regular contributor to continuing professional development forums and collaborative regional architectural workshops.', 20),
+('jhoanna-ramos', 'Financial Management & Operations Alumnus', 'Holds a degree in Financial Management, directing progressive fiscal strategy and capital allocations for design-build operations.', 0),
+('jhoanna-ramos', 'Corporate Treasurer & Co-Founding Partner', 'Directs internal financial governance, compliance auditing, and stakeholder investment pipelines at ATBP Collaborative.', 10),
+('jhoanna-ramos', 'Human Resource Management & Compliance Specialist', 'Oversees labor law compliance, personnel development frameworks, and vendor contract negotiations studio-wide.', 20),
+('adrian-mores', 'Licensed Architect (RLA)', 'PRC-registered architect spearheading complex building envelopes, technical drafting, and statutory code compliance.', 0),
+('adrian-mores', 'Registered Master Plumber (NAMPAP)', 'Accredited specialist directing sanitary engineering, water distribution networks, and integrated MEPFS coordination.', 10),
+('adrian-mores', 'Technical Systems Design Specialist', 'Specializes in high-density commercial fit-outs, modular assembly methods, and multi-disciplinary drawing standardizations.', 20),
+('nikka-oliveros', 'Licensed Architect (RLA)', 'PRC-licensed architect focusing on space planning, material schedules, and statutory construction documentation.', 0),
+('nikka-oliveros', 'Digital Architecture & BIM Specialist', 'Proficient in advanced 3D modeling pipelines, parametric detailing, and coordination of permit-ready drawing packages.', 10),
+('nikka-oliveros', 'Space Planning & Tropical Architecture Researcher', 'Conducts empirical research in passive cooling methodologies and locally sourced textural surface finishes.', 20),
+('mark-ramos', 'Bachelor of Science in Architecture', 'Graduated with an emphasis on digital architectural technologies and construction documentation methodologies.', 0),
+('mark-ramos', 'Certified Autodesk Revit Professional', 'Industry-certified modeler managing complex multi-trade clash-detection, family creation, and parametric workflows.', 10),
+('mark-ramos', 'Digital Production Quality Controller', 'Oversees digital drafting accuracy, model integrity standards, and structural synchronization across all design packages.', 20),
+('maria-santos', 'BS Interior Design, University of the Philippines', 'Graduated with honors, focusing on ergonomic interior planning, spatial psychology, and bespoke fixture design.', 0),
+('maria-santos', 'Active Member, Philippine Institute of Interior Designers (PIID)', 'Participates in national interior design symposia, sustainable material councils, and artisanal craft collaborations.', 10),
+('maria-santos', 'Acoustic Design & Lighting Certification', 'Certified specialist in ambient architectural lighting layouts and interior acoustic performance optimization.', 20),
+('christian-alipio', 'BS Civil Engineering, Mapúa University', 'Earned a degree in Civil Engineering with concentration in structural analysis and reinforced concrete design.', 0),
+('christian-alipio', 'Professional Project Management Specialist', 'Coordinates turnkey site management, subcontractor work sequencing, and critical-path milestone tracking.', 10),
+('christian-alipio', 'OSHA Workplace Safety Certified', 'Enforces occupational health, jobsite safety regulations, and risk-mitigation protocols across active build sites.', 20),
+('hannah-villanueva', 'BS Business Administration, Major in Operations Management', 'Graduated with focus on supply chain integration, service delivery optimization, and corporate organizational dynamics.', 0),
+('hannah-villanueva', 'Certified Client Relationship Management Professional', 'Leads client onboarding journeys, transparent communication cadences, and executive stakeholder alignment.', 10),
+('hannah-villanueva', 'Studio Operations & Scheduling Lead', 'Coordinates cross-functional project schedules between design, procurement, and on-site construction divisions.', 20),
+('ernest-bambico', 'Licensed Architect (RLA)', 'PRC-accredited professional validating construction documents against local building codes and zoning laws.', 0),
+('ernest-bambico', 'BS Architecture, University of Santo Tomas', 'Completed architectural studies with focus on structural morphology, history of architecture, and construction detailing.', 10),
+('ernest-bambico', 'Construction Detailing & Code Compliance Specialist', 'Bridges schematic design intent and fabrication realities through meticulous on-site joinery and structural detailing.', 20),
+('john-dave-aquino', 'Licensed Architect (RLA)', 'PRC-registered architect managing end-to-end design-build projects and prefabrication detailing.', 0),
+('john-dave-aquino', 'BS Architecture, Far Eastern University', 'Graduated with core emphasis on building science, modular framing, and architectural construction systems.', 10),
+('john-dave-aquino', 'Design-Build Delivery & Modular Fabrication Specialist', 'Directs custom timber joinery, metalwork fabrication, and rapid on-site assembly strategies.', 20),
+('rafael-bautista', 'BS Civil Engineering, De La Salle University', 'Graduated with specialization in structural foundation engineering and advanced soil-structure interaction.', 0),
+('rafael-bautista', 'Registered Civil Engineer (RCE)', 'PRC-licensed civil engineer supervising formwork integrity, reinforced rebar inspections, and concrete pour quality.', 10),
+('rafael-bautista', 'Construction Safety & Quality Control Certified', 'Implements QA/QC checklists, non-destructive material testing, and rigorous site hazard assessments.', 20),
+('patricia-yumang', 'Licensed Architect (RLA)', 'PRC-licensed architect creating schematic concept sets, spatial moodboards, and digital presentation packages.', 0),
+('patricia-yumang', 'BS Architecture, University of the Philippines', 'Completed architectural degree with distinction in sustainable design and vernacular Philippine architecture.', 10),
+('patricia-yumang', 'Tropical & Passive Design Research Assistant', 'Researches microclimatic shading solutions, passive airflow dynamics, and natural materiality.', 20),
+('andrea-fernandez', 'Licensed Architect (RLA)', 'PRC-registered architect providing creative direction and design quality control across all project typologies.', 0),
+('andrea-fernandez', 'BS Architecture, University of the Philippines', 'Alumna specializing in contemporary urban design theory, tectonic expression, and spatial composition.', 10),
+('andrea-fernandez', 'Design Leadership & Creative Direction Specialist', 'Mentors design teams, establishes studio aesthetic guidelines, and oversees milestone design crit sessions.', 20),
+('miguel-torres', 'Certificate in Construction Management', 'Specialized vocational training in construction trades coordination, procurement logistics, and tool management.', 0),
+('miguel-torres', 'OSHA Workplace Safety Certified', 'Leads daily toolbox talks, hazard prevention protocols, and PPE compliance on multi-trade construction jobsites.', 10),
+('miguel-torres', 'Site Supervision & Crew Scheduling Specialist', 'Directs daily field labor allocation, concrete cures, framing inspections, and subcontractor handover workflows.', 20),
+('kristelle-del-rosario', 'BS Quantity Surveying / Construction Management', 'Graduated with specialization in cost engineering, bill of quantities (BOQ) preparation, and contract valuation.', 0),
+('kristelle-del-rosario', 'Registered Quantity Surveyor', 'Certified professional managing commercial cost auditing, budget variance tracking, and procurement tenders.', 10),
+('kristelle-del-rosario', 'Cost Estimation & Budget Control Specialist', 'Develops comprehensive material take-offs and financial cost forecasting for residential and commercial builds.', 20);
+
+-- 8. PROJECTS (Works Portfolio)
+INSERT INTO public.projects (
+    slug, project_code, project_title, year, category_id, typology_id, contract_type_id,
+    client_type, status, location_name, address_details, coordinates, floor_area_sqm,
+    property_area_type, duration, materials, description, full_writeup, youtube_video_url,
+    is_featured, is_draft, sort_order
+) VALUES
+('urban-living-1', 'PRJ-2021-001', 'Multi-Generational Project 1', '2021', 'Shelter', 'multi-generational', 'comprehensive-design', 'Mid-High-Income', 'completed', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 140, 'tua', '9 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Multi-Generational project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Multi-Generational Project 1. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', TRUE, FALSE, 0),
+('urban-living-2', 'PRJ-2021-002', 'Multi-Generational Project 2', '2021', 'Shelter', 'multi-generational', 'comprehensive-design', 'Mid-Income', 'ongoing', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 652, 'tua', '9 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Multi-Generational project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Multi-Generational Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', TRUE, FALSE, 10),
+('tiny-living-3', 'PRJ-2023-003', 'Tiny Living Project 1', '2023', 'Shelter', 'tiny-living', 'comprehensive-design', 'Mid-High-Income', 'ongoing', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 142, 'tua', '21 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Tiny Living project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Tiny Living Project 1. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', TRUE, FALSE, 20),
+('tiny-living-4', 'PRJ-2021-004', 'Tiny Living Project 2', '2021', 'Shelter', 'tiny-living', 'comprehensive-design', 'Mid-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 809, 'tua', '8 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Tiny Living project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Tiny Living Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', TRUE, FALSE, 30),
+('tiny-living-5', 'PRJ-2023-005', 'Tiny Living Project 3', '2023', 'Shelter', 'tiny-living', 'comprehensive-design', 'Mid-High-Income', 'ongoing', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 146, 'tua', '11 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Tiny Living project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Tiny Living Project 3. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', TRUE, FALSE, 40),
+('Vacation Homes-6', 'PRJ-2022-006', 'Vacation Homes Project 1', '2022', 'Shelter', 'vacation-homes', 'comprehensive-design', 'Mid-High-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 165, 'tua', '13 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Vacation Homes project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Vacation Homes Project 1. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 50),
+('Vacation Homes-7', 'PRJ-2023-007', 'Vacation Homes Project 2', '2023', 'Shelter', 'vacation-homes', 'comprehensive-design', 'Mid-High-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 315, 'tua', '11 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Vacation Homes project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Vacation Homes Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 60),
+('multi-generational-8', 'PRJ-2020-008', 'Multi-Generational Project 1', '2020', 'Shelter', 'multi-generational', 'comprehensive-design', 'High-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 642, 'tua', '17 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Multi-Generational project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Multi-Generational Project 1. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 70),
+('multi-generational-9', 'PRJ-2021-009', 'Multi-Generational Project 2', '2021', 'Shelter', 'multi-generational', 'comprehensive-design', 'High-Income', 'completed', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 982, 'tua', '9 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Multi-Generational project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Multi-Generational Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 80),
+('multi-generational-10', 'PRJ-2021-010', 'Multi-Generational Project 3', '2021', 'Shelter', 'multi-generational', 'comprehensive-design', 'Mid-Income', 'ongoing', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 133, 'tua', '22 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Multi-Generational project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Multi-Generational Project 3. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 90),
+('multi-generational-11', 'PRJ-2022-011', 'Multi-Generational Project 4', '2022', 'Shelter', 'multi-generational', 'comprehensive-design', 'Mid-High-Income', 'completed', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 356, 'tua', '15 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Multi-Generational project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Multi-Generational Project 4. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 100),
+('vacation-homes-12', 'PRJ-2020-012', 'Vacation Homes Project 1', '2020', 'Shelter', 'vacation-homes', 'comprehensive-design', 'High-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 508, 'tua', '18 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Vacation Homes project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Vacation Homes Project 1. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 110),
+('vacation-homes-13', 'PRJ-2023-013', 'Vacation Homes Project 2', '2023', 'Shelter', 'vacation-homes', 'comprehensive-design', 'Mid-High-Income', 'ongoing', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 310, 'tua', '8 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Vacation Homes project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Vacation Homes Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 120),
+('vacation-homes-14', 'PRJ-2021-014', 'Vacation Homes Project 3', '2021', 'Shelter', 'vacation-homes', 'comprehensive-design', 'Mid-High-Income', 'ongoing', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 212, 'tua', '3 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Vacation Homes project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Vacation Homes Project 3. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 130),
+('vacation-homes-15', 'PRJ-2022-015', 'Vacation Homes Project 4', '2022', 'Shelter', 'vacation-homes', 'comprehensive-design', 'Mid-Income', 'ongoing', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 992, 'tua', '18 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Vacation Homes project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Vacation Homes Project 4. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 140),
+('vacation-homes-16', 'PRJ-2022-016', 'Vacation Homes Project 5', '2022', 'Shelter', 'vacation-homes', 'comprehensive-design', 'Mid-High-Income', 'completed', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 450, 'tua', '22 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Vacation Homes project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Vacation Homes Project 5. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 150),
+('vacation-homes-17', 'PRJ-2024-017', 'Vacation Homes Project 6', '2024', 'Shelter', 'vacation-homes', 'comprehensive-design', 'Mid-Income', 'ongoing', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 361, 'tua', '4 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Vacation Homes project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Vacation Homes Project 6. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 160),
+('retail---lifestyle-18', 'PRJ-2021-018', 'Retail & Lifestyle Project 1', '2021', 'Livelihood', 'retail-and-lifestyle', 'comprehensive-design', 'High-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 99, 'tua', '5 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Retail & Lifestyle project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Retail & Lifestyle Project 1. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 170),
+('retail---lifestyle-19', 'PRJ-2021-019', 'Retail & Lifestyle Project 2', '2021', 'Livelihood', 'retail-and-lifestyle', 'comprehensive-design', 'Mid-Income', 'ongoing', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 974, 'tua', '24 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Retail & Lifestyle project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Retail & Lifestyle Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 180),
+('retail---lifestyle-20', 'PRJ-2021-020', 'Retail & Lifestyle Project 3', '2021', 'Livelihood', 'retail-and-lifestyle', 'comprehensive-design', 'Mid-High-Income', 'ongoing', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 946, 'tua', '7 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Retail & Lifestyle project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Retail & Lifestyle Project 3. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 190),
+('retail---lifestyle-21', 'PRJ-2022-021', 'Retail & Lifestyle Project 4', '2022', 'Livelihood', 'retail-and-lifestyle', 'comprehensive-design', 'Mid-High-Income', 'completed', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 119, 'tua', '11 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Retail & Lifestyle project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Retail & Lifestyle Project 4. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 200),
+('build---sell-homes-22', 'PRJ-2021-022', 'Workspaces Project 1', '2021', 'Livelihood', 'workspaces', 'comprehensive-design', 'Mid-Income', 'completed', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 832, 'tua', '15 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Workspaces project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Workspaces Project 1. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 210),
+('build---sell-homes-23', 'PRJ-2022-023', 'Workspaces Project 2', '2022', 'Livelihood', 'workspaces', 'comprehensive-design', 'High-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 132, 'tua', '14 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Workspaces project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Workspaces Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 220),
+('food---beverage-24', 'PRJ-2025-024', 'Food & Beverage Project 1', '2025', 'Livelihood', 'food-and-beverage', 'comprehensive-design', 'High-Income', 'ongoing', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 866, 'tua', '5 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Food & Beverage project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Food & Beverage Project 1. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 230),
+('food---beverage-25', 'PRJ-2022-025', 'Food & Beverage Project 2', '2022', 'Livelihood', 'food-and-beverage', 'comprehensive-design', 'High-Income', 'completed', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 483, 'tua', '6 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Food & Beverage project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Food & Beverage Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 240),
+('food---beverage-26', 'PRJ-2022-026', 'Food & Beverage Project 3', '2022', 'Livelihood', 'food-and-beverage', 'comprehensive-design', 'Mid-High-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 63, 'tua', '4 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Food & Beverage project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Food & Beverage Project 3. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 250),
+('food---beverage-27', 'PRJ-2021-027', 'Food & Beverage Project 4', '2021', 'Livelihood', 'food-and-beverage', 'comprehensive-design', 'Mid-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 807, 'tua', '12 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Food & Beverage project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Food & Beverage Project 4. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 260),
+('workspaces-28', 'PRJ-2023-028', 'Workspaces Project 1', '2023', 'Livelihood', 'workspaces', 'comprehensive-design', 'High-Income', 'completed', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 240, 'tua', '22 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Workspaces project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Workspaces Project 1. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 270),
+('workspaces-29', 'PRJ-2025-029', 'Workspaces Project 2', '2025', 'Livelihood', 'workspaces', 'comprehensive-design', 'Mid-High-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 168, 'tua', '18 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Workspaces project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Workspaces Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 280),
+('workspaces-30', 'PRJ-2020-030', 'Workspaces Project 3', '2020', 'Livelihood', 'workspaces', 'comprehensive-design', 'Mid-High-Income', 'completed', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 572, 'tua', '21 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Workspaces project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Workspaces Project 3. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 290),
+('workspaces-31', 'PRJ-2023-031', 'Workspaces Project 4', '2023', 'Livelihood', 'workspaces', 'comprehensive-design', 'Mid-High-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 478, 'tua', '17 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Workspaces project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Workspaces Project 4. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 300),
+('shared-places-32', 'PRJ-2020-032', 'Shared Places Project 1', '2020', 'Community', 'shared-places', 'comprehensive-design', 'Mid-Income', 'completed', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 632, 'tua', '8 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Shared Places project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Shared Places Project 1. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 310),
+('shared-places-33', 'PRJ-2020-033', 'Shared Places Project 2', '2020', 'Community', 'shared-places', 'comprehensive-design', 'Mid-Income', 'ongoing', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 682, 'tua', '15 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Shared Places project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Shared Places Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 320),
+('shared-places-34', 'PRJ-2021-034', 'Shared Places Project 3', '2021', 'Community', 'shared-places', 'comprehensive-design', 'Mid-High-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 750, 'tua', '21 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Shared Places project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Shared Places Project 3. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 330),
+('shared-places-35', 'PRJ-2022-035', 'Shared Places Project 4', '2022', 'Community', 'shared-places', 'comprehensive-design', 'Mid-High-Income', 'completed', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 512, 'tua', '7 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Shared Places project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Shared Places Project 4. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 340),
+('shared-places-36', 'PRJ-2021-036', 'Shared Places Project 5', '2021', 'Community', 'shared-places', 'comprehensive-design', 'Mid-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 484, 'tua', '24 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Shared Places project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Shared Places Project 5. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 350),
+('shared-places-37', 'PRJ-2024-037', 'Shared Places Project 6', '2024', 'Community', 'shared-places', 'comprehensive-design', 'High-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 574, 'tua', '22 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Shared Places project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Shared Places Project 6. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 360),
+('sacred-structures-38', 'PRJ-2024-038', 'Sacred Structures Project 1', '2024', 'Community', 'sacred-structures', 'comprehensive-design', 'High-Income', 'ongoing', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 349, 'tua', '8 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Sacred Structures project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Sacred Structures Project 1. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 370),
+('sacred-structures-39', 'PRJ-2020-039', 'Sacred Structures Project 2', '2020', 'Community', 'sacred-structures', 'comprehensive-design', 'High-Income', 'completed', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 259, 'tua', '24 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Sacred Structures project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Sacred Structures Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 380),
+('shared-spaces-40', 'PRJ-2024-040', 'Shared Spaces Project 1', '2024', 'Community', 'shared-spaces', 'comprehensive-design', 'High-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 335, 'tua', '7 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Shared Spaces project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Shared Spaces Project 1. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 390),
+('shared-spaces-41', 'PRJ-2022-041', 'Shared Spaces Project 2', '2022', 'Community', 'shared-spaces', 'comprehensive-design', 'Mid-Income', 'schematics', 'Metro Manila, Philippines', '{"regionName":"National Capital Region","cityName":"Metro Manila","country":"Philippines"}'::jsonb, '{"lat": 14.5995, "lng": 120.9842}'::jsonb, 315, 'tua', '20 Months', '{"Concrete","Wood","Steel","Glass"}'::text[], 'A stunning Shared Spaces project showcasing modern architecture and sustainable design principles, deeply integrated into its surroundings.', 'This is a comprehensive full writeup for the Shared Spaces Project 2. It incorporates sustainable materials, passive cooling strategies, and a meticulous response to the tropical context. The spaces are fluid and interconnected, making the best use of natural light.', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', FALSE, FALSE, 400)
+ON CONFLICT (slug) DO UPDATE SET 
+    project_code = EXCLUDED.project_code, project_title = EXCLUDED.project_title, year = EXCLUDED.year,
+    category_id = EXCLUDED.category_id, typology_id = EXCLUDED.typology_id, contract_type_id = EXCLUDED.contract_type_id,
+    client_type = EXCLUDED.client_type, status = EXCLUDED.status, location_name = EXCLUDED.location_name,
+    floor_area_sqm = EXCLUDED.floor_area_sqm, property_area_type = EXCLUDED.property_area_type, duration = EXCLUDED.duration,
+    materials = EXCLUDED.materials, description = EXCLUDED.description, full_writeup = EXCLUDED.full_writeup,
+    youtube_video_url = EXCLUDED.youtube_video_url, is_featured = EXCLUDED.is_featured, is_draft = EXCLUDED.is_draft, sort_order = EXCLUDED.sort_order, updated_at = NOW();
+
+-- 9. PROJECT MEDIA
+WITH raw_media (project_slug, media_type, url, caption, is_cover, sort_order) AS (
+VALUES
+('urban-living-1', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Multi-Generational Project 1 - View 1', TRUE, 0),
+('urban-living-1', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Multi-Generational Project 1 - View 2', FALSE, 10),
+('urban-living-1', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Multi-Generational Project 1 - View 3', FALSE, 20),
+('urban-living-1', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Multi-Generational Project 1 - View 4', FALSE, 30),
+('urban-living-1', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Multi-Generational Project 1 - View 5', FALSE, 40),
+('urban-living-1', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Multi-Generational Project 1 - Video Tour', FALSE, 999),
+('urban-living-2', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Multi-Generational Project 2 - View 1', TRUE, 0),
+('urban-living-2', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Multi-Generational Project 2 - View 2', FALSE, 10),
+('urban-living-2', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Multi-Generational Project 2 - View 3', FALSE, 20),
+('urban-living-2', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Multi-Generational Project 2 - View 4', FALSE, 30),
+('urban-living-2', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Multi-Generational Project 2 - View 5', FALSE, 40),
+('urban-living-2', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Multi-Generational Project 2 - View 6', FALSE, 50),
+('urban-living-2', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Multi-Generational Project 2 - Video Tour', FALSE, 999),
+('tiny-living-3', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-1.jpg', 'Tiny Living Project 1 - View 1', TRUE, 0),
+('tiny-living-3', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Tiny Living Project 1 - View 2', FALSE, 10),
+('tiny-living-3', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Tiny Living Project 1 - View 3', FALSE, 20),
+('tiny-living-3', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Tiny Living Project 1 - View 4', FALSE, 30),
+('tiny-living-3', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Tiny Living Project 1 - View 5', FALSE, 40),
+('tiny-living-3', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Tiny Living Project 1 - View 6', FALSE, 50),
+('tiny-living-3', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Tiny Living Project 1 - View 7', FALSE, 60),
+('tiny-living-3', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Tiny Living Project 1 - Video Tour', FALSE, 999),
+('tiny-living-4', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Tiny Living Project 2 - View 1', TRUE, 0),
+('tiny-living-4', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Tiny Living Project 2 - View 2', FALSE, 10),
+('tiny-living-4', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Tiny Living Project 2 - View 3', FALSE, 20),
+('tiny-living-4', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Tiny Living Project 2 - View 4', FALSE, 30),
+('tiny-living-4', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Tiny Living Project 2 - View 5', FALSE, 40),
+('tiny-living-4', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Tiny Living Project 2 - View 6', FALSE, 50),
+('tiny-living-4', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Tiny Living Project 2 - Video Tour', FALSE, 999),
+('tiny-living-5', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Tiny Living Project 3 - View 1', TRUE, 0),
+('tiny-living-5', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Tiny Living Project 3 - View 2', FALSE, 10),
+('tiny-living-5', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Tiny Living Project 3 - View 3', FALSE, 20),
+('tiny-living-5', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Tiny Living Project 3 - View 4', FALSE, 30),
+('tiny-living-5', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Tiny Living Project 3 - View 5', FALSE, 40),
+('tiny-living-5', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Tiny Living Project 3 - View 6', FALSE, 50),
+('tiny-living-5', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Tiny Living Project 3 - Video Tour', FALSE, 999),
+('Vacation Homes-6', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Vacation Homes Project 1 - View 1', TRUE, 0),
+('Vacation Homes-6', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Vacation Homes Project 1 - View 2', FALSE, 10),
+('Vacation Homes-6', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-1.jpg', 'Vacation Homes Project 1 - View 3', FALSE, 20),
+('Vacation Homes-6', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Vacation Homes Project 1 - View 4', FALSE, 30),
+('Vacation Homes-6', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Vacation Homes Project 1 - View 5', FALSE, 40),
+('Vacation Homes-6', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Vacation Homes Project 1 - View 6', FALSE, 50),
+('Vacation Homes-6', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Vacation Homes Project 1 - View 7', FALSE, 60),
+('Vacation Homes-6', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Vacation Homes Project 1 - View 8', FALSE, 70),
+('Vacation Homes-6', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Vacation Homes Project 1 - Video Tour', FALSE, 999),
+('Vacation Homes-7', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Vacation Homes Project 2 - View 1', TRUE, 0),
+('Vacation Homes-7', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Vacation Homes Project 2 - View 2', FALSE, 10),
+('Vacation Homes-7', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-1.jpg', 'Vacation Homes Project 2 - View 3', FALSE, 20),
+('Vacation Homes-7', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Vacation Homes Project 2 - View 4', FALSE, 30),
+('Vacation Homes-7', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Vacation Homes Project 2 - View 5', FALSE, 40),
+('Vacation Homes-7', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Vacation Homes Project 2 - Video Tour', FALSE, 999),
+('multi-generational-8', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Multi-Generational Project 1 - View 1', TRUE, 0),
+('multi-generational-8', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Multi-Generational Project 1 - View 2', FALSE, 10),
+('multi-generational-8', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Multi-Generational Project 1 - View 3', FALSE, 20),
+('multi-generational-8', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Multi-Generational Project 1 - View 4', FALSE, 30),
+('multi-generational-8', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Multi-Generational Project 1 - View 5', FALSE, 40),
+('multi-generational-8', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Multi-Generational Project 1 - View 6', FALSE, 50),
+('multi-generational-8', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Multi-Generational Project 1 - Video Tour', FALSE, 999),
+('multi-generational-9', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Multi-Generational Project 2 - View 1', TRUE, 0),
+('multi-generational-9', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Multi-Generational Project 2 - View 2', FALSE, 10),
+('multi-generational-9', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Multi-Generational Project 2 - View 3', FALSE, 20),
+('multi-generational-9', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Multi-Generational Project 2 - View 4', FALSE, 30),
+('multi-generational-9', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Multi-Generational Project 2 - View 5', FALSE, 40),
+('multi-generational-9', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Multi-Generational Project 2 - View 6', FALSE, 50),
+('multi-generational-9', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Multi-Generational Project 2 - View 7', FALSE, 60),
+('multi-generational-9', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Multi-Generational Project 2 - View 8', FALSE, 70),
+('multi-generational-9', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Multi-Generational Project 2 - Video Tour', FALSE, 999),
+('multi-generational-10', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Multi-Generational Project 3 - View 1', TRUE, 0),
+('multi-generational-10', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Multi-Generational Project 3 - View 2', FALSE, 10),
+('multi-generational-10', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-1.jpg', 'Multi-Generational Project 3 - View 3', FALSE, 20),
+('multi-generational-10', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Multi-Generational Project 3 - View 4', FALSE, 30),
+('multi-generational-10', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Multi-Generational Project 3 - View 5', FALSE, 40),
+('multi-generational-10', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Multi-Generational Project 3 - View 6', FALSE, 50),
+('multi-generational-10', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Multi-Generational Project 3 - View 7', FALSE, 60),
+('multi-generational-10', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Multi-Generational Project 3 - View 8', FALSE, 70),
+('multi-generational-10', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Multi-Generational Project 3 - Video Tour', FALSE, 999),
+('multi-generational-11', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Multi-Generational Project 4 - View 1', TRUE, 0),
+('multi-generational-11', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Multi-Generational Project 4 - View 2', FALSE, 10),
+('multi-generational-11', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Multi-Generational Project 4 - View 3', FALSE, 20),
+('multi-generational-11', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Multi-Generational Project 4 - View 4', FALSE, 30),
+('multi-generational-11', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Multi-Generational Project 4 - View 5', FALSE, 40),
+('multi-generational-11', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Multi-Generational Project 4 - View 6', FALSE, 50),
+('multi-generational-11', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Multi-Generational Project 4 - Video Tour', FALSE, 999),
+('vacation-homes-12', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Vacation Homes Project 1 - View 1', TRUE, 0),
+('vacation-homes-12', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Vacation Homes Project 1 - View 2', FALSE, 10),
+('vacation-homes-12', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Vacation Homes Project 1 - View 3', FALSE, 20),
+('vacation-homes-12', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Vacation Homes Project 1 - View 4', FALSE, 30),
+('vacation-homes-12', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Vacation Homes Project 1 - View 5', FALSE, 40),
+('vacation-homes-12', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Vacation Homes Project 1 - View 6', FALSE, 50),
+('vacation-homes-12', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Vacation Homes Project 1 - Video Tour', FALSE, 999),
+('vacation-homes-13', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Vacation Homes Project 2 - View 1', TRUE, 0),
+('vacation-homes-13', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-1.jpg', 'Vacation Homes Project 2 - View 2', FALSE, 10),
+('vacation-homes-13', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Vacation Homes Project 2 - View 3', FALSE, 20),
+('vacation-homes-13', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Vacation Homes Project 2 - View 4', FALSE, 30),
+('vacation-homes-13', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Vacation Homes Project 2 - View 5', FALSE, 40),
+('vacation-homes-13', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Vacation Homes Project 2 - View 6', FALSE, 50),
+('vacation-homes-13', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Vacation Homes Project 2 - View 7', FALSE, 60),
+('vacation-homes-13', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Vacation Homes Project 2 - View 8', FALSE, 70),
+('vacation-homes-13', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Vacation Homes Project 2 - Video Tour', FALSE, 999),
+('vacation-homes-14', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Vacation Homes Project 3 - View 1', TRUE, 0),
+('vacation-homes-14', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Vacation Homes Project 3 - View 2', FALSE, 10),
+('vacation-homes-14', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Vacation Homes Project 3 - View 3', FALSE, 20),
+('vacation-homes-14', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-1.jpg', 'Vacation Homes Project 3 - View 4', FALSE, 30),
+('vacation-homes-14', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Vacation Homes Project 3 - View 5', FALSE, 40),
+('vacation-homes-14', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Vacation Homes Project 3 - View 6', FALSE, 50),
+('vacation-homes-14', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Vacation Homes Project 3 - View 7', FALSE, 60),
+('vacation-homes-14', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Vacation Homes Project 3 - View 8', FALSE, 70),
+('vacation-homes-14', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Vacation Homes Project 3 - Video Tour', FALSE, 999),
+('vacation-homes-15', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Vacation Homes Project 4 - View 1', TRUE, 0),
+('vacation-homes-15', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Vacation Homes Project 4 - View 2', FALSE, 10),
+('vacation-homes-15', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Vacation Homes Project 4 - View 3', FALSE, 20),
+('vacation-homes-15', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Vacation Homes Project 4 - View 4', FALSE, 30),
+('vacation-homes-15', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Vacation Homes Project 4 - View 5', FALSE, 40),
+('vacation-homes-15', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Vacation Homes Project 4 - View 6', FALSE, 50),
+('vacation-homes-15', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Vacation Homes Project 4 - View 7', FALSE, 60),
+('vacation-homes-15', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Vacation Homes Project 4 - Video Tour', FALSE, 999),
+('vacation-homes-16', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Vacation Homes Project 5 - View 1', TRUE, 0),
+('vacation-homes-16', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Vacation Homes Project 5 - View 2', FALSE, 10),
+('vacation-homes-16', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Vacation Homes Project 5 - View 3', FALSE, 20),
+('vacation-homes-16', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Vacation Homes Project 5 - View 4', FALSE, 30),
+('vacation-homes-16', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Vacation Homes Project 5 - View 5', FALSE, 40),
+('vacation-homes-16', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Vacation Homes Project 5 - View 6', FALSE, 50),
+('vacation-homes-16', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Vacation Homes Project 5 - View 7', FALSE, 60),
+('vacation-homes-16', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Vacation Homes Project 5 - Video Tour', FALSE, 999),
+('vacation-homes-17', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Vacation Homes Project 6 - View 1', TRUE, 0),
+('vacation-homes-17', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Vacation Homes Project 6 - View 2', FALSE, 10),
+('vacation-homes-17', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Vacation Homes Project 6 - View 3', FALSE, 20),
+('vacation-homes-17', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Vacation Homes Project 6 - View 4', FALSE, 30),
+('vacation-homes-17', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Vacation Homes Project 6 - View 5', FALSE, 40),
+('vacation-homes-17', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-1.jpg', 'Vacation Homes Project 6 - View 6', FALSE, 50),
+('vacation-homes-17', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Vacation Homes Project 6 - View 7', FALSE, 60),
+('vacation-homes-17', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Vacation Homes Project 6 - View 8', FALSE, 70),
+('vacation-homes-17', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Vacation Homes Project 6 - Video Tour', FALSE, 999),
+('retail---lifestyle-18', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Retail & Lifestyle Project 1 - View 1', TRUE, 0),
+('retail---lifestyle-18', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Retail & Lifestyle Project 1 - View 2', FALSE, 10),
+('retail---lifestyle-18', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Retail & Lifestyle Project 1 - View 3', FALSE, 20),
+('retail---lifestyle-18', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Retail & Lifestyle Project 1 - View 4', FALSE, 30),
+('retail---lifestyle-18', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Retail & Lifestyle Project 1 - View 5', FALSE, 40),
+('retail---lifestyle-18', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Retail & Lifestyle Project 1 - View 6', FALSE, 50),
+('retail---lifestyle-18', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Retail & Lifestyle Project 1 - Video Tour', FALSE, 999),
+('retail---lifestyle-19', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Retail & Lifestyle Project 2 - View 1', TRUE, 0),
+('retail---lifestyle-19', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Retail & Lifestyle Project 2 - View 2', FALSE, 10),
+('retail---lifestyle-19', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Retail & Lifestyle Project 2 - View 3', FALSE, 20),
+('retail---lifestyle-19', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Retail & Lifestyle Project 2 - View 4', FALSE, 30),
+('retail---lifestyle-19', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Retail & Lifestyle Project 2 - View 5', FALSE, 40),
+('retail---lifestyle-19', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Retail & Lifestyle Project 2 - Video Tour', FALSE, 999),
+('retail---lifestyle-20', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Retail & Lifestyle Project 3 - View 1', TRUE, 0),
+('retail---lifestyle-20', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Retail & Lifestyle Project 3 - View 2', FALSE, 10),
+('retail---lifestyle-20', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Retail & Lifestyle Project 3 - View 3', FALSE, 20),
+('retail---lifestyle-20', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Retail & Lifestyle Project 3 - View 4', FALSE, 30),
+('retail---lifestyle-20', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Retail & Lifestyle Project 3 - View 5', FALSE, 40),
+('retail---lifestyle-20', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Retail & Lifestyle Project 3 - View 6', FALSE, 50),
+('retail---lifestyle-20', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Retail & Lifestyle Project 3 - View 7', FALSE, 60),
+('retail---lifestyle-20', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Retail & Lifestyle Project 3 - Video Tour', FALSE, 999),
+('retail---lifestyle-21', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Retail & Lifestyle Project 4 - View 1', TRUE, 0),
+('retail---lifestyle-21', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Retail & Lifestyle Project 4 - View 2', FALSE, 10),
+('retail---lifestyle-21', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Retail & Lifestyle Project 4 - View 3', FALSE, 20),
+('retail---lifestyle-21', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Retail & Lifestyle Project 4 - View 4', FALSE, 30),
+('retail---lifestyle-21', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Retail & Lifestyle Project 4 - View 5', FALSE, 40),
+('retail---lifestyle-21', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Retail & Lifestyle Project 4 - View 6', FALSE, 50),
+('retail---lifestyle-21', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Retail & Lifestyle Project 4 - View 7', FALSE, 60),
+('retail---lifestyle-21', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Retail & Lifestyle Project 4 - View 8', FALSE, 70),
+('retail---lifestyle-21', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Retail & Lifestyle Project 4 - Video Tour', FALSE, 999),
+('build---sell-homes-22', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Workspaces Project 1 - View 1', TRUE, 0),
+('build---sell-homes-22', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Workspaces Project 1 - View 2', FALSE, 10),
+('build---sell-homes-22', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Workspaces Project 1 - View 3', FALSE, 20),
+('build---sell-homes-22', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Workspaces Project 1 - View 4', FALSE, 30),
+('build---sell-homes-22', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Workspaces Project 1 - View 5', FALSE, 40),
+('build---sell-homes-22', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Workspaces Project 1 - View 6', FALSE, 50),
+('build---sell-homes-22', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Workspaces Project 1 - View 7', FALSE, 60),
+('build---sell-homes-22', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Workspaces Project 1 - View 8', FALSE, 70),
+('build---sell-homes-22', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Workspaces Project 1 - Video Tour', FALSE, 999),
+('build---sell-homes-23', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-1.jpg', 'Workspaces Project 2 - View 1', TRUE, 0),
+('build---sell-homes-23', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Workspaces Project 2 - View 2', FALSE, 10),
+('build---sell-homes-23', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Workspaces Project 2 - View 3', FALSE, 20),
+('build---sell-homes-23', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Workspaces Project 2 - View 4', FALSE, 30),
+('build---sell-homes-23', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Workspaces Project 2 - View 5', FALSE, 40),
+('build---sell-homes-23', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Workspaces Project 2 - View 6', FALSE, 50),
+('build---sell-homes-23', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Workspaces Project 2 - View 7', FALSE, 60),
+('build---sell-homes-23', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Workspaces Project 2 - View 8', FALSE, 70),
+('build---sell-homes-23', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Workspaces Project 2 - Video Tour', FALSE, 999),
+('food---beverage-24', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Food & Beverage Project 1 - View 1', TRUE, 0),
+('food---beverage-24', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Food & Beverage Project 1 - View 2', FALSE, 10),
+('food---beverage-24', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Food & Beverage Project 1 - View 3', FALSE, 20),
+('food---beverage-24', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Food & Beverage Project 1 - View 4', FALSE, 30),
+('food---beverage-24', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Food & Beverage Project 1 - View 5', FALSE, 40),
+('food---beverage-24', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Food & Beverage Project 1 - View 6', FALSE, 50),
+('food---beverage-24', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Food & Beverage Project 1 - View 7', FALSE, 60),
+('food---beverage-24', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Food & Beverage Project 1 - Video Tour', FALSE, 999),
+('food---beverage-25', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Food & Beverage Project 2 - View 1', TRUE, 0),
+('food---beverage-25', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Food & Beverage Project 2 - View 2', FALSE, 10),
+('food---beverage-25', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Food & Beverage Project 2 - View 3', FALSE, 20),
+('food---beverage-25', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Food & Beverage Project 2 - View 4', FALSE, 30),
+('food---beverage-25', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Food & Beverage Project 2 - View 5', FALSE, 40),
+('food---beverage-25', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Food & Beverage Project 2 - View 6', FALSE, 50),
+('food---beverage-25', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Food & Beverage Project 2 - View 7', FALSE, 60),
+('food---beverage-25', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Food & Beverage Project 2 - View 8', FALSE, 70),
+('food---beverage-25', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Food & Beverage Project 2 - Video Tour', FALSE, 999),
+('food---beverage-26', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Food & Beverage Project 3 - View 1', TRUE, 0),
+('food---beverage-26', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Food & Beverage Project 3 - View 2', FALSE, 10),
+('food---beverage-26', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Food & Beverage Project 3 - View 3', FALSE, 20),
+('food---beverage-26', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Food & Beverage Project 3 - View 4', FALSE, 30),
+('food---beverage-26', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Food & Beverage Project 3 - View 5', FALSE, 40),
+('food---beverage-26', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Food & Beverage Project 3 - View 6', FALSE, 50),
+('food---beverage-26', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Food & Beverage Project 3 - View 7', FALSE, 60),
+('food---beverage-26', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Food & Beverage Project 3 - Video Tour', FALSE, 999),
+('food---beverage-27', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Food & Beverage Project 4 - View 1', TRUE, 0),
+('food---beverage-27', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Food & Beverage Project 4 - View 2', FALSE, 10),
+('food---beverage-27', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Food & Beverage Project 4 - View 3', FALSE, 20),
+('food---beverage-27', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Food & Beverage Project 4 - View 4', FALSE, 30),
+('food---beverage-27', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Food & Beverage Project 4 - View 5', FALSE, 40),
+('food---beverage-27', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Food & Beverage Project 4 - View 6', FALSE, 50),
+('food---beverage-27', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Food & Beverage Project 4 - View 7', FALSE, 60),
+('food---beverage-27', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Food & Beverage Project 4 - Video Tour', FALSE, 999),
+('workspaces-28', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Workspaces Project 1 - View 1', TRUE, 0),
+('workspaces-28', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Workspaces Project 1 - View 2', FALSE, 10),
+('workspaces-28', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Workspaces Project 1 - View 3', FALSE, 20),
+('workspaces-28', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-1.jpg', 'Workspaces Project 1 - View 4', FALSE, 30),
+('workspaces-28', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Workspaces Project 1 - View 5', FALSE, 40),
+('workspaces-28', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Workspaces Project 1 - View 6', FALSE, 50),
+('workspaces-28', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Workspaces Project 1 - Video Tour', FALSE, 999),
+('workspaces-29', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Workspaces Project 2 - View 1', TRUE, 0),
+('workspaces-29', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Workspaces Project 2 - View 2', FALSE, 10),
+('workspaces-29', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Workspaces Project 2 - View 3', FALSE, 20),
+('workspaces-29', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Workspaces Project 2 - View 4', FALSE, 30),
+('workspaces-29', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Workspaces Project 2 - View 5', FALSE, 40),
+('workspaces-29', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Workspaces Project 2 - Video Tour', FALSE, 999),
+('workspaces-30', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Workspaces Project 3 - View 1', TRUE, 0),
+('workspaces-30', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Workspaces Project 3 - View 2', FALSE, 10),
+('workspaces-30', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Workspaces Project 3 - View 3', FALSE, 20),
+('workspaces-30', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Workspaces Project 3 - View 4', FALSE, 30),
+('workspaces-30', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Workspaces Project 3 - View 5', FALSE, 40),
+('workspaces-30', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Workspaces Project 3 - Video Tour', FALSE, 999),
+('workspaces-31', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Workspaces Project 4 - View 1', TRUE, 0),
+('workspaces-31', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Workspaces Project 4 - View 2', FALSE, 10),
+('workspaces-31', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Workspaces Project 4 - View 3', FALSE, 20),
+('workspaces-31', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Workspaces Project 4 - View 4', FALSE, 30),
+('workspaces-31', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Workspaces Project 4 - View 5', FALSE, 40),
+('workspaces-31', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Workspaces Project 4 - View 6', FALSE, 50),
+('workspaces-31', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Workspaces Project 4 - View 7', FALSE, 60),
+('workspaces-31', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Workspaces Project 4 - View 8', FALSE, 70),
+('workspaces-31', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Workspaces Project 4 - Video Tour', FALSE, 999),
+('shared-places-32', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Shared Places Project 1 - View 1', TRUE, 0),
+('shared-places-32', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Shared Places Project 1 - View 2', FALSE, 10),
+('shared-places-32', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Shared Places Project 1 - View 3', FALSE, 20),
+('shared-places-32', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Shared Places Project 1 - View 4', FALSE, 30),
+('shared-places-32', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Shared Places Project 1 - View 5', FALSE, 40),
+('shared-places-32', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Shared Places Project 1 - View 6', FALSE, 50),
+('shared-places-32', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Shared Places Project 1 - Video Tour', FALSE, 999),
+('shared-places-33', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Shared Places Project 2 - View 1', TRUE, 0),
+('shared-places-33', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Shared Places Project 2 - View 2', FALSE, 10),
+('shared-places-33', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Shared Places Project 2 - View 3', FALSE, 20),
+('shared-places-33', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Shared Places Project 2 - View 4', FALSE, 30),
+('shared-places-33', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Shared Places Project 2 - View 5', FALSE, 40),
+('shared-places-33', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Shared Places Project 2 - View 6', FALSE, 50),
+('shared-places-33', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Shared Places Project 2 - Video Tour', FALSE, 999),
+('shared-places-34', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Shared Places Project 3 - View 1', TRUE, 0),
+('shared-places-34', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Shared Places Project 3 - View 2', FALSE, 10),
+('shared-places-34', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Shared Places Project 3 - View 3', FALSE, 20),
+('shared-places-34', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Shared Places Project 3 - View 4', FALSE, 30),
+('shared-places-34', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Shared Places Project 3 - View 5', FALSE, 40),
+('shared-places-34', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Shared Places Project 3 - Video Tour', FALSE, 999),
+('shared-places-35', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Shared Places Project 4 - View 1', TRUE, 0),
+('shared-places-35', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Shared Places Project 4 - View 2', FALSE, 10),
+('shared-places-35', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Shared Places Project 4 - View 3', FALSE, 20),
+('shared-places-35', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Shared Places Project 4 - View 4', FALSE, 30),
+('shared-places-35', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Shared Places Project 4 - View 5', FALSE, 40),
+('shared-places-35', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Shared Places Project 4 - View 6', FALSE, 50),
+('shared-places-35', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Shared Places Project 4 - View 7', FALSE, 60),
+('shared-places-35', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Shared Places Project 4 - Video Tour', FALSE, 999),
+('shared-places-36', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Shared Places Project 5 - View 1', TRUE, 0),
+('shared-places-36', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Shared Places Project 5 - View 2', FALSE, 10),
+('shared-places-36', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Shared Places Project 5 - View 3', FALSE, 20),
+('shared-places-36', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Shared Places Project 5 - View 4', FALSE, 30),
+('shared-places-36', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Shared Places Project 5 - View 5', FALSE, 40),
+('shared-places-36', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-1.jpg', 'Shared Places Project 5 - View 6', FALSE, 50),
+('shared-places-36', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Shared Places Project 5 - View 7', FALSE, 60),
+('shared-places-36', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Shared Places Project 5 - Video Tour', FALSE, 999),
+('shared-places-37', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Shared Places Project 6 - View 1', TRUE, 0),
+('shared-places-37', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Shared Places Project 6 - View 2', FALSE, 10),
+('shared-places-37', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Shared Places Project 6 - View 3', FALSE, 20),
+('shared-places-37', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Shared Places Project 6 - View 4', FALSE, 30),
+('shared-places-37', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Shared Places Project 6 - View 5', FALSE, 40),
+('shared-places-37', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Shared Places Project 6 - View 6', FALSE, 50),
+('shared-places-37', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Shared Places Project 6 - Video Tour', FALSE, 999),
+('sacred-structures-38', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Sacred Structures Project 1 - View 1', TRUE, 0),
+('sacred-structures-38', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Sacred Structures Project 1 - View 2', FALSE, 10),
+('sacred-structures-38', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Sacred Structures Project 1 - View 3', FALSE, 20),
+('sacred-structures-38', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-1.jpg', 'Sacred Structures Project 1 - View 4', FALSE, 30),
+('sacred-structures-38', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Sacred Structures Project 1 - View 5', FALSE, 40),
+('sacred-structures-38', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Sacred Structures Project 1 - View 6', FALSE, 50),
+('sacred-structures-38', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Sacred Structures Project 1 - Video Tour', FALSE, 999),
+('sacred-structures-39', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Sacred Structures Project 2 - View 1', TRUE, 0),
+('sacred-structures-39', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Sacred Structures Project 2 - View 2', FALSE, 10),
+('sacred-structures-39', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Sacred Structures Project 2 - View 3', FALSE, 20),
+('sacred-structures-39', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-1.jpg', 'Sacred Structures Project 2 - View 4', FALSE, 30),
+('sacred-structures-39', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-5/tiny-living-5-2.jpg', 'Sacred Structures Project 2 - View 5', FALSE, 40),
+('sacred-structures-39', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Sacred Structures Project 2 - View 6', FALSE, 50),
+('sacred-structures-39', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Sacred Structures Project 2 - Video Tour', FALSE, 999),
+('shared-spaces-40', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-6.jpg', 'Shared Spaces Project 1 - View 1', TRUE, 0),
+('shared-spaces-40', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Shared Spaces Project 1 - View 2', FALSE, 10),
+('shared-spaces-40', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Shared Spaces Project 1 - View 3', FALSE, 20),
+('shared-spaces-40', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Shared Spaces Project 1 - View 4', FALSE, 30),
+('shared-spaces-40', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Shared Spaces Project 1 - View 5', FALSE, 40),
+('shared-spaces-40', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-2.jpg', 'Shared Spaces Project 1 - View 6', FALSE, 50),
+('shared-spaces-40', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Shared Spaces Project 1 - View 7', FALSE, 60),
+('shared-spaces-40', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Shared Spaces Project 1 - View 8', FALSE, 70),
+('shared-spaces-40', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Shared Spaces Project 1 - Video Tour', FALSE, 999),
+('shared-spaces-41', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-4/tiny-living-4-2.jpg', 'Shared Spaces Project 2 - View 1', TRUE, 0),
+('shared-spaces-41', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/Vacation%20Homes-6/Vacation%20Homes-6-2.jpg', 'Shared Spaces Project 2 - View 2', FALSE, 10),
+('shared-spaces-41', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-3.jpg', 'Shared Spaces Project 2 - View 3', FALSE, 20),
+('shared-spaces-41', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-2/urban-living-2-3.jpg', 'Shared Spaces Project 2 - View 4', FALSE, 30),
+('shared-spaces-41', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-1.jpg', 'Shared Spaces Project 2 - View 5', FALSE, 40),
+('shared-spaces-41', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/tiny-living-3/tiny-living-3-3.jpg', 'Shared Spaces Project 2 - View 6', FALSE, 50),
+('shared-spaces-41', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-5.jpg', 'Shared Spaces Project 2 - View 7', FALSE, 60),
+('shared-spaces-41', 'image', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/projects/urban-living-1/urban-living-1-1.jpg', 'Shared Spaces Project 2 - View 8', FALSE, 70),
+('shared-spaces-41', 'video', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Shared Spaces Project 2 - Video Tour', FALSE, 999)
+)
+INSERT INTO public.project_media (project_id, media_type, url, caption, is_cover, sort_order)
+SELECT p.id, rm.media_type, rm.url, rm.caption, rm.is_cover, rm.sort_order
+FROM raw_media rm
+JOIN public.projects p ON p.slug = rm.project_slug;
+
+-- 10. PROJECT CONTRIBUTORS
+WITH raw_contributors (project_slug, person_id, role_in_project, contribution_narrative, sort_order) AS (
+VALUES
+('urban-living-1', 'marchie-borja', 'Lead Principal Architect', 'Envisioned the passive cooling strategies, concrete-wood aesthetic balance, and overall spatial zoning parameters.', 0),
+('retail---lifestyle-18', 'marchie-borja', 'Principal Concept Designer', 'Sculpted the sand-textured plaster arches and guided the tactile materials selection to contrast with structural steel.', 0),
+('Vacation Homes-6', 'marchie-borja', 'Design Advisor', 'Consulted on spatial layout optimization and wood panel continuity layout.', 0),
+('urban-living-1', 'jhoanna-ramos', 'Fiscal & Procurement Director', 'Managed materials import procurement, local trade contractor scheduling, and progressive construction budget bounds.', 0),
+('Vacation Homes-6', 'jhoanna-ramos', 'Contract Administrator', 'Coordinated the turn-key interior build schedules and material vendor contracts.', 0),
+('build---sell-homes-22', 'jhoanna-ramos', 'Operations & B2B Manager', 'Negotiated SLA terms, managed global agency communication timelines, and coordinated administrative deliverables.', 0),
+('urban-living-1', 'adrian-mores', 'Technical & Construction Director', 'Supervised off-form concrete fabrication, board-marked textures execution, and passive cooling aerodynamic ventilation layout.', 0),
+('food---beverage-24', 'adrian-mores', 'Lead Engineer & Modular Specialist', 'Designed the lightweight cast-concrete components, custom stainless steel joinery, and fully integrated electrical/plumbing systems.', 0),
+('build---sell-homes-22', 'adrian-mores', 'Technical Director / BIM Lead', 'Enforced Revit/CAD standards for all international drawing packages, ensuring impeccable quality assurance.', 0),
+('Vacation Homes-6', 'nikka-oliveros', 'Lead Drafting Architect', 'Developed the custom Rose Ebony veneer joinery details, lighting layouts, and modular cabinetry assembly drawings.', 0),
+('retail---lifestyle-18', 'nikka-oliveros', 'Project Architect', 'Created the detailed layout blueprints, plaster textures schedules, and structural hanger steel shop drawings.', 0),
+('build---sell-homes-22', 'nikka-oliveros', 'Associate BIM Modeler', 'Drafted complex building models and generated structural document checklists under strict quality parameters.', 0),
+('urban-living-1', 'mark-ramos', 'Lead BIM Modeler', 'Built the exact 3D virtual twin of the residence to run solar, aerodynamic, and structural clash-detection simulations.', 0),
+('Vacation Homes-6', 'mark-ramos', 'Senior Modeler', 'Produced the complete mechanical coordination blueprint sets.', 0),
+('retail---lifestyle-18', 'maria-santos', 'Lead Interior Designer', 'Curated the custom texture finishes, boutique lighting schemes, and soft velvet/steel furniture selection.', 0),
+('Vacation Homes-6', 'maria-santos', 'Interior Design Lead', 'Orchestrated the Rose Ebony cabinetry, customized wood cladding patterns, and soft ambient light profiles.', 0),
+('urban-living-1', 'christian-alipio', 'Construction Manager', 'Handled direct site administration, concrete pour quality inspections, and structural safety management.', 0),
+('food---beverage-24', 'christian-alipio', 'Fabrication Supervisor', 'Managed the off-site fabrication of pre-cast lightweight components and safe delivery/rapid installation schedules.', 0),
+('Vacation Homes-6', 'hannah-villanueva', 'Client Relations Manager', 'Managed client communication cadence, milestone sign-offs, and progress billing coordination.', 0),
+('build---sell-homes-22', 'hannah-villanueva', 'Operations Coordinator', 'Coordinated internal scheduling across design, permitting, and site teams to keep delivery on track.', 0),
+('tiny-living-3', 'ernest-bambico', 'Project Architect', 'Developed construction detail sets for compact spatial framing and resolved on-site buildability conflicts.', 0),
+('shared-places-32', 'ernest-bambico', 'Site Detailing Architect', 'Verified as-built conditions against design drawings and issued field revision notes during construction.', 0),
+('Vacation Homes-7', 'john-dave-aquino', 'Design-Build Lead', 'Carried the design from schematic layout through shop drawings and on-site fabrication oversight.', 0),
+('sacred-structures-38', 'john-dave-aquino', 'Fabrication Design Lead', 'Resolved joinery and structural detailing on-site to keep the original design intent through construction.', 0),
+('build---sell-homes-23', 'rafael-bautista', 'Site Engineer', 'Inspected formwork and concrete pours, and enforced structural quality checkpoints throughout construction.', 0),
+('shared-spaces-40', 'rafael-bautista', 'Structural Site Lead', 'Coordinated crew scheduling and material testing to keep the build on program without cutting corners.', 0),
+('tiny-living-4', 'patricia-yumang', 'Junior Design Architect', 'Developed early schematic studies and material mood boards for client concept presentations.', 0),
+('shared-places-33', 'patricia-yumang', 'Design Support Architect', 'Assisted with layout iteration and produced presentation-ready renders for design review.', 0),
+('urban-living-1', 'andrea-fernandez', 'Design Director', 'Reviewed concept milestones and enforced material and spatial consistency across the design phases.', 0),
+('Vacation Homes-7', 'andrea-fernandez', 'Creative Quality Lead', 'Guided the design team through detailing revisions to keep the finished units aligned with the original concept.', 0),
+('urban-living-2', 'miguel-torres', 'Construction Supervisor', 'Managed daily crew schedules, materials deliveries, and jobsite safety briefings.', 0),
+('vacation-homes-14', 'miguel-torres', 'Site Supervisor', 'Coordinated labor allocation and sequencing to keep the build on schedule.', 0),
+('retail---lifestyle-19', 'kristelle-del-rosario', 'Cost Estimator', 'Prepared material take-offs and detailed cost estimates ahead of the construction budget approval.', 0),
+('build---sell-homes-23', 'kristelle-del-rosario', 'Quantity Surveyor', 'Tracked actual spend against budget throughout construction and flagged cost variances early.', 0)
+)
+INSERT INTO public.project_contributors (project_id, person_id, role_in_project, contribution_narrative, sort_order)
+SELECT p.id, rc.person_id, rc.role_in_project, rc.contribution_narrative, rc.sort_order
+FROM raw_contributors rc
+JOIN public.projects p ON p.slug = rc.project_slug
+ON CONFLICT (project_id, person_id) DO UPDATE SET 
+    role_in_project = EXCLUDED.role_in_project, contribution_narrative = EXCLUDED.contribution_narrative;
+
+-- 11. SITE SETTINGS
+INSERT INTO public.site_settings (key, content) VALUES
+('contact_info', '{"address":"P4, B2, L1, N402 Lovebird Lane corner Eagle Drive, Countryside Village, Barangay Sun Valley, City of Parañaque, National Capital Region, Philippines, Southeast Asia.","addressLines":["P4, B2, L1, N402 Lovebird Lane corner Eagle Drive, Countryside Village,","Barangay Sun Valley, City of Parañaque, National Capital Region,","Philippines, Southeast Asia"],"landline":"+632 8257-0968","mobile":"+63 917 165 4827","email":"enquire@atbpcollaborative.com","socials":{"facebook":{"label":"ATBP Collaborative","url":"https://www.facebook.com/atbp.collaborative/"},"threads":{"label":"@atbp.collaborative","url":"https://www.threads.com/@atbp.collaborative"},"instagram":{"label":"@atbp.collaborative","url":"https://www.instagram.com/atbp.collaborative"},"youtube":{"label":"@atbpcollaborative9514","url":"https://www.youtube.com/@atbpcollaborative9514"}}}'::jsonb),
+('privacy_policy', '{"title":"Privacy Policy","subtitle":"ATBP Collaborative • Design-Build Practice","icon":{},"closeLabel":"Close & Accept","intro":{"title":"Effective Date: January 1, 2026","text":"This Privacy Policy outlines how ATBP Collaborative (under the Licensed Architectural Practice of Marchie Teodoro Borja, PRC Registration No. 0054827 / SEC OPC) collects, uses, protects, and handles your data in compliance with the Data Privacy Act of 2012 (<a href=\"https://www.officialgazette.gov.ph/2012/08/15/republic-act-no-10173/\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-space-sparkle transition-colors\">Republic Act No. 10173</a>) and professional guidelines governing design-build practices in the Philippines."},"sections":[{"icon":{},"title":"1. Information We Collect","text":"When you interact with ATBP Collaborative—whether through our Discovery Intake form, project proposal requests, site consultation inquiries, or digital portals—we collect relevant information necessary to deliver architectural and construction services:","list":["<strong>Personal Identification:</strong> Full name, company affiliation, contact numbers, email address, and billing parameters.","<strong>Project & Site Coordinates:</strong> Property location, land title details, lot dimensions, topographic data, zoning constraints, budget brackets, and design preferences.","<strong>Technical & Media Assets:</strong> Architectural sketches, CAD/BIM models, reference images, site photos, and technical documentation uploaded during consultations.","<strong>Digital Usage Data:</strong> Anonymized browser metadata, device identifiers, and page interaction statistics collected via cookies to optimize website performance."]},{"icon":{},"title":"2. How We Use Your Information","text":"All collected data is processed strictly for legitimate architectural and design-build operations:","list":["Formulating custom design proposals, project scopes, cost estimations, and architectural contracts.","Managing Discovery Sessions, site inspections, design reviews, and construction phase coordination.","Facilitating local government unit (LGU) building permit applications, zoning compliance, and regulatory submissions under <a href=\"https://lawphil.net/statutes/repacts/ra2004/ra_9266_2004.html\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-space-sparkle transition-colors\">Republic Act No. 9266</a> (The Architecture Act of 2004).","Communicating project updates, milestone deliverables, and administrative invoices."]},{"icon":{},"title":"3. Data Security & Intellectual Property Safeguards","text":"We implement robust physical, technical, and organizational security measures to protect your personal and project information against unauthorized access, loss, or alteration:","list":["Confidential project files and client blueprints are stored on encrypted cloud servers with strict role-based access controls.","All architectural designs, structural calculations, and technical documentation produced by ATBP Collaborative remain protected under professional copyright and <a href=\"https://lawphil.net/statutes/repacts/ra2004/ra_9266_2004.html\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-space-sparkle transition-colors\">RA 9266</a> laws.","We never sell, trade, or rent client personal or project data to external marketers or unauthorized third parties."]},{"icon":{},"title":"4. Third-Party Disclosures & Sub-Consultants","text":"To execute comprehensive design-build projects, we may share essential project specifications with authorized third parties strictly on a need-to-know basis:","list":["Licensed engineering sub-consultants (Structural, MEPFS, Sanitary, Geotechnical specialists).","Contracted construction crews, material suppliers, and specialized fabricators.","Government regulatory bodies (Building Officials, Fire Marshals, Subdivision Associations) for legal permit processing."]},{"icon":{},"title":"5. Your Rights & Retention","text":"Under the Philippine <a href=\"https://www.officialgazette.gov.ph/2012/08/15/republic-act-no-10173/\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-space-sparkle transition-colors\">Data Privacy Act of 2012</a>, you hold the right to:","list":["Request access to the personal data we hold about you.","Request correction or updates to inaccurate project details.","Withdraw consent or request erasure of non-statutory records (subject to mandatory legal retention periods for building plans)."]}],"items":["<div class=\"p-5 border mt-4 border-space-sparkle/20 bg-space-sparkle/5 dark:bg-white/5 text-mini\"><h4 class=\"font-sans font-bold text-caption uppercase tracking-wider mb-2\">Contact Our Privacy Officer</h4><p class=\"opacity-80 mb-2\">If you have questions, concerns, or requests regarding this Privacy Policy or your data, please contact ATBP Collaborative:</p><div class=\"font-mono text-mini opacity-90 space-y-0.5\"><p>Email: <a href=\"mailto:enquire@atbpcollaborative.com\" class=\"underline hover:opacity-100\">enquire@atbpcollaborative.com</a></p><p>Practice Principal: Marchie Teodoro Borja, Architect (PRC No. 0054827)</p><p>Address: Metro Manila, Philippines</p></div></div>"]}'::jsonb),
+('legal_notices', '{"title":"Legal & Regulatory Notices","subtitle":"ATBP Collaborative • Licensed Architectural Practice","icon":{},"intro":{"title":"Professional Practice Disclaimer","text":"ATBP Collaborative operates under the licensed architectural practice of Architect Marchie Teodoro Borja. All professional services, contract drawings, technical specifications, and construction supervisions comply with <a href=\"https://lawphil.net/statutes/repacts/ra2004/ra_9266_2004.html\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-space-sparkle transition-colors\">Republic Act No. 9266</a> and Philippine building regulations."},"sections":[{"icon":{},"title":"1. Professional Registration & Accreditation","list":["<strong>Professional Regulation Code (<a href=\"https://lawphil.net/statutes/repacts/ra2004/ra_9266_2004.html\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-space-sparkle transition-colors\">RA 9266</a>):</strong> Sec. 37 Architectural Practice Regulations.","<strong>PRC Registration:</strong> Architect License No. 0054827 | Board of Architecture (PRC-BOA) Registration No. 0054827.","<strong>PRC-BOMP Certification:</strong> Registration No. 0012169.","<strong>SEC Registry:</strong> Registered One-Person Corporation (OPC) 2026."]},{"icon":{},"title":"2. Architectural Ownership & Copyright","text":"Under Section 33 of <a href=\"https://lawphil.net/statutes/repacts/ra2004/ra_9266_2004.html\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-space-sparkle transition-colors\">Republic Act No. 9266</a> (The Architecture Act of 2004), drawings, specifications, CAD/BIM models, render visuals, and contract documents prepared by ATBP Collaborative as instruments of service are the intellectual property and copyright of the Architect.<br/><br/><span class=\"opacity-85 text-mini\">Reproduction, modification, or re-use of design assets for other sites or projects without prior express written consent is strictly prohibited under Philippine copyright law.</span>"},{"icon":{},"title":"3. Honest & Transparent Construction Standard","text":"ATBP Collaborative upholds an absolute transparent billing model across all design-build projects. Detailed bill of quantities (BOQ), material specifications, labor breakdowns, and subcontractor pricing are disclosed openly to clients without hidden markups."}]}'::jsonb),
+('studio_writeups', '{"tagline":"Designing with Values. Building with Culture. Managing with Integrity.","subSlogan":"A Philippine architectural and design-build practice dedicated to cultural truth, spatial poetry, and structural honesty.","philosophy":"ATBP Collaborative operates under the licensed architectural practice of Architect Marchie Teodoro Borja. We champion honest construction standards, non-hidden markups, and contextual architecture suited to the Philippine climate and socio-economic landscape.","cultureStatement":"From indigenous vernacular tectonics to contemporary tropical minimalism, our works celebrate local craftsmanship, passive cooling, and enduring craftsmanship."}'::jsonb)
+ON CONFLICT (key) DO UPDATE SET content = EXCLUDED.content, updated_at = NOW();
+
+-- 11B. HOMEPAGE SLOGANS & SUBTEXT
+INSERT INTO public.site_settings (key, content) VALUES
+('homepage_slogans', '{"slogans":["designed with values.","managed with integrity.","built with culture."],"heroSubtext":["ATBP Collaborative delivers bespoke architectural design, master planning, and structural craft.","Bridging visionary spatial concepts with honest Philippines building execution across all scales."]}'::jsonb)
+ON CONFLICT (key) DO UPDATE SET content = EXCLUDED.content, updated_at = NOW();
+
+-- 12. SITE PAGES (SEO-Locked Titles & Slugs)
+INSERT INTO public.site_pages (id, title, subtitle, hero_image_url, is_draft) VALUES
+('services-hub', 'our services', 'Discover our flexible contract types and comprehensive architectural capabilities tailored to your project scale and scope.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/studio_services_img_1785469964556.jpg', FALSE),
+('process-hub', 'our process', 'Purpose-built responses for one-of-a-kind briefs', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/studio_process_img_1785469980353.jpg', FALSE),
+('contact-hub', 'contact & channels', 'Inquiries, physical visits, collaborations and careers', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/contact_headquarters_img_1785470005846.jpg', FALSE),
+('case-study-house', 'the case study house', 'explore case study house project types and collaborative offerings', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/contact_case_study_house_img_1785469986420.jpg', FALSE),
+('grow-with-us', 'grow with us', 'careers, apprenticeships & internships', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/studio_people_img_1785469993286.jpg', FALSE),
+('partner-with-us', 'partner with us', 'trade contractors, engineering specialists & material suppliers', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/production_drawings_1783495233053.jpg', FALSE),
+('works', 'gawâ', 'a curated portfolio of shelter, livelihood, and community architecture across the Philippines.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/hero_modern_villa_1783495183350.jpg', FALSE)
+ON CONFLICT (id) DO UPDATE SET 
+    subtitle = EXCLUDED.subtitle, hero_image_url = EXCLUDED.hero_image_url, is_draft = EXCLUDED.is_draft, updated_at = NOW();
+
+-- 13. NAVIGATION CARDS (Hub Landing Cards)
+INSERT INTO public.navigation_cards (hub_id, card_key, title, tagline, subtext, tags, image_url, target_href, sort_order, is_draft) VALUES
+('case-study-house', 'discovery', 'schedule a discovery session', 'intake, spatial goals & consultation', 'for project intake, site feasibility & spatial planning consultations', ARRAY['Project Intake', 'Design Brief', 'Spatial Requirements'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/studio_services_img_1785469964556.jpg', '/contact/case-study-house/discovery-session', 10, FALSE),
+('case-study-house', 'request-proposal', 'request a proposal', 'project scoping & preliminary quotations', 'for official cost estimates and formal project proposals', ARRAY['Quotations', 'Project Scoping', 'Proposals'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/production_drawings_1783495233053.jpg', '/contact/case-study-house/request-for-proposal', 20, FALSE),
+('case-study-house', 'locate-map', 'studio hours & location', 'headquarters, address & contact channels', 'for physical visits, interactive map & contact coordinates', ARRAY['Parañaque City', 'Interactive Map', 'Viber & Email'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/contact_headquarters_img_1785470005846.jpg', '/contact/contact-info', 30, FALSE),
+('grow-with-us', 'apprenticeship', 'apprenticeship programs', 'for on-the-job training requirements', 'for on-the-job training requirements', ARRAY['Junior Architect', 'Licensure Support', 'Site Experience'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/studio_people_img_1785469993286.jpg', '/contact/grow-with-us/apprenticeship-programs', 10, FALSE),
+('grow-with-us', 'studio-regulars', 'regular programs', 'for professionals', 'for professionals', ARRAY['Registered Architect', 'Project Director', 'Design Lead'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/production_drawings_1783495233053.jpg', '/contact/grow-with-us/regular-programs', 20, FALSE),
+('partner-with-us', 'suppliers', 'suppliers', 'for material suppliers & trade product specs', 'for material suppliers & trade product specs', ARRAY['Finish Materials', 'Structural Supplies', 'Fixtures'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/kiosk_coffee_bar_1783495252161.jpg', '/contact/partner-with-us/supplier', 10, FALSE),
+('partner-with-us', 'consultants', 'consultants', 'for engineering & specialty consultants', 'for engineering & specialty consultants', ARRAY['Structural Engineers', 'MEPFS Designers', 'Environmental'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/contact_headquarters_img_1785470005846.jpg', '/contact/partner-with-us/consultant', 20, FALSE),
+('partner-with-us', 'builders', 'builders', 'for trade contractors & specialty builders', 'for trade contractors & specialty builders', ARRAY['General Contractors', 'Millwork Specialists', 'Metal Fabricators'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/studio_process_img_1785469980353.jpg', '/contact/partner-with-us/builder', 30, FALSE),
+('process', 'designing-with-values', 'designing with values', 'purpose-driven spatial concepts anchored in environmental & social context', 'designing spaces that respect context, microclimate, and the human experience.', ARRAY['Microclimate', 'Human-Centric', 'Vernacular'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/contact_case_study_house_img_1785469986420.jpg', '/studio/our-process/designing-with-values', 10, FALSE),
+('process', 'managing-with-integrity', 'managing with integrity', 'uncompromising fiscal clarity, transparent procurement & rigorous oversight', 'ensuring project success through transparent procurement and uncompromising oversight.', ARRAY['Open-Book Budget', 'Transparent Bids', 'Milestones'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/contact_headquarters_img_1785470005846.jpg', '/studio/our-process/managing-with-integrity', 20, FALSE),
+('process', 'building-with-culture', 'building with culture', 'synthesizing regional craftsmanship with modern architectural technology', 'honoring regional craftsmanship by integrating traditional artisan techniques with modern standards.', ARRAY['Artisan Guilds', 'Regional Materials', 'Craftsmanship'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/studio_process_img_1785469980353.jpg', '/studio/our-process/building-with-culture', 30, FALSE),
+('studio', 'services', 'services', 'comprehensive & piecework services', 'explore our flexible contract types and architectural scopes', ARRAY['Full Architecture', 'Engineering', 'Modular Detailing'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/studio-services-card.jpg', '/studio/our-services', 10, FALSE),
+('studio', 'process', 'process', 'design, manage, build with integrity', 'learn how we design, manage, and build with purpose', ARRAY['Double Diamond', 'Values', 'Culture'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/studio-process-card.jpg', '/studio/our-process', 20, FALSE),
+('studio', 'people', 'people', 'our designers, managers & builders', 'meet the multidisciplinary team behind ATBP Collaborative', ARRAY['Designers', 'Managers', 'Builders'], 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/studio-people-card.jpg', '/studio/our-people', 30, FALSE)
+ON CONFLICT (card_key) DO UPDATE SET 
+    title = EXCLUDED.title, tagline = EXCLUDED.tagline, subtext = EXCLUDED.subtext, tags = EXCLUDED.tags, image_url = EXCLUDED.image_url, target_href = EXCLUDED.target_href, sort_order = EXCLUDED.sort_order, is_draft = EXCLUDED.is_draft, updated_at = NOW();
+
+-- 14. SERVICE OFFERINGS
+INSERT INTO public.service_offerings (id, title, section_tag, tagline, description, extra_description, image_url, subtext, pillars, content_columns, sort_order, is_draft) VALUES
+('comprehensive-services', 'comprehensive services', 'services | kaya', 'full-lifecycle architectural design, technical engineering, & turnkey delivery', 'End-to-end design and building management from initial site evaluation, conceptual design, regulatory approvals, through technical detailing, construction oversight, and final project handover.', NULL, 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/hero_modern_villa_1783495183350.jpg', 'From concept to turnkey delivery, we guide every detail of your vision to reality.', '[{"title":"Full Architectural Masterplanning","desc":"Integrated spatial design, exterior form development, and interior zoning tailored to site topology and lifestyle."},{"title":"Engineering & MEPFS Integration","desc":"Comprehensive structural calculation, electrical, plumbing, mechanical, and fire protection coordination."},{"title":"Permitting & Bureaucratic Approvals","desc":"Full regulatory compliance, local government approvals, and environmental clearance documentation."},{"title":"Turnkey Construction Supervision","desc":"On-site quality audits, material inspection, schedule tracking, and seamless contractor direction."}]'::jsonb, '[{"title":"Comprehensive Design Services","paragraphs":["Our design process is rooted in a deep understanding of your vision, lifestyle, and the unique characteristics of your site.","We integrate architectural planning, interior design, and engineering to create cohesive spaces that are both beautiful and functional.","As a design-build studio, we prioritize constructability and material intelligence from the very beginning, ensuring that every design decision aligns with your budget and timeline.","We navigate the complexities of local zoning, building codes, and environmental regulations, streamlining the path to construction."],"linkText":"Learn more about our process in designing","href":"/studio/our-process/designing-with-values"},{"title":"Comprehensive Management Services","paragraphs":["Effective project management is the bridge between a great design and a successful build.","We oversee every phase of the project, from initial cost estimation and value engineering to procurement and scheduling.","Our team acts as your single point of contact, coordinating with specialized consultants, suppliers, and local authorities to keep the project on track.","By maintaining rigorous quality control and transparent communication, we mitigate risks and ensure that the final result exceeds expectations."],"linkText":"Understand how we manage projects","href":"/studio/our-process/managing-with-integrity"},{"title":"Building Construction Services","paragraphs":["Construction is where our designs come to life. We bring decades of hands-on experience and a network of trusted craftsmen to every project.","Our build teams work in tandem with our designers, fostering a collaborative environment that quickly resolves on-site challenges without compromising the design intent.","We employ advanced construction methodologies and sustainable practices to deliver structures of enduring quality and performance.","From groundbreaking to final handover, we are committed to safety, efficiency, and unparalleled craftsmanship in every detail."],"linkText":"Validate our capabilities as Builder","href":"/studio/our-process/building-with-culture"}]'::jsonb, 10, FALSE),
+
+('piecework-services', 'piecework services', 'services | kaya', 'modular technical detailing, targeted consulting & specialized scopes', 'Flexible, specialized engagements designed to resolve critical project bottlenecks, refine complex architectural detailing, or provide expert peer reviews without full turnkey commitments.', NULL, 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/kiosk_coffee_bar_1783495252161.jpg', 'Targeted architectural solutions and independent technical reviews for bespoke requirements.', '[{"title":"Architectural Working Drawings","desc":"High-precision technical drafting, construction details, and construction-ready drawing packages."},{"title":"Joinery & Facade Detailing","desc":"Bespoke architectural metalwork, millwork, custom fenestration, and enclosure assemblies."},{"title":"Peer Review & Value Engineering","desc":"Independent auditing of third-party blueprints to optimize costs, constructability, and code compliance."},{"title":"Material Specification Audits","desc":"Specialized procurement advisory, finish schedules, and performance material sourcing."}]'::jsonb, '[{"items":[{"title":"Architectural Interiors","content":"Custom interior spatial design focusing on finishes, millwork detailing, ceiling layout, and built-in furniture coordination. We bridge shell design with internal tactility."},{"title":"Lighting Design","content":"Fixture specification, reflected ceiling plans, lux level calculations, and circuit zoning. Crafted to amplify space utility, mood, and material textures."},{"title":"Site Planning","content":"Analyzing solar pathing, typography setbacks, accessibility routing, and easement compliance to optimize building footprint placement on your specific land."}]},{"items":[{"title":"Document & Assessment","content":"Comprehensive auditing of existing blueprints, structural condition reports, spatial efficiency analysis, and code compliance assessments for pre-construction."},{"title":"Code Compliance","content":"Rigorous validation of design plans against building codes, zoning regulations, fire safety policies, and local city ordinances to guarantee permit approvals."},{"title":"Permit Processing","content":"End-to-end administration of governmental approvals, environmental clearances, utility permits, and barangay/city hall certifications."}]},{"items":[{"title":"Masonry","content":"Detailed specifications for stone cladding, brick bonding, retaining wall structures, load-bearing concrete blocks, and external masonry finishes."},{"title":"Paint Jobs","content":"Specification of coating schedules, primer selections, anti-microbial interior paints, weatherproofing exterior paint systems, and custom color swatches."}]}]'::jsonb, 20, FALSE),
+
+('consultation-retainer-services', 'consultation & retainer services', 'services | kaya', 'ongoing architectural guidance, strategic advisory & long-term partnerships', 'Continuous, expert architectural advice designed for ongoing developments, portfolio management, or phased projects that require strategic oversight and flexible, on-demand consultation.', NULL, 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/studio_services_img_1785469964556.jpg', 'Strategic architectural guidance and design governance for complex, phased projects.', '[{"title":"Strategic Project Advisory","desc":"High-level architectural consulting to evaluate masterplans, spatial viability, and long-term asset value."},{"title":"Feasibility & Zoning Audits","desc":"Preliminary site assessments, land use compliance checks, and regulatory risk analysis before capital commitment."},{"title":"Design Direction Retainers","desc":"Ongoing architectural stewardship for brands and developers requiring continuous design oversight."},{"title":"Independent Technical Auditing","desc":"Objective quality reviews, contractor milestone verification, and material compliance inspections."}]'::jsonb, '[{"title":"Consultation","content":"Flexible, on-demand advisory sessions covering project feasibility, site evaluations, budget estimation, layout advice, and design critiques. Perfect for resolving specific design crossroads without long-term commitments."},{"title":"Retainer","content":"Continuous architectural partner support for phased developments, multi-property portfolios, and long-term asset management. Ensures ongoing design control, contractor alignment, and quality supervision over extended timelines."}]'::jsonb, 30, FALSE)
+ON CONFLICT (id) DO UPDATE SET 
+    tagline = EXCLUDED.tagline, description = EXCLUDED.description, extra_description = EXCLUDED.extra_description, image_url = EXCLUDED.image_url, subtext = EXCLUDED.subtext, pillars = EXCLUDED.pillars, content_columns = EXCLUDED.content_columns, sort_order = EXCLUDED.sort_order, is_draft = EXCLUDED.is_draft, updated_at = NOW();
+
+-- 15. PROCESS PHILOSOPHIES
+INSERT INTO public.process_philosophies (id, title, section_tag, tagline, description, extra_description, image_url, subtext, pillars, sort_order, is_draft) VALUES
+('designing-with-values', 'designing with values', 'process | paraán', 'purpose-driven spatial concepts anchored in environmental & social context', 'Our design methodology begins with deep contextual listening—ensuring every spatial form respects microclimates, community heritage, resource stewardship, and long-term utility.', 'Every decision we make in the design phase is guided by a commitment to environmental stewardship and human-centric ergonomics. We strive to build enduring structures that act as positive forces within their respective ecologies and communities.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/contact_case_study_house_img_1785469986420.jpg', 'Designing spaces that respect context, microclimate, and the human experience.', '[{"title":"Passive Environmental Response","desc":"Optimizing natural light, cross-ventilation, and solar orientation to minimize operational energy loads."},{"title":"Material Integrity & Circularity","desc":"Prioritizing non-toxic, locally harvested, and enduring building materials that age with grace."},{"title":"Human-Centric Spatial Ergonomics","desc":"Crafting spaces that nurture emotional wellbeing, intuitive navigation, and multi-generational adaptability."},{"title":"Vernacular & Cultural Adaptation","desc":"Harmonizing contemporary spatial minimalism with regional architectural heritage and micro-histories."}]'::jsonb, 10, FALSE),
+
+('managing-with-integrity', 'managing with integrity', 'process | paraán', 'uncompromising fiscal clarity, transparent procurement & rigorous oversight', 'A discipline of project stewardship built on open-book budgeting, transparent contractor bidding, strict schedule milestones, and zero hidden markups.', 'We champion full transparency throughout the lifecycle of every project. By enforcing open-book budgeting and uncompromised quality standards, we protect our clients'' investments and deliver spaces exactly as envisioned, without hidden surprises.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/contact_headquarters_img_1785470005846.jpg', 'Ensuring project success through transparent procurement and uncompromising oversight.', '[{"title":"Open-Book Financial Reporting","desc":"Real-time cost tracking and transparent line-item breakdowns with complete client visibility."},{"title":"Competitive Vendor Bidding","desc":"Unbiased contractor evaluation and transparent bid comparisons to protect project capital."},{"title":"Milestone Verification","desc":"Strict payment releases tied directly to verified site completion and quality benchmarks."},{"title":"Proactive Risk Mitigation","desc":"Pre-emptive issue resolution, delay tracking, and safety compliance protocols."}]'::jsonb, 20, FALSE),
+
+('building-with-culture', 'building with culture', 'process | paraán', 'synthesizing regional craftsmanship with modern architectural technology', 'Bridging time-honored local artisan techniques with modern structural standards to craft buildings deeply rooted in place, character, and tactile permanence.', 'We believe that true sustainability involves preserving cultural heritage and empowering local artisans. By integrating time-honored building techniques with contemporary standards, we create spaces that resonate with history while serving modern needs.', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/studio_process_img_1785469980353.jpg', 'Honoring regional craftsmanship by integrating traditional artisan techniques with modern standards.', '[{"title":"Artisan & Guild Collaboration","desc":"Partnering directly with local woodcarvers, stonemasons, weavers, and metal fabricators."},{"title":"Regional Material Sourcing","desc":"Utilizing indigenous timbers, volcanic stone, bamboo composites, and local aggregates."},{"title":"Hybrid Construction Technology","desc":"Pairing modern engineered steel and concrete with hand-crafted natural finishes."},{"title":"Community Skill Empowerment","desc":"Investing in local labor force training and supporting traditional building guilds."}]'::jsonb, 30, FALSE)
+ON CONFLICT (id) DO UPDATE SET 
+    tagline = EXCLUDED.tagline, description = EXCLUDED.description, extra_description = EXCLUDED.extra_description, image_url = EXCLUDED.image_url, subtext = EXCLUDED.subtext, pillars = EXCLUDED.pillars, sort_order = EXCLUDED.sort_order, is_draft = EXCLUDED.is_draft, updated_at = NOW();
+
+-- 16. STAGE GROUPS (Dynamic Category Groups per Process Page)
+INSERT INTO public.stage_groups (id, process_page_id, name, col_span, sort_order, is_draft) VALUES
+-- Designing with Values
+('a0000001-0000-0000-0000-000000000001', 'designing-with-values', 'guidance', 4, 10, FALSE),
+('a0000001-0000-0000-0000-000000000002', 'designing-with-values', 'experiential', 4, 20, FALSE),
+('a0000001-0000-0000-0000-000000000003', 'designing-with-values', 'presence', 4, 30, FALSE),
+
+-- Managing with Integrity
+('a0000002-0000-0000-0000-000000000001', 'managing-with-integrity', 'guidance', 4, 10, FALSE),
+('a0000002-0000-0000-0000-000000000002', 'managing-with-integrity', 'experiential', 4, 20, FALSE),
+('a0000002-0000-0000-0000-000000000003', 'managing-with-integrity', 'presence', 4, 30, FALSE),
+
+-- Building with Culture
+('a0000003-0000-0000-0000-000000000001', 'building-with-culture', 'guidance', 4, 10, FALSE),
+('a0000003-0000-0000-0000-000000000002', 'building-with-culture', 'experiential', 4, 20, FALSE),
+('a0000003-0000-0000-0000-000000000003', 'building-with-culture', 'presence', 4, 30, FALSE)
+ON CONFLICT (id) DO UPDATE SET 
+    name = EXCLUDED.name, col_span = EXCLUDED.col_span, sort_order = EXCLUDED.sort_order, is_draft = EXCLUDED.is_draft, updated_at = NOW();
+
+-- 17. PROCESS STAGES (Dynamic Stages per Page & Group)
+INSERT INTO public.process_stages (id, process_page_id, stage_group_id, step_number, title, subtitle, description, deliverables, duration, sort_order, is_draft) VALUES
+-- Designing with Values
+('b0000001-0000-0000-0000-000000000001', 'designing-with-values', 'a0000001-0000-0000-0000-000000000001', '01', 'Discovery Session', 'Initial Consultation & Strategic Alignment', 'An initial casual 2-hour online consultation or in-person session where we align on project scale, site context, vision, and target budget bounds with zero commitment required.', ARRAY['Client Brief & Vision Definition', 'Site & Zoning Feasibility Assessment', 'Budget & Timeline Expectations Alignment', 'Non-Binding Pre-Design Roadmap'], '1 - 2 Weeks', 10, FALSE),
+('b0000001-0000-0000-0000-000000000002', 'designing-with-values', 'a0000001-0000-0000-0000-000000000001', '02', 'Proposal Review', 'Tailored Scope of Services & Commercial Alignment', 'We submit a comprehensive, transparent design-build proposal outlining project scope, deliverables, team structure, and milestone payment schedules for client alignment.', ARRAY['Detailed Scope of Architectural Services', 'Phase-by-Phase Deliverables Checklist', 'Transparent Fee Structure & Payment Terms', 'Project Master Schedule'], '1 - 2 Weeks', 20, FALSE),
+('b0000001-0000-0000-0000-000000000003', 'designing-with-values', 'a0000001-0000-0000-0000-000000000001', '03', 'Contract Review', 'Formalizing Service Agreements & Governance', 'We draft and finalize notarized service agreements mapping out precise legal responsibilities, project milestones, quality guarantees, and progressive payment stages.', ARRAY['Notarized Architectural Service Agreement', 'Defined Progressive Payment Schedule', 'Legal & Regulatory Compliance Framework', 'Milestone Verification Protocols'], '1 Week', 30, FALSE),
+('b0000001-0000-0000-0000-000000000004', 'designing-with-values', 'a0000001-0000-0000-0000-000000000002', '04', 'Design Stage', 'Spatial Programming & Conceptual Massing', 'Guided by the Double Diamond design framework, we analyze site orientation, solar diagnostics, and spatial requirements to synthesize schematic floor layouts and 3D architectural massing.', ARRAY['Solar & Environmental Diagnostics', 'Spatial Programming Matrix', 'Schematic Architectural Floor Plans', '3D Volumetric Concept Models'], '4 - 8 Weeks', 40, FALSE),
+('b0000001-0000-0000-0000-000000000005', 'designing-with-values', 'a0000001-0000-0000-0000-000000000002', '05', 'Technical Stage', 'BIM Engineering & Permit-Ready Blueprints', 'We refine conceptual designs into high-resolution technical BIM models, integrating structural engineering, MEPFS systems, finish schedules, and construction drawing packages.', ARRAY['High-Resolution Technical BIM Models', 'Integrated Structural & MEPFS Systems', 'Permit-Ready Construction Drawings', 'Material Specifications & Schedules'], '6 - 10 Weeks', 50, FALSE),
+('b0000001-0000-0000-0000-000000000006', 'designing-with-values', 'a0000001-0000-0000-0000-000000000002', '06', 'Construction Stage', 'On-Site Execution & Quality Supervision', 'From contractor bidding and procurement to continuous on-site architectural oversight and quality assurance inspections, we safeguard the design intent through turnkey completion.', ARRAY['Contractor Bidding & Procurement Support', 'Continuous On-Site Quality Inspections', 'Material Compliance & Verification', 'Turnkey Handover & Final Sign-Off'], '6 - 18 Months', 60, FALSE),
+('b0000001-0000-0000-0000-000000000007', 'designing-with-values', 'a0000001-0000-0000-0000-000000000003', '07', '15-Year Project Support', 'Long-Term Stewardship & Warranty Care', 'Our engagement continues far past move-in day. We provide a 15-year structural and maintenance support protocol to guarantee enduring building performance and client peace of mind.', ARRAY['15-Year Structural Integrity Guarantee', 'Scheduled Post-Occupancy Audits', 'Building Maintenance & Renovation Advice', 'Dedicated Lifetime Client Support Line'], '15 Years', 70, FALSE),
+
+-- Managing with Integrity
+('b0000002-0000-0000-0000-000000000001', 'managing-with-integrity', 'a0000002-0000-0000-0000-000000000001', '01', 'Discovery Session', 'Initial Consultation & Strategic Alignment', 'An initial casual 2-hour online consultation or in-person session where we align on project scale, site context, vision, and target budget bounds with zero commitment required.', ARRAY['Client Brief & Vision Definition', 'Site & Zoning Feasibility Assessment', 'Budget & Timeline Expectations Alignment', 'Non-Binding Pre-Design Roadmap'], '1 - 2 Weeks', 10, FALSE),
+('b0000002-0000-0000-0000-000000000002', 'managing-with-integrity', 'a0000002-0000-0000-0000-000000000001', '02', 'Proposal Review', 'Tailored Scope of Services & Commercial Alignment', 'We submit a comprehensive, transparent design-build proposal outlining project scope, deliverables, team structure, and milestone payment schedules for client alignment.', ARRAY['Detailed Scope of Architectural Services', 'Phase-by-Phase Deliverables Checklist', 'Transparent Fee Structure & Payment Terms', 'Project Master Schedule'], '1 - 2 Weeks', 20, FALSE),
+('b0000002-0000-0000-0000-000000000003', 'managing-with-integrity', 'a0000002-0000-0000-0000-000000000001', '03', 'Contract Review', 'Formalizing Service Agreements & Governance', 'We draft and finalize notarized service agreements mapping out precise legal responsibilities, project milestones, quality guarantees, and progressive payment stages.', ARRAY['Notarized Architectural Service Agreement', 'Defined Progressive Payment Schedule', 'Legal & Regulatory Compliance Framework', 'Milestone Verification Protocols'], '1 Week', 30, FALSE),
+('b0000002-0000-0000-0000-000000000004', 'managing-with-integrity', 'a0000002-0000-0000-0000-000000000002', '04', 'Design Stage', 'Spatial Programming & Conceptual Massing', 'Guided by the Double Diamond design framework, we analyze site orientation, solar diagnostics, and spatial requirements to synthesize schematic floor layouts and 3D architectural massing.', ARRAY['Solar & Environmental Diagnostics', 'Spatial Programming Matrix', 'Schematic Architectural Floor Plans', '3D Volumetric Concept Models'], '4 - 8 Weeks', 40, FALSE),
+('b0000002-0000-0000-0000-000000000005', 'managing-with-integrity', 'a0000002-0000-0000-0000-000000000002', '05', 'Technical Stage', 'BIM Engineering & Permit-Ready Blueprints', 'We refine conceptual designs into high-resolution technical BIM models, integrating structural engineering, MEPFS systems, finish schedules, and construction drawing packages.', ARRAY['High-Resolution Technical BIM Models', 'Integrated Structural & MEPFS Systems', 'Permit-Ready Construction Drawings', 'Material Specifications & Schedules'], '6 - 10 Weeks', 50, FALSE),
+('b0000002-0000-0000-0000-000000000006', 'managing-with-integrity', 'a0000002-0000-0000-0000-000000000002', '06', 'Construction Stage', 'On-Site Execution & Quality Supervision', 'From contractor bidding and procurement to continuous on-site architectural oversight and quality assurance inspections, we safeguard the design intent through turnkey completion.', ARRAY['Contractor Bidding & Procurement Support', 'Continuous On-Site Quality Inspections', 'Material Compliance & Verification', 'Turnkey Handover & Final Sign-Off'], '6 - 18 Months', 60, FALSE),
+('b0000002-0000-0000-0000-000000000007', 'managing-with-integrity', 'a0000002-0000-0000-0000-000000000003', '07', '15-Year Project Support', 'Long-Term Stewardship & Warranty Care', 'Our engagement continues far past move-in day. We provide a 15-year structural and maintenance support protocol to guarantee enduring building performance and client peace of mind.', ARRAY['15-Year Structural Integrity Guarantee', 'Scheduled Post-Occupancy Audits', 'Building Maintenance & Renovation Advice', 'Dedicated Lifetime Client Support Line'], '15 Years', 70, FALSE),
+
+-- Building with Culture
+('b0000003-0000-0000-0000-000000000001', 'building-with-culture', 'a0000003-0000-0000-0000-000000000001', '01', 'Discovery Session', 'Initial Consultation & Strategic Alignment', 'An initial casual 2-hour online consultation or in-person session where we align on project scale, site context, vision, and target budget bounds with zero commitment required.', ARRAY['Client Brief & Vision Definition', 'Site & Zoning Feasibility Assessment', 'Budget & Timeline Expectations Alignment', 'Non-Binding Pre-Design Roadmap'], '1 - 2 Weeks', 10, FALSE),
+('b0000003-0000-0000-0000-000000000002', 'building-with-culture', 'a0000003-0000-0000-0000-000000000001', '02', 'Proposal Review', 'Tailored Scope of Services & Commercial Alignment', 'We submit a comprehensive, transparent design-build proposal outlining project scope, deliverables, team structure, and milestone payment schedules for client alignment.', ARRAY['Detailed Scope of Architectural Services', 'Phase-by-Phase Deliverables Checklist', 'Transparent Fee Structure & Payment Terms', 'Project Master Schedule'], '1 - 2 Weeks', 20, FALSE),
+('b0000003-0000-0000-0000-000000000003', 'building-with-culture', 'a0000003-0000-0000-0000-000000000001', '03', 'Contract Review', 'Formalizing Service Agreements & Governance', 'We draft and finalize notarized service agreements mapping out precise legal responsibilities, project milestones, quality guarantees, and progressive payment stages.', ARRAY['Notarized Architectural Service Agreement', 'Defined Progressive Payment Schedule', 'Legal & Regulatory Compliance Framework', 'Milestone Verification Protocols'], '1 Week', 30, FALSE),
+('b0000003-0000-0000-0000-000000000004', 'building-with-culture', 'a0000003-0000-0000-0000-000000000002', '04', 'Design Stage', 'Spatial Programming & Conceptual Massing', 'Guided by the Double Diamond design framework, we analyze site orientation, solar diagnostics, and spatial requirements to synthesize schematic floor layouts and 3D architectural massing.', ARRAY['Solar & Environmental Diagnostics', 'Spatial Programming Matrix', 'Schematic Architectural Floor Plans', '3D Volumetric Concept Models'], '4 - 8 Weeks', 40, FALSE),
+('b0000003-0000-0000-0000-000000000005', 'building-with-culture', 'a0000003-0000-0000-0000-000000000002', '05', 'Technical Stage', 'BIM Engineering & Permit-Ready Blueprints', 'We refine conceptual designs into high-resolution technical BIM models, integrating structural engineering, MEPFS systems, finish schedules, and construction drawing packages.', ARRAY['High-Resolution Technical BIM Models', 'Integrated Structural & MEPFS Systems', 'Permit-Ready Construction Drawings', 'Material Specifications & Schedules'], '6 - 10 Weeks', 50, FALSE),
+('b0000003-0000-0000-0000-000000000006', 'building-with-culture', 'a0000003-0000-0000-0000-000000000002', '06', 'Construction Stage', 'On-Site Execution & Quality Supervision', 'From contractor bidding and procurement to continuous on-site architectural oversight and quality assurance inspections, we safeguard the design intent through turnkey completion.', ARRAY['Contractor Bidding & Procurement Support', 'Continuous On-Site Quality Inspections', 'Material Compliance & Verification', 'Turnkey Handover & Final Sign-Off'], '6 - 18 Months', 60, FALSE),
+('b0000003-0000-0000-0000-000000000007', 'building-with-culture', 'a0000003-0000-0000-0000-000000000003', '07', '15-Year Project Support', 'Long-Term Stewardship & Warranty Care', 'Our engagement continues far past move-in day. We provide a 15-year structural and maintenance support protocol to guarantee enduring building performance and client peace of mind.', ARRAY['15-Year Structural Integrity Guarantee', 'Scheduled Post-Occupancy Audits', 'Building Maintenance & Renovation Advice', 'Dedicated Lifetime Client Support Line'], '15 Years', 70, FALSE)
+ON CONFLICT (id) DO UPDATE SET 
+    title = EXCLUDED.title, subtitle = EXCLUDED.subtitle, description = EXCLUDED.description, deliverables = EXCLUDED.deliverables, duration = EXCLUDED.duration, sort_order = EXCLUDED.sort_order, is_draft = EXCLUDED.is_draft, updated_at = NOW();
+
+-- 18. HOME SLIDES (Hero Carousel)
+INSERT INTO public.home_slides (id, title, image_url, sort_order, is_draft) VALUES
+('c0000001-0000-0000-0000-000000000001', 'Your Home', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/hero_modern_villa_1783495183350.jpg', 10, FALSE),
+('c0000001-0000-0000-0000-000000000002', 'Your Business', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/condo_fitout_interior_1783495200802.jpg', 20, FALSE),
+('c0000001-0000-0000-0000-000000000003', 'Your Office', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/production_drawings_1783495233053.jpg', 30, FALSE),
+('c0000001-0000-0000-0000-000000000004', 'Your Home', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/retail_boutique_1783495217375.jpg', 40, FALSE),
+('c0000001-0000-0000-0000-000000000005', 'Your Business', 'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/cms/kiosk_coffee_bar_1783495252161.jpg', 50, FALSE)
+ON CONFLICT (id) DO UPDATE SET 
+    title = EXCLUDED.title, image_url = EXCLUDED.image_url, sort_order = EXCLUDED.sort_order, is_draft = EXCLUDED.is_draft, updated_at = NOW();
+
+-- ==============================================================================
+-- POST-SEED PRIVILEGES (Guarantees anon and authenticated have access to all tables)
+-- ==============================================================================
+GRANT USAGE, CREATE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
