@@ -16,6 +16,7 @@ import {
   getStageGroupsWithStages,
   getHomepageSlogans,
 } from './supabase/cms.service';
+import { fetchAdminSitePagesAction } from '@/app/actions/admin-mutations';
 import {
   SitePage,
   NavigationCardItem,
@@ -84,12 +85,13 @@ export async function getHomeCarouselImages(): Promise<HomeCarouselImage[]> {
 export async function getSitePagesData(): Promise<SitePage[]> {
   if (shouldQuerySupabase()) {
     try {
-      return await getSitePages();
+      const pages = await fetchAdminSitePagesAction();
+      if (pages && pages.length > 0) return pages;
     } catch (err) {
-      console.warn('[DataService] Supabase getSitePages failed:', err);
+      console.warn('[DataService] fetchAdminSitePagesAction failed, falling back to getSitePages:', err);
     }
   }
-  return getSitePages(false);
+  return getSitePages(true);
 }
 
 export async function getNavigationCardsData(hubId?: string): Promise<NavigationCardItem[]> {

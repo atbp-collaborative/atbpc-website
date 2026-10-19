@@ -38,7 +38,7 @@ import {
 } from '@/services/supabase/cms-admin.service';
 import { toast } from 'sonner';
 
-export type CmsTab = 'pages' | 'process' | 'services' | 'home';
+export type CmsTab = 'pages' | 'landing-pages' | 'process' | 'services' | 'home';
 
 export function useAdminCms() {
   const [activeTab, setActiveTab] = useState<CmsTab>('pages');
@@ -107,26 +107,75 @@ export function useAdminCms() {
 
   // Page mutation
   const handleSavePage = useCallback(async (page: SitePage) => {
-    const saved = await saveAdminSitePage(page);
-    setPages((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
-    toast.success(`Page "${saved.title}" saved successfully`);
-    return saved;
+    try {
+      const saved = await saveAdminSitePage(page);
+      setPages((prev) => {
+        const idx = prev.findIndex((p) => {
+          const pId = p.id.toLowerCase().replace(/^\/+|\/+$/g, '');
+          const sId = saved.id.toLowerCase().replace(/^\/+|\/+$/g, '');
+          if (pId === sId) return true;
+          const pLast = pId.split('/').pop();
+          const sLast = sId.split('/').pop();
+          return Boolean(pLast && pLast === sLast);
+        });
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = saved;
+          return copy;
+        }
+        return [...prev, saved];
+      });
+      toast.success(`Page "${saved.title}" saved successfully`);
+      return saved;
+    } catch (err: any) {
+      console.error('Failed to save page:', err);
+      toast.error(err?.message || `Failed to save page "${page.title}"`);
+      throw err;
+    }
   }, []);
 
   // Card mutation
   const handleSaveCard = useCallback(async (card: NavigationCardItem) => {
-    const saved = await saveAdminNavigationCard(card);
-    setCards((prev) => prev.map((c) => (c.id === saved.id ? saved : c)));
-    toast.success(`Navigation card "${saved.title}" saved`);
-    return saved;
+    try {
+      const saved = await saveAdminNavigationCard(card);
+      setCards((prev) => {
+        const idx = prev.findIndex((c) => c.id === saved.id || c.cardKey === saved.cardKey);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = saved;
+          return copy;
+        }
+        return [...prev, saved];
+      });
+      toast.success(`Navigation card "${saved.title}" saved`);
+      return saved;
+    } catch (err: any) {
+      console.error('Failed to save card:', err);
+      toast.error(err?.message || `Failed to save navigation card "${card.title}"`);
+      throw err;
+    }
   }, []);
 
   // Philosophy mutation
   const handleSavePhilosophy = useCallback(async (item: ProcessPhilosophy) => {
-    const saved = await saveAdminProcessPhilosophy(item);
-    setPhilosophies((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
-    toast.success(`Philosophy for "${saved.title}" updated`);
-    return saved;
+    try {
+      const saved = await saveAdminProcessPhilosophy(item);
+      setPhilosophies((prev) => {
+        const idx = prev.findIndex((p) => p.id === saved.id);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = saved;
+          return copy;
+        }
+        return [...prev, saved];
+      });
+      toast.success(`Philosophy for "${saved.title}" updated`);
+      return saved;
+    } catch (err: any) {
+      console.error('Failed to save philosophy:', err);
+      toast.error(err?.message || `Failed to save philosophy "${item.title}"`);
+      throw err;
+    }
   }, []);
 
   // Stage Group mutations
@@ -188,10 +237,24 @@ export function useAdminCms() {
 
   // Service mutation
   const handleSaveService = useCallback(async (offering: ServiceOffering) => {
-    const saved = await saveAdminServiceOffering(offering);
-    setServices((prev) => prev.map((s) => (s.id === saved.id ? saved : s)));
-    toast.success(`Service offering "${saved.title}" updated`);
-    return saved;
+    try {
+      const saved = await saveAdminServiceOffering(offering);
+      setServices((prev) => {
+        const idx = prev.findIndex((s) => s.id === saved.id);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = saved;
+          return copy;
+        }
+        return [...prev, saved];
+      });
+      toast.success(`Service offering "${saved.title}" updated`);
+      return saved;
+    } catch (err: any) {
+      console.error('Failed to save service:', err);
+      toast.error(err?.message || `Failed to save service "${offering.title}"`);
+      throw err;
+    }
   }, []);
 
   // Home Slide mutations

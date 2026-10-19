@@ -6,11 +6,12 @@
 'use client';
 
 import React from 'react';
-import { Globe, Compass, Briefcase, Sparkles, RefreshCw } from 'lucide-react';
+import { Globe, Compass, Briefcase, Sparkles, RefreshCw, LayoutTemplate } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { Button } from '@/components/primitives/buttons/Button';
 import { useAdminCms, CmsTab } from '@/hooks/admin/useAdminCms';
 import { CmsPagesTab } from '@/components/admin/cms/CmsPagesTab';
+import { CmsLandingPagesTab } from '@/components/admin/cms/CmsLandingPagesTab';
 import { CmsProcessTab } from '@/components/admin/cms/CmsProcessTab';
 import { CmsServicesTab } from '@/components/admin/cms/CmsServicesTab';
 import { CmsHomeTab } from '@/components/admin/cms/CmsHomeTab';
@@ -52,7 +53,8 @@ export default function AdminContentPage() {
   } = useAdminCms();
 
   const tabs: { id: CmsTab; label: string; icon: React.ElementType }[] = [
-    { id: 'pages', label: 'Pages & Navigation', icon: Globe },
+    { id: 'pages', label: 'Content Pages', icon: Globe },
+    { id: 'landing-pages', label: 'Landing Pages', icon: LayoutTemplate },
     { id: 'process', label: 'Process & Stages', icon: Compass },
     { id: 'services', label: 'Services & Scopes', icon: Briefcase },
     { id: 'home', label: 'Homepage & Slogans', icon: Sparkles },
@@ -113,8 +115,13 @@ export default function AdminContentPage() {
             {activeTab === 'pages' && (
               <CmsPagesTab
                 pages={pages}
-                cards={cards}
                 onSavePage={savePage}
+              />
+            )}
+
+            {activeTab === 'landing-pages' && (
+              <CmsLandingPagesTab
+                cards={cards}
                 onSaveCard={saveCard}
               />
             )}

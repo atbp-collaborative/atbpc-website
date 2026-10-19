@@ -34,6 +34,7 @@ import {
   saveHomeSlideAction,
   deleteHomeSlideAction,
   saveHomepageSlogansAction,
+  fetchAdminSitePagesAction,
 } from '@/app/actions/admin-mutations';
 
 // ==========================================
@@ -42,12 +43,12 @@ import {
 
 export async function fetchAdminSitePages(): Promise<SitePage[]> {
   try {
-    const pages = await getSitePages(true);
+    const pages = await fetchAdminSitePagesAction();
     if (pages && pages.length > 0) return pages;
   } catch (err) {
-    console.warn('Failed to fetch site pages from Supabase:', err);
+    console.warn('Failed to fetch site pages from server action:', err);
   }
-  return getSitePages(false);
+  return getSitePages(true);
 }
 
 export async function saveAdminSitePage(page: SitePage): Promise<SitePage> {

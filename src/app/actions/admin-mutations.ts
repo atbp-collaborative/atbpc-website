@@ -27,6 +27,7 @@ import {
   normalizeTypologyId,
   normalizeContractTypeId,
 } from '@/lib/projects/project-helpers';
+import { getFallbackSitePages } from '@/services/supabase/cms.service';
 
 // ==============================================================================
 // 1. PEOPLE MUTATIONS
@@ -463,13 +464,69 @@ export async function deleteRoleAction(id: string) {
 // 4. CMS & PAGE MANAGEMENT MUTATIONS
 // ==============================================================================
 
+export async function fetchAdminSitePagesAction(): Promise<SitePage[]> {
+  try {
+    const supabase = getAdminClient();
+    const { data, error } = await supabase.from('site_pages').select('*');
+    const dbPages: SitePage[] = (!error && data)
+      ? data.map((row: any): SitePage => ({
+          id: row.id,
+          title: row.title,
+          subtitle: row.subtitle,
+          heroImageUrl: row.hero_image_url,
+          metaTitle: row.meta_title,
+          metaDescription: row.meta_description,
+          isDraft: Boolean(row.is_draft),
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        }))
+      : [];
+
+    const fallbackPages = getFallbackSitePages();
+    const pageMap = new Map<string, SitePage>();
+
+    fallbackPages.forEach((p) => {
+      pageMap.set(p.id.toLowerCase().replace(/^\/+|\/+$/g, ''), p);
+    });
+
+    dbPages.forEach((dbP) => {
+      const normDbId = dbP.id.toLowerCase().replace(/^\/+|\/+$/g, '');
+      const lastSeg = normDbId.split('/').pop();
+      let matchedKey: string | null = null;
+      for (const key of pageMap.keys()) {
+        if (key === normDbId || (lastSeg && key.split('/').pop() === lastSeg)) {
+          matchedKey = key;
+          break;
+        }
+      }
+      if (matchedKey) {
+        const existing = pageMap.get(matchedKey)!;
+        pageMap.set(matchedKey, {
+          ...existing,
+          ...dbP,
+          id: existing.id,
+        });
+      } else {
+        pageMap.set(normDbId, dbP);
+      }
+    });
+
+    return Array.from(pageMap.values());
+  } catch (err) {
+    console.warn('[fetchAdminSitePagesAction] Exception:', err);
+    return getFallbackSitePages();
+  }
+}
+
 export async function saveSitePageAction(page: SitePage) {
   try {
     const supabase = getAdminClient();
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('site_pages')
-      .update({
+      .upsert({
+        id: page.id,
+        title: page.title,
         subtitle: page.subtitle,
         hero_image_url: page.heroImageUrl,
         meta_title: page.metaTitle || null,
@@ -477,7 +534,8 @@ export async function saveSitePageAction(page: SitePage) {
         is_draft: Boolean(page.isDraft),
         updated_at: new Date().toISOString(),
       })
-      .eq('id', page.id);
+      .select()
+      .single();
 
     if (error) {
       console.error('[saveSitePageAction] Error:', error);
@@ -485,11 +543,29 @@ export async function saveSitePageAction(page: SitePage) {
     }
 
     // Revalidate navigation and all pages depending on site_pages
+    const targetRoute = page.id.startsWith('/') ? page.id : `/${page.id}`;
+    revalidatePath(targetRoute);
     revalidatePath('/', 'layout');
     revalidateTag('site-pages');
     revalidateTag('navigation');
 
-    return { success: true, data: page };
+    return {
+      success: true,
+      data: {
+        ...page,
+        ...(data
+          ? {
+              id: data.id,
+              title: data.title,
+              subtitle: data.subtitle,
+              heroImageUrl: data.hero_image_url,
+              metaTitle: data.meta_title,
+              metaDescription: data.meta_description,
+              isDraft: Boolean(data.is_draft),
+            }
+          : {}),
+      },
+    };
   } catch (err: any) {
     console.error('[saveSitePageAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to save site page' };
@@ -500,9 +576,12 @@ export async function saveNavigationCardAction(card: NavigationCardItem) {
   try {
     const supabase = getAdminClient();
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('navigation_cards')
-      .update({
+      .upsert({
+        id: card.id,
+        hub_id: card.hubId,
+        card_key: card.cardKey,
         title: card.title,
         tagline: card.tagline,
         subtext: card.subtext,
@@ -513,7 +592,8 @@ export async function saveNavigationCardAction(card: NavigationCardItem) {
         is_draft: Boolean(card.isDraft),
         updated_at: new Date().toISOString(),
       })
-      .eq('id', card.id);
+      .select()
+      .single();
 
     if (error) {
       console.error('[saveNavigationCardAction] Error:', error);
@@ -523,7 +603,27 @@ export async function saveNavigationCardAction(card: NavigationCardItem) {
     revalidatePath('/', 'layout');
     revalidateTag('navigation');
 
-    return { success: true, data: card };
+    return {
+      success: true,
+      data: {
+        ...card,
+        ...(data
+          ? {
+              id: data.id,
+              hubId: data.hub_id,
+              cardKey: data.card_key,
+              title: data.title,
+              tagline: data.tagline,
+              subtext: data.subtext,
+              tags: data.tags,
+              imageUrl: data.image_url,
+              targetHref: data.target_href,
+              sortOrder: data.sort_order,
+              isDraft: Boolean(data.is_draft),
+            }
+          : {}),
+      },
+    };
   } catch (err: any) {
     console.error('[saveNavigationCardAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to save navigation card' };
