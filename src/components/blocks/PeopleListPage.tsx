@@ -4,6 +4,7 @@ import React, { Suspense } from 'react';
 import { getMembers } from '@/services/dummy-data.service';
 import { Member, MemberCategory } from '@/types';
 import { PeopleCarousel } from '@/components/blocks/PeopleCarousel';
+import { PersonCardSkeleton } from '@/components/primitives/skeletons/PersonCardSkeleton';
 
 export interface PeopleListPageProps {
   activeFilter: 'all' | MemberCategory;
@@ -11,10 +12,21 @@ export interface PeopleListPageProps {
 
 function PeopleListPageContent({ activeFilter }: PeopleListPageProps) {
   const [members, setMembers] = React.useState<Member[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    getMembers().then(setMembers);
+    getMembers()
+      .then(setMembers)
+      .finally(() => setIsLoading(false));
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="w-full flex-1 flex flex-col justify-between md:overflow-hidden px-4 sm:px-8 md:px-12 py-3 sm:py-5 select-none">
+        <PersonCardSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -34,7 +46,13 @@ function PeopleListPageContent({ activeFilter }: PeopleListPageProps) {
 
 export function PeopleListPage(props: PeopleListPageProps) {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <div className="w-full flex-1 px-4 sm:px-8 md:px-12 py-3 sm:py-5">
+          <PersonCardSkeleton />
+        </div>
+      }
+    >
       <PeopleListPageContent {...props} />
     </Suspense>
   );

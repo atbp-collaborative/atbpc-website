@@ -11,13 +11,21 @@ import { AtbpLogo } from '@/components/global/AtbpLogo';
 import { ExpandingButton } from '@/components/primitives/buttons/ExpandingButton';
 import { useActiveNav } from '@/hooks/useActiveNav';
 
-import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '@/lib/navigation/nav-data';
+import {
+  WORKS_NAV_STRUCTURE,
+  STUDIO_NAV_STRUCTURE,
+  CONTACT_NAV_STRUCTURE,
+  getFilteredStudioNav,
+  getFilteredContactNav,
+} from '@/lib/navigation/nav-data';
+import { SitePage } from '@/types';
 import { ThemeToggle } from '@/components/global/ThemeToggle';
 import { ProtectionToggle } from '@/components/global/ProtectionToggle';
 
 interface MobileDrawerProps {
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
+  sitePages?: SitePage[];
   isProtectionEnabled?: boolean;
   onToggleProtection?: () => void;
   onOpenLegal?: () => void;
@@ -76,6 +84,7 @@ const SectionTrigger: React.FC<SectionTriggerProps> = ({
 export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   isMobileMenuOpen,
   setIsMobileMenuOpen,
+  sitePages,
   isProtectionEnabled = false,
   onToggleProtection,
   onOpenLegal,
@@ -84,6 +93,9 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   const { isDarkMode, toggleTheme } = useTheme();
   const pathname = usePathname();
   const { isWorksActive, isStudioActive, isContactActive, currentCategoryFilter: projectFilter } = useActiveNav();
+
+  const studioNav = React.useMemo(() => getFilteredStudioNav(sitePages), [sitePages]);
+  const contactNav = React.useMemo(() => getFilteredContactNav(sitePages), [sitePages]);
 
   // Accordion expansion state: only one category expanded at a time
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
@@ -262,7 +274,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                         className="overflow-hidden"
                       >
                         <div className="flex flex-col space-y-2 pt-1 pb-2">
-                          {STUDIO_NAV_STRUCTURE.map((sec) => (
+                          {studioNav.map((sec) => (
                             <div key={sec.id} className="space-y-1">
                               <Link
                                 href={sec.id}
@@ -321,7 +333,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                         className="overflow-hidden"
                       >
                         <div className="flex flex-col space-y-2 pt-1 pb-2">
-                          {CONTACT_NAV_STRUCTURE.map((grp) => (
+                          {contactNav.map((grp) => (
                             <div key={grp.id} className="space-y-1">
                               <Link
                                 href={grp.id}

@@ -103,3 +103,31 @@ export const CONTACT_NAV_STRUCTURE: DropdownGroup[] = [
     ],
   },
 ];
+
+export function getFilteredStudioNav(sitePages?: { id: string; isDraft: boolean }[]): DropdownGroup[] {
+  if (!sitePages || sitePages.length === 0) return STUDIO_NAV_STRUCTURE;
+
+  const isServicesDraft = sitePages.some((p) => p.id === 'services-hub' && p.isDraft);
+  const isProcessDraft = sitePages.some((p) => p.id === 'process-hub' && p.isDraft);
+
+  return STUDIO_NAV_STRUCTURE.filter((group) => {
+    if (group.id === ROUTES.ourServices && isServicesDraft) return false;
+    if (group.id === ROUTES.services && isProcessDraft) return false;
+    return true;
+  });
+}
+
+export function getFilteredContactNav(sitePages?: { id: string; isDraft: boolean }[]): DropdownGroup[] {
+  if (!sitePages || sitePages.length === 0) return CONTACT_NAV_STRUCTURE;
+
+  const isCaseStudyDraft = sitePages.some((p) => p.id === 'case-study-house' && p.isDraft);
+  const isGrowWithUsDraft = sitePages.some((p) => p.id === 'grow-with-us' && p.isDraft);
+  const isPartnerWithUsDraft = sitePages.some((p) => p.id === 'partner-with-us' && p.isDraft);
+
+  return CONTACT_NAV_STRUCTURE.filter((group) => {
+    if (group.id === ROUTES.caseStudyHouse && isCaseStudyDraft) return false;
+    if (group.id === ROUTES.growWithUs && isGrowWithUsDraft) return false;
+    if (group.id === ROUTES.partnerWithUs && isPartnerWithUsDraft) return false;
+    return true;
+  });
+}

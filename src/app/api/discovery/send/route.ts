@@ -5,9 +5,31 @@ import * as React from 'react';
 import { NotificationEmailTemplate } from '@/components/emails/NotificationEmailTemplate';
 import { discoverySchema } from '@/lib/forms/discovery.schema';
 
+import { checkRateLimit, isHoneypotTriggered } from '@/lib/security/rate-limit';
+
 export async function POST(request: Request) {
   try {
+    // 1. IP Rate Limiting Check
+    const rateCheck = checkRateLimit(request);
+    if (!rateCheck.success) {
+      return NextResponse.json(
+        { error: 'Too many submissions. Please wait a few minutes before trying again.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateCheck.retryAfterSeconds),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
+
+    // 2. Honeypot Spam Defense Check
+    if (isHoneypotTriggered(body)) {
+      console.warn('[Honeypot] Trapped automated bot submission in discovery session form.');
+      return NextResponse.json({ success: true, message: 'Discovery booking received' });
+    }
     
     // Validate the request body
     const validatedData = discoverySchema.parse(body);

@@ -12,6 +12,8 @@
     "@aivangogh/ph-address": "^2026.2.1",
     "@calcom/embed-react": "^1.5.3",
     "@react-email/components": "^1.0.12",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
     "@tailwindcss/postcss": "^4.3.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.546.0",

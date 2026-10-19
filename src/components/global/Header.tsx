@@ -6,7 +6,14 @@ import { Menu, X, Calendar, FileText } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
 import { ROUTES } from '@/lib/navigation/routes';
-import { WORKS_NAV_STRUCTURE, STUDIO_NAV_STRUCTURE, CONTACT_NAV_STRUCTURE } from '@/lib/navigation/nav-data';
+import {
+  WORKS_NAV_STRUCTURE,
+  STUDIO_NAV_STRUCTURE,
+  CONTACT_NAV_STRUCTURE,
+  getFilteredStudioNav,
+  getFilteredContactNav,
+} from '@/lib/navigation/nav-data';
+import { SitePage } from '@/types';
 import { AtbpLogo } from '@/components/global/AtbpLogo';
 import { NavItem } from '@/components/global/NavItem';
 import { ExpandingButton } from '@/components/primitives/buttons/ExpandingButton';
@@ -18,15 +25,19 @@ import { useActiveNav } from '@/hooks';
 interface HeaderProps {
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
+  sitePages?: SitePage[];
 }
 
 export const Header: React.FC<HeaderProps> = ({
   isMobileMenuOpen,
   setIsMobileMenuOpen,
+  sitePages,
 }) => {
   const { isDarkMode } = useTheme();
   const pathname = usePathname();
   const { isWorksActive, isStudioActive, isContactActive, currentCategoryFilter } = useActiveNav();
+  const studioNav = React.useMemo(() => getFilteredStudioNav(sitePages), [sitePages]);
+  const contactNav = React.useMemo(() => getFilteredContactNav(sitePages), [sitePages]);
   const worksSlug = pathname.startsWith('/works/') ? pathname.split('/')[2] : null;
 
   const isWorksLanding = pathname === '/works';
@@ -107,7 +118,7 @@ export const Header: React.FC<HeaderProps> = ({
               isActive={isStudioActive}
               isHeaderTransparent={isHeaderTransparent}
               isDarkMode={isDarkMode}
-              navGroups={STUDIO_NAV_STRUCTURE}
+              navGroups={studioNav}
               activeId={pathname}
               href={ROUTES.studio}
               getDropdownItemHref={(id) => id}
@@ -118,7 +129,7 @@ export const Header: React.FC<HeaderProps> = ({
               isActive={isContactActive}
               isHeaderTransparent={isHeaderTransparent}
               isDarkMode={isDarkMode}
-              navGroups={CONTACT_NAV_STRUCTURE}
+              navGroups={contactNav}
               activeId={pathname}
               minWidthClass="min-w-[80px]"
               href={ROUTES.contact}

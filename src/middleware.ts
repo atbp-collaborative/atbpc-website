@@ -5,12 +5,25 @@ export function middleware(request: NextRequest) {
   // Get the hostname from the request headers or URL
   const hostname = request.headers.get('host') || request.nextUrl.hostname;
 
-  // Define the domains that should see the under construction page
-  const isProtectedDomain = 
+  // Determine if maintenance mode is active:
+  // 1. If MAINTENANCE_MODE === 'true', enforce maintenance mode.
+  // 2. If MAINTENANCE_MODE === 'false', disable maintenance mode completely.
+  // 3. If MAINTENANCE_MODE is undefined, preserve default behavior for the official production domain.
+  const maintenanceEnv = process.env.MAINTENANCE_MODE?.toLowerCase();
+  const isProductionDomain = 
     hostname === 'atbpcollaborative.com' || 
     hostname === 'www.atbpcollaborative.com';
 
-  if (isProtectedDomain) {
+  const isMaintenanceActive = 
+    maintenanceEnv === 'true' || 
+    (maintenanceEnv !== 'false' && isProductionDomain);
+
+  // Allow preview bypass via URL query (?preview=true) or stored preview cookie
+  const previewQuery = request.nextUrl.searchParams.get('preview');
+  const hasPreviewCookie = request.cookies.get('preview_access')?.value === 'true';
+  const shouldBypass = previewQuery === 'true' || hasPreviewCookie;
+
+  if (isMaintenanceActive && !shouldBypass) {
     // Rewrite all requests to the /under-construction page
     // We check the pathname to avoid infinite rewrite loops
     if (request.nextUrl.pathname !== '/under-construction') {
@@ -28,8 +41,19 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Allow other domains (like atbpc-website.vercel.app or localhost) to work normally
-  return NextResponse.next();
+  const response = NextResponse.next();
+
+  // If user navigated with ?preview=true, set cookie so subsequent navigation bypasses maintenance
+  if (previewQuery === 'true') {
+    response.cookies.set('preview_access', 'true', {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+  }
+
+  return response;
 }
 
 export const config = {

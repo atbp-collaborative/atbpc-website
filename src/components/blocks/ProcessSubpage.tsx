@@ -1,35 +1,80 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { StudioSubpageData } from '@/lib/dummy-data/our-services/services-data';
 import { ProcessStage, ProcessAccordion } from '@/components/blocks/process-stage';
 import { 
-  PROCESS_NODES, 
   BASE_PROCESS_NODES, 
   CATEGORY_GROUPS,
   ProcessNode
 } from '@/lib/dummy-data/our-process/process-data';
 import { useTheme } from '@/context/ThemeContext';
+import { StageGroup } from '@/types';
+import { getStageGroupsData } from '@/services/dummy-data.service';
 
 interface ProcessSubpageProps {
   data: StudioSubpageData;
+  stageGroups?: StageGroup[];
 }
 
-export const ProcessSubpage: React.FC<ProcessSubpageProps> = ({ data }) => {
+export const ProcessSubpage: React.FC<ProcessSubpageProps> = ({ data, stageGroups: initialStageGroups }) => {
   const { isDarkMode } = useTheme();
+  const [stageGroups, setStageGroups] = useState<StageGroup[] | undefined>(initialStageGroups);
 
-  const nodes = useMemo(() => {
-    switch (data.id) {
-      case 'designing-with-values':
-        return BASE_PROCESS_NODES;
-      case 'managing-with-integrity':
-        return BASE_PROCESS_NODES;
-      case 'building-with-culture':
-        return BASE_PROCESS_NODES;
-      default:
-        return PROCESS_NODES;
+  useEffect(() => {
+    if (!initialStageGroups) {
+      getStageGroupsData(data.id).then((groups) => {
+        if (groups && groups.length > 0) {
+          setStageGroups(groups);
+        }
+      }).catch((err) => {
+        console.warn('Failed to load dynamic stage groups:', err);
+      });
     }
-  }, [data.id]);
+  }, [data.id, initialStageGroups]);
+
+  const { nodes, categoryGroups } = useMemo(() => {
+    if (stageGroups && stageGroups.length > 0) {
+      let cumulativeCol = 1;
+      const mappedGroups: { key: any; label: string; colStart: number; colSpan: number }[] = [];
+      const mappedNodes: ProcessNode[] = [];
+
+      stageGroups.forEach((group) => {
+        const groupStages = group.stages || [];
+        const span = groupStages.length;
+        mappedGroups.push({
+          key: group.name,
+          label: group.name,
+          colStart: cumulativeCol,
+          colSpan: span > 0 ? span : 1,
+        });
+        cumulativeCol += span;
+
+        groupStages.forEach((st) => {
+          mappedNodes.push({
+            id: st.id,
+            stepNumber: st.stepNumber,
+            category: group.name as any,
+            title: st.title,
+            lines: [st.title],
+            subtitle: st.subtitle,
+            description: st.description,
+            deliverables: st.deliverables,
+            duration: st.duration,
+          });
+        });
+      });
+
+      if (mappedNodes.length > 0) {
+        return { nodes: mappedNodes, categoryGroups: mappedGroups };
+      }
+    }
+
+    return {
+      nodes: BASE_PROCESS_NODES,
+      categoryGroups: CATEGORY_GROUPS,
+    };
+  }, [stageGroups]);
 
   return (
     <div
