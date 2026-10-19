@@ -21,6 +21,18 @@ export function mapProjectRecord(p: any): Project {
   // Ensure slug is human-readable and never a UUID
   const slug = p.slug || (!isUuid(p.id) ? p.id : generateProjectSlug(p.project_title, p.year));
 
+  const contributors = (p.contributors || []).map((c: any) => ({
+    id: c.id,
+    projectId: c.project_id || p.id,
+    memberId: c.person_id,
+    memberName: c.person ? `${c.person.first_name || ''} ${c.person.last_name || ''}`.trim() : c.person_id,
+    memberRole: c.role_in_project,
+    memberImage: c.person?.profile_photo_url || '',
+    roleInProject: c.role_in_project,
+    description: c.contribution_narrative || '',
+    sortOrder: c.sort_order ?? 0,
+  }));
+
   return {
     id: p.id,
     slug,
@@ -48,6 +60,7 @@ export function mapProjectRecord(p: any): Project {
       duration: p.duration || '12 Months',
       materials: p.materials || ['Concrete', 'Wood', 'Steel', 'Glass'],
     },
+    contributors,
   };
 }
 
@@ -56,7 +69,16 @@ const PROJECT_SELECT_QUERY = `
   media:project_media(*),
   category:project_categories(id, name),
   typology:project_typologies(id, name),
-  contract:contract_types(id, name)
+  contract:contract_types(id, name),
+  contributors:project_contributors(
+    id,
+    project_id,
+    person_id,
+    role_in_project,
+    contribution_narrative,
+    sort_order,
+    person:people(id, first_name, last_name, profile_photo_url, primary_role_id)
+  )
 `;
 
 export async function getProjectsFromSupabase(includeDrafts: boolean = false): Promise<Project[]> {

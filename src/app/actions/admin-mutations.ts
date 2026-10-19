@@ -28,6 +28,7 @@ import {
   normalizeContractTypeId,
 } from '@/lib/projects/project-helpers';
 import { getFallbackSitePages } from '@/services/supabase/cms.service';
+import { optimizeImageBuffer } from '@/lib/images/server-image-optimizer';
 
 // ==============================================================================
 // 1. PEOPLE MUTATIONS
@@ -53,7 +54,15 @@ export async function savePersonAction(member: Member) {
 
     const shortBio = member.bio || member.fullBio || 'Member of ATBP Collaborative.';
     const fullBio = member.fullBio || member.bio || 'Member of ATBP Collaborative.';
-    const profilePhotoUrl = member.image || defaultAvatar;
+    let profilePhotoUrl =
+      member.image ||
+      (member as any).photoUrl ||
+      (member as any).avatar ||
+      defaultAvatar;
+
+    if (profilePhotoUrl && profilePhotoUrl.startsWith('data:image/')) {
+      profilePhotoUrl = await uploadBase64ToStorage(profilePhotoUrl, id, 0, 'people');
+    }
 
     const personPayload = {
       id,
@@ -197,17 +206,102 @@ export async function togglePersonDraftAction(id: string, isDraft: boolean) {
 }
 
 // ==============================================================================
-// 2. PROJECTS MUTATIONS
 // ==============================================================================
+// 2. PROJECTS MUTATIONS & MEDIA UPLOADS
+// ==============================================================================
+
+/**
+ * Uploads a file to Supabase Storage bucket 'portfolio-media' under the designated folder (default: projects/)
+ * Automatically auto-orients, downscales, and optimizes images using Sharp to efficient WebP.
+ */
+export async function uploadProjectMediaAction(formData: FormData) {
+  try {
+    const file = formData.get('file') as File | null;
+    if (!file) {
+      return { success: false, error: 'No file provided for upload' };
+    }
+
+    const folderParam = (formData.get('folder') as string | null) || 'projects';
+    const cleanFolder = ['projects', 'people', 'categories', 'cms'].includes(folderParam)
+      ? folderParam
+      : 'projects';
+
+    const supabase = getAdminClient();
+    const arrayBuffer = await file.arrayBuffer();
+    const rawBuffer = Buffer.from(arrayBuffer);
+
+    // Automatically optimize, downscale to max 1920x1920, and convert to WebP
+    const optimized = await optimizeImageBuffer(rawBuffer, file.type);
+    const storagePath = `${cleanFolder}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${optimized.ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('portfolio-media')
+      .upload(storagePath, optimized.buffer, {
+        contentType: optimized.contentType,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('[uploadProjectMediaAction] Supabase storage upload error:', uploadError);
+      return { success: false, error: uploadError.message };
+    }
+
+    const { data } = supabase.storage.from('portfolio-media').getPublicUrl(storagePath);
+    return { success: true, url: data.publicUrl };
+  } catch (err: any) {
+    console.error('[uploadProjectMediaAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to upload media to storage' };
+  }
+}
+
+/**
+ * Fallback helper to automatically upload base64 image data URLs directly to Supabase Storage,
+ * ensuring no base64 payloads ever get written into Postgres or localStorage.
+ */
+async function uploadBase64ToStorage(
+  dataUrl: string,
+  targetId: string,
+  idx: number,
+  folder: string = 'projects'
+): Promise<string> {
+  if (!dataUrl.startsWith('data:image/')) return dataUrl;
+
+  try {
+    const supabase = getAdminClient();
+    const matches = dataUrl.match(/^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/);
+    if (!matches) return dataUrl;
+
+    const extRaw = matches[1].toLowerCase();
+    const base64Data = matches[2];
+    const rawBuffer = Buffer.from(base64Data, 'base64');
+    const optimized = await optimizeImageBuffer(rawBuffer, `image/${extRaw}`);
+
+    const cleanFolder = ['projects', 'people', 'categories', 'cms'].includes(folder)
+      ? folder
+      : 'projects';
+    const storagePath = `${cleanFolder}/${targetId}/${Date.now()}-${idx}.${optimized.ext}`;
+
+    const { error } = await supabase.storage.from('portfolio-media').upload(storagePath, optimized.buffer, {
+      contentType: optimized.contentType,
+      upsert: true,
+    });
+
+    if (!error) {
+      const { data } = supabase.storage.from('portfolio-media').getPublicUrl(storagePath);
+      return data.publicUrl;
+    }
+    console.error('[uploadBase64ToStorage] Upload error:', error);
+  } catch (err) {
+    console.error('[uploadBase64ToStorage] Exception:', err);
+  }
+  return dataUrl;
+}
 
 export async function saveProjectAction(project: Project) {
   try {
     const supabase = getAdminClient();
 
     // 1. Maintain UUID Primary Key
-    // If it's already a valid UUID, preserve it.
-    // If it's a temporary client ID (e.g. 'project-1234') or empty, generate a new UUID.
-    // If it's a legacy non-UUID text ID, keep it to avoid breaking pre-migration tables.
     const isExistingUuid = isUuid(project.id);
     const isTempId = !project.id || project.id.startsWith('project-');
     const id = isExistingUuid ? project.id : isTempId ? crypto.randomUUID() : project.id;
@@ -284,26 +378,17 @@ export async function saveProjectAction(project: Project) {
       return { success: false, error: prjError.message };
     }
 
-    // Sync media gallery if present
-    if (project.media && Array.isArray(project.media)) {
+    // 5. Sanitize and Sync media gallery (auto-uploading any base64 images to Supabase Storage)
+    let processedImages: string[] = [];
+    if (project.images && Array.isArray(project.images)) {
+      processedImages = await Promise.all(
+        project.images.map((url, idx) => uploadBase64ToStorage(url, id, idx))
+      );
+
       await supabase.from('project_media').delete().eq('project_id', id);
 
-      if (project.media.length > 0) {
-        const mediaToInsert = project.media.map((m, idx) => ({
-          project_id: id,
-          media_type: (m as any).mediaType || 'image',
-          url: m.mediaUrl || (m as any).url,
-          caption: m.caption || null,
-          is_cover: Boolean(m.isCover || idx === 0),
-          sort_order: m.sortOrder ?? idx + 1,
-        }));
-        await supabase.from('project_media').insert(mediaToInsert);
-      }
-    } else if (project.images && Array.isArray(project.images)) {
-      await supabase.from('project_media').delete().eq('project_id', id);
-
-      if (project.images.length > 0) {
-        const mediaToInsert = project.images.map((url, idx) => ({
+      if (processedImages.length > 0) {
+        const mediaToInsert = processedImages.map((url, idx) => ({
           project_id: id,
           media_type: 'image',
           url,
@@ -313,12 +398,53 @@ export async function saveProjectAction(project: Project) {
         }));
         await supabase.from('project_media').insert(mediaToInsert);
       }
+    } else if (project.media && Array.isArray(project.media)) {
+      await supabase.from('project_media').delete().eq('project_id', id);
+
+      if (project.media.length > 0) {
+        const sanitizedMedia = await Promise.all(
+          project.media.map(async (m, idx) => {
+            const rawUrl = m.mediaUrl || (m as any).url || '';
+            const cleanUrl = await uploadBase64ToStorage(rawUrl, id, idx);
+            return {
+              project_id: id,
+              media_type: (m as any).mediaType || 'image',
+              url: cleanUrl,
+              caption: m.caption || null,
+              is_cover: Boolean(m.isCover || idx === 0),
+              sort_order: m.sortOrder ?? idx + 1,
+            };
+          })
+        );
+        await supabase.from('project_media').insert(sanitizedMedia);
+        processedImages = sanitizedMedia.map((m) => m.url);
+      }
+    }
+
+    // 6. Sync Project Contributors into Supabase project_contributors table
+    if (project.contributors && Array.isArray(project.contributors)) {
+      await supabase.from('project_contributors').delete().eq('project_id', id);
+
+      if (project.contributors.length > 0) {
+        const contributorsToInsert = project.contributors.map((c, idx) => ({
+          project_id: id,
+          person_id: c.memberId,
+          role_in_project: c.roleInProject,
+          contribution_narrative: c.description || null,
+          sort_order: c.sortOrder ?? idx,
+        }));
+        const { error: contribErr } = await supabase.from('project_contributors').insert(contributorsToInsert);
+        if (contribErr) {
+          console.error('[saveProjectAction] Error inserting project contributors:', contribErr);
+        }
+      }
     }
 
     revalidatePath('/works');
     revalidatePath('/works/[category]', 'page');
     revalidatePath('/works/[category]/[slug]', 'page');
     revalidatePath('/admin/projects');
+    revalidatePath('/admin/people');
     revalidatePath('/', 'layout');
 
     return {
@@ -331,11 +457,51 @@ export async function saveProjectAction(project: Project) {
         categoryId,
         typologyId,
         contractTypeId: contractTypeId || undefined,
+        images: processedImages.length > 0 ? processedImages : project.images,
       },
     };
   } catch (err: any) {
     console.error('[saveProjectAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to save project' };
+  }
+}
+
+export async function getProjectContributorsAction(projectId: string) {
+  try {
+    const supabase = getAdminClient();
+    const { data, error } = await supabase
+      .from('project_contributors')
+      .select(`
+        id,
+        person_id,
+        role_in_project,
+        contribution_narrative,
+        sort_order,
+        person:people(id, first_name, last_name, profile_photo_url, primary_role_id)
+      `)
+      .eq('project_id', projectId)
+      .order('sort_order', { ascending: true });
+
+    if (error) {
+      console.error('[getProjectContributorsAction] Error:', error);
+      return { success: false, error: error.message, data: [] };
+    }
+
+    const contributors = (data || []).map((row: any) => ({
+      id: row.id,
+      memberId: row.person_id,
+      memberName: row.person ? `${row.person.first_name || ''} ${row.person.last_name || ''}`.trim() : row.person_id,
+      memberRole: row.role_in_project,
+      memberImage: row.person?.profile_photo_url || '',
+      roleInProject: row.role_in_project,
+      description: row.contribution_narrative || '',
+      sortOrder: row.sort_order,
+    }));
+
+    return { success: true, data: contributors };
+  } catch (err: any) {
+    console.error('[getProjectContributorsAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to load contributors', data: [] };
   }
 }
 

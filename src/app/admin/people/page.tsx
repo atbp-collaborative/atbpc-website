@@ -231,7 +231,7 @@ export default function AdminPeoplePage() {
     }
 
     const cleanId =
-      formData.id.trim() ||
+      formData.id.trim().toLowerCase().replace(/^-+|-+$/g, '') ||
       generateMemberSlug(formData.firstName, formData.lastName) ||
       'member-' + Date.now();
 
@@ -547,9 +547,16 @@ export default function AdminPeoplePage() {
                       type="text"
                       required
                       value={formData.id}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, id: e.target.value }))
-                      }
+                      onChange={(e) => {
+                        const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                        setFormData((prev) => ({ ...prev, id: val }));
+                      }}
+                      onBlur={() => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          id: (prev.id || '').replace(/^-+|-+$/g, ''),
+                        }));
+                      }}
                       placeholder="first-last"
                       className={`${inputClass} font-mono text-mini`}
                     />
@@ -870,6 +877,7 @@ export default function AdminPeoplePage() {
                   label="Profile Portrait"
                   helperText="Upload a high-resolution portrait photograph."
                   images={formData.image ? [formData.image] : []}
+                  folder="people"
                   onChange={(imgs) =>
                     setFormData((prev) => ({ ...prev, image: imgs[0] || '' }))
                   }

@@ -10,6 +10,9 @@ import Image from 'next/image';
 import { Upload, Trash2, ArrowUp, ArrowDown, ImageIcon, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/primitives/buttons/Button';
 import { useTheme } from '@/context/ThemeContext';
+import { uploadProjectMediaAction } from '@/app/actions/admin-mutations';
+import { downscaleImageFile } from '@/lib/images/client-image-resizer';
+import { toast } from 'sonner';
 
 interface ImageManagerFieldProps {
   images: string[];
@@ -17,6 +20,7 @@ interface ImageManagerFieldProps {
   single?: boolean;
   label?: string;
   helperText?: string;
+  folder?: string;
 }
 
 export const ImageManagerField: React.FC<ImageManagerFieldProps> = ({
@@ -25,38 +29,56 @@ export const ImageManagerField: React.FC<ImageManagerFieldProps> = ({
   single = false,
   label = 'Images',
   helperText = 'Upload images from your device.',
+  folder = 'projects',
 }) => {
   const { isDarkMode } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const processFiles = (files: FileList | File[]) => {
+  const processFiles = async (files: FileList | File[]) => {
     const validImageFiles = Array.from(files).filter((file) => file.type.startsWith('image/'));
-    if (validImageFiles.length === 0) return;
+    if (validImageFiles.length === 0) {
+      toast.error('Please select valid image files (JPG, PNG, WEBP, SVG).');
+      return;
+    }
 
-    const filesToRead = single ? [validImageFiles[0]] : validImageFiles;
+    const filesToUpload = single ? [validImageFiles[0]] : validImageFiles;
+    setIsUploading(true);
 
-    Promise.all(
-      filesToRead.map(
-        (file) =>
-          new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          })
-      )
-    )
-      .then((dataUrls) => {
-        if (single) {
-          onChange([dataUrls[0]]);
-        } else {
-          onChange([...images, ...dataUrls]);
+    try {
+      const uploadPromises = filesToUpload.map(async (rawFile) => {
+        // Automatically downscale large image files client-side before transmission
+        const file = await downscaleImageFile(rawFile, 1920, 0.85);
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', folder);
+        const res = await uploadProjectMediaAction(formData);
+        if (res.success && res.url) {
+          return res.url;
         }
-      })
-      .catch((err) => {
-        console.error('Failed to read image files:', err);
+        throw new Error(res.error || 'Failed to upload image to Supabase Storage');
       });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+
+      if (single) {
+        onChange([uploadedUrls[0]]);
+      } else {
+        onChange([...images, ...uploadedUrls]);
+      }
+      toast.success(
+        single
+          ? 'Image uploaded successfully to cloud storage'
+          : `${uploadedUrls.length} image(s) uploaded successfully to cloud storage`
+      );
+    } catch (err: any) {
+      console.error('Failed to upload image files:', err);
+      toast.error(err?.message || 'Failed to upload image to cloud storage');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,6 +154,13 @@ export const ImageManagerField: React.FC<ImageManagerFieldProps> = ({
         multiple={!single}
         className="hidden"
       />
+
+      {isUploading && (
+        <div className="flex items-center justify-center gap-2.5 p-4 rounded-xl bg-space-sparkle/10 border border-space-sparkle/30 text-space-sparkle text-caption font-medium animate-pulse">
+          <RefreshCw size={16} className="animate-spin" />
+          <span>Uploading image(s) to cloud storage... Please wait</span>
+        </div>
+      )}
 
       {/* Upload Dropzone (shown when empty, or as compact trigger when images exist) */}
       {images.length === 0 ? (

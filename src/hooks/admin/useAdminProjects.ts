@@ -6,21 +6,18 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Project, ProjectCategoryItem, ProjectTypologyItem, ContractTypeItem } from '@/types';
+import { Project, ProjectCategoryItem, ProjectTypologyItem, ContractTypeItem, ProjectContributor, ProjectRole } from '@/types';
 import { getProjects as getProjectsFromDataService } from '@/services/dummy-data.service';
 import {
   getProjects as getProjectsStorage,
   getProjectCategories,
   getProjectTypologies,
   getContractTypes,
-  saveProject as saveProjectStorage,
-  deleteProject as deleteProjectStorage,
-  toggleProjectDraft as toggleProjectDraftStorage,
   getTeamMembersForProject,
-  associateMemberToProject,
-  disassociateMemberFromProject,
   ProjectTeamMemberEntry,
+  INITIAL_PROJECT_ROLES_DATA,
 } from '@/services/mock/adminMockStorage';
+import { getProjectRolesFromSupabase } from '@/services/supabase/project-roles.service';
 import {
   saveProjectAction,
   deleteProjectAction,
@@ -39,6 +36,7 @@ export function useAdminProjects() {
   const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [typologyFilter, setTypologyFilter] = useState<string>('all');
+  const [projectRoles, setProjectRoles] = useState<ProjectRole[]>(INITIAL_PROJECT_ROLES_DATA);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -58,6 +56,20 @@ export function useAdminProjects() {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    async function loadRoles() {
+      try {
+        const roles = await getProjectRolesFromSupabase();
+        if (roles && roles.length > 0) {
+          setProjectRoles(roles);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch project roles from Supabase:', err);
+      }
+    }
+    loadRoles();
+  }, []);
 
   const allCategories = useMemo(() => {
     const set = new Set<string>();
@@ -106,8 +118,6 @@ export function useAdminProjects() {
   }, [projects, searchTerm, statusFilter, visibilityFilter, categoryFilter, typologyFilter]);
 
   const saveProject = useCallback(async (projectData: Project) => {
-    saveProjectStorage(projectData);
-
     const res = await saveProjectAction(projectData);
     if (!res.success) {
       toast.error(`Database error: ${res.error}`);
@@ -130,7 +140,6 @@ export function useAdminProjects() {
 
   const deleteProject = useCallback(async (id: string) => {
     const target = projects.find((p) => p.id === id);
-    deleteProjectStorage(id);
     setProjects((prev) => prev.filter((p) => p.id !== id));
 
     const res = await deleteProjectAction(id);
@@ -145,7 +154,6 @@ export function useAdminProjects() {
     const target = projects.find((p) => p.id === id);
     const newDraftState = !target?.isDraft;
 
-    toggleProjectDraftStorage(id);
     setProjects((prev) =>
       prev.map((p) => (p.id === id ? { ...p, isDraft: newDraftState } : p))
     );
@@ -158,20 +166,60 @@ export function useAdminProjects() {
     toast.info(`Project status set to ${newDraftState ? 'Draft' : 'Published'}`);
   }, [projects]);
 
-  const getTeamForProject = useCallback((projectId: string): ProjectTeamMemberEntry[] => {
-    return getTeamMembersForProject(projectId);
-  }, []);
+  const getTeamForProject = useCallback(
+    (projectId: string): ProjectContributor[] => {
+      const target = projects.find((p) => p.id === projectId);
+      if (target?.contributors && target.contributors.length > 0) {
+        return target.contributors;
+      }
+      return (getTeamMembersForProject(projectId) as any) || [];
+    },
+    [projects]
+  );
 
   const associateMember = useCallback(
     (memberId: string, projectId: string, roleInProject: string, description: string = '') => {
-      associateMemberToProject(memberId, projectId, roleInProject, description);
+      setProjects((prev) =>
+        prev.map((p) => {
+          if (p.id !== projectId) return p;
+          const currentContributors = p.contributors || [];
+          const exists = currentContributors.some((c) => c.memberId === memberId);
+          if (exists) {
+            return {
+              ...p,
+              contributors: currentContributors.map((c) =>
+                c.memberId === memberId ? { ...c, roleInProject, description } : c
+              ),
+            };
+          }
+          return {
+            ...p,
+            contributors: [
+              ...currentContributors,
+              {
+                memberId,
+                roleInProject,
+                description,
+              },
+            ],
+          };
+        })
+      );
       toast.success('Team member associated with project');
     },
     []
   );
 
   const disassociateMember = useCallback((memberId: string, projectId: string) => {
-    disassociateMemberFromProject(memberId, projectId);
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          contributors: (p.contributors || []).filter((c) => c.memberId !== memberId),
+        };
+      })
+    );
     toast.info('Team member disassociated from project');
   }, []);
 
@@ -192,6 +240,7 @@ export function useAdminProjects() {
     categories: useMemo(() => getProjectCategories(), []),
     typologies: useMemo(() => getProjectTypologies(), []),
     contractTypes: useMemo(() => getContractTypes(), []),
+    projectRoles,
     isLoading,
     refresh,
     saveProject,

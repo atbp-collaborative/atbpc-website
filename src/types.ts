@@ -11,6 +11,18 @@ export interface ProjectMediaItem {
   sortOrder?: number;
 }
 
+export interface ProjectContributor {
+  id?: string;
+  projectId?: string;
+  memberId: string;
+  memberName?: string;
+  memberRole?: string;
+  memberImage?: string;
+  roleInProject: string;
+  description?: string;
+  sortOrder?: number;
+}
+
 export interface Project {
   id: string; // UUID primary key (or slug fallback for mock data)
   slug?: string; // Human-readable URL slug e.g. 'urban-living-1'
@@ -35,10 +47,11 @@ export interface Project {
   isDraft?: boolean;
   specs: {
     area?: string;
-    scope: string;
-    duration: string;
+    scope?: string;
+    duration?: string;
     materials?: string[];
   };
+  contributors?: ProjectContributor[];
 }
 
 

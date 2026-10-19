@@ -38,6 +38,7 @@ import {
 import { useAdminPeople } from '@/hooks/admin/useAdminPeople';
 import { useTheme } from '@/context/ThemeContext';
 import { Project } from '@/types';
+import { toast } from 'sonner';
 import { MAIN_CATEGORIES, TYPOLOGY_MAP, ALL_TYPOLOGIES } from '@/lib/projects/project-constants';
 import {
   isUuid,
@@ -60,26 +61,23 @@ const EMPTY_PROJECT: Project = {
   categoryId: 'Shelter',
   typologyId: 'multi-generational',
   contractTypeId: 'comprehensive-design',
-  floorAreaSqm: 250,
+  floorAreaSqm: 100,
   subcategory: 'Multi-Generational',
-  location: 'Metro Manila, Philippines',
-  year: '2026',
-  clientType: 'Mid-High-Income',
+  location: 'Metro Manila',
+  year: String(new Date().getFullYear()),
+  clientType: 'Mid-Income',
   description: '',
   fullWriteup: '',
-  images: [
-    'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80',
-  ],
+  images: [],
   video: '',
   status: 'ongoing',
   specs: {
-    area: '250 sqm',
-    scope: 'Comprehensive Architectural & Interior Design',
-    duration: '12 Months',
+    area: '100 sqm',
+    duration: '9 months',
     materials: ['Concrete', 'Wood', 'Steel', 'Glass'],
   },
-  isDraft: false,
+  isDraft: true, // Default to draft per Excel Remarks
+  contributors: [],
 };
 
 const CLIENT_TYPES: ('Mid-Income' | 'Mid-High-Income' | 'High-Income')[] = [
@@ -115,6 +113,7 @@ export default function AdminProjectsPage() {
     setCategoryFilter,
     typologyFilter,
     setTypologyFilter,
+    projectRoles,
     saveProject,
     deleteProject,
     toggleDraft,
@@ -161,6 +160,9 @@ export default function AdminProjectsPage() {
       mainCategory: 'Shelter',
       typologyId: 'multi-generational',
       contractTypeId: 'comprehensive-design',
+      isDraft: true,
+      images: [],
+      contributors: [],
     };
     initialDataRef.current = newProj;
     setFormData(newProj);
@@ -178,6 +180,9 @@ export default function AdminProjectsPage() {
     const typName = getTypologyName(typId);
     const contractId = normalizeContractTypeId(proj.contractTypeId || proj.specs?.scope);
     const readableSlug = proj.slug || (!isUuid(proj.id) ? proj.id : generateProjectSlug(proj.title, proj.year));
+    const currentContributors = proj.contributors && proj.contributors.length > 0
+      ? proj.contributors
+      : (getTeamForProject(proj.id) as any) || [];
 
     const editProj: Project = {
       ...EMPTY_PROJECT,
@@ -192,6 +197,7 @@ export default function AdminProjectsPage() {
       subcategory: typName,
       contractTypeId: contractId || 'comprehensive-design',
       floorAreaSqm: areaNum,
+      contributors: currentContributors,
     };
     initialDataRef.current = { ...editProj };
     setFormData({ ...editProj });
@@ -210,15 +216,47 @@ export default function AdminProjectsPage() {
     setViewMode('list');
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title.trim()) return;
+    if (!formData.title?.trim()) {
+      toast.error('Project Title is required.');
+      return;
+    }
+
+    if (!formData.projectCode?.trim()) {
+      toast.error('Project Code (YYNN) is required.');
+      return;
+    }
+
+    if (!formData.location?.trim()) {
+      toast.error('Location is required.');
+      return;
+    }
+
+    if (!formData.description?.trim()) {
+      toast.error('Short Overview Summary is required.');
+      return;
+    }
+
+    if (!formData.fullWriteup?.trim()) {
+      toast.error('Comprehensive Writeup is required.');
+      return;
+    }
+
+    // Remark 25: "do not accept if no primary photo uploaded"
+    if (!formData.images || formData.images.length === 0) {
+      toast.error('Please upload at least one primary project photo before saving.');
+      return;
+    }
 
     // Maintain UUID for primary key (generate if empty or temp)
     const effectiveId = isUuid(formData.id) ? formData.id : crypto.randomUUID();
 
     // Generate human-readable slug (never a UUID)
-    const effectiveSlug = generateProjectSlug(formData.slug || formData.title, formData.year);
+    const effectiveSlug = generateProjectSlug(
+      (formData.slug || formData.title || '').replace(/^-+|-+$/g, ''),
+      formData.year
+    );
 
     const catId = normalizeCategoryId(formData.categoryId || formData.mainCategory);
     const typId = normalizeTypologyId(formData.typologyId || formData.subcategory);
@@ -234,9 +272,10 @@ export default function AdminProjectsPage() {
       category: typName,
       subcategory: typName,
       contractTypeId: normalizeContractTypeId(formData.contractTypeId) || undefined,
+      contributors: formData.contributors || [],
     };
 
-    saveProject(projectToSave);
+    await saveProject(projectToSave);
     initialDataRef.current = projectToSave;
     setViewMode('list');
   };
@@ -330,7 +369,7 @@ export default function AdminProjectsPage() {
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, projectCode: e.target.value.trim() }))
                       }
-                      placeholder="e.g. 2601"
+                      placeholder="26XX"
                       className={`${inputClass} font-mono font-semibold`}
                     />
                     <p className="text-micro opacity-50">
@@ -340,7 +379,7 @@ export default function AdminProjectsPage() {
 
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      URL Slug (Human-Readable) <span className="text-red-500">*</span>
+                      URL Slug <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -351,11 +390,16 @@ export default function AdminProjectsPage() {
                           ...prev,
                           slug: e.target.value
                             .toLowerCase()
-                            .replace(/[^a-z0-9-]+/g, '-')
-                            .replace(/^-+|-+$/g, ''),
+                            .replace(/[^a-z0-9-]/g, ''),
                         }))
                       }
-                      placeholder="e.g. multi-generational-1"
+                      onBlur={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          slug: (prev.slug || '').replace(/^-+|-+$/g, ''),
+                        }))
+                      }
+                      placeholder="project-title"
                       className={`${inputClass} font-mono text-mini`}
                     />
                     <div className="flex items-center justify-between text-micro opacity-60">
@@ -382,7 +426,7 @@ export default function AdminProjectsPage() {
                           slug: prev.slug ? prev.slug : generateProjectSlug(newTitle, prev.year),
                         }));
                       }}
-                      placeholder="e.g. Multi-Generational Residence 1"
+                      placeholder="project-title"
                       className={inputClass}
                     />
                   </div>
@@ -390,7 +434,7 @@ export default function AdminProjectsPage() {
                   {/* Dynamic Category & Typology Cascading Dropdowns */}
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Main Category (Pillar) <span className="text-red-500">*</span>
+                      Project Category <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={normalizeCategoryId(formData.categoryId || formData.mainCategory)}
@@ -411,6 +455,7 @@ export default function AdminProjectsPage() {
                       }}
                       className={inputClass}
                     >
+                      <option value="">[ Select Project Category ]</option>
                       {categories.map((cat) => (
                         <option key={cat.id} value={cat.id}>
                           {cat.name} ({cat.tagline})
@@ -438,6 +483,7 @@ export default function AdminProjectsPage() {
                       }}
                       className={inputClass}
                     >
+                      <option value="">[ Select Project Typology ]</option>
                       {typologies
                         .filter((t) => t.categoryId === normalizeCategoryId(formData.categoryId || formData.mainCategory))
                         .map((typ) => (
@@ -451,7 +497,7 @@ export default function AdminProjectsPage() {
                   {/* Contract Type / Scope of Services */}
                   <div className="space-y-1 sm:col-span-2">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Governing Contract Type / Engagement Model
+                      Contract Type <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={formData.contractTypeId || ''}
@@ -469,7 +515,7 @@ export default function AdminProjectsPage() {
                       }}
                       className={inputClass}
                     >
-                      <option value="">-- Choose Contract Engagement Model --</option>
+                      <option value="">[ Select Contract Type ]</option>
                       {contractTypes.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.name} — {c.contractModel} ({c.code})
@@ -478,24 +524,24 @@ export default function AdminProjectsPage() {
                     </select>
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1 sm:col-span-2">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Location
+                      Location <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
+                    <textarea
+                      rows={2}
                       value={formData.location}
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, location: e.target.value }))
                       }
-                      placeholder="e.g. Metro Manila, Philippines"
+                      placeholder="Metro Manila"
                       className={inputClass}
                     />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Year Completed / Begun
+                      Year Completed
                     </label>
                     <input
                       type="text"
@@ -503,14 +549,14 @@ export default function AdminProjectsPage() {
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, year: e.target.value }))
                       }
-                      placeholder="e.g. 2026"
+                      placeholder="<this year>"
                       className={inputClass}
                     />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Client Demographic
+                      Client Demographic <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={formData.clientType}
@@ -522,17 +568,16 @@ export default function AdminProjectsPage() {
                       }
                       className={inputClass}
                     >
-                      {CLIENT_TYPES.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
+                      <option value="">[ Select Demographic ]</option>
+                      <option value="Mid-Income">Mid Income</option>
+                      <option value="Mid-High-Income">Mid-High Income</option>
+                      <option value="High-Income">High Income</option>
                     </select>
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1 sm:col-span-2">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Project Lifecycle Status
+                      Project Phase <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={formData.status}
@@ -544,11 +589,10 @@ export default function AdminProjectsPage() {
                       }
                       className={inputClass}
                     >
-                      {PROJECT_STATUSES.map((status) => (
-                        <option key={status} value={status}>
-                          {status.toUpperCase()}
-                        </option>
-                      ))}
+                      <option value="">[ Select Phase ]</option>
+                      <option value="schematics">Schematics</option>
+                      <option value="ongoing">Ongoing</option>
+                      <option value="completed">Completed</option>
                     </select>
                   </div>
                 </div>
@@ -566,7 +610,7 @@ export default function AdminProjectsPage() {
 
                 <div className="space-y-1">
                   <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Short Overview Summary
+                    Short Overview Summary <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     rows={2}
@@ -574,14 +618,14 @@ export default function AdminProjectsPage() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, description: e.target.value }))
                     }
-                    placeholder="Brief 1-2 sentence overview for cards and portfolio preview..."
+                    placeholder="Brief overview for cards and portfolio preview..."
                     className={inputClass}
                   />
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Comprehensive Full Writeup
+                    Comprehensive Writeup <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     rows={6}
@@ -596,7 +640,7 @@ export default function AdminProjectsPage() {
 
                 <div className="space-y-1">
                   <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Walkthrough Video URL (Optional)
+                    Walkthrough Video URL
                   </label>
                   <input
                     type="url"
@@ -604,26 +648,26 @@ export default function AdminProjectsPage() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, video: e.target.value }))
                     }
-                    placeholder="https://www.youtube.com/watch?v=..."
+                    placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1"
                     className={inputClass}
                   />
                 </div>
               </div>
 
-              {/* Card 3: Specifications & Materials */}
+              {/* Card 3: Project Specifications */}
               <div
                 className={`p-6 rounded-xl border space-y-4 ${
                   isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
                 }`}
               >
                 <h3 className="text-caption font-semibold uppercase tracking-wider opacity-70 border-b pb-2 border-black/5 dark:border-white/5">
-                  Tectonics &amp; Specifications
+                  Project Specifications
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Floor Area (sqm)
+                      Floor Area (sqm) <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <input
@@ -643,31 +687,13 @@ export default function AdminProjectsPage() {
                             },
                           }));
                         }}
-                        placeholder="e.g. 250"
+                        placeholder="100"
                         className={`${inputClass} pr-12`}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-mini opacity-40 font-mono pointer-events-none">
                         sqm
                       </span>
                     </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                      Engagement Scope
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.specs?.scope || ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          specs: { ...prev.specs, scope: e.target.value },
-                        }))
-                      }
-                      placeholder="e.g. Comprehensive Design-Build"
-                      className={inputClass}
-                    />
                   </div>
 
                   <div className="space-y-1">
@@ -683,7 +709,7 @@ export default function AdminProjectsPage() {
                           specs: { ...prev.specs, duration: e.target.value },
                         }))
                       }
-                      placeholder="e.g. 12 Months"
+                      placeholder="9 months"
                       className={inputClass}
                     />
                   </div>
@@ -706,7 +732,7 @@ export default function AdminProjectsPage() {
                 </div>
               </div>
 
-              {/* Card 4: Assigned Team & Collaborators (Bi-directional link to Members) */}
+              {/* Card 4: Project Contributors (Assigned Team & Collaborators) */}
               <div
                 className={`p-6 rounded-xl border ${
                   isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
@@ -714,13 +740,53 @@ export default function AdminProjectsPage() {
               >
                 <ProjectTeamManager
                   projectId={formData.id}
-                  team={currentTeam}
+                  team={formData.contributors || []}
                   allMembers={allMembers}
+                  projectRoles={projectRoles}
                   onAssociate={(memberId, role, desc) => {
-                    associateMember(memberId, formData.id, role, desc);
+                    const foundMember = allMembers.find((m) => m.id === memberId);
+                    setFormData((prev) => {
+                      const currentList = prev.contributors || [];
+                      const exists = currentList.some((c) => c.memberId === memberId);
+                      if (exists) {
+                        return {
+                          ...prev,
+                          contributors: currentList.map((c) =>
+                            c.memberId === memberId
+                              ? {
+                                  ...c,
+                                  roleInProject: role,
+                                  description: desc,
+                                  memberName: foundMember?.name || c.memberName,
+                                  memberRole: foundMember?.role || c.memberRole,
+                                  memberImage: foundMember?.image || c.memberImage,
+                                }
+                              : c
+                          ),
+                        };
+                      }
+                      return {
+                        ...prev,
+                        contributors: [
+                          ...currentList,
+                          {
+                            memberId,
+                            roleInProject: role,
+                            description: desc,
+                            memberName: foundMember?.name || memberId,
+                            memberRole: foundMember?.role || '',
+                            memberImage: foundMember?.image || '',
+                            sortOrder: currentList.length,
+                          },
+                        ],
+                      };
+                    });
                   }}
                   onDisassociate={(memberId) => {
-                    disassociateMember(memberId, formData.id);
+                    setFormData((prev) => ({
+                      ...prev,
+                      contributors: (prev.contributors || []).filter((c) => c.memberId !== memberId),
+                    }));
                   }}
                 />
               </div>
@@ -739,6 +805,7 @@ export default function AdminProjectsPage() {
                   label="Project Photography"
                   helperText="Primary image will serve as portfolio cover. Reorder using arrows."
                   images={formData.images || []}
+                  folder="projects"
                   onChange={(imgs) =>
                     setFormData((prev) => ({ ...prev, images: imgs }))
                   }

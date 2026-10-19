@@ -67,8 +67,15 @@ function setStored<T>(key: string, value: T): void {
   if (!isClient()) return;
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch (err) {
-    console.error(`Error writing ${key} to localStorage:`, err);
+  } catch (err: any) {
+    if (err?.name === 'QuotaExceededError' || err?.code === 22 || err?.number === -2147024882) {
+      console.warn(`[adminMockStorage] LocalStorage quota reached for key "${key}". Cleaning up stale cache.`);
+      try {
+        localStorage.removeItem(key);
+      } catch {}
+    } else {
+      console.warn(`[adminMockStorage] Warning writing ${key} to localStorage:`, err?.message || err);
+    }
   }
 }
 
