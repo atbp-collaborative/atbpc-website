@@ -33,6 +33,7 @@ import {
   fetchAdminHomeSlides,
   saveAdminHomeSlide,
   deleteAdminHomeSlide,
+  reorderAdminHomeSlides,
   fetchAdminHomepageSlogans,
   saveAdminHomepageSlogans,
 } from '@/services/supabase/cms-admin.service';
@@ -279,6 +280,19 @@ export function useAdminCms() {
     toast.info('Hero slide removed');
   }, []);
 
+  const handleReorderSlides = useCallback(async (newSlides: HomeSlideItem[]) => {
+    setSlides(newSlides);
+    try {
+      await reorderAdminHomeSlides(newSlides);
+      toast.success('Slide order updated');
+    } catch (err: any) {
+      console.error('Failed to reorder slides:', err);
+      toast.error(err?.message || 'Failed to update slide order');
+      const latest = await fetchAdminHomeSlides();
+      setSlides(latest);
+    }
+  }, []);
+
   // Homepage Slogans mutation
   const handleSaveSlogans = useCallback(async (data: HomepageSlogans) => {
     const saved = await saveAdminHomepageSlogans(data);
@@ -317,6 +331,7 @@ export function useAdminCms() {
     slogans,
     saveSlide: handleSaveSlide,
     deleteSlide: handleDeleteSlide,
+    reorderSlides: handleReorderSlides,
     saveSlogans: handleSaveSlogans,
   };
 }

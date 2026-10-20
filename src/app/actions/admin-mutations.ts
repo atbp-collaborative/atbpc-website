@@ -1218,6 +1218,32 @@ export async function deleteHomeSlideAction(slideId: string) {
   }
 }
 
+export async function reorderHomeSlidesAction(items: { id: string; sortOrder: number }[]) {
+  try {
+    const supabase = getAdminClient();
+    const updates = items.map((item) =>
+      supabase
+        .from('home_slides')
+        .update({ sort_order: item.sortOrder, updated_at: new Date().toISOString() })
+        .eq('id', item.id)
+    );
+
+    const results = await Promise.all(updates);
+    const failedResult = results.find((r) => r.error);
+    if (failedResult?.error) {
+      console.error('[reorderHomeSlidesAction] Error:', failedResult.error);
+      return { success: false, error: failedResult.error.message };
+    }
+
+    revalidatePath('/');
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[reorderHomeSlidesAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to reorder home slides' };
+  }
+}
+
 export async function saveHomepageSlogansAction(slogans: HomepageSlogans) {
   try {
     const supabase = getAdminClient();

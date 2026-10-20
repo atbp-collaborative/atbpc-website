@@ -46,10 +46,9 @@ export default function AdminContentPage() {
     saveService,
     // Tab 4
     slides,
-    slogans,
     saveSlide,
     deleteSlide,
-    saveSlogans,
+    reorderSlides,
   } = useAdminCms();
 
   const tabs: { id: CmsTab; label: string; icon: React.ElementType }[] = [
@@ -115,10 +114,9 @@ export default function AdminContentPage() {
             {activeTab === 'home' && (
               <CmsHomeTab
                 slides={slides}
-                slogans={slogans}
                 onSaveSlide={saveSlide}
                 onDeleteSlide={deleteSlide}
-                onSaveSlogans={saveSlogans}
+                onReorderSlides={reorderSlides}
               />
             )}
 

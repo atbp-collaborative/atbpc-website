@@ -56,7 +56,7 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
   const matchingLandingCard = useMemo(() => {
     return cards.find(
       (c) =>
-        c.hubId === 'process' &&
+        (c.hubId === 'process' || c.hubId === 'our-process') &&
         (c.id === selectedProcessPageId || c.cardKey === selectedProcessPageId)
     );
   }, [cards, selectedProcessPageId]);
@@ -80,6 +80,31 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
 
   // Stage Group modal state
   const [editingGroup, setEditingGroup] = useState<StageGroup | null>(null);
+  const initialGroupRef = useRef<StageGroup | null>(null);
+
+  const handleStartCreateGroup = () => {
+    const newGroup: StageGroup = {
+      id: `group-${Date.now()}`,
+      processPageId: selectedProcessPageId,
+      name: '',
+      colSpan: 1,
+      sortOrder: (stageGroups.length + 1) * 10,
+      isDraft: false,
+      stages: [],
+    };
+    setEditingGroup(newGroup);
+    initialGroupRef.current = { ...newGroup };
+  };
+
+  const handleStartEditGroup = (group: StageGroup) => {
+    setEditingGroup({ ...group });
+    initialGroupRef.current = { ...group };
+  };
+
+  const isGroupDirty = useMemo(() => {
+    if (!editingGroup || !initialGroupRef.current) return false;
+    return JSON.stringify(editingGroup) !== JSON.stringify(initialGroupRef.current);
+  }, [editingGroup]);
 
   // Process Stage modal state
   const [editingStage, setEditingStage] = useState<ProcessStageItem | null>(null);
@@ -102,19 +127,6 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
     { id: 'managing-with-integrity', label: 'Managing with Integrity' },
     { id: 'building-with-culture', label: 'Building with Culture' },
   ];
-
-  const handleStartCreateGroup = () => {
-    const newGroup: StageGroup = {
-      id: `group-${Date.now()}`,
-      processPageId: selectedProcessPageId,
-      name: '',
-      colSpan: 1,
-      sortOrder: (stageGroups.length + 1) * 10,
-      isDraft: false,
-      stages: [],
-    };
-    setEditingGroup(newGroup);
-  };
 
   const handleStartCreateStage = (groupId: string) => {
     setStageTargetGroupId(groupId);
@@ -282,7 +294,7 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
                     </Button>
                     <Button
                       type="ghost"
-                      onClick={() => setEditingGroup({ ...group })}
+                      onClick={() => handleStartEditGroup(group)}
                       className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
                     >
                       <Edit2 size={13} className="mr-1 inline" /> Edit Group
@@ -456,6 +468,7 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                if (!isGroupDirty) return;
                 onSaveStageGroup(editingGroup);
                 setEditingGroup(null);
               }}
@@ -511,7 +524,7 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
 
                 <div className="flex items-center gap-3">
                   <Button type="ghost" onClick={() => setEditingGroup(null)} label="Cancel" />
-                  <Button type="filled" htmlType="submit">
+                  <Button type="filled" htmlType="submit" disabled={!isGroupDirty}>
                     <Save size={14} className="mr-1.5 inline" /> Save Stage Group
                   </Button>
                 </div>

@@ -33,6 +33,7 @@ import {
   saveServiceOfferingAction,
   saveHomeSlideAction,
   deleteHomeSlideAction,
+  reorderHomeSlidesAction,
   saveHomepageSlogansAction,
   fetchAdminSitePagesAction,
 } from '@/app/actions/admin-mutations';
@@ -201,6 +202,16 @@ export async function deleteAdminHomeSlide(slideId: string): Promise<void> {
   if (!res.success) {
     console.error('Failed to delete home slide from Supabase:', res.error);
     throw new Error(res.error || 'Failed to delete home slide');
+  }
+}
+
+export async function reorderAdminHomeSlides(slides: HomeSlideItem[]): Promise<void> {
+  const res = await reorderHomeSlidesAction(
+    slides.map((s) => ({ id: s.id, sortOrder: s.sortOrder }))
+  );
+  if (!res.success) {
+    console.error('Failed to reorder home slides in Supabase:', res.error);
+    throw new Error(res.error || 'Failed to reorder home slides');
   }
 }
 
