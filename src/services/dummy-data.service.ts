@@ -16,6 +16,7 @@ import {
   getStageGroupsWithStages,
   getHomepageSlogans,
 } from './supabase/cms.service';
+import { fetchAdminSitePagesAction } from '@/app/actions/admin-mutations';
 import {
   SitePage,
   NavigationCardItem,
@@ -64,7 +65,30 @@ export async function getContactInfo(): Promise<ContactInfo> {
 }
 
 export async function getServices(): Promise<Service[]> {
+  try {
+    const cards = await getNavigationCardsData('services');
+    if (cards && cards.length > 0) {
+      return cards.map((c) => {
+        let iconName = 'Briefcase';
+        if (c.cardKey === 'comprehensive-services' || c.title.includes('comprehensive')) iconName = 'Layers';
+        else if (c.cardKey === 'piecework-services' || c.title.includes('piecework')) iconName = 'LayoutGrid';
+        return {
+          title: c.title,
+          iconName,
+          desc: c.tagline || c.subtext,
+          image: c.imageUrl,
+        };
+      });
+    }
+  } catch (err) {
+    console.warn('[DataService] Failed to load services navigation cards:', err);
+  }
   return SERVICES_DATA;
+}
+
+export async function getServiceOfferingByIdData(id: string): Promise<ServiceOffering | null> {
+  const all = await getServiceOfferingsData();
+  return all.find((s) => s.id === id) || null;
 }
 
 export async function getHomeCarouselImages(): Promise<HomeCarouselImage[]> {
@@ -84,12 +108,13 @@ export async function getHomeCarouselImages(): Promise<HomeCarouselImage[]> {
 export async function getSitePagesData(): Promise<SitePage[]> {
   if (shouldQuerySupabase()) {
     try {
-      return await getSitePages();
+      const pages = await fetchAdminSitePagesAction();
+      if (pages && pages.length > 0) return pages;
     } catch (err) {
-      console.warn('[DataService] Supabase getSitePages failed:', err);
+      console.warn('[DataService] fetchAdminSitePagesAction failed, falling back to getSitePages:', err);
     }
   }
-  return getSitePages(false);
+  return getSitePages(true);
 }
 
 export async function getNavigationCardsData(hubId?: string): Promise<NavigationCardItem[]> {
@@ -156,19 +181,27 @@ export async function getMembers(includeDrafts: boolean = false): Promise<Member
       console.warn('[DataService] Supabase getMembers failed, falling back to mock data:', err);
     }
   }
+  if (!includeDrafts) {
+    return MEMBERS_DATA.filter((m) => !m.isDraft && m.isCurrentlyHired !== false);
+  }
   return MEMBERS_DATA;
 }
 
-export async function getMemberById(id: string): Promise<Member | undefined> {
+export async function getMemberById(id: string, includeDrafts: boolean = false): Promise<Member | undefined> {
   if (shouldQuerySupabase()) {
     try {
-      const person = await getPersonByIdFromSupabase(id);
+      const person = await getPersonByIdFromSupabase(id, includeDrafts);
       if (person) return person;
     } catch (err) {
       console.warn(`[DataService] Supabase getMemberById(${id}) failed, falling back to mock data:`, err);
     }
   }
-  return MEMBERS_DATA.find((member) => member.id === id);
+  const found = MEMBERS_DATA.find((member) => member.id === id);
+  if (!found) return undefined;
+  if (!includeDrafts && (found.isDraft || found.isCurrentlyHired === false)) {
+    return undefined;
+  }
+  return found;
 }
 
 export async function getProjects(includeDrafts: boolean = false): Promise<Project[]> {
@@ -192,5 +225,5 @@ export async function getProjectById(id: string): Promise<Project | undefined> {
       console.warn(`[DataService] Supabase getProjectById(${id}) failed, falling back to mock data:`, err);
     }
   }
-  return PROJECTS_DATA.find((project) => project.id === id);
+  return PROJECTS_DATA.find((project) => project.id === id || (project.slug && project.slug === id));
 }

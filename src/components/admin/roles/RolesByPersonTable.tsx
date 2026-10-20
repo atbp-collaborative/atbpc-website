@@ -13,9 +13,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { Member, Role } from '@/types';
 import {
   getCategoryBadgeClasses,
-  getTrackBadgeClasses,
   formatCategoryLabel,
-  formatTrackLabel,
   getRolesForMember,
 } from '@/lib/roles/role-helpers';
 import { Button } from '@/components/primitives/buttons/Button';
@@ -24,12 +22,14 @@ interface RolesByPersonTableProps {
   members: Member[];
   allRoles: Role[];
   onManageMemberRoles: (member: Member) => void;
+  onSelectPerson?: (member: Member) => void;
 }
 
 export const RolesByPersonTable: React.FC<RolesByPersonTableProps> = ({
   members,
   allRoles,
   onManageMemberRoles,
+  onSelectPerson,
 }) => {
   const { isDarkMode } = useTheme();
 
@@ -83,6 +83,23 @@ export const RolesByPersonTable: React.FC<RolesByPersonTableProps> = ({
               const assignedRoles = getRolesForMember(member, allRoles);
               const projectsCount = member.involvement?.length || 0;
 
+              // Distinguish primary role vs other roles
+              let primaryRole = allRoles.find((r) => {
+                if (member.primaryRoleId && (r.id === member.primaryRoleId || r.code?.toLowerCase() === member.primaryRoleId.toLowerCase())) {
+                  return true;
+                }
+                if (member.role && (r.title.toLowerCase() === member.role.toLowerCase() || (r.code && member.role.toLowerCase().includes(r.code.toLowerCase())))) {
+                  return true;
+                }
+                return false;
+              });
+
+              if (!primaryRole && member.primaryRoleId) {
+                primaryRole = allRoles.find((r) => r.id.toLowerCase() === member.primaryRoleId?.toLowerCase());
+              }
+
+              const otherRoles = assignedRoles.filter((r) => r.id !== primaryRole?.id);
+
               return (
                 <tr
                   key={member.id}
@@ -109,8 +126,15 @@ export const RolesByPersonTable: React.FC<RolesByPersonTableProps> = ({
                         )}
                       </div>
                       <div className="space-y-0.5 min-w-0">
-                        <div className="font-semibold text-body-sm leading-snug truncate">
-                          {member.name}
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-body-sm leading-snug truncate">
+                            {member.name}
+                          </span>
+                          {member.isCurrentlyHired === false && (
+                            <span className="text-[10px] font-mono uppercase px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold">
+                              Separated
+                            </span>
+                          )}
                         </div>
                         <div className="text-micro opacity-60 truncate">
                           {member.role || 'No title set'}
@@ -145,60 +169,93 @@ export const RolesByPersonTable: React.FC<RolesByPersonTableProps> = ({
                     </div>
                   </td>
 
-                  {/* Assigned Roles */}
+                  {/* Assigned Roles (Distinguishing Primary vs Secondary/Other) */}
                   <td className="py-3.5 px-4 align-top">
-                    {assignedRoles.length > 0 ? (
-                      <div className="space-y-1.5 max-w-md">
-                        <div className="flex flex-wrap gap-1.5">
-                          {assignedRoles.map((role) => (
-                            <span
-                              key={role.id}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-micro font-medium ${
-                                isDarkMode
-                                  ? 'bg-white/5 border-white/10'
-                                  : 'bg-black/5 border-black/10'
-                              }`}
-                            >
-                              <Shield size={11} className="text-space-sparkle shrink-0" />
-                              <span className="truncate max-w-[180px]">{role.title}</span>
-                              {role.code && (
-                                <span className="text-[10px] font-mono opacity-60">
-                                  ({role.code})
-                                </span>
-                              )}
-                            </span>
-                          ))}
+                    <div className="space-y-2 max-w-md">
+                      {/* Primary Role Display */}
+                      {primaryRole ? (
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-mono uppercase tracking-wider opacity-60 block">
+                            Primary Role:
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-micro font-medium bg-space-sparkle/15 text-space-sparkle border-space-sparkle/30">
+                            <Shield size={11} className="shrink-0 text-space-sparkle" />
+                            <span className="truncate max-w-[180px]">{primaryRole.title}</span>
+                            {primaryRole.code && (
+                              <span className="text-[10px] font-mono opacity-70">
+                                ({primaryRole.code})
+                              </span>
+                            )}
+                          </span>
                         </div>
-                        <span className="text-micro font-mono opacity-50 block">
-                          Total: {assignedRoles.length} {assignedRoles.length === 1 ? 'role' : 'roles'}
+                      ) : member.role ? (
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-mono uppercase tracking-wider opacity-60 block">
+                            Primary Role:
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-micro font-medium bg-space-sparkle/15 text-space-sparkle border-space-sparkle/30">
+                            <Shield size={11} className="shrink-0 text-space-sparkle" />
+                            <span className="truncate max-w-[180px]">{member.role}</span>
+                          </span>
+                        </div>
+                      ) : null}
+
+                      {/* Secondary / Other Roles Display */}
+                      {otherRoles.length > 0 && (
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-mono uppercase tracking-wider opacity-60 block">
+                            Other Roles:
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {otherRoles.map((role) => (
+                              <span
+                                key={role.id}
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-micro font-medium ${
+                                  isDarkMode
+                                    ? 'bg-white/5 border-white/10'
+                                    : 'bg-black/5 border-black/10'
+                                }`}
+                              >
+                                <span className="truncate max-w-[160px]">{role.title}</span>
+                                {role.code && (
+                                  <span className="text-[10px] font-mono opacity-60">
+                                    ({role.code})
+                                  </span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {!primaryRole && !member.role && otherRoles.length === 0 && (
+                        <span className="text-micro opacity-40 italic block">
+                          No roles assigned
                         </span>
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        <span className="text-caption opacity-50 italic block">
-                          Primary role: {member.role || 'None'}
-                        </span>
-                        <button
-                          onClick={() => onManageMemberRoles(member)}
-                          className="text-micro text-space-sparkle hover:underline cursor-pointer flex items-center gap-1"
-                        >
-                          + Assign roles
-                        </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </td>
 
-                  {/* Projects Involvement */}
+                  {/* Projects Involvement - Clickable button to open modal */}
                   <td className="py-3.5 px-4 align-top whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-space-sparkle">
-                        <FolderKanban size={14} />
+                    <button
+                      type="button"
+                      onClick={() => onSelectPerson?.(member)}
+                      title={`Click to view/manage project involvements for ${member.name}`}
+                      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer text-left ${
+                        isDarkMode
+                          ? 'bg-white/5 border-white/10 hover:border-space-sparkle hover:bg-space-sparkle/10'
+                          : 'bg-black/5 border-black/10 hover:border-space-sparkle hover:bg-space-sparkle/5'
+                      }`}
+                    >
+                      <div className="p-1 rounded-md bg-space-sparkle/15 text-space-sparkle">
+                        <FolderKanban size={13} />
                       </div>
                       <span className="font-semibold text-caption">{projectsCount}</span>
                       <span className="text-micro opacity-60">
                         {projectsCount === 1 ? 'project' : 'projects'}
                       </span>
-                    </div>
+                    </button>
                   </td>
 
                   {/* Actions */}

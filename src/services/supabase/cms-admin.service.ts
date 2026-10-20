@@ -7,6 +7,7 @@ import {
   SitePage,
   NavigationCardItem,
   ServiceOffering,
+  ServiceAccordionItem,
   ProcessPhilosophy,
   StageGroup,
   ProcessStageItem,
@@ -31,9 +32,13 @@ import {
   saveProcessStageAction,
   deleteProcessStageAction,
   saveServiceOfferingAction,
+  saveServiceAccordionAction,
+  deleteServiceAccordionAction,
   saveHomeSlideAction,
   deleteHomeSlideAction,
+  reorderHomeSlidesAction,
   saveHomepageSlogansAction,
+  fetchAdminSitePagesAction,
 } from '@/app/actions/admin-mutations';
 
 // ==========================================
@@ -42,12 +47,12 @@ import {
 
 export async function fetchAdminSitePages(): Promise<SitePage[]> {
   try {
-    const pages = await getSitePages(true);
+    const pages = await fetchAdminSitePagesAction();
     if (pages && pages.length > 0) return pages;
   } catch (err) {
-    console.warn('Failed to fetch site pages from Supabase:', err);
+    console.warn('Failed to fetch site pages from server action:', err);
   }
-  return getSitePages(false);
+  return getSitePages(true);
 }
 
 export async function saveAdminSitePage(page: SitePage): Promise<SitePage> {
@@ -172,6 +177,23 @@ export async function saveAdminServiceOffering(offering: ServiceOffering): Promi
   return res.data || offering;
 }
 
+export async function saveAdminServiceAccordion(item: ServiceAccordionItem): Promise<ServiceAccordionItem> {
+  const res = await saveServiceAccordionAction(item);
+  if (!res.success) {
+    console.error('Failed to save service accordion to Supabase:', res.error);
+    throw new Error(res.error || 'Failed to save service accordion');
+  }
+  return res.data || item;
+}
+
+export async function deleteAdminServiceAccordion(itemId: string, serviceId: string): Promise<void> {
+  const res = await deleteServiceAccordionAction(itemId, serviceId);
+  if (!res.success) {
+    console.error('Failed to delete service accordion from Supabase:', res.error);
+    throw new Error(res.error || 'Failed to delete service accordion');
+  }
+}
+
 // ==========================================
 // 5. HOMEPAGE SLIDES & SLOGANS CRUD
 // ==========================================
@@ -200,6 +222,16 @@ export async function deleteAdminHomeSlide(slideId: string): Promise<void> {
   if (!res.success) {
     console.error('Failed to delete home slide from Supabase:', res.error);
     throw new Error(res.error || 'Failed to delete home slide');
+  }
+}
+
+export async function reorderAdminHomeSlides(slides: HomeSlideItem[]): Promise<void> {
+  const res = await reorderHomeSlidesAction(
+    slides.map((s) => ({ id: s.id, sortOrder: s.sortOrder }))
+  );
+  if (!res.success) {
+    console.error('Failed to reorder home slides in Supabase:', res.error);
+    throw new Error(res.error || 'Failed to reorder home slides');
   }
 }
 

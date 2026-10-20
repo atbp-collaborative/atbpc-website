@@ -3,6 +3,7 @@
 import React from 'react';
 import { PartnerApplicationForm } from '@/components/forms/PartnerApplicationForm';
 import { supplierConditionsData } from '@/lib/modals/partner-conditions';
+import { PagePublishGate } from '@/components/global/PagePublishGate';
 
 export default function SupplierPage() {
   const categories = [
@@ -40,16 +41,18 @@ export default function SupplierPage() {
   const conditionsContent = supplierConditionsData;
 
   return (
-    <PartnerApplicationForm
-      variant="supplier"
-      title="supply us with quality specifications"
-      subtitle="we qualify all products before specifying them on projects entrusted to us by our clients"
-      categories={categories}
-      successTitle="Specification Request Received"
-      successMessage="Thank you for submitting your product specifications. Our technical procurement team will evaluate your material catalog for upcoming ATBP Collaborative projects."
-      submitAnotherLabel="Submit Another Specification"
-      conditionsTitle="General Conditions for Product Qualification"
-      conditionsContent={conditionsContent}
-    />
+    <PagePublishGate slug="contact/partner-with-us/supplier">
+      <PartnerApplicationForm
+        variant="supplier"
+        title="supply us with quality specifications"
+        subtitle="we qualify all products before specifying them on projects entrusted to us by our clients"
+        categories={categories}
+        successTitle="Specification Request Received"
+        successMessage="Thank you for submitting your product specifications. Our technical procurement team will evaluate your material catalog for upcoming ATBP Collaborative projects."
+        submitAnotherLabel="Submit Another Specification"
+        conditionsTitle="General Conditions for Product Qualification"
+        conditionsContent={conditionsContent}
+      />
+    </PagePublishGate>
   );
 }

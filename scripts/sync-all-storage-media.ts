@@ -194,10 +194,9 @@ async function run() {
   console.log('3. Updating seed_new.sql and seed_cms.sql with Bucket URLs');
   console.log('================================================================\n');
 
-  // Replace URLs in seed_new.sql and seed_cms.sql
+  // Replace URLs in seed_new.sql
   const seedFiles = [
     path.join(process.cwd(), 'supabase', 'seed_new.sql'),
-    path.join(process.cwd(), 'supabase', 'seed_cms.sql'),
   ];
 
   // Also build mapping for all people and categories to CDN URLs

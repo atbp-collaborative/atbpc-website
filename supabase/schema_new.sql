@@ -52,6 +52,28 @@ CREATE TABLE IF NOT EXISTS public.roles (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Licenses: Professional Licensure Reference Table
+CREATE TABLE IF NOT EXISTS public.licenses (
+    id VARCHAR(50) PRIMARY KEY,
+    title TEXT NOT NULL UNIQUE,
+    abbreviation VARCHAR(20),
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Project Roles: Specific Scope Contribution Roles (Separate from Studio Roles)
+CREATE TABLE IF NOT EXISTS public.project_roles (
+    id VARCHAR(50) PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Project Categories: The 3 Core Pillars
 CREATE TABLE IF NOT EXISTS public.project_categories (
     id VARCHAR(50) PRIMARY KEY,                                      -- 'Shelter', 'Livelihood', 'Community'
@@ -108,6 +130,9 @@ CREATE TABLE IF NOT EXISTS public.people (
     personal_email TEXT,
     contact_number TEXT,
     portfolio_url TEXT,
+    external_url TEXT,
+    address_details JSONB NOT NULL DEFAULT '{}'::jsonb,
+    other_role_ids TEXT[] NOT NULL DEFAULT '{}',
     short_bio TEXT NOT NULL,
     full_bio TEXT NOT NULL,
     profile_photo_url TEXT NOT NULL,
@@ -135,7 +160,8 @@ CREATE TABLE IF NOT EXISTS public.person_credentials (
 
 -- Projects (Works Portfolio & Case Studies)
 CREATE TABLE IF NOT EXISTS public.projects (
-    id VARCHAR(100) PRIMARY KEY,                                     -- slug e.g. 'urban-living-1'
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug VARCHAR(100) NOT NULL UNIQUE,                               -- readable slug e.g. 'urban-living-1'
     project_code VARCHAR(50) NOT NULL UNIQUE,                        -- e.g. 'PRJ-2021-001'
     project_title TEXT NOT NULL,
     year VARCHAR(4) NOT NULL,                                        -- e.g. '2026'
@@ -164,7 +190,7 @@ CREATE TABLE IF NOT EXISTS public.projects (
 -- Project Media: Gallery Images & Showcase Videos
 CREATE TABLE IF NOT EXISTS public.project_media (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id VARCHAR(100) NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
     media_type TEXT NOT NULL DEFAULT 'image' CHECK (media_type IN ('image', 'video')),
     url TEXT NOT NULL,
     caption TEXT,
@@ -176,9 +202,10 @@ CREATE TABLE IF NOT EXISTS public.project_media (
 -- Project Contributors: Bi-Directional Association between Projects and People
 CREATE TABLE IF NOT EXISTS public.project_contributors (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id VARCHAR(100) NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
     person_id VARCHAR(100) NOT NULL REFERENCES public.people(id) ON DELETE CASCADE,
     role_in_project TEXT NOT NULL,                                   -- e.g. 'Lead Principal Architect'
+    project_role_ids TEXT[] NOT NULL DEFAULT '{}',                   -- references public.project_roles(id)
     contribution_narrative TEXT,                                     -- specific contribution description
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -254,6 +281,21 @@ CREATE TABLE IF NOT EXISTS public.service_offerings (
     subtext TEXT NOT NULL,
     pillars JSONB NOT NULL DEFAULT '[]'::jsonb,                      -- [{ title, desc }]
     content_columns JSONB NOT NULL DEFAULT '[]'::jsonb,              -- Accordion columns / deliverables
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 3B. Service Accordions (Dynamic Modular Deliverables & Subpage Sections)
+CREATE TABLE IF NOT EXISTS public.service_accordions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    service_id VARCHAR(50) NOT NULL REFERENCES public.service_offerings(id) ON DELETE CASCADE,
+    column_index INTEGER NOT NULL DEFAULT 0,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    link_text TEXT,
+    link_href TEXT,
     sort_order INTEGER NOT NULL DEFAULT 0,
     is_draft BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -457,6 +499,11 @@ CREATE TRIGGER trg_site_settings_updated_at BEFORE UPDATE ON public.site_setting
 CREATE TRIGGER trg_site_pages_updated_at BEFORE UPDATE ON public.site_pages FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER trg_navigation_cards_updated_at BEFORE UPDATE ON public.navigation_cards FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER trg_service_offerings_updated_at BEFORE UPDATE ON public.service_offerings FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+DROP TRIGGER IF EXISTS trg_service_accordions_updated_at ON public.service_accordions;
+CREATE TRIGGER trg_service_accordions_updated_at
+BEFORE UPDATE ON public.service_accordions
+FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
 CREATE TRIGGER trg_process_philosophies_updated_at BEFORE UPDATE ON public.process_philosophies FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER trg_stage_groups_updated_at BEFORE UPDATE ON public.stage_groups FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER trg_process_stages_updated_at BEFORE UPDATE ON public.process_stages FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -492,6 +539,10 @@ CREATE INDEX IF NOT EXISTS idx_project_proposals_status ON public.project_propos
 CREATE INDEX IF NOT EXISTS idx_site_pages_is_draft ON public.site_pages(is_draft);
 CREATE INDEX IF NOT EXISTS idx_navigation_cards_hub ON public.navigation_cards(hub_id, is_draft, sort_order);
 CREATE INDEX IF NOT EXISTS idx_service_offerings_is_draft ON public.service_offerings(is_draft, sort_order);
+CREATE INDEX IF NOT EXISTS idx_service_accordions_service_id ON public.service_accordions(service_id);
+CREATE INDEX IF NOT EXISTS idx_service_accordions_col_sort ON public.service_accordions(service_id, column_index, sort_order);
+CREATE INDEX IF NOT EXISTS idx_service_accordions_is_draft ON public.service_accordions(is_draft);
+
 CREATE INDEX IF NOT EXISTS idx_process_philosophies_is_draft ON public.process_philosophies(is_draft, sort_order);
 CREATE INDEX IF NOT EXISTS idx_stage_groups_page ON public.stage_groups(process_page_id, is_draft, sort_order);
 CREATE INDEX IF NOT EXISTS idx_process_stages_page ON public.process_stages(process_page_id, stage_group_id, is_draft, sort_order);
@@ -527,6 +578,31 @@ $$;
 -- ==============================================================================
 -- 10. ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
+
+
+ALTER TABLE public.licenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.project_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.service_accordions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read access for licenses" ON public.licenses
+    FOR SELECT USING (true);
+CREATE POLICY "Admin write access for licenses" ON public.licenses
+    FOR ALL USING (auth.role() = 'authenticated' OR auth.role() = 'service_role');
+
+CREATE POLICY "Public read access for project_roles" ON public.project_roles
+    FOR SELECT USING (true);
+CREATE POLICY "Admin write access for project_roles" ON public.project_roles
+    FOR ALL USING (auth.role() = 'authenticated' OR auth.role() = 'service_role');
+
+CREATE POLICY "Public can view published service accordions"
+    ON public.service_accordions FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can manage service accordions"
+    ON public.service_accordions FOR ALL
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
 
 ALTER TABLE public.tracks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
@@ -894,49 +970,72 @@ INSERT INTO storage.buckets (id, name, public) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Public bucket: portfolio-media
+DROP POLICY IF EXISTS "Public can read portfolio media" ON storage.objects;
 CREATE POLICY "Public can read portfolio media"
     ON storage.objects FOR SELECT
     USING (bucket_id = 'portfolio-media');
 
+DROP POLICY IF EXISTS "Admins and Editors can upload portfolio media" ON storage.objects;
 CREATE POLICY "Admins and Editors can upload portfolio media"
     ON storage.objects FOR INSERT
     TO authenticated
     WITH CHECK (bucket_id = 'portfolio-media' AND public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
 
+DROP POLICY IF EXISTS "Admins and Editors can update portfolio media" ON storage.objects;
 CREATE POLICY "Admins and Editors can update portfolio media"
     ON storage.objects FOR UPDATE
     TO authenticated
     USING (bucket_id = 'portfolio-media' AND public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
 
+DROP POLICY IF EXISTS "Only Superadmin can delete portfolio media" ON storage.objects;
 CREATE POLICY "Only Superadmin can delete portfolio media"
     ON storage.objects FOR DELETE
     TO authenticated
     USING (bucket_id = 'portfolio-media' AND public.is_superadmin());
 
 -- Private Intake Buckets: Public can upload during form submissions, Admins can read
+DROP POLICY IF EXISTS "Public can upload career documents" ON storage.objects;
 CREATE POLICY "Public can upload career documents"
     ON storage.objects FOR INSERT
     WITH CHECK (bucket_id = 'career-documents');
 
+DROP POLICY IF EXISTS "Admins can view career documents" ON storage.objects;
 CREATE POLICY "Admins can view career documents"
     ON storage.objects FOR SELECT
     TO authenticated
     USING (bucket_id = 'career-documents' AND public.get_current_admin_role() IN ('superadmin', 'admin'));
 
+DROP POLICY IF EXISTS "Public can upload partner documents" ON storage.objects;
 CREATE POLICY "Public can upload partner documents"
     ON storage.objects FOR INSERT
     WITH CHECK (bucket_id = 'partner-documents');
 
+DROP POLICY IF EXISTS "Admins can view partner documents" ON storage.objects;
 CREATE POLICY "Admins can view partner documents"
     ON storage.objects FOR SELECT
     TO authenticated
     USING (bucket_id = 'partner-documents' AND public.get_current_admin_role() IN ('superadmin', 'admin'));
 
+DROP POLICY IF EXISTS "Public can upload proposal documents" ON storage.objects;
 CREATE POLICY "Public can upload proposal documents"
     ON storage.objects FOR INSERT
     WITH CHECK (bucket_id = 'proposal-documents');
 
+DROP POLICY IF EXISTS "Admins can view proposal documents" ON storage.objects;
 CREATE POLICY "Admins can view proposal documents"
     ON storage.objects FOR SELECT
     TO authenticated
     USING (bucket_id = 'proposal-documents' AND public.get_current_admin_role() IN ('superadmin', 'admin'));
+
+-- ==============================================================================
+-- 12. ROLE PRIVILEGES & PERMISSIONS (Crucial for Supabase API access)
+-- ==============================================================================
+GRANT USAGE, CREATE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO postgres, anon, authenticated, service_role;
+

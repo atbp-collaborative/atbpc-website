@@ -10,6 +10,7 @@ import {
   SitePage,
   NavigationCardItem,
   ServiceOffering,
+  ServiceAccordionItem,
   ProcessPhilosophy,
   StageGroup,
   ProcessStageItem,
@@ -30,18 +31,21 @@ import {
   deleteAdminProcessStage,
   fetchAdminServiceOfferings,
   saveAdminServiceOffering,
+  saveAdminServiceAccordion,
+  deleteAdminServiceAccordion,
   fetchAdminHomeSlides,
   saveAdminHomeSlide,
   deleteAdminHomeSlide,
+  reorderAdminHomeSlides,
   fetchAdminHomepageSlogans,
   saveAdminHomepageSlogans,
 } from '@/services/supabase/cms-admin.service';
 import { toast } from 'sonner';
 
-export type CmsTab = 'pages' | 'process' | 'services' | 'home';
+export type CmsTab = 'pages' | 'landing-pages' | 'process' | 'services' | 'home';
 
 export function useAdminCms() {
-  const [activeTab, setActiveTab] = useState<CmsTab>('pages');
+  const [activeTab, setActiveTab] = useState<CmsTab>('landing-pages');
   const [isLoading, setIsLoading] = useState(true);
 
   // Tab 1: Pages & Nav
@@ -55,7 +59,7 @@ export function useAdminCms() {
 
   // Tab 3: Services
   const [services, setServices] = useState<ServiceOffering[]>([]);
-  const [selectedServiceId, setSelectedServiceId] = useState<string>('comprehensive');
+  const [selectedServiceId, setSelectedServiceId] = useState<string>('comprehensive-services');
 
   // Tab 4: Home
   const [slides, setSlides] = useState<HomeSlideItem[]>([]);
@@ -107,33 +111,82 @@ export function useAdminCms() {
 
   // Page mutation
   const handleSavePage = useCallback(async (page: SitePage) => {
-    const saved = await saveAdminSitePage(page);
-    setPages((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
-    toast.success(`Page "${saved.title}" saved successfully`);
-    return saved;
+    try {
+      const saved = await saveAdminSitePage(page);
+      setPages((prev) => {
+        const idx = prev.findIndex((p) => {
+          const pId = p.id.toLowerCase().replace(/^\/+|\/+$/g, '');
+          const sId = saved.id.toLowerCase().replace(/^\/+|\/+$/g, '');
+          if (pId === sId) return true;
+          const pLast = pId.split('/').pop();
+          const sLast = sId.split('/').pop();
+          return Boolean(pLast && pLast === sLast);
+        });
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = saved;
+          return copy;
+        }
+        return [...prev, saved];
+      });
+      toast.success(`Page "${saved.title}" saved successfully`);
+      return saved;
+    } catch (err: any) {
+      console.error('Failed to save page:', err);
+      toast.error(err?.message || `Failed to save page "${page.title}"`);
+      throw err;
+    }
   }, []);
 
   // Card mutation
   const handleSaveCard = useCallback(async (card: NavigationCardItem) => {
-    const saved = await saveAdminNavigationCard(card);
-    setCards((prev) => prev.map((c) => (c.id === saved.id ? saved : c)));
-    toast.success(`Navigation card "${saved.title}" saved`);
-    return saved;
+    try {
+      const saved = await saveAdminNavigationCard(card);
+      setCards((prev) => {
+        const idx = prev.findIndex((c) => c.id === saved.id || c.cardKey === saved.cardKey);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = saved;
+          return copy;
+        }
+        return [...prev, saved];
+      });
+      toast.success(`Navigation card "${saved.title}" saved`);
+      return saved;
+    } catch (err: any) {
+      console.error('Failed to save card:', err);
+      toast.error(err?.message || `Failed to save navigation card "${card.title}"`);
+      throw err;
+    }
   }, []);
 
   // Philosophy mutation
   const handleSavePhilosophy = useCallback(async (item: ProcessPhilosophy) => {
-    const saved = await saveAdminProcessPhilosophy(item);
-    setPhilosophies((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
-    toast.success(`Philosophy for "${saved.title}" updated`);
-    return saved;
+    try {
+      const saved = await saveAdminProcessPhilosophy(item);
+      setPhilosophies((prev) => {
+        const idx = prev.findIndex((p) => p.id === saved.id);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = saved;
+          return copy;
+        }
+        return [...prev, saved];
+      });
+      toast.success(`Philosophy for "${saved.title}" updated`);
+      return saved;
+    } catch (err: any) {
+      console.error('Failed to save philosophy:', err);
+      toast.error(err?.message || `Failed to save philosophy "${item.title}"`);
+      throw err;
+    }
   }, []);
 
   // Stage Group mutations
   const handleSaveStageGroup = useCallback(async (group: StageGroup) => {
     const saved = await saveAdminStageGroup(group);
     setStageGroups((prev) => {
-      const idx = prev.findIndex((g) => g.id === saved.id);
+      const idx = prev.findIndex((g) => g.id === saved.id || g.id === group.id);
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = saved;
@@ -158,7 +211,7 @@ export function useAdminCms() {
       prev.map((g) => {
         if (g.id === saved.stageGroupId) {
           const stgs = g.stages || [];
-          const sIdx = stgs.findIndex((s) => s.id === saved.id);
+          const sIdx = stgs.findIndex((s) => s.id === saved.id || s.id === stage.id);
           let newStgs: ProcessStageItem[];
           if (sIdx >= 0) {
             newStgs = [...stgs];
@@ -188,17 +241,83 @@ export function useAdminCms() {
 
   // Service mutation
   const handleSaveService = useCallback(async (offering: ServiceOffering) => {
-    const saved = await saveAdminServiceOffering(offering);
-    setServices((prev) => prev.map((s) => (s.id === saved.id ? saved : s)));
-    toast.success(`Service offering "${saved.title}" updated`);
-    return saved;
+    try {
+      const saved = await saveAdminServiceOffering(offering);
+      setServices((prev) => {
+        const idx = prev.findIndex((s) => s.id === saved.id);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = saved;
+          return copy;
+        }
+        return [...prev, saved];
+      });
+      toast.success(`Service offering "${saved.title}" updated`);
+      return saved;
+    } catch (err: any) {
+      console.error('Failed to save service:', err);
+      toast.error(err?.message || `Failed to save service "${offering.title}"`);
+      throw err;
+    }
+  }, []);
+
+  // Service Accordion mutations
+  const handleSaveServiceAccordion = useCallback(async (item: ServiceAccordionItem) => {
+    try {
+      const saved = await saveAdminServiceAccordion(item);
+      setServices((prev) =>
+        prev.map((s) => {
+          if (s.id === saved.serviceId) {
+            const accs = s.accordions || [];
+            const idx = accs.findIndex((a) => a.id === item.id || a.id === saved.id);
+            let nextAccs: ServiceAccordionItem[];
+            if (idx >= 0) {
+              nextAccs = [...accs];
+              nextAccs[idx] = saved;
+            } else {
+              nextAccs = [...accs, saved];
+            }
+            return { ...s, accordions: nextAccs };
+          }
+          return s;
+        })
+      );
+      toast.success(`Accordion "${saved.title}" saved`);
+      return saved;
+    } catch (err: any) {
+      console.error('Failed to save service accordion:', err);
+      toast.error(err?.message || `Failed to save accordion "${item.title}"`);
+      throw err;
+    }
+  }, []);
+
+  const handleDeleteServiceAccordion = useCallback(async (itemId: string, serviceId: string) => {
+    try {
+      await deleteAdminServiceAccordion(itemId, serviceId);
+      setServices((prev) =>
+        prev.map((s) => {
+          if (s.id === serviceId) {
+            return {
+              ...s,
+              accordions: (s.accordions || []).filter((a) => a.id !== itemId),
+            };
+          }
+          return s;
+        })
+      );
+      toast.info('Accordion item removed');
+    } catch (err: any) {
+      console.error('Failed to delete service accordion:', err);
+      toast.error(err?.message || 'Failed to delete accordion');
+      throw err;
+    }
   }, []);
 
   // Home Slide mutations
   const handleSaveSlide = useCallback(async (slide: HomeSlideItem) => {
     const saved = await saveAdminHomeSlide(slide);
     setSlides((prev) => {
-      const idx = prev.findIndex((s) => s.id === saved.id);
+      const idx = prev.findIndex((s) => s.id === saved.id || s.id === slide.id);
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = saved;
@@ -214,6 +333,19 @@ export function useAdminCms() {
     await deleteAdminHomeSlide(slideId);
     setSlides((prev) => prev.filter((s) => s.id !== slideId));
     toast.info('Hero slide removed');
+  }, []);
+
+  const handleReorderSlides = useCallback(async (newSlides: HomeSlideItem[]) => {
+    setSlides(newSlides);
+    try {
+      await reorderAdminHomeSlides(newSlides);
+      toast.success('Slide order updated');
+    } catch (err: any) {
+      console.error('Failed to reorder slides:', err);
+      toast.error(err?.message || 'Failed to update slide order');
+      const latest = await fetchAdminHomeSlides();
+      setSlides(latest);
+    }
   }, []);
 
   // Homepage Slogans mutation
@@ -249,11 +381,15 @@ export function useAdminCms() {
     selectedServiceId,
     setSelectedServiceId,
     saveService: handleSaveService,
+    saveServiceAccordion: handleSaveServiceAccordion,
+    deleteServiceAccordion: handleDeleteServiceAccordion,
     // Tab 4
     slides,
     slogans,
     saveSlide: handleSaveSlide,
     deleteSlide: handleDeleteSlide,
+    reorderSlides: handleReorderSlides,
     saveSlogans: handleSaveSlogans,
   };
 }
+

@@ -7,17 +7,17 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Shield, Save } from 'lucide-react';
+import { X, Shield, Save, Trash2 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { Role, RoleCategory, RoleTrack } from '@/types';
 import { Button } from '@/components/primitives/buttons/Button';
-import { formatCategoryLabel, formatTrackLabel } from '@/lib/roles/role-helpers';
 import { getTracks } from '@/services/mock/adminMockStorage';
 
 interface RoleFormModalProps {
   isOpen: boolean;
   role: Role | null;
   onSave: (role: Role) => void;
+  onDelete?: (roleId: string) => void;
   onClose: () => void;
 }
 
@@ -28,22 +28,29 @@ const EMPTY_ROLE: Role = {
   category: 'designers',
   track: 'professionals',
   trackId: 'PROF',
-  department: '',
   description: '',
   isActive: true,
   isDraft: false,
 };
 
+const CAREER_TRACK_OPTIONS = [
+  { id: 'PROF', label: 'Professional Practice', trackType: 'professional' },
+  { id: 'INTERN_CHED_240', label: '240-hr Curriculum-based Internship', trackType: 'internship' },
+  { id: 'APPRENTICE_ALE_3840', label: '3840-hr Diversified Architectural Experience', trackType: 'apprenticeship' },
+  { id: 'INTERN_VOC', label: 'Vocational', trackType: 'internship' },
+];
+
 export const RoleFormModal: React.FC<RoleFormModalProps> = ({
   isOpen,
   role,
   onSave,
+  onDelete,
   onClose,
 }) => {
   const { isDarkMode } = useTheme();
-  const tracks = useMemo(() => getTracks(), []);
   const [formData, setFormData] = useState<Role>(EMPTY_ROLE);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   useEffect(() => {
     if (role) {
@@ -60,6 +67,7 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
       });
     }
     setErrors({});
+    setIsConfirmingDelete(false);
   }, [role, isOpen]);
 
   useEffect(() => {
@@ -81,6 +89,15 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
     if (!formData.title.trim()) {
       newErrors.title = 'Role title is required';
     }
+    if (!formData.code || !formData.code.trim()) {
+      newErrors.code = 'Role code is required';
+    }
+    if (!formData.category) {
+      newErrors.category = 'Role category is required';
+    }
+    if (!formData.trackId) {
+      newErrors.trackId = 'Career track is required';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -90,6 +107,13 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
     if (!validate()) return;
     onSave(formData);
     onClose();
+  };
+
+  const handleDelete = () => {
+    if (role && onDelete) {
+      onDelete(role.id);
+      onClose();
+    }
   };
 
   const inputBaseClass = `w-full px-3.5 py-2.5 rounded-lg border text-caption outline-none transition-colors ${
@@ -145,64 +169,61 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Role Title */}
-              <div className="space-y-1">
-                <label className="text-caption font-semibold flex items-center justify-between">
-                  <span>Role Title <span className="text-space-sparkle">*</span></span>
-                  {errors.title && (
-                    <span className="text-micro text-red-500">{errors.title}</span>
-                  )}
-                </label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g. Senior Project Architect"
-                  className={inputBaseClass}
-                  autoFocus
-                />
-              </div>
-
-              {/* Code & Department row */}
+              {/* Role Title & Role Code row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-caption font-semibold">
-                    Role Code <span className="text-micro font-normal opacity-60">(e.g. HRDT-07)</span>
+                  <label className="text-caption font-semibold flex items-center justify-between">
+                    <span>Role Title <span className="text-space-sparkle">*</span></span>
+                    {errors.title && (
+                      <span className="text-micro text-red-500">{errors.title}</span>
+                    )}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Junior Designer"
+                    className={inputBaseClass}
+                    autoFocus
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-caption font-semibold flex items-center justify-between">
+                    <span>Role Code <span className="text-space-sparkle">*</span></span>
+                    {errors.code && (
+                      <span className="text-micro text-red-500">{errors.code}</span>
+                    )}
                   </label>
                   <input
                     type="text"
                     value={formData.code || ''}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                    placeholder="e.g. HRDT-07"
+                    placeholder="HRDT-01"
                     className={`${inputBaseClass} font-mono`}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-caption font-semibold">Department / Team</label>
-                  <input
-                    type="text"
-                    value={formData.department || ''}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    placeholder="e.g. Production Team"
-                    className={inputBaseClass}
                   />
                 </div>
               </div>
 
-              {/* Category & Track row */}
+              {/* Category & Career Track row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-caption font-semibold">
-                    Category <span className="text-space-sparkle">*</span>
+                  <label className="text-caption font-semibold flex items-center justify-between">
+                    <span>Role Category <span className="text-space-sparkle">*</span></span>
+                    {errors.category && (
+                      <span className="text-micro text-red-500">{errors.category}</span>
+                    )}
                   </label>
                   <select
-                    value={formData.category}
+                    value={formData.category || ''}
                     onChange={(e) =>
                       setFormData({ ...formData, category: e.target.value as RoleCategory })
                     }
                     className={inputBaseClass}
                   >
+                    <option value="" disabled>
+                      [ Select Role Category ]
+                    </option>
                     <option value="designers">Designers</option>
                     <option value="managers">Managers</option>
                     <option value="builders">Builders</option>
@@ -210,14 +231,17 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-caption font-semibold">
-                    Studio Track <span className="text-space-sparkle">*</span>
+                  <label className="text-caption font-semibold flex items-center justify-between">
+                    <span>Career Track <span className="text-space-sparkle">*</span></span>
+                    {errors.trackId && (
+                      <span className="text-micro text-red-500">{errors.trackId}</span>
+                    )}
                   </label>
                   <select
-                    value={formData.trackId || 'PROF'}
+                    value={formData.trackId || ''}
                     onChange={(e) => {
                       const tId = e.target.value;
-                      const matched = tracks.find((t) => t.id === tId);
+                      const matched = CAREER_TRACK_OPTIONS.find((t) => t.id === tId);
                       setFormData({
                         ...formData,
                         trackId: tId,
@@ -226,9 +250,12 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
                     }}
                     className={inputBaseClass}
                   >
-                    {tracks.map((t) => (
+                    <option value="" disabled>
+                      [ Select Career Track ]
+                    </option>
+                    {CAREER_TRACK_OPTIONS.map((t) => (
                       <option key={t.id} value={t.id}>
-                        {t.name} ({t.code})
+                        {t.label}
                       </option>
                     ))}
                   </select>
@@ -256,7 +283,7 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
                       : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
                   }`}
                 >
-                  {formData.isActive !== false ? '● Active' : '○ Inactive / Draft'}
+                  {formData.isActive !== false ? '● Active' : '○ Inactive'}
                 </button>
               </div>
 
@@ -273,20 +300,55 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
               </div>
 
               {/* Modal footer actions */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/10 dark:border-white/10">
-                <Button
-                  type="ghost"
-                  onClick={onClose}
-                  className="!py-2 !px-4 text-caption"
-                  label="Cancel"
-                />
-                <Button
-                  type="filled"
-                  htmlType="submit"
-                  className="!py-2 !px-5 text-caption !bg-space-sparkle text-white"
-                >
-                  <Save size={14} className="mr-1.5 inline" /> Save Role
-                </Button>
+              <div className="flex items-center justify-between gap-3 pt-4 border-t border-black/10 dark:border-white/10">
+                {/* Trash/Delete action inside edit modal */}
+                {role && onDelete ? (
+                  isConfirmingDelete ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-micro text-red-500 font-medium">Delete this role?</span>
+                      <button
+                        type="button"
+                        onClick={handleDelete}
+                        className="px-2.5 py-1 text-micro rounded bg-red-600 text-white font-medium hover:bg-red-700 cursor-pointer"
+                      >
+                        Yes, Delete
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsConfirmingDelete(false)}
+                        className="px-2 py-1 text-micro rounded border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsConfirmingDelete(true)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-caption text-red-500 hover:bg-red-500/10 border border-red-500/20 transition-colors cursor-pointer"
+                    >
+                      <Trash2 size={14} /> <span>Delete Role</span>
+                    </button>
+                  )
+                ) : (
+                  <div />
+                )}
+
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="ghost"
+                    onClick={onClose}
+                    className="!py-2 !px-4 text-caption"
+                    label="Cancel"
+                  />
+                  <Button
+                    type="filled"
+                    htmlType="submit"
+                    className="!py-2 !px-5 text-caption !bg-space-sparkle text-white"
+                  >
+                    <Save size={14} className="mr-1.5 inline" /> Save Role
+                  </Button>
+                </div>
               </div>
             </form>
           </motion.div>

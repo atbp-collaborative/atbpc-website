@@ -3,13 +3,14 @@ import {
   SitePage,
   NavigationCardItem,
   ServiceOffering,
+  ServiceAccordionItem,
   ProcessPhilosophy,
   StageGroup,
   ProcessStageItem,
   HomeSlideItem,
   HomepageSlogans,
 } from '@/types';
-import { OUR_SERVICES_DATA } from '@/lib/dummy-data/our-services/services-data';
+import { OUR_SERVICES_DATA, SERVICES_DATA } from '@/lib/dummy-data/our-services/services-data';
 import {
   OUR_SERVICES_PROCESS_DATA,
   BASE_PROCESS_NODES,
@@ -27,27 +28,59 @@ import { HOME_CAROUSEL_DATA } from '@/lib/dummy-data/works/home-carousel';
 // 1. SITE PAGES (SEO-Locked Pages & Metadata)
 // ==============================================================================
 
-export async function getSitePages(includeDrafts = false): Promise<SitePage[]> {
+export async function getSitePages(includeDrafts = true): Promise<SitePage[]> {
   try {
     let query = supabasePublic.from('site_pages').select('*');
     if (!includeDrafts) {
       query = query.eq('is_draft', false);
     }
     const { data, error } = await query;
-    if (error || !data || data.length === 0) {
-      return getFallbackSitePages();
-    }
-    return data.map((row: any): SitePage => ({
+    const dbPages: SitePage[] = (!error && data) ? data.map((row: any): SitePage => ({
       id: row.id,
       title: row.title,
       subtitle: row.subtitle,
       heroImageUrl: row.hero_image_url,
       metaTitle: row.meta_title,
       metaDescription: row.meta_description,
-      isDraft: row.is_draft,
+      isDraft: Boolean(row.is_draft),
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-    }));
+    })) : [];
+
+    const fallbackPages = getFallbackSitePages();
+    const pageMap = new Map<string, SitePage>();
+
+    fallbackPages.forEach((p) => {
+      pageMap.set(p.id.toLowerCase().replace(/^\/+|\/+$/g, ''), p);
+    });
+
+    dbPages.forEach((dbP) => {
+      const normDbId = dbP.id.toLowerCase().replace(/^\/+|\/+$/g, '');
+      const lastSeg = normDbId.split('/').pop();
+      let matchedKey: string | null = null;
+      for (const key of pageMap.keys()) {
+        if (key === normDbId || (lastSeg && key.split('/').pop() === lastSeg)) {
+          matchedKey = key;
+          break;
+        }
+      }
+      if (matchedKey) {
+        const existing = pageMap.get(matchedKey)!;
+        pageMap.set(matchedKey, {
+          ...existing,
+          ...dbP,
+          id: existing.id,
+        });
+      } else {
+        pageMap.set(normDbId, dbP);
+      }
+    });
+
+    let result = Array.from(pageMap.values());
+    if (!includeDrafts) {
+      result = result.filter((p) => !p.isDraft);
+    }
+    return result;
   } catch (err) {
     console.warn('Falling back to local site pages:', err);
     return getFallbackSitePages();
@@ -59,8 +92,9 @@ export async function getSitePageById(id: string): Promise<SitePage | null> {
   return pages.find((p) => p.id === id) || null;
 }
 
-function getFallbackSitePages(): SitePage[] {
+export function getFallbackSitePages(): SitePage[] {
   return [
+    // 0. Parent Hubs
     {
       id: 'services-hub',
       title: 'our services',
@@ -108,6 +142,114 @@ function getFallbackSitePages(): SitePage[] {
       title: 'gawâ',
       subtitle: 'a curated portfolio of shelter, livelihood, and community architecture across the Philippines.',
       heroImageUrl: '/images/hero_modern_villa_1783495183350.jpg',
+      isDraft: false,
+    },
+
+    // 1. studio/our-services subpages
+    {
+      id: 'studio/our-services/comprehensive-services',
+      title: 'comprehensive services',
+      subtitle: 'full-lifecycle architectural design, technical engineering, & turnkey delivery',
+      heroImageUrl: '/images/hero_modern_villa_1783495183350.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'studio/our-services/piecework-services',
+      title: 'piecework services',
+      subtitle: 'targeted architectural, engineering, or modular consulting scopes',
+      heroImageUrl: '/images/studio_services_img_1785469964556.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'studio/our-services/consultation-retainer-services',
+      title: 'consultation & retainer services',
+      subtitle: 'on-call technical advisory, peer reviews, and ongoing design management',
+      heroImageUrl: '/images/production_drawings_1783495233053.jpg',
+      isDraft: false,
+    },
+
+    // 2. studio/our-process subpages
+    {
+      id: 'studio/our-process/designing-with-values',
+      title: 'designing with values',
+      subtitle: 'purpose-driven spatial concepts anchored in environmental & social context',
+      heroImageUrl: '/images/contact_case_study_house_img_1785469986420.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'studio/our-process/managing-with-integrity',
+      title: 'managing with integrity',
+      subtitle: 'uncompromising fiscal clarity, transparent procurement & rigorous oversight',
+      heroImageUrl: '/images/contact_headquarters_img_1785470005846.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'studio/our-process/building-with-culture',
+      title: 'building with culture',
+      subtitle: 'synthesizing regional craftsmanship with modern architectural technology',
+      heroImageUrl: '/images/studio_process_img_1785469980353.jpg',
+      isDraft: false,
+    },
+
+    // 3. contact/case-study-house subpages
+    {
+      id: 'contact/case-study-house/discovery-session',
+      title: 'schedule a discovery session',
+      subtitle: 'for project intake, site feasibility & spatial planning consultations',
+      heroImageUrl: '/images/studio_services_img_1785469964556.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'contact/case-study-house/request-a-proposal',
+      title: 'request a proposal',
+      subtitle: 'for official cost estimates and formal project proposals',
+      heroImageUrl: '/images/production_drawings_1783495233053.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'contact/case-study-house/contact-info',
+      title: 'studio hours & location',
+      subtitle: 'headquarters, physical visits, interactive map & contact coordinates',
+      heroImageUrl: '/images/contact_headquarters_img_1785470005846.jpg',
+      isDraft: false,
+    },
+
+    // 4. contact/grow-with-us subpages
+    {
+      id: 'contact/grow-with-us/apprenticeship-programs',
+      title: 'apprenticeship programs',
+      subtitle: 'for on-the-job training requirements & licensure mentorship',
+      heroImageUrl: '/images/studio_people_img_1785469993286.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'contact/grow-with-us/regular-programs',
+      title: 'regular programs',
+      subtitle: 'for licensed architects, project directors & design practitioners',
+      heroImageUrl: '/images/production_drawings_1783495233053.jpg',
+      isDraft: false,
+    },
+
+    // 5. contact/partner-with-us subpages
+    {
+      id: 'contact/partner-with-us/supplier',
+      title: 'suppliers',
+      subtitle: 'for material suppliers & trade product specifications',
+      heroImageUrl: '/images/kiosk_coffee_bar_1783495252161.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'contact/partner-with-us/consultant',
+      title: 'consultants',
+      subtitle: 'for engineering & specialty technical consultants',
+      heroImageUrl: '/images/contact_headquarters_img_1785470005846.jpg',
+      isDraft: false,
+    },
+    {
+      id: 'contact/partner-with-us/builder',
+      title: 'builders',
+      subtitle: 'for trade contractors & specialty builders',
+      heroImageUrl: '/images/studio_process_img_1785469980353.jpg',
       isDraft: false,
     },
   ];
@@ -212,6 +354,33 @@ function getFallbackNavigationCards(hubId?: string): NavigationCardItem[] {
       sortOrder: (i + 1) * 10,
       isDraft: false,
     })),
+    ...SERVICES_DATA.map((c, i) => {
+      let targetHref = '/studio/our-services';
+      let cardKey = 'comprehensive-services';
+      if (c.title === 'comprehensive design' || c.title.includes('comprehensive')) {
+        targetHref = '/studio/our-services/comprehensive-services';
+        cardKey = 'comprehensive-services';
+      } else if (c.title === 'piecework services' || c.title.includes('piecework')) {
+        targetHref = '/studio/our-services/piecework-services';
+        cardKey = 'piecework-services';
+      } else {
+        targetHref = '/studio/our-services/consultation-retainer-services';
+        cardKey = 'consultation-retainer-services';
+      }
+      return {
+        id: cardKey,
+        hubId: 'services',
+        cardKey: cardKey,
+        title: c.title,
+        tagline: c.desc,
+        subtext: c.desc,
+        tags: [],
+        imageUrl: c.image,
+        targetHref: targetHref,
+        sortOrder: (i + 1) * 10,
+        isDraft: false,
+      };
+    }),
   ];
 
   if (hubId) {
@@ -235,25 +404,62 @@ export async function getServiceOfferings(includeDrafts = false): Promise<Servic
       query = query.eq('is_draft', false);
     }
 
-    const { data, error } = await query;
-    if (error || !data || data.length === 0) {
+    const { data: offeringsData, error: offeringsError } = await query;
+    if (offeringsError || !offeringsData || offeringsData.length === 0) {
       return getFallbackServiceOfferings();
     }
 
-    return data.map((row: any): ServiceOffering => ({
-      id: row.id,
-      title: row.title,
-      sectionTag: row.section_tag,
-      tagline: row.tagline,
-      description: row.description,
-      extraDescription: row.extra_description,
-      imageUrl: row.image_url,
-      subtext: row.subtext,
-      pillars: row.pillars || [],
-      contentColumns: row.content_columns || [],
-      sortOrder: row.sort_order,
-      isDraft: row.is_draft,
-    }));
+    // Also fetch service accordions
+    let accordionsQuery = supabasePublic
+      .from('service_accordions')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    if (!includeDrafts) {
+      accordionsQuery = accordionsQuery.eq('is_draft', false);
+    }
+
+    const { data: accordionsData } = await accordionsQuery;
+    const accordionsByService = new Map<string, ServiceAccordionItem[]>();
+    if (accordionsData) {
+      accordionsData.forEach((row: any) => {
+        const item: ServiceAccordionItem = {
+          id: row.id,
+          serviceId: row.service_id,
+          columnIndex: row.column_index ?? 0,
+          title: row.title,
+          content: row.content,
+          linkText: row.link_text,
+          linkHref: row.link_href,
+          sortOrder: row.sort_order ?? 0,
+          isDraft: Boolean(row.is_draft),
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        };
+        const list = accordionsByService.get(item.serviceId) || [];
+        list.push(item);
+        accordionsByService.set(item.serviceId, list);
+      });
+    }
+
+    return offeringsData.map((row: any): ServiceOffering => {
+      const sAccordions = accordionsByService.get(row.id) || getFallbackServiceAccordions(row.id);
+      return {
+        id: row.id,
+        title: row.title,
+        sectionTag: row.section_tag,
+        tagline: row.tagline,
+        description: row.description,
+        extraDescription: row.extra_description,
+        imageUrl: row.image_url,
+        subtext: row.subtext,
+        pillars: row.pillars || [],
+        contentColumns: row.content_columns || [],
+        accordions: sAccordions,
+        sortOrder: row.sort_order,
+        isDraft: row.is_draft,
+      };
+    });
   } catch (err) {
     console.warn('Falling back to local service offerings:', err);
     return getFallbackServiceOfferings();
@@ -263,6 +469,166 @@ export async function getServiceOfferings(includeDrafts = false): Promise<Servic
 export async function getServiceOfferingById(id: string): Promise<ServiceOffering | null> {
   const items = await getServiceOfferings(true);
   return items.find((item) => item.id === id) || null;
+}
+
+export function getFallbackServiceAccordions(serviceId: string): ServiceAccordionItem[] {
+  if (serviceId === 'comprehensive-services') {
+    return [
+      {
+        id: 'comp-acc-1',
+        serviceId: 'comprehensive-services',
+        columnIndex: 0,
+        title: 'Comprehensive Design Services',
+        content: `Our design process is rooted in a deep understanding of your vision, lifestyle, and the unique characteristics of your site.
+
+We integrate architectural planning, interior design, and engineering to create cohesive spaces that are both beautiful and functional.
+
+As a design-build studio, we prioritize constructability and material intelligence from the very beginning, ensuring that every design decision aligns with your budget and timeline.
+
+We navigate the complexities of local zoning, building codes, and environmental regulations, streamlining the path to construction.`,
+        linkText: 'Learn more about our process in designing',
+        linkHref: '/studio/our-process/designing-with-values',
+        sortOrder: 10,
+        isDraft: false,
+      },
+      {
+        id: 'comp-acc-2',
+        serviceId: 'comprehensive-services',
+        columnIndex: 1,
+        title: 'Comprehensive Management Services',
+        content: `Effective project management is the bridge between a great design and a successful build.
+
+We oversee every phase of the project, from initial cost estimation and value engineering to procurement and scheduling.
+
+Our team acts as your single point of contact, coordinating with specialized consultants, suppliers, and local authorities to keep the project on track.
+
+By maintaining rigorous quality control and transparent communication, we mitigate risks and ensure that the final result exceeds expectations.`,
+        linkText: 'Understand how we manage projects',
+        linkHref: '/studio/our-process/managing-with-integrity',
+        sortOrder: 20,
+        isDraft: false,
+      },
+      {
+        id: 'comp-acc-3',
+        serviceId: 'comprehensive-services',
+        columnIndex: 2,
+        title: 'Building Construction Services',
+        content: `Construction is where our designs come to life. We bring decades of hands-on experience and a network of trusted craftsmen to every project.
+
+Our build teams work in tandem with our designers, fostering a collaborative environment that quickly resolves on-site challenges without compromising the design intent.
+
+We employ advanced construction methodologies and sustainable practices to deliver structures of enduring quality and performance.
+
+From groundbreaking to final handover, we are committed to safety, efficiency, and unparalleled craftsmanship in every detail.`,
+        linkText: 'Validate our capabilities as Builder',
+        linkHref: '/studio/our-process/building-with-culture',
+        sortOrder: 30,
+        isDraft: false,
+      },
+    ];
+  }
+
+  if (serviceId === 'piecework-services') {
+    return [
+      {
+        id: 'piece-acc-1',
+        serviceId: 'piecework-services',
+        columnIndex: 0,
+        title: 'Architectural Interiors',
+        content: 'Custom interior spatial design focusing on finishes, millwork detailing, ceiling layout, and built-in furniture coordination. We bridge shell design with internal tactility.',
+        sortOrder: 10,
+        isDraft: false,
+      },
+      {
+        id: 'piece-acc-2',
+        serviceId: 'piecework-services',
+        columnIndex: 0,
+        title: 'Lighting Design',
+        content: 'Fixture specification, reflected ceiling plans, lux level calculations, and circuit zoning. Crafted to amplify space utility, mood, and material textures.',
+        sortOrder: 20,
+        isDraft: false,
+      },
+      {
+        id: 'piece-acc-3',
+        serviceId: 'piecework-services',
+        columnIndex: 0,
+        title: 'Site Planning',
+        content: 'Analyzing solar pathing, typography setbacks, accessibility routing, and easement compliance to optimize building footprint placement on your specific land.',
+        sortOrder: 30,
+        isDraft: false,
+      },
+      {
+        id: 'piece-acc-4',
+        serviceId: 'piecework-services',
+        columnIndex: 1,
+        title: 'Document & Assessment',
+        content: 'Comprehensive auditing of existing blueprints, structural condition reports, spatial efficiency analysis, and code compliance assessments for pre-construction.',
+        sortOrder: 10,
+        isDraft: false,
+      },
+      {
+        id: 'piece-acc-5',
+        serviceId: 'piecework-services',
+        columnIndex: 1,
+        title: 'Code Compliance',
+        content: 'Rigorous validation of design plans against building codes, zoning regulations, fire safety policies, and local city ordinances to guarantee permit approvals.',
+        sortOrder: 20,
+        isDraft: false,
+      },
+      {
+        id: 'piece-acc-6',
+        serviceId: 'piecework-services',
+        columnIndex: 1,
+        title: 'Permit Processing',
+        content: 'End-to-end administration of governmental approvals, environmental clearances, utility permits, and barangay/city hall certifications.',
+        sortOrder: 30,
+        isDraft: false,
+      },
+      {
+        id: 'piece-acc-7',
+        serviceId: 'piecework-services',
+        columnIndex: 2,
+        title: 'Masonry',
+        content: 'Detailed specifications for stone cladding, brick bonding, retaining wall structures, load-bearing concrete blocks, and external masonry finishes.',
+        sortOrder: 10,
+        isDraft: false,
+      },
+      {
+        id: 'piece-acc-8',
+        serviceId: 'piecework-services',
+        columnIndex: 2,
+        title: 'Paint Jobs',
+        content: 'Specification of coating schedules, primer selections, anti-microbial interior paints, weatherproofing exterior paint systems, and custom color swatches.',
+        sortOrder: 20,
+        isDraft: false,
+      },
+    ];
+  }
+
+  if (serviceId === 'consultation-retainer-services') {
+    return [
+      {
+        id: 'consult-acc-1',
+        serviceId: 'consultation-retainer-services',
+        columnIndex: 0,
+        title: 'Consultation',
+        content: 'Flexible, on-demand advisory sessions covering project feasibility, site evaluations, budget estimation, layout advice, and design critiques. Perfect for resolving specific design crossroads without long-term commitments.',
+        sortOrder: 10,
+        isDraft: false,
+      },
+      {
+        id: 'consult-acc-2',
+        serviceId: 'consultation-retainer-services',
+        columnIndex: 1,
+        title: 'Retainer',
+        content: 'Continuous architectural partner support for phased developments, multi-property portfolios, and long-term asset management. Ensures ongoing design control, contractor alignment, and quality supervision over extended timelines.',
+        sortOrder: 20,
+        isDraft: false,
+      },
+    ];
+  }
+
+  return [];
 }
 
 function getFallbackServiceOfferings(): ServiceOffering[] {
@@ -277,6 +643,7 @@ function getFallbackServiceOfferings(): ServiceOffering[] {
     subtext: s.subtext,
     pillars: s.pillars,
     contentColumns: [],
+    accordions: getFallbackServiceAccordions(s.id),
     sortOrder: (idx + 1) * 10,
     isDraft: false,
   }));

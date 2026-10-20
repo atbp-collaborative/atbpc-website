@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Compass,
   Plus,
@@ -14,15 +14,13 @@ import {
   Save,
   X,
   Layers,
-  ChevronRight,
   ListPlus,
   Clock,
-  CheckCircle2,
 } from 'lucide-react';
-import { ProcessPhilosophy, StageGroup, ProcessStageItem } from '@/types';
-import { PublicationToggle } from '@/components/admin/PublicationToggle';
+import { ProcessPhilosophy, StageGroup, ProcessStageItem, NavigationCardItem } from '@/types';
 import { Button } from '@/components/primitives/buttons/Button';
 import { DynamicListField } from '@/components/admin/DynamicListField';
+import { PublicationToggle } from '@/components/admin/PublicationToggle';
 import { useTheme } from '@/context/ThemeContext';
 
 interface CmsProcessTabProps {
@@ -35,6 +33,7 @@ interface CmsProcessTabProps {
   onDeleteStageGroup: (groupId: string) => void;
   onSaveProcessStage: (stage: ProcessStageItem) => void;
   onDeleteProcessStage: (stageId: string) => void;
+  cards?: NavigationCardItem[];
 }
 
 export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
@@ -47,33 +46,42 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
   onDeleteStageGroup,
   onSaveProcessStage,
   onDeleteProcessStage,
+  cards = [],
 }) => {
   const { isDarkMode } = useTheme();
 
   // Active Philosophy object
   const currentPhilosophy = philosophies.find((p) => p.id === selectedProcessPageId);
 
+  // Match tagline with the corresponding card in Landing Pages
+  const matchingLandingCard = useMemo(() => {
+    return cards.find(
+      (c) =>
+        (c.hubId === 'process' || c.hubId === 'our-process') &&
+        (c.id === selectedProcessPageId || c.cardKey === selectedProcessPageId)
+    );
+  }, [cards, selectedProcessPageId]);
+
+  const displayedTagline = matchingLandingCard?.tagline || currentPhilosophy?.tagline || '';
+
   // Philosophy edit modal
   const [editingPhilosophy, setEditingPhilosophy] = useState<ProcessPhilosophy | null>(null);
+  const initialPhilosophyRef = useRef<ProcessPhilosophy | null>(null);
+
+  const handleStartEditPhilosophy = (phil: ProcessPhilosophy) => {
+    const philWithSyncedTagline = { ...phil, tagline: displayedTagline };
+    setEditingPhilosophy(philWithSyncedTagline);
+    initialPhilosophyRef.current = { ...philWithSyncedTagline };
+  };
+
+  const isPhilosophyDirty = useMemo(() => {
+    if (!editingPhilosophy || !initialPhilosophyRef.current) return false;
+    return JSON.stringify(editingPhilosophy) !== JSON.stringify(initialPhilosophyRef.current);
+  }, [editingPhilosophy]);
 
   // Stage Group modal state
   const [editingGroup, setEditingGroup] = useState<StageGroup | null>(null);
-
-  // Process Stage modal state
-  const [editingStage, setEditingStage] = useState<ProcessStageItem | null>(null);
-  const [stageTargetGroupId, setStageTargetGroupId] = useState<string>('');
-
-  const inputClass = `w-full text-caption px-3.5 py-2 rounded-lg border outline-none transition-all ${
-    isDarkMode
-      ? 'border-bright-gray/20 bg-vintage-charcoal/50 text-white placeholder-bright-gray/40 focus:border-space-sparkle'
-      : 'border-vintage-charcoal/20 bg-white text-vintage-charcoal placeholder-vintage-charcoal/40 focus:border-space-sparkle'
-  }`;
-
-  const processPages = [
-    { id: 'designing-with-values', label: 'Designing with Values' },
-    { id: 'managing-with-integrity', label: 'Managing with Integrity' },
-    { id: 'building-with-culture', label: 'Building with Culture' },
-  ];
+  const initialGroupRef = useRef<StageGroup | null>(null);
 
   const handleStartCreateGroup = () => {
     const newGroup: StageGroup = {
@@ -86,7 +94,40 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
       stages: [],
     };
     setEditingGroup(newGroup);
+    initialGroupRef.current = { ...newGroup };
   };
+
+  const handleStartEditGroup = (group: StageGroup) => {
+    setEditingGroup({ ...group });
+    initialGroupRef.current = { ...group };
+  };
+
+  const isGroupDirty = useMemo(() => {
+    if (!editingGroup || !initialGroupRef.current) return false;
+    return JSON.stringify(editingGroup) !== JSON.stringify(initialGroupRef.current);
+  }, [editingGroup]);
+
+  // Process Stage modal state
+  const [editingStage, setEditingStage] = useState<ProcessStageItem | null>(null);
+  const [stageTargetGroupId, setStageTargetGroupId] = useState<string>('');
+  const initialStageRef = useRef<ProcessStageItem | null>(null);
+
+  const isStageDirty = useMemo(() => {
+    if (!editingStage || !initialStageRef.current) return false;
+    return JSON.stringify(editingStage) !== JSON.stringify(initialStageRef.current);
+  }, [editingStage]);
+
+  const inputClass = `w-full text-caption px-3.5 py-2 rounded-lg border outline-none transition-all ${
+    isDarkMode
+      ? 'border-bright-gray/20 bg-vintage-charcoal/50 text-white placeholder-bright-gray/40 focus:border-space-sparkle'
+      : 'border-vintage-charcoal/20 bg-white text-vintage-charcoal placeholder-vintage-charcoal/40 focus:border-space-sparkle'
+  }`;
+
+  const processPages = [
+    { id: 'designing-with-values', label: 'Designing with Values' },
+    { id: 'managing-with-integrity', label: 'Managing with Integrity' },
+    { id: 'building-with-culture', label: 'Building with Culture' },
+  ];
 
   const handleStartCreateStage = (groupId: string) => {
     setStageTargetGroupId(groupId);
@@ -109,6 +150,13 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
       isDraft: false,
     };
     setEditingStage(newStage);
+    initialStageRef.current = { ...newStage };
+  };
+
+  const handleStartEditStage = (stage: ProcessStageItem, groupId: string) => {
+    setStageTargetGroupId(groupId);
+    setEditingStage({ ...stage });
+    initialStageRef.current = { ...stage };
   };
 
   return (
@@ -159,23 +207,37 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
                 {currentPhilosophy.sectionTag || 'Philosophy Brief'}
               </span>
               <h3 className="text-body font-bold lowercase">{currentPhilosophy.title}</h3>
-              <p className="text-mini font-medium italic opacity-80 mt-0.5">{currentPhilosophy.tagline}</p>
+              {/* Tagline synced with the landing page card */}
+              <p className="text-mini font-medium italic opacity-80 mt-0.5">{displayedTagline}</p>
             </div>
-            <Button
-              type="ghost"
-              onClick={() => setEditingPhilosophy({ ...currentPhilosophy })}
-              className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle shrink-0"
-            >
-              <Edit2 size={13} className="mr-1 inline" /> Edit Philosophy
-            </Button>
+            <div className="flex items-center gap-3 shrink-0">
+              <PublicationToggle
+                isDraft={Boolean(currentPhilosophy.isDraft)}
+                disabled={true}
+                onToggle={() => {}}
+              />
+              <Button
+                type="filled"
+                onClick={() => handleStartEditPhilosophy(currentPhilosophy)}
+                className="!py-2 !px-4 text-mini font-semibold shrink-0"
+              >
+                <Edit2 size={13} className="mr-1.5 inline" /> Edit Page Details
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2 text-caption opacity-80 leading-relaxed">
             <p>{currentPhilosophy.description}</p>
-            {currentPhilosophy.extraDescription && (
-              <p className="opacity-70 text-mini">{currentPhilosophy.extraDescription}</p>
-            )}
           </div>
+
+          {currentPhilosophy.subtext && (
+            <div className="pt-3 border-t border-black/5 dark:border-white/5">
+              <span className="text-micro font-semibold uppercase tracking-wider block opacity-60 mb-0.5">
+                Footer Note
+              </span>
+              <p className="text-mini italic opacity-75">{currentPhilosophy.subtext}</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -187,7 +249,7 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
               <Layers size={18} className="text-space-sparkle" /> Stage Groups &amp; Deliverables
             </h3>
             <p className="text-mini opacity-60">
-              Each stage group defines timeline columns and houses specific stages with deliverables.
+              Each stage group defines the workflow phases and houses specific stages with deliverables.
             </p>
           </div>
           <Button
@@ -219,22 +281,22 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
                   isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
                 }`}
               >
-                {/* Group Header */}
+                {/* Group Header: column span and main trash icon removed */}
                 <div
                   className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b ${
                     isDarkMode ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-space-sparkle/15 text-space-sparkle flex items-center justify-center font-bold font-mono text-mini">
-                      {group.colSpan}c
-                    </span>
+                    <div className="w-8 h-8 rounded-lg bg-space-sparkle/15 text-space-sparkle flex items-center justify-center font-bold">
+                      <Layers size={16} />
+                    </div>
                     <div>
                       <h4 className="font-bold text-caption sm:text-body uppercase tracking-wider">
                         {group.name || 'Unnamed Stage Group'}
                       </h4>
                       <span className="text-micro font-mono opacity-50">
-                        Span: {group.colSpan} Column(s) | Order: {group.sortOrder} | Stages: {group.stages?.length || 0}
+                        Order: {group.sortOrder} | Stages: {group.stages?.length || 0}
                       </span>
                     </div>
                   </div>
@@ -249,19 +311,11 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
                     </Button>
                     <Button
                       type="ghost"
-                      onClick={() => setEditingGroup({ ...group })}
+                      onClick={() => handleStartEditGroup(group)}
                       className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
                     >
                       <Edit2 size={13} className="mr-1 inline" /> Edit Group
                     </Button>
-                    <button
-                      type="button"
-                      onClick={() => onDeleteStageGroup(group.id)}
-                      className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg cursor-pointer transition-colors"
-                      title="Delete group"
-                    >
-                      <Trash2 size={15} />
-                    </button>
                   </div>
                 </div>
 
@@ -292,9 +346,6 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
                             </div>
 
                             <h5 className="font-bold text-caption">{stage.title}</h5>
-                            {stage.subtitle && (
-                              <p className="text-micro font-medium opacity-70 italic">{stage.subtitle}</p>
-                            )}
                             <p className="text-micro opacity-70 line-clamp-3 leading-relaxed">
                               {stage.description}
                             </p>
@@ -305,47 +356,30 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
                                 <span className="text-micro font-mono uppercase tracking-wider opacity-60 block">
                                   Deliverables ({stage.deliverables.length}):
                                 </span>
-                                <div className="flex items-center gap-1 flex-wrap">
+                                <div className="space-y-1">
                                   {stage.deliverables.map((deliv, idx) => (
-                                    <span
+                                    <div
                                       key={idx}
-                                      className="text-micro px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 opacity-80"
+                                      className="text-micro px-2 py-1 rounded bg-black/5 dark:bg-white/5 opacity-80 flex items-center gap-1.5"
                                     >
-                                      ✓ {deliv}
-                                    </span>
+                                      <span className="text-space-sparkle">✓</span>
+                                      <span>{deliv}</span>
+                                    </div>
                                   ))}
                                 </div>
                               </div>
                             )}
                           </div>
 
-                          <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-2">
-                            <PublicationToggle
-                              isDraft={Boolean(stage.isDraft)}
-                              onToggle={() =>
-                                onSaveProcessStage({ ...stage, isDraft: !stage.isDraft })
-                              }
-                            />
-                            <div className="flex items-center gap-1.5">
-                              <Button
-                                type="ghost"
-                                onClick={() => {
-                                  setStageTargetGroupId(group.id);
-                                  setEditingStage({ ...stage });
-                                }}
-                                className="!py-1 !px-2.5 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
-                              >
-                                <Edit2 size={12} className="mr-1 inline" /> Edit
-                              </Button>
-                              <button
-                                type="button"
-                                onClick={() => onDeleteProcessStage(stage.id)}
-                                className="p-1.5 text-red-500 hover:bg-red-500/10 rounded cursor-pointer"
-                                title="Remove stage"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
+                          {/* Stage Card Footer: publication chip and trash button removed */}
+                          <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-end gap-2">
+                            <Button
+                              type="ghost"
+                              onClick={() => handleStartEditStage(stage, group.id)}
+                              className="!py-1 !px-2.5 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
+                            >
+                              <Edit2 size={12} className="mr-1 inline" /> Edit Stage
+                            </Button>
                           </div>
                         </div>
                       ))}
@@ -382,6 +416,7 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                if (!isPhilosophyDirty) return;
                 onSavePhilosophy(editingPhilosophy);
                 setEditingPhilosophy(null);
               }}
@@ -393,11 +428,11 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
                 </label>
                 <input
                   type="text"
-                  required
-                  value={editingPhilosophy.tagline}
-                  onChange={(e) => setEditingPhilosophy({ ...editingPhilosophy, tagline: e.target.value })}
-                  className={inputClass}
+                  disabled
+                  value={displayedTagline}
+                  className={`${inputClass} opacity-60 cursor-not-allowed`}
                 />
+                <p className="text-micro opacity-40">Tagline is synced with the corresponding Landing Pages card.</p>
               </div>
 
               <div className="space-y-1">
@@ -415,21 +450,35 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
 
               <div className="space-y-1">
                 <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                  Secondary Description / Context
+                  Bottom Subtext (Footer Row)
                 </label>
                 <textarea
-                  rows={3}
-                  value={editingPhilosophy.extraDescription || ''}
-                  onChange={(e) => setEditingPhilosophy({ ...editingPhilosophy, extraDescription: e.target.value })}
+                  rows={2}
+                  required
+                  value={editingPhilosophy.subtext || ''}
+                  onChange={(e) => setEditingPhilosophy({ ...editingPhilosophy, subtext: e.target.value })}
+                  placeholder="e.g. Purpose-built architectural and design-build responses..."
                   className={inputClass}
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/10 dark:border-white/10">
-                <Button type="ghost" onClick={() => setEditingPhilosophy(null)} label="Cancel" />
-                <Button type="filled" htmlType="submit">
-                  <Save size={14} className="mr-1.5 inline" /> Save Philosophy
-                </Button>
+              <div className="flex items-center justify-between pt-4 border-t border-black/10 dark:border-white/10">
+                <PublicationToggle
+                  isDraft={Boolean(editingPhilosophy.isDraft)}
+                  onToggle={() =>
+                    setEditingPhilosophy({
+                      ...editingPhilosophy,
+                      isDraft: !editingPhilosophy.isDraft,
+                    })
+                  }
+                />
+
+                <div className="flex items-center gap-2">
+                  <Button type="ghost" onClick={() => setEditingPhilosophy(null)} label="Cancel" />
+                  <Button type="filled" htmlType="submit" disabled={!isPhilosophyDirty}>
+                    <Save size={14} className="mr-1.5 inline" /> Save Page Details
+                  </Button>
+                </div>
               </div>
             </form>
           </div>
@@ -462,6 +511,7 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                if (!isGroupDirty) return;
                 onSaveStageGroup(editingGroup);
                 setEditingGroup(null);
               }}
@@ -481,44 +531,46 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Grid Column Span
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    value={editingGroup.colSpan}
-                    onChange={(e) =>
-                      setEditingGroup({ ...editingGroup, colSpan: parseInt(e.target.value, 10) || 1 })
-                    }
-                    className={inputClass}
-                  />
-                  <p className="text-micro opacity-40">Width in timeline columns.</p>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Sort Order
-                  </label>
-                  <input
-                    type="number"
-                    value={editingGroup.sortOrder}
-                    onChange={(e) =>
-                      setEditingGroup({ ...editingGroup, sortOrder: parseInt(e.target.value, 10) || 0 })
-                    }
-                    className={inputClass}
-                  />
-                </div>
+              {/* Grid Column Span removed, Sort order rendered directly */}
+              <div className="space-y-1">
+                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                  Sort Order
+                </label>
+                <input
+                  type="number"
+                  value={editingGroup.sortOrder}
+                  onChange={(e) =>
+                    setEditingGroup({ ...editingGroup, sortOrder: parseInt(e.target.value, 10) || 0 })
+                  }
+                  className={inputClass}
+                />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/10 dark:border-white/10">
-                <Button type="ghost" onClick={() => setEditingGroup(null)} label="Cancel" />
-                <Button type="filled" htmlType="submit">
-                  <Save size={14} className="mr-1.5 inline" /> Save Stage Group
-                </Button>
+              {/* Trash icon moved inside the modal window */}
+              <div className="flex items-center justify-between pt-4 border-t border-black/10 dark:border-white/10">
+                {stageGroups.some((g) => g.id === editingGroup.id) ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to delete stage group "${editingGroup.name}"?`)) {
+                        onDeleteStageGroup(editingGroup.id);
+                        setEditingGroup(null);
+                      }
+                    }}
+                    className="text-red-500 hover:text-red-600 dark:hover:text-red-400 text-mini flex items-center gap-1.5 cursor-pointer font-medium"
+                  >
+                    <Trash2 size={14} /> Delete Group
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                <div className="flex items-center gap-3">
+                  <Button type="ghost" onClick={() => setEditingGroup(null)} label="Cancel" />
+                  <Button type="filled" htmlType="submit" disabled={!isGroupDirty}>
+                    <Save size={14} className="mr-1.5 inline" /> Save Stage Group
+                  </Button>
+                </div>
               </div>
             </form>
           </div>
@@ -551,6 +603,7 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                if (!isStageDirty) return;
                 onSaveProcessStage({ ...editingStage, stageGroupId: stageTargetGroupId });
                 setEditingStage(null);
               }}
@@ -586,32 +639,18 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Subtitle / Action Tag
-                  </label>
-                  <input
-                    type="text"
-                    value={editingStage.subtitle}
-                    onChange={(e) => setEditingStage({ ...editingStage, subtitle: e.target.value })}
-                    placeholder="e.g. Feasibility & Solar Mapping"
-                    className={inputClass}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Estimated Duration
-                  </label>
-                  <input
-                    type="text"
-                    value={editingStage.duration}
-                    onChange={(e) => setEditingStage({ ...editingStage, duration: e.target.value })}
-                    placeholder="e.g. 2-4 Weeks"
-                    className={inputClass}
-                  />
-                </div>
+              {/* Subtitle / Action Tag field removed */}
+              <div className="space-y-1">
+                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                  Estimated Duration
+                </label>
+                <input
+                  type="text"
+                  value={editingStage.duration}
+                  onChange={(e) => setEditingStage({ ...editingStage, duration: e.target.value })}
+                  placeholder="e.g. 2-4 Weeks"
+                  className={inputClass}
+                />
               </div>
 
               <div className="space-y-1">
@@ -627,9 +666,11 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
                 />
               </div>
 
+              {/* Key Deliverables listed one item per row via layout="rows" */}
               <div className="pt-2">
                 <DynamicListField
                   mode="strings"
+                  layout="rows"
                   label="Key Deliverables"
                   placeholder="e.g. Solar Path Diagrams, 3D Schematics, Permit Set"
                   helperText="List formal outputs received by the client upon completing this stage."
@@ -638,11 +679,31 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/10 dark:border-white/10">
-                <Button type="ghost" onClick={() => setEditingStage(null)} label="Cancel" />
-                <Button type="filled" htmlType="submit">
-                  <Save size={14} className="mr-1.5 inline" /> Save Process Stage
-                </Button>
+              {/* Trash icon inside modal and save enabled only in dirty state */}
+              <div className="flex items-center justify-between pt-4 border-t border-black/10 dark:border-white/10">
+                {stageGroups.some((g) => g.stages?.some((s) => s.id === editingStage.id)) ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to delete stage "${editingStage.title}"?`)) {
+                        onDeleteProcessStage(editingStage.id);
+                        setEditingStage(null);
+                      }
+                    }}
+                    className="text-red-500 hover:text-red-600 dark:hover:text-red-400 text-mini flex items-center gap-1.5 cursor-pointer font-medium"
+                  >
+                    <Trash2 size={14} /> Delete Stage
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                <div className="flex items-center gap-3">
+                  <Button type="ghost" onClick={() => setEditingStage(null)} label="Cancel" />
+                  <Button type="filled" htmlType="submit" disabled={!isStageDirty}>
+                    <Save size={14} className="mr-1.5 inline" /> Save Process Stage
+                  </Button>
+                </div>
               </div>
             </form>
           </div>

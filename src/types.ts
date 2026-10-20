@@ -11,8 +11,21 @@ export interface ProjectMediaItem {
   sortOrder?: number;
 }
 
+export interface ProjectContributor {
+  id?: string;
+  projectId?: string;
+  memberId: string;
+  memberName?: string;
+  memberRole?: string;
+  memberImage?: string;
+  roleInProject: string;
+  description?: string;
+  sortOrder?: number;
+}
+
 export interface Project {
-  id: string;
+  id: string; // UUID primary key (or slug fallback for mock data)
+  slug?: string; // Human-readable URL slug e.g. 'urban-living-1'
   projectCode?: string; // YYNN format, e.g. 2601
   title: string;
   category: string;
@@ -34,10 +47,11 @@ export interface Project {
   isDraft?: boolean;
   specs: {
     area?: string;
-    scope: string;
-    duration: string;
+    scope?: string;
+    duration?: string;
     materials?: string[];
   };
+  contributors?: ProjectContributor[];
 }
 
 
@@ -63,9 +77,27 @@ export interface Service {
 
 export interface MemberInvolvement {
   projectId: string;
+  projectSlug?: string;
   projectTitle: string;
   roleInProject: string;
+  projectRoleIds?: string[];
   description: string;
+}
+
+export interface License {
+  id: string;
+  title: string;
+  abbreviation?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface ProjectRole {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  isActive?: boolean;
 }
 
 export interface Track {
@@ -138,6 +170,7 @@ export interface Member {
   titles?: string;
   role: string;
   roles?: string[];
+  otherRoleIds?: string[];
   primaryRoleId?: string;
   trackId?: string;
   license?: string;
@@ -148,7 +181,9 @@ export interface Member {
   fullBio: string;
   personalEmail?: string;
   contactNumber?: string;
+  addressDetails?: import('@/components/forms/form-fields/types').PhAddress;
   portfolioUrl?: string;
+  externalUrl?: string;
   dateOfHiring?: string;
   dateOfSeparation?: string | null;
   isCurrentlyHired?: boolean;
@@ -172,6 +207,27 @@ export interface StudioWriteups {
   subSlogan: string;
   philosophy: string;
   cultureStatement: string;
+}
+
+export interface CareerPrivacyData {
+  title: string;
+  subtitle: string;
+  badge?: string;
+  items: string[];
+  closeLabel?: string;
+}
+
+export interface PartnerConditionCategory {
+  title: string;
+  subtitle: string;
+  badge?: string;
+  items: string[];
+}
+
+export interface PartnerConditionsData {
+  builder: PartnerConditionCategory;
+  consultant: PartnerConditionCategory;
+  supplier: PartnerConditionCategory;
 }
 
 export interface SitePage {
@@ -205,6 +261,20 @@ export interface ServicePillar {
   desc: string;
 }
 
+export interface ServiceAccordionItem {
+  id: string;
+  serviceId: string;
+  columnIndex: number;
+  title: string;
+  content: string;
+  linkText?: string | null;
+  linkHref?: string | null;
+  sortOrder: number;
+  isDraft: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface ServiceOffering {
   id: string;
   title: string;
@@ -214,8 +284,9 @@ export interface ServiceOffering {
   extraDescription?: string | null;
   imageUrl?: string | null;
   subtext: string;
-  pillars: ServicePillar[];
-  contentColumns: unknown[];
+  pillars?: ServicePillar[];
+  contentColumns?: unknown[];
+  accordions?: ServiceAccordionItem[];
   sortOrder: number;
   isDraft: boolean;
 }

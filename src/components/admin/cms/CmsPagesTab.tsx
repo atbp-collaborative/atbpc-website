@@ -5,468 +5,242 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { Lock, Edit2, Globe, Save, X, Eye, EyeOff } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { SitePage, NavigationCardItem } from '@/types';
 import { PublicationToggle } from '@/components/admin/PublicationToggle';
-import { Button } from '@/components/primitives/buttons/Button';
 import { useTheme } from '@/context/ThemeContext';
-import { ImageManagerField } from '@/components/admin/ImageManagerField';
 
 interface CmsPagesTabProps {
   pages: SitePage[];
-  cards: NavigationCardItem[];
   onSavePage: (page: SitePage) => void;
-  onSaveCard: (card: NavigationCardItem) => void;
+  cards?: NavigationCardItem[];
+}
+
+const SUBPAGE_TEMPLATES: SitePage[] = [
+  // 1. contact/case-study-house subpages
+  {
+    id: 'contact/case-study-house/discovery-session',
+    title: 'schedule a discovery session',
+    subtitle: 'for project intake, site feasibility & spatial planning consultations',
+    heroImageUrl: '/images/studio_services_img_1785469964556.jpg',
+    isDraft: false,
+  },
+  {
+    id: 'contact/case-study-house/request-a-proposal',
+    title: 'request a proposal',
+    subtitle: 'for official cost estimates and formal project proposals',
+    heroImageUrl: '/images/production_drawings_1783495233053.jpg',
+    isDraft: false,
+  },
+  {
+    id: 'contact/case-study-house/contact-info',
+    title: 'studio hours & location',
+    subtitle: 'headquarters, physical visits, interactive map & contact coordinates',
+    heroImageUrl: '/images/contact_headquarters_img_1785470005846.jpg',
+    isDraft: false,
+  },
+
+  // 2. contact/grow-with-us subpages
+  {
+    id: 'contact/grow-with-us/apprenticeship-programs',
+    title: 'apprenticeship programs',
+    subtitle: 'for on-the-job training requirements & licensure mentorship',
+    heroImageUrl: '/images/studio_people_img_1785469993286.jpg',
+    isDraft: false,
+  },
+  {
+    id: 'contact/grow-with-us/regular-programs',
+    title: 'regular programs',
+    subtitle: 'for licensed architects, project directors & design practitioners',
+    heroImageUrl: '/images/production_drawings_1783495233053.jpg',
+    isDraft: false,
+  },
+
+  // 3. contact/partner-with-us subpages
+  {
+    id: 'contact/partner-with-us/supplier',
+    title: 'suppliers',
+    subtitle: 'for material suppliers & trade product specifications',
+    heroImageUrl: '/images/kiosk_coffee_bar_1783495252161.jpg',
+    isDraft: false,
+  },
+  {
+    id: 'contact/partner-with-us/consultant',
+    title: 'consultants',
+    subtitle: 'for engineering & specialty technical consultants',
+    heroImageUrl: '/images/contact_headquarters_img_1785470005846.jpg',
+    isDraft: false,
+  },
+  {
+    id: 'contact/partner-with-us/builder',
+    title: 'builders',
+    subtitle: 'for trade contractors & specialty builders',
+    heroImageUrl: '/images/studio_process_img_1785469980353.jpg',
+    isDraft: false,
+  },
+];
+
+const SUBPAGE_CATEGORIES = [
+  { id: 'all', label: 'All Subpages' },
+  { id: 'case-study-house', label: 'Case Study House' },
+  { id: 'grow-with-us', label: 'Grow With Us' },
+  { id: 'partner-with-us', label: 'Partner With Us' },
+];
+
+function getSubpageCategory(id: string): { label: string; id: string } {
+  const norm = id.toLowerCase();
+  if (norm.includes('case-study-house')) return { label: 'Case Study House', id: 'case-study-house' };
+  if (norm.includes('grow-with-us')) return { label: 'Grow With Us', id: 'grow-with-us' };
+  if (norm.includes('partner-with-us')) return { label: 'Partner With Us', id: 'partner-with-us' };
+  return { label: 'Subpage', id: 'all' };
+}
+
+function getThumbnailForPage(page: SitePage, cards: NavigationCardItem[] = []): string {
+  const normPageId = page.id.toLowerCase().replace(/^\/+|\/+$/g, '');
+  const lastSegment = normPageId.split('/').pop() || '';
+
+  const matched = cards.find((c) => {
+    const normTarget = (c.targetHref || '').toLowerCase().replace(/^\/+|\/+$/g, '');
+    if (normTarget && (normTarget === normPageId || normTarget.endsWith(normPageId) || normPageId.endsWith(normTarget))) {
+      return true;
+    }
+    const normKey = (c.cardKey || '').toLowerCase();
+    if (normKey && normKey === lastSegment) {
+      return true;
+    }
+    return false;
+  });
+
+  return matched?.imageUrl || page.heroImageUrl || '';
 }
 
 export const CmsPagesTab: React.FC<CmsPagesTabProps> = ({
   pages,
-  cards,
   onSavePage,
-  onSaveCard,
+  cards = [],
 }) => {
   const { isDarkMode } = useTheme();
 
-  // Page editing modal state
-  const [editingPage, setEditingPage] = useState<SitePage | null>(null);
+  // Category filter state
+  const [activeCategory, setActiveCategory] = useState<string>('all');
 
-  // Card editing modal state
-  const [editingCard, setEditingCard] = useState<NavigationCardItem | null>(null);
+  // Merge incoming pages from DB with SUBPAGE_TEMPLATES
+  const activeSubpages = useMemo(() => {
+    return SUBPAGE_TEMPLATES.map((tmpl) => {
+      const match = pages.find((p) => {
+        const pId = p.id.toLowerCase().replace(/^\/+|\/+$/g, '');
+        const tmplId = tmpl.id.toLowerCase().replace(/^\/+|\/+$/g, '');
+        if (pId === tmplId) return true;
+        const pLast = pId.split('/').pop();
+        const tmplLast = tmplId.split('/').pop();
+        return Boolean(pLast && pLast === tmplLast);
+      });
+      return match ? { ...tmpl, ...match, id: tmpl.id } : tmpl;
+    });
+  }, [pages]);
 
-  const inputClass = `w-full text-caption px-3.5 py-2 rounded-lg border outline-none transition-all ${
-    isDarkMode
-      ? 'border-bright-gray/20 bg-vintage-charcoal/50 text-white placeholder-bright-gray/40 focus:border-space-sparkle'
-      : 'border-vintage-charcoal/20 bg-white text-vintage-charcoal placeholder-vintage-charcoal/40 focus:border-space-sparkle'
-  }`;
-
-  const handleSavePageSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingPage) return;
-    onSavePage(editingPage);
-    setEditingPage(null);
-  };
-
-  const handleSaveCardSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingCard) return;
-    onSaveCard(editingCard);
-    setEditingCard(null);
-  };
+  const filteredSubpages = useMemo(() => {
+    if (activeCategory === 'all') return activeSubpages;
+    return activeSubpages.filter((p) => getSubpageCategory(p.id).id === activeCategory);
+  }, [activeSubpages, activeCategory]);
 
   return (
-    <div className="space-y-10">
-      {/* SECTION 1: SITE PAGES */}
+    <div className="space-y-6">
       <div className="space-y-4">
-        <div className="flex items-center justify-between border-b pb-3 border-black/10 dark:border-white/10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3 border-black/10 dark:border-white/10">
           <div>
             <h3 className="text-body font-bold flex items-center gap-2">
-              <Globe size={18} className="text-space-sparkle" /> Site Pages &amp; Metadata
+              <Globe size={18} className="text-space-sparkle" /> Content Pages ({filteredSubpages.length})
             </h3>
             <p className="text-mini opacity-60">
-              Manage subtitles, hero imagery, and SEO metadata. Page slugs and H1 titles are SEO-locked.
+              Manage publication visibility for contact and outreach subpages.
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {pages.map((page) => (
-            <div
-              key={page.id}
-              className={`p-5 rounded-xl border flex flex-col justify-between transition-all ${
-                isDarkMode
-                  ? 'bg-vintage-charcoal/60 border-white/10 hover:border-space-sparkle/40'
-                  : 'bg-white border-black/10 hover:border-space-sparkle/40 shadow-xs'
-              }`}
-            >
-              <div className="space-y-3">
-                {/* Hero preview or placeholder */}
-                <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-black/10 border border-black/10 dark:border-white/10">
-                  {page.heroImageUrl ? (
-                    <Image
-                      src={page.heroImageUrl}
-                      alt={page.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center opacity-40 text-micro font-mono">
-                      No Hero Media
-                    </div>
-                  )}
+        {/* Category Filter Chips */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {SUBPAGE_CATEGORIES.map((cat) => {
+            const count =
+              cat.id === 'all'
+                ? activeSubpages.length
+                : activeSubpages.filter((p) => getSubpageCategory(p.id).id === cat.id).length;
+            const isSelected = activeCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-3 py-1.5 rounded-lg text-micro font-medium whitespace-nowrap transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-space-sparkle text-white shadow-xs font-semibold'
+                    : isDarkMode
+                      ? 'bg-vintage-charcoal/80 text-bright-gray/70 hover:bg-white/5 border border-white/10'
+                      : 'bg-white text-vintage-charcoal/70 hover:bg-black/5 border border-black/10'
+                }`}
+              >
+                {cat.label} ({count})
+              </button>
+            );
+          })}
+        </div>
 
-                  {/* SEO-Locked badge */}
-                  <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded text-micro font-mono uppercase bg-black/70 text-white backdrop-blur-xs">
-                    <Lock size={10} className="text-amber-400" /> SEO Locked
+        {/* LIST ONLY VIEW */}
+        <div className="space-y-3">
+          {filteredSubpages.map((page) => {
+            const category = getSubpageCategory(page.id);
+            const displaySlug = page.id.startsWith('/') ? page.id : `/${page.id}`;
+            const thumbnail = getThumbnailForPage(page, cards);
+
+            return (
+              <div
+                key={page.id}
+                className={`p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all ${
+                  isDarkMode
+                    ? 'bg-vintage-charcoal/60 border-white/10 hover:border-space-sparkle/40'
+                    : 'bg-white border-black/10 hover:border-space-sparkle/40 shadow-xs'
+                }`}
+              >
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  <div className="relative w-20 h-14 sm:w-28 sm:h-18 rounded-lg overflow-hidden bg-black/10 shrink-0 border border-black/10 dark:border-white/10">
+                    {thumbnail ? (
+                      <Image
+                        src={thumbnail}
+                        alt={page.title}
+                        fill
+                        sizes="120px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center opacity-40 text-micro font-mono">
+                        No Media
+                      </div>
+                    )}
                   </div>
 
-                  {/* Status chip */}
-                  <div className="absolute top-2 right-2">
-                    <span
-                      className={`px-2 py-0.5 rounded text-micro font-mono uppercase font-semibold ${
-                        page.isDraft
-                          ? 'bg-amber-500/90 text-white'
-                          : 'bg-emerald-600/90 text-white'
-                      }`}
-                    >
-                      {page.isDraft ? 'Draft' : 'Published'}
-                    </span>
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <h4 className="font-bold text-caption sm:text-body line-clamp-1 lowercase">
+                      {page.title}
+                    </h4>
+                    <p className="text-micro font-mono opacity-50 uppercase truncate" title={displaySlug}>
+                      {displaySlug}
+                    </p>
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center gap-2 text-micro font-mono opacity-50 uppercase">
-                    <span>/{page.id}</span>
-                  </div>
-                  <h4 className="font-bold text-caption sm:text-body line-clamp-1 lowercase">
-                    {page.title}
-                  </h4>
-                  <p className="text-mini opacity-70 line-clamp-2 mt-1">
-                    {page.subtitle || 'No subtitle provided.'}
-                  </p>
+                <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                  <PublicationToggle
+                    isDraft={Boolean(page.isDraft)}
+                    onToggle={() => onSavePage({ ...page, isDraft: !page.isDraft })}
+                  />
                 </div>
               </div>
-
-              <div className="pt-4 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-2 mt-4">
-                <PublicationToggle
-                  isDraft={Boolean(page.isDraft)}
-                  onToggle={() => onSavePage({ ...page, isDraft: !page.isDraft })}
-                />
-                <Button
-                  type="ghost"
-                  onClick={() => setEditingPage({ ...page })}
-                  className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
-                >
-                  <Edit2 size={13} className="mr-1 inline" /> Edit Page
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
-
-      {/* SECTION 2: NAVIGATION CARDS */}
-      <div className="space-y-4 pt-6 border-t border-black/10 dark:border-white/10">
-        <div>
-          <h3 className="text-body font-bold">Interactive Navigation Cards ({cards.length})</h3>
-          <p className="text-mini opacity-60">
-            Control the teaser cards displayed across hubs (titles, taglines, subtexts, and images).
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {cards.map((card) => (
-            <div
-              key={card.id}
-              className={`p-5 rounded-xl border flex flex-col justify-between transition-all ${
-                isDarkMode
-                  ? 'bg-vintage-charcoal/60 border-white/10 hover:border-space-sparkle/40'
-                  : 'bg-white border-black/10 hover:border-space-sparkle/40 shadow-xs'
-              }`}
-            >
-              <div className="space-y-3">
-                <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-black/10 border border-black/10 dark:border-white/10">
-                  {card.imageUrl ? (
-                    <Image
-                      src={card.imageUrl}
-                      alt={card.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center opacity-40 text-micro font-mono">
-                      No Image
-                    </div>
-                  )}
-                  <div className="absolute top-2 left-2 px-2 py-0.5 rounded text-micro font-mono uppercase bg-black/70 text-white backdrop-blur-xs">
-                    {card.hubId}
-                  </div>
-                  <div className="absolute top-2 right-2">
-                    <span
-                      className={`px-2 py-0.5 rounded text-micro font-mono uppercase font-semibold ${
-                        card.isDraft ? 'bg-amber-500/90 text-white' : 'bg-emerald-600/90 text-white'
-                      }`}
-                    >
-                      {card.isDraft ? 'Draft' : 'Live'}
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-caption sm:text-body line-clamp-1 lowercase">
-                    {card.title}
-                  </h4>
-                  <p className="text-mini font-medium text-space-sparkle line-clamp-1">
-                    {card.tagline}
-                  </p>
-                  <p className="text-micro opacity-60 line-clamp-2 mt-1">
-                    {card.subtext}
-                  </p>
-                  <div className="flex items-center gap-1 flex-wrap pt-2">
-                    {card.tags?.map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="text-micro font-mono px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 opacity-70"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-2 mt-4">
-                <PublicationToggle
-                  isDraft={Boolean(card.isDraft)}
-                  onToggle={() => onSaveCard({ ...card, isDraft: !card.isDraft })}
-                />
-                <Button
-                  type="ghost"
-                  onClick={() => setEditingCard({ ...card })}
-                  className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
-                >
-                  <Edit2 size={13} className="mr-1 inline" /> Edit Card
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* EDIT SITE PAGE MODAL */}
-      {editingPage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div
-            className={`w-full max-w-2xl rounded-xl border p-6 max-h-[90vh] overflow-y-auto ${
-              isDarkMode
-                ? 'bg-vintage-charcoal border-white/10 text-bright-gray'
-                : 'bg-white border-black/10 text-vintage-charcoal'
-            }`}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-black/10 dark:border-white/10 mb-4">
-              <div>
-                <h3 className="text-body font-bold lowercase">edit page: {editingPage.title}</h3>
-                <span className="text-micro font-mono opacity-50">Slug: /{editingPage.id} (SEO Locked)</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingPage(null)}
-                className="p-1 opacity-60 hover:opacity-100 cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSavePageSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80 flex items-center gap-1.5">
-                  <Lock size={12} className="text-amber-500" /> Canonical Title (SEO Locked)
-                </label>
-                <input
-                  type="text"
-                  disabled
-                  value={editingPage.title}
-                  className={`${inputClass} opacity-60 cursor-not-allowed`}
-                />
-                <p className="text-micro opacity-40">Page titles and URL slugs are locked to preserve search indexing.</p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                  Page Subtitle / Tagline <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  value={editingPage.subtitle}
-                  onChange={(e) => setEditingPage({ ...editingPage, subtitle: e.target.value })}
-                  placeholder="Enter page subtitle or introductory philosophy..."
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <ImageManagerField
-                  single={true}
-                  label="Hero Banner Image"
-                  helperText="High-resolution banner photo for the top of this page."
-                  images={editingPage.heroImageUrl ? [editingPage.heroImageUrl] : []}
-                  onChange={(imgs) => setEditingPage({ ...editingPage, heroImageUrl: imgs[0] || '' })}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="space-y-1">
-                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Meta Title (Browser Tab &amp; Google)
-                  </label>
-                  <input
-                    type="text"
-                    value={editingPage.metaTitle || ''}
-                    onChange={(e) => setEditingPage({ ...editingPage, metaTitle: e.target.value })}
-                    placeholder="e.g. Services — ATBP Collaborative"
-                    className={inputClass}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Meta Description
-                  </label>
-                  <input
-                    type="text"
-                    value={editingPage.metaDescription || ''}
-                    onChange={(e) => setEditingPage({ ...editingPage, metaDescription: e.target.value })}
-                    placeholder="Brief description for search engines..."
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-lg border border-black/10 dark:border-white/10 mt-4">
-                <div>
-                  <span className="text-mini font-semibold block">Page Publication Status</span>
-                  <span className="text-micro opacity-60">Control public visibility and visitor access</span>
-                </div>
-                <PublicationToggle
-                  isDraft={Boolean(editingPage.isDraft)}
-                  onToggle={() => setEditingPage({ ...editingPage, isDraft: !editingPage.isDraft })}
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/10 dark:border-white/10">
-                <Button type="ghost" onClick={() => setEditingPage(null)} label="Cancel" />
-                <Button type="filled" htmlType="submit">
-                  <Save size={14} className="mr-1.5 inline" /> Save Page
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* EDIT NAVIGATION CARD MODAL */}
-      {editingCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div
-            className={`w-full max-w-2xl rounded-xl border p-6 max-h-[90vh] overflow-y-auto ${
-              isDarkMode
-                ? 'bg-vintage-charcoal border-white/10 text-bright-gray'
-                : 'bg-white border-black/10 text-vintage-charcoal'
-            }`}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-black/10 dark:border-white/10 mb-4">
-              <div>
-                <h3 className="text-body font-bold lowercase">edit card: {editingCard.title}</h3>
-                <span className="text-micro font-mono opacity-50">Hub: {editingCard.hubId} | Key: {editingCard.cardKey}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingCard(null)}
-                className="p-1 opacity-60 hover:opacity-100 cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveCardSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                  Card Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editingCard.title}
-                  onChange={(e) => setEditingCard({ ...editingCard, title: e.target.value })}
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                  Tagline (e.g. "for the way you live")
-                </label>
-                <input
-                  type="text"
-                  value={editingCard.tagline}
-                  onChange={(e) => setEditingCard({ ...editingCard, tagline: e.target.value })}
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                  Subtext (Description paragraph)
-                </label>
-                <textarea
-                  rows={2}
-                  value={editingCard.subtext}
-                  onChange={(e) => setEditingCard({ ...editingCard, subtext: e.target.value })}
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <ImageManagerField
-                  single={true}
-                  label="Card Background Image"
-                  helperText="Visual cover preview photograph for this card."
-                  images={editingCard.imageUrl ? [editingCard.imageUrl] : []}
-                  onChange={(imgs) => setEditingCard({ ...editingCard, imageUrl: imgs[0] || '' })}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Destination URL (Href)
-                  </label>
-                  <input
-                    type="text"
-                    value={editingCard.targetHref}
-                    onChange={(e) => setEditingCard({ ...editingCard, targetHref: e.target.value })}
-                    className={inputClass}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Sort Order
-                  </label>
-                  <input
-                    type="number"
-                    value={editingCard.sortOrder}
-                    onChange={(e) => setEditingCard({ ...editingCard, sortOrder: parseInt(e.target.value, 10) || 0 })}
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-lg border border-black/10 dark:border-white/10 mt-4">
-                <div>
-                  <span className="text-mini font-semibold block">Card Visibility</span>
-                  <span className="text-micro opacity-60">Control visibility on public hub pages</span>
-                </div>
-                <PublicationToggle
-                  isDraft={Boolean(editingCard.isDraft)}
-                  onToggle={() => setEditingCard({ ...editingCard, isDraft: !editingCard.isDraft })}
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/10 dark:border-white/10">
-                <Button type="ghost" onClick={() => setEditingCard(null)} label="Cancel" />
-                <Button type="filled" htmlType="submit">
-                  <Save size={14} className="mr-1.5 inline" /> Save Card
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -21,6 +21,7 @@ import {
   savePersonAction,
   deletePersonAction,
   togglePersonDraftAction,
+  fetchAdminPeopleAction,
 } from '@/app/actions/admin-mutations';
 import { toast } from 'sonner';
 
@@ -37,7 +38,8 @@ export function useAdminPeople() {
   const refresh = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await getMembersFromDataService(true);
+      const dbPeople = await fetchAdminPeopleAction();
+      const data = dbPeople.length > 0 ? dbPeople : await getMembersFromDataService(true);
       setMembers(data);
 
       // Check if user created any local members before live Supabase sync
@@ -83,6 +85,13 @@ export function useAdminPeople() {
         (visibilityFilter === 'published' && !member.isDraft);
 
       return matchesSearch && matchesCategory && matchesVisibility;
+    })
+    .sort((a, b) => {
+      const aHired = a.isCurrentlyHired !== false;
+      const bHired = b.isCurrentlyHired !== false;
+      if (aHired && !bHired) return -1;
+      if (!aHired && bHired) return 1;
+      return (a.displayOrder ?? 99) - (b.displayOrder ?? 99);
     });
   }, [members, searchTerm, classificationFilter, visibilityFilter]);
 

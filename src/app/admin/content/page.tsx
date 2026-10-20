@@ -6,11 +6,12 @@
 'use client';
 
 import React from 'react';
-import { Globe, Compass, Briefcase, Sparkles, RefreshCw } from 'lucide-react';
+import { Globe, Compass, Briefcase, Sparkles, RefreshCw, LayoutTemplate } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { Button } from '@/components/primitives/buttons/Button';
 import { useAdminCms, CmsTab } from '@/hooks/admin/useAdminCms';
 import { CmsPagesTab } from '@/components/admin/cms/CmsPagesTab';
+import { CmsLandingPagesTab } from '@/components/admin/cms/CmsLandingPagesTab';
 import { CmsProcessTab } from '@/components/admin/cms/CmsProcessTab';
 import { CmsServicesTab } from '@/components/admin/cms/CmsServicesTab';
 import { CmsHomeTab } from '@/components/admin/cms/CmsHomeTab';
@@ -43,19 +44,20 @@ export default function AdminContentPage() {
     selectedServiceId,
     setSelectedServiceId,
     saveService,
+    saveServiceAccordion,
+    deleteServiceAccordion,
     // Tab 4
     slides,
-    slogans,
     saveSlide,
     deleteSlide,
-    saveSlogans,
+    reorderSlides,
   } = useAdminCms();
 
   const tabs: { id: CmsTab; label: string; icon: React.ElementType }[] = [
-    { id: 'pages', label: 'Pages & Navigation', icon: Globe },
-    { id: 'process', label: 'Process & Stages', icon: Compass },
-    { id: 'services', label: 'Services & Scopes', icon: Briefcase },
-    { id: 'home', label: 'Homepage & Slogans', icon: Sparkles },
+    { id: 'landing-pages', label: 'Navigation Cards', icon: LayoutTemplate },
+    { id: 'pages', label: 'Content Pages', icon: Globe },
+    { id: 'services', label: 'Services', icon: Briefcase },
+    { id: 'process', label: 'Processes', icon: Compass },
   ];
 
   return (
@@ -110,11 +112,34 @@ export default function AdminContentPage() {
           </div>
         ) : (
           <div>
+            {activeTab === 'landing-pages' && (
+              <CmsLandingPagesTab
+                cards={cards}
+                onSaveCard={saveCard}
+                slides={slides}
+                onSaveSlide={saveSlide}
+                onDeleteSlide={deleteSlide}
+                onReorderSlides={reorderSlides}
+              />
+            )}
+
             {activeTab === 'pages' && (
               <CmsPagesTab
                 pages={pages}
-                cards={cards}
                 onSavePage={savePage}
+                cards={cards}
+              />
+            )}
+
+            {activeTab === 'services' && (
+              <CmsServicesTab
+                services={services}
+                selectedServiceId={selectedServiceId}
+                onSelectServiceId={setSelectedServiceId}
+                onSaveService={saveService}
+                onSaveServiceAccordion={saveServiceAccordion}
+                onDeleteServiceAccordion={deleteServiceAccordion}
+                cards={cards}
                 onSaveCard={saveCard}
               />
             )}
@@ -130,25 +155,7 @@ export default function AdminContentPage() {
                 onDeleteStageGroup={deleteStageGroup}
                 onSaveProcessStage={saveProcessStage}
                 onDeleteProcessStage={deleteProcessStage}
-              />
-            )}
-
-            {activeTab === 'services' && (
-              <CmsServicesTab
-                services={services}
-                selectedServiceId={selectedServiceId}
-                onSelectServiceId={setSelectedServiceId}
-                onSaveService={saveService}
-              />
-            )}
-
-            {activeTab === 'home' && (
-              <CmsHomeTab
-                slides={slides}
-                slogans={slogans}
-                onSaveSlide={saveSlide}
-                onDeleteSlide={deleteSlide}
-                onSaveSlogans={saveSlogans}
+                cards={cards}
               />
             )}
           </div>

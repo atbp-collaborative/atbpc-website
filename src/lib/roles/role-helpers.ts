@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Role, RoleCategory, RoleTrack, Member } from '@/types';
+import { Role, RoleCategory, RoleTrack, Member, ProjectRole } from '@/types';
 
 /**
  * Visual styling classes for categories
@@ -81,26 +81,66 @@ export function formatTrackLabel(track: RoleTrack): string {
 
 /**
  * Checks if a member holds a specific role.
- * Matches either by explicit role IDs array (`member.roles`) or by primary role string matching (`member.role`).
+ * Matches by primaryRoleId, roles array, otherRoleIds array, or primary role string matching.
  */
 export function memberHasRole(member: Member, role: Role): boolean {
-  if (member.roles && member.roles.includes(role.id)) {
-    return true;
-  }
-  if (member.roles && member.roles.includes(role.title)) {
-    return true;
-  }
-  if (member.role) {
-    const normMemberRole = member.role.toLowerCase().trim();
-    const normRoleTitle = role.title.toLowerCase().trim();
-    if (normMemberRole === normRoleTitle) {
+  const normRoleTitle = role.title ? role.title.toLowerCase().trim() : '';
+  const cleanRoleCode = role.code ? role.code.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+
+  // 1. Check primaryRoleId
+  if (member.primaryRoleId) {
+    const normPrimary = member.primaryRoleId.toLowerCase().trim();
+    const cleanPrimary = normPrimary.replace(/[^a-z0-9]/g, '');
+
+    if (member.primaryRoleId === role.id) {
       return true;
     }
-    // Also match if code is in the role string, e.g. "[HRDT-03: Junior Architect]"
+    if (cleanRoleCode && (cleanPrimary === cleanRoleCode || cleanPrimary.includes(cleanRoleCode))) {
+      return true;
+    }
+    if (normRoleTitle && normPrimary === normRoleTitle) {
+      return true;
+    }
+  }
+
+  // 2. Check explicit role arrays (roles, otherRoleIds)
+  const roleList = [
+    ...(member.roles || []),
+    ...(member.otherRoleIds || []),
+  ];
+
+  if (roleList.length > 0) {
+    for (const rId of roleList) {
+      if (rId === role.id) {
+        return true;
+      }
+      const normRId = rId.toLowerCase().trim();
+      const cleanRId = normRId.replace(/[^a-z0-9]/g, '');
+      if (cleanRoleCode && (cleanRId === cleanRoleCode || cleanRId.includes(cleanRoleCode))) {
+        return true;
+      }
+      if (normRoleTitle && normRId === normRoleTitle) {
+        return true;
+      }
+    }
+  }
+
+  // 3. Check legacy member.role string
+  if (member.role) {
+    const normMemberRole = member.role.toLowerCase().trim();
+    const cleanMemberRole = normMemberRole.replace(/[^a-z0-9]/g, '');
+
+    if (normRoleTitle && normMemberRole === normRoleTitle) {
+      return true;
+    }
     if (role.code && normMemberRole.includes(role.code.toLowerCase())) {
       return true;
     }
+    if (cleanRoleCode && cleanMemberRole.includes(cleanRoleCode)) {
+      return true;
+    }
   }
+
   return false;
 }
 
@@ -116,4 +156,92 @@ export function getRolesForMember(member: Member, allRoles: Role[]): Role[] {
  */
 export function getMembersForRole(role: Role, allMembers: Member[]): Member[] {
   return allMembers.filter((member) => memberHasRole(member, role));
+}
+
+/**
+ * Evaluates a search term and determines whether it most strongly matches
+ * a Person name, a Studio Role, or a Project Role.
+ */
+export function detectIntelligentRolesViewMode(
+  term: string,
+  roles: Role[],
+  members: Member[],
+  projectRoles: ProjectRole[]
+): 'roles' | 'persons' | 'project-roles' | null {
+  const clean = term.toLowerCase().trim();
+  if (clean.length < 2) return null;
+
+  // 1. Score matching for members (names, pseudonyms, titles)
+  let personScore = 0;
+  for (const m of members) {
+    const fullName = m.name?.toLowerCase() || '';
+    const firstName = m.firstName?.toLowerCase() || '';
+    const lastName = m.lastName?.toLowerCase() || '';
+    const pseudonym = m.pseudonym?.toLowerCase() || '';
+
+    if (fullName === clean || firstName === clean || lastName === clean) {
+      personScore += 100;
+    } else if (
+      fullName.startsWith(clean) ||
+      firstName.startsWith(clean) ||
+      lastName.startsWith(clean) ||
+      pseudonym.startsWith(clean)
+    ) {
+      personScore += 60;
+    } else if (
+      fullName.includes(clean) ||
+      pseudonym.includes(clean) ||
+      (m.role && m.role.toLowerCase().includes(clean))
+    ) {
+      personScore += 25;
+    }
+  }
+
+  // 2. Score matching for project roles (name, code)
+  let projectRoleScore = 0;
+  for (const pr of projectRoles) {
+    const prName = pr.name?.toLowerCase() || '';
+    const prCode = pr.code?.toLowerCase() || '';
+
+    if (prName === clean || prCode === clean) {
+      projectRoleScore += 100;
+    } else if (prName.startsWith(clean) || prCode.startsWith(clean)) {
+      projectRoleScore += 60;
+    } else if (prName.includes(clean) || prCode.includes(clean)) {
+      projectRoleScore += 25;
+    }
+  }
+
+  // 3. Score matching for studio roles (title, code)
+  let studioRoleScore = 0;
+  for (const r of roles) {
+    const rTitle = r.title?.toLowerCase() || '';
+    const rCode = r.code?.toLowerCase() || '';
+
+    if (rTitle === clean || rCode === clean) {
+      studioRoleScore += 100;
+    } else if (rTitle.startsWith(clean) || rCode.startsWith(clean)) {
+      studioRoleScore += 60;
+    } else if (rTitle.includes(clean) || rCode.includes(clean)) {
+      studioRoleScore += 25;
+    }
+  }
+
+  const maxScore = Math.max(personScore, projectRoleScore, studioRoleScore);
+  if (maxScore < 25) return null;
+
+  if (personScore > studioRoleScore && personScore > projectRoleScore) {
+    return 'persons';
+  }
+  if (projectRoleScore > studioRoleScore && projectRoleScore > personScore) {
+    return 'project-roles';
+  }
+  if (studioRoleScore > personScore && studioRoleScore > projectRoleScore) {
+    return 'roles';
+  }
+
+  // Tie-breaker
+  if (personScore === maxScore) return 'persons';
+  if (projectRoleScore === maxScore) return 'project-roles';
+  return 'roles';
 }

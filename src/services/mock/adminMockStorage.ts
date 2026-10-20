@@ -8,11 +8,15 @@ import {
   Project,
   AdminUser,
   StudioWriteups,
+  CareerPrivacyData,
+  PartnerConditionsData,
   Role,
   Track,
   ProjectCategoryItem,
   ProjectTypologyItem,
   ContractTypeItem,
+  License,
+  ProjectRole,
 } from '@/types';
 import { MEMBERS_DATA } from '@/lib/dummy-data/works/members';
 import { PROJECTS_DATA } from '@/lib/dummy-data/works/projects';
@@ -21,6 +25,7 @@ import { CONTACT_INFO, ContactInfo } from '@/lib/dummy-data/contact/contact-info
 import { privacyPolicyModalData } from '@/lib/modals/privacy-policy';
 import { legalModalData } from '@/lib/modals/legal';
 import { ModalData } from '@/lib/modals/types';
+import { DEFAULT_STUDIO_WRITEUPS } from '@/lib/constants/studio-writeups';
 
 const STORAGE_KEYS = {
   MEMBERS: 'atbp_admin_members_v1',
@@ -30,18 +35,62 @@ const STORAGE_KEYS = {
   CATEGORIES: 'atbp_admin_categories_v1',
   TYPOLOGIES: 'atbp_admin_typologies_v1',
   CONTRACT_TYPES: 'atbp_admin_contract_types_v1',
+  LICENSES: 'atbp_admin_licenses_v1',
+  PROJECT_ROLES: 'atbp_admin_project_roles_v1',
   CONTACT: 'atbp_admin_contact_v1',
   PRIVACY: 'atbp_admin_privacy_v1',
+  CAREER_PRIVACY: 'atbp_admin_career_privacy_v1',
+  PARTNER_CONDITIONS: 'atbp_admin_partner_conditions_v1',
   LEGAL: 'atbp_admin_legal_v1',
   WRITEUPS: 'atbp_admin_writeups_v1',
   AUTH: 'atbp_admin_auth_user_v1',
 };
 
-const DEFAULT_WRITEUPS: StudioWriteups = {
-  tagline: 'Designing with Values. Building with Culture. Managing with Integrity.',
-  subSlogan: 'A Philippine architectural and design-build practice dedicated to cultural truth, spatial poetry, and structural honesty.',
-  philosophy: 'ATBP Collaborative operates under the licensed architectural practice of Architect Marchie Teodoro Borja. We champion honest construction standards, non-hidden markups, and contextual architecture suited to the Philippine climate and socio-economic landscape.',
-  cultureStatement: 'From indigenous vernacular tectonics to contemporary tropical minimalism, our works celebrate local craftsmanship, passive cooling, and enduring craftsmanship.'
+const DEFAULT_WRITEUPS: StudioWriteups = DEFAULT_STUDIO_WRITEUPS;
+
+export const DEFAULT_CAREER_PRIVACY: CareerPrivacyData = {
+  title: 'Privacy Statement',
+  subtitle: 'ATBP Collaborative • Data Privacy',
+  badge: 'Republic Act No. 10173',
+  items: [
+    '<p>ATBP Collaborative is committed to safeguarding the privacy and personal credentials of all applicants in accordance with <a href="https://www.officialgazette.gov.ph/2012/08/15/republic-act-no-10173/" target="_blank" rel="noopener noreferrer" class="underline hover:text-space-sparkle transition-colors">Republic Act No. 10173</a> (Data Privacy Act of 2012).</p>',
+    '<p>Any personal identifiers, contact numbers, links, video intros, or portfolio materials provided through this application portal are collected strictly for talent recruitment, portfolio evaluation, and potential employment assessment.</p>',
+    '<p>Your information will remain strictly confidential within our practice management and will never be disclosed to third parties without your explicit consent.</p>',
+  ],
+  closeLabel: 'Understood',
+};
+
+export const DEFAULT_PARTNER_CONDITIONS: PartnerConditionsData = {
+  builder: {
+    title: 'General Conditions for Builder Partnership',
+    subtitle: 'ATBP Collaborative • Builder Accreditation',
+    badge: 'PCAB & Integrity Standards',
+    items: [
+      '<p>1. <strong>Licensing & Integrity:</strong> Partner builders must hold valid PCAB licenses and tax registrations (BIR / SEC / DTI) matching their declared scope of work and construction category.</p>',
+      '<p>2. <strong>Workmanship Standards:</strong> All construction methods, site safety protocols, and material assemblies must adhere strictly to ATBP Collaborative architectural blueprints and specifications.</p>',
+      '<p>3. <strong>Contractual Transparency:</strong> Sample contracts and project execution methodologies are verified for cost-transparency, delay penalties, and warranty guarantees.</p>',
+    ],
+  },
+  consultant: {
+    title: 'General Conditions for Consultant Partnership',
+    subtitle: 'ATBP Collaborative • Consultant Accreditation',
+    badge: 'PRC / PTR Professional Standards',
+    items: [
+      '<p>1. <strong>Professional Licensing:</strong> Partner consultants and specialist firms must hold active PRC/PTR professional licenses or accredited corporate engineering practice permits.</p>',
+      '<p>2. <strong>Design Integrity & Calculation Standards:</strong> All technical calculations, BIM models, and structural/MEPFS drawings must align with national codes and studio specifications.</p>',
+      '<p>3. <strong>Confidentiality & Peer Review:</strong> Information disclosed through this portal is safeguarded for studio project matching, fee estimations, and inter-practice collaboration.</p>',
+    ],
+  },
+  supplier: {
+    title: 'General Conditions for Product Qualification',
+    subtitle: 'ATBP Collaborative • Supplier Accreditation',
+    badge: 'Material Quality Verification',
+    items: [
+      '<p>1. <strong>Quality Verification:</strong> All submitted material specifications, MSDS documents, and physical catalogs are pre-screened according to strict structural, aesthetic, and environmental sustainability standards prior to studio specification.</p>',
+      '<p>2. <strong>Warranty & Lead Times:</strong> Suppliers must provide verified lead times and manufacturer warranty coverage for custom millwork, finishes, and specialized hardware.</p>',
+      '<p>3. <strong>Data Confidentiality:</strong> Product documentation provided through this portal will be archived exclusively for internal procurement, mock-up schedules, and client bill-of-quantity estimations.</p>',
+    ],
+  },
 };
 
 function isClient(): boolean {
@@ -63,8 +112,15 @@ function setStored<T>(key: string, value: T): void {
   if (!isClient()) return;
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch (err) {
-    console.error(`Error writing ${key} to localStorage:`, err);
+  } catch (err: any) {
+    if (err?.name === 'QuotaExceededError' || err?.code === 22 || err?.number === -2147024882) {
+      console.warn(`[adminMockStorage] LocalStorage quota reached for key "${key}". Cleaning up stale cache.`);
+      try {
+        localStorage.removeItem(key);
+      } catch {}
+    } else {
+      console.warn(`[adminMockStorage] Warning writing ${key} to localStorage:`, err?.message || err);
+    }
   }
 }
 
@@ -172,14 +228,16 @@ export function getProjects(): Project[] {
   return getStored<Project[]>(STORAGE_KEYS.PROJECTS, PROJECTS_DATA);
 }
 
-export function getProjectById(id: string): Project | undefined {
+export function getProjectById(identifier: string): Project | undefined {
   const projects = getProjects();
-  return projects.find((p) => p.id === id);
+  return projects.find((p) => p.id === identifier || (p.slug && p.slug === identifier));
 }
 
 export function saveProject(project: Project): Project {
   const projects = getProjects();
-  const existingIdx = projects.findIndex((p) => p.id === project.id);
+  const existingIdx = projects.findIndex(
+    (p) => p.id === project.id || (Boolean(p.slug && project.slug) && p.slug === project.slug)
+  );
 
   let updatedProjects: Project[];
   if (existingIdx >= 0) {
@@ -372,6 +430,26 @@ export function getPrivacyPolicy(): ModalData {
 
 export function savePrivacyPolicy(data: ModalData): ModalData {
   setStored(STORAGE_KEYS.PRIVACY, data);
+  return data;
+}
+
+export function getCareerPrivacy(): CareerPrivacyData {
+  initializeAdminStorage();
+  return getStored<CareerPrivacyData>(STORAGE_KEYS.CAREER_PRIVACY, DEFAULT_CAREER_PRIVACY);
+}
+
+export function saveCareerPrivacy(data: CareerPrivacyData): CareerPrivacyData {
+  setStored(STORAGE_KEYS.CAREER_PRIVACY, data);
+  return data;
+}
+
+export function getPartnerConditions(): PartnerConditionsData {
+  initializeAdminStorage();
+  return getStored<PartnerConditionsData>(STORAGE_KEYS.PARTNER_CONDITIONS, DEFAULT_PARTNER_CONDITIONS);
+}
+
+export function savePartnerConditions(data: PartnerConditionsData): PartnerConditionsData {
+  setStored(STORAGE_KEYS.PARTNER_CONDITIONS, data);
   return data;
 }
 
@@ -606,9 +684,64 @@ export const INITIAL_CONTRACT_TYPES: ContractTypeItem[] = [
   { id: 'consultation-retainer', code: 'SCOPE-CONSULT-RETAIN', name: 'Consultation & Retainer Services', serviceTier: 'consultation', contractModel: 'Strategic Advisory Retainer', description: 'Ongoing architectural consulting, portfolio feasibility, and client-rep audits.', sortOrder: 50 },
 ];
 
+export const INITIAL_LICENSES_DATA: License[] = [
+  { id: 'lic-arch', title: 'Architect', abbreviation: 'RLA', sortOrder: 10, isActive: true },
+  { id: 'lic-int-des', title: 'Interior Designer', abbreviation: 'IDr', sortOrder: 20, isActive: true },
+  { id: 'lic-master-plumb', title: 'Master Plumber', abbreviation: 'RMP', sortOrder: 30, isActive: true },
+  { id: 'lic-master-elec', title: 'Master Electrician', abbreviation: 'RME', sortOrder: 40, isActive: true },
+  { id: 'lic-cpa', title: 'Accountant', abbreviation: 'CPA', sortOrder: 50, isActive: true },
+  { id: 'lic-civil-eng', title: 'Civil Engineer', abbreviation: 'CE', sortOrder: 60, isActive: true },
+  { id: 'lic-struct-eng', title: 'Structural Engineer', abbreviation: 'SE', sortOrder: 70, isActive: true },
+  { id: 'lic-sanitary-eng', title: 'Sanitary Engineer', abbreviation: 'SanE', sortOrder: 80, isActive: true },
+  { id: 'lic-reg-elec-eng', title: 'Registered Electrical Engineer', abbreviation: 'REE', sortOrder: 90, isActive: true },
+  { id: 'lic-prof-elec-eng', title: 'Professional Electrical Engineer', abbreviation: 'PEE', sortOrder: 100, isActive: true },
+  { id: 'lic-mech-eng', title: 'Mechanical Engineer', abbreviation: 'ME', sortOrder: 110, isActive: true },
+];
+
+export const INITIAL_PROJECT_ROLES_DATA: ProjectRole[] = [
+  { id: 'proj-role-arch-design', code: 'PR-ARCH', name: 'Architectural Design', description: 'Spatial programming, schematic concepts, exterior massing, and construction drawings.', isActive: true },
+  { id: 'proj-role-cost-est', code: 'PR-COST', name: 'Cost Estimates', description: 'Bill of quantities, cost feasibility, material takeoffs, and procurement budget control.', isActive: true },
+  { id: 'proj-role-elec-sys', code: 'PR-ELEC', name: 'Electrical Systems', description: 'Power distribution, lighting fixture layout, auxiliary communication, and solar load calculations.', isActive: true },
+  { id: 'proj-role-plumb-sys', code: 'PR-PLUMB', name: 'Plumbing Systems', description: 'Sanitary piping, domestic potable water supply, rainwater catchment, and drainage routing.', isActive: true },
+  { id: 'proj-role-bim-lead', code: 'PR-BIM', name: 'BIM Lead', description: 'Building information modeling coordination, 3D clash detection, and parametric Revit/IFC execution.', isActive: true },
+  { id: 'proj-role-arch-rend', code: 'PR-REND', name: 'Architectural Renderer', description: 'Photorealistic visual simulation, lighting ambiance studies, material texture mapping, and animations.', isActive: true },
+];
+
 export function getTracks(): Track[] {
   initializeAdminStorage();
   return getStored<Track[]>(STORAGE_KEYS.TRACKS, INITIAL_TRACKS_DATA);
+}
+
+export function getLicenses(): License[] {
+  initializeAdminStorage();
+  return getStored<License[]>(STORAGE_KEYS.LICENSES, INITIAL_LICENSES_DATA);
+}
+
+export function getProjectRoles(): ProjectRole[] {
+  initializeAdminStorage();
+  return getStored<ProjectRole[]>(STORAGE_KEYS.PROJECT_ROLES, INITIAL_PROJECT_ROLES_DATA);
+}
+
+export function saveProjectRole(projectRole: ProjectRole): ProjectRole {
+  const list = getProjectRoles();
+  const idx = list.findIndex((r) => r.id === projectRole.id);
+
+  let updated: ProjectRole[];
+  if (idx >= 0) {
+    updated = [...list];
+    updated[idx] = projectRole;
+  } else {
+    updated = [...list, projectRole];
+  }
+
+  setStored(STORAGE_KEYS.PROJECT_ROLES, updated);
+  return projectRole;
+}
+
+export function deleteProjectRole(id: string): void {
+  const list = getProjectRoles();
+  const updated = list.filter((r) => r.id !== id);
+  setStored(STORAGE_KEYS.PROJECT_ROLES, updated);
 }
 
 export function getProjectCategories(): ProjectCategoryItem[] {
@@ -641,6 +774,8 @@ export function resetAdminStorageToDefaults(): void {
   localStorage.removeItem(STORAGE_KEYS.CONTRACT_TYPES);
   localStorage.removeItem(STORAGE_KEYS.CONTACT);
   localStorage.removeItem(STORAGE_KEYS.PRIVACY);
+  localStorage.removeItem(STORAGE_KEYS.CAREER_PRIVACY);
+  localStorage.removeItem(STORAGE_KEYS.PARTNER_CONDITIONS);
   localStorage.removeItem(STORAGE_KEYS.LEGAL);
   localStorage.removeItem(STORAGE_KEYS.WRITEUPS);
   initializeAdminStorage();

@@ -17,6 +17,7 @@ interface StringListProps {
   label: string;
   placeholder?: string;
   helperText?: string;
+  layout?: 'chips' | 'rows';
 }
 
 interface PairItem {
@@ -49,7 +50,7 @@ export const DynamicListField: React.FC<DynamicListFieldProps> = (props) => {
   }`;
 
   if (props.mode === 'strings') {
-    const { items = [], onChange, label, placeholder = 'Add item...', helperText } = props;
+    const { items = [], onChange, label, placeholder = 'Add item...', helperText, layout = 'chips' } = props;
 
     const handleAdd = () => {
       if (!newString.trim()) return;
@@ -93,27 +94,52 @@ export const DynamicListField: React.FC<DynamicListFieldProps> = (props) => {
         </div>
 
         {items.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {items.map((item, idx) => (
-              <span
-                key={idx}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-mini border ${
-                  isDarkMode
-                    ? 'bg-white/5 border-white/10 text-bright-gray'
-                    : 'bg-black/5 border-black/10 text-vintage-charcoal'
-                }`}
-              >
-                <span>{item}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemove(idx)}
-                  className="hover:text-red-500 transition-colors cursor-pointer"
+          layout === 'rows' ? (
+            <div className="space-y-1.5 pt-1">
+              {items.map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg border text-caption ${
+                    isDarkMode
+                      ? 'bg-white/5 border-white/10 text-bright-gray'
+                      : 'bg-black/5 border-black/10 text-vintage-charcoal'
+                  }`}
                 >
-                  <Trash2 size={11} />
-                </button>
-              </span>
-            ))}
-          </div>
+                  <span className="truncate flex-1">{item}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(idx)}
+                    className="p-1 text-red-500 hover:bg-red-500/10 rounded cursor-pointer transition-colors shrink-0"
+                    title="Remove item"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {items.map((item, idx) => (
+                <span
+                  key={idx}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-mini border ${
+                    isDarkMode
+                      ? 'bg-white/5 border-white/10 text-bright-gray'
+                      : 'bg-black/5 border-black/10 text-vintage-charcoal'
+                  }`}
+                >
+                  <span>{item}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(idx)}
+                    className="hover:text-red-500 transition-colors cursor-pointer"
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )
         )}
       </div>
     );
@@ -130,7 +156,7 @@ export const DynamicListField: React.FC<DynamicListFieldProps> = (props) => {
   } = props;
 
   const handleAddPair = () => {
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim() || !newDesc.trim()) return;
     onChange([...items, { title: newTitle.trim(), description: newDesc.trim() }]);
     setNewTitle('');
     setNewDesc('');
@@ -201,7 +227,7 @@ export const DynamicListField: React.FC<DynamicListFieldProps> = (props) => {
           <Button
             type="filled"
             onClick={handleAddPair}
-            disabled={!newTitle.trim()}
+            disabled={!newTitle.trim() || !newDesc.trim()}
             className="!py-1.5 !px-3 text-mini"
           >
             <Plus size={13} className="mr-1 inline" /> Add Entry

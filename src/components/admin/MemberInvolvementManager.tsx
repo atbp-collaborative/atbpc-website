@@ -5,100 +5,126 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { MemberInvolvement, Project, Role } from '@/types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { MemberInvolvement, Project, ProjectRole, ProjectCategoryItem, ProjectTypologyItem } from '@/types';
 import { Plus, Trash2, Building, Briefcase, Filter } from 'lucide-react';
 import { Button } from '@/components/primitives/buttons/Button';
 import { useTheme } from '@/context/ThemeContext';
-import {
-  MAIN_CATEGORIES,
-  TYPOLOGY_MAP,
-  getTypologiesForCategory,
-} from '@/lib/projects/project-constants';
-import { getRoles } from '@/services/mock/adminMockStorage';
+import { ComboboxMultiSelect } from '@/components/admin/ComboboxMultiSelect';
+import { getProjectRolesFromSupabase } from '@/services/supabase/project-roles.service';
+import { getProjectCategories, getProjectTypologies } from '@/services/mock/adminMockStorage';
+import { supabasePublic } from '@/lib/supabase/public';
 
 interface MemberInvolvementManagerProps {
   involvements: MemberInvolvement[];
   allProjects: Project[];
-  allRoles?: Role[];
   onChange: (involvements: MemberInvolvement[]) => void;
 }
 
 export const MemberInvolvementManager: React.FC<MemberInvolvementManagerProps> = ({
   involvements = [],
   allProjects = [],
-  allRoles,
   onChange,
 }) => {
   const { isDarkMode } = useTheme();
+
+  // Dynamic reference tables state
+  const [categories, setCategories] = useState<ProjectCategoryItem[]>([]);
+  const [typologies, setTypologies] = useState<ProjectTypologyItem[]>([]);
+  const [projectRoles, setProjectRoles] = useState<ProjectRole[]>([]);
 
   // Cascading project selection states
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedTypology, setSelectedTypology] = useState<string>('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
-  // Role states (based on Manage Roles)
-  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
-  const [customRole, setCustomRole] = useState<string>('');
+  // Multi-chip project roles and description
+  const [selectedProjectRoleIds, setSelectedProjectRoleIds] = useState<string[]>([]);
   const [description, setDescription] = useState<string>('');
 
-  // Effective roles from Manage Roles
-  const rolesList = useMemo(() => {
-    return allRoles && allRoles.length > 0 ? allRoles : getRoles();
-  }, [allRoles]);
+  // Fetch categories, typologies, and project roles
+  useEffect(() => {
+    async function loadReferenceData() {
+      // Load Categories
+      try {
+        const { data: catData } = await supabasePublic
+          .from('project_categories')
+          .select('*')
+          .order('sort_order', { ascending: true });
+        if (catData && catData.length > 0) {
+          setCategories(catData.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            tagline: c.tagline || '',
+            heroImageUrl: c.hero_image_url,
+            sortOrder: c.sort_order,
+          })));
+        } else {
+          setCategories(getProjectCategories());
+        }
+      } catch {
+        setCategories(getProjectCategories());
+      }
 
-  // Group roles by category for easy selection
-  const designerRoles = useMemo(
-    () => rolesList.filter((r) => r.category === 'designers'),
-    [rolesList]
-  );
-  const managerRoles = useMemo(
-    () => rolesList.filter((r) => r.category === 'managers'),
-    [rolesList]
-  );
-  const builderRoles = useMemo(
-    () => rolesList.filter((r) => r.category === 'builders'),
-    [rolesList]
-  );
+      // Load Typologies
+      try {
+        const { data: typData } = await supabasePublic
+          .from('project_typologies')
+          .select('*')
+          .order('sort_order', { ascending: true });
+        if (typData && typData.length > 0) {
+          setTypologies(typData.map((t: any) => ({
+            id: t.id,
+            categoryId: t.category_id,
+            name: t.name,
+            description: t.description,
+            sortOrder: t.sort_order,
+          })));
+        } else {
+          setTypologies(getProjectTypologies());
+        }
+      } catch {
+        setTypologies(getProjectTypologies());
+      }
+
+      // Load Project Roles (Separate entity from studio roles)
+      const pRoles = await getProjectRolesFromSupabase();
+      setProjectRoles(pRoles);
+    }
+
+    loadReferenceData();
+  }, []);
 
   // Projects not yet associated
   const unlinkedProjects = useMemo(() => {
     return allProjects.filter((p) => !involvements.some((inv) => inv.projectId === p.id));
   }, [allProjects, involvements]);
 
-  // Available typologies based on selected category
+  // Available typologies filtered by selected category
   const availableTypologies = useMemo(() => {
-    return getTypologiesForCategory(selectedCategory);
-  }, [selectedCategory]);
+    if (!selectedCategory) return typologies;
+    return typologies.filter(
+      (t) => t.categoryId.toLowerCase() === selectedCategory.toLowerCase()
+    );
+  }, [selectedCategory, typologies]);
 
-  // Cascading filtered projects
+  // Filter projects by category and typology
   const filteredProjects = useMemo(() => {
     return unlinkedProjects.filter((p) => {
-      // Resolve project category
-      const projCat =
-        p.mainCategory ||
-        Object.keys(TYPOLOGY_MAP).find((cat) =>
-          TYPOLOGY_MAP[cat].includes(p.category) ||
-          (p.subcategory && TYPOLOGY_MAP[cat].includes(p.subcategory))
-        ) ||
-        '';
-
-      if (
-        selectedCategory &&
-        selectedCategory !== 'all' &&
-        projCat.toLowerCase() !== selectedCategory.toLowerCase()
-      ) {
-        return false;
+      if (selectedCategory) {
+        const matchesCat =
+          (p.categoryId && p.categoryId.toLowerCase() === selectedCategory.toLowerCase()) ||
+          (p.mainCategory && p.mainCategory.toLowerCase() === selectedCategory.toLowerCase()) ||
+          (p.category && p.category.toLowerCase() === selectedCategory.toLowerCase());
+        if (!matchesCat) return false;
       }
 
-      // Resolve project typology
-      const projTyp = p.subcategory || p.category || '';
-      if (
-        selectedTypology &&
-        selectedTypology !== 'all' &&
-        projTyp.toLowerCase() !== selectedTypology.toLowerCase()
-      ) {
-        return false;
+      if (selectedTypology) {
+        const matchesTyp =
+          (p.typologyId && p.typologyId.toLowerCase() === selectedTypology.toLowerCase()) ||
+          (p.subcategory && p.subcategory.toLowerCase() === selectedTypology.toLowerCase()) ||
+          (p.category && p.category.toLowerCase() === selectedTypology.toLowerCase());
+        if (!matchesTyp) return false;
       }
 
       return true;
@@ -116,30 +142,39 @@ export const MemberInvolvementManager: React.FC<MemberInvolvementManagerProps> =
     setSelectedProjectId('');
   };
 
+  // Strict validation guard: "do not accept Associate Project if any field has no value provided"
+  const canAssociate = Boolean(
+    selectedCategory &&
+    selectedTypology &&
+    selectedProjectId &&
+    selectedProjectRoleIds.length > 0 &&
+    description.trim().length > 0
+  );
+
   const handleAdd = () => {
-    if (!selectedProjectId) return;
+    if (!canAssociate) return;
     const project = allProjects.find((p) => p.id === selectedProjectId);
     if (!project) return;
 
-    let roleTitle = 'Contributor';
-    if (selectedRoleId === '__custom__') {
-      roleTitle = customRole.trim() || 'Contributor';
-    } else if (selectedRoleId) {
-      const foundRole = rolesList.find((r) => r.id === selectedRoleId || r.title === selectedRoleId);
-      roleTitle = foundRole ? foundRole.title : selectedRoleId;
-    }
+    // Concatenate project role names for display
+    const roleNames = selectedProjectRoleIds
+      .map((id) => projectRoles.find((r) => r.id === id)?.name || id)
+      .join(', ');
 
     const newInvolvement: MemberInvolvement = {
       projectId: project.id,
       projectTitle: project.title,
-      roleInProject: roleTitle,
+      projectSlug: project.slug || project.id,
+      roleInProject: roleNames,
+      projectRoleIds: selectedProjectRoleIds,
       description: description.trim(),
     };
 
     onChange([...involvements, newInvolvement]);
+    setSelectedCategory('');
+    setSelectedTypology('');
     setSelectedProjectId('');
-    setSelectedRoleId('');
-    setCustomRole('');
+    setSelectedProjectRoleIds([]);
     setDescription('');
   };
 
@@ -161,7 +196,7 @@ export const MemberInvolvementManager: React.FC<MemberInvolvementManagerProps> =
             Project Involvements ({involvements.length})
           </h4>
           <p className="text-micro opacity-60">
-            Associate this team member with studio portfolio projects.
+            Associate this team member with studio portfolio projects and contribution scopes.
           </p>
         </div>
       </div>
@@ -183,7 +218,7 @@ export const MemberInvolvementManager: React.FC<MemberInvolvementManagerProps> =
                 </div>
                 <div className="flex items-center gap-2 text-mini opacity-80 pl-5">
                   <Briefcase size={12} className="opacity-60 shrink-0" />
-                  <span>{inv.roleInProject}</span>
+                  <span className="font-medium text-space-sparkle">{inv.roleInProject}</span>
                 </div>
                 {inv.description && (
                   <p className="text-micro opacity-60 pl-5 leading-relaxed">
@@ -222,21 +257,21 @@ export const MemberInvolvementManager: React.FC<MemberInvolvementManagerProps> =
           <span>Link New Project Involvement</span>
         </div>
 
-        {/* Cascading Filter Fields: Category & Typology */}
+        {/* Cascading Filter Fields: Category & Typology (from database) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-micro uppercase tracking-wider block opacity-70 mb-1">
-              1. Project Category
+              Project Category <span className="text-red-500">*</span>
             </label>
             <select
               value={selectedCategory}
               onChange={(e) => handleCategoryChange(e.target.value)}
               className={inputBaseClass}
             >
-              <option value="">-- All / Choose Category --</option>
-              {MAIN_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
+              <option value="">[ Select Project Category ]</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
                 </option>
               ))}
             </select>
@@ -244,125 +279,91 @@ export const MemberInvolvementManager: React.FC<MemberInvolvementManagerProps> =
 
           <div>
             <label className="text-micro uppercase tracking-wider block opacity-70 mb-1">
-              2. Project Typology
+              Project Typology <span className="text-red-500">*</span>
             </label>
             <select
               value={selectedTypology}
               onChange={(e) => handleTypologyChange(e.target.value)}
-              className={inputBaseClass}
+              disabled={!selectedCategory}
+              className={`${inputBaseClass} ${!selectedCategory ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <option value="">-- All Typologies in Category --</option>
+              <option value="">[ Select Project Typology ]</option>
               {availableTypologies.map((typ) => (
-                <option key={typ} value={typ}>
-                  {typ}
+                <option key={typ.id} value={typ.id}>
+                  {typ.name}
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        {/* Project and Role selectors */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="text-micro uppercase tracking-wider block opacity-70 mb-1">
-              3. Select Project <span className="text-space-sparkle">*</span>
-            </label>
-            <select
-              value={selectedProjectId}
-              onChange={(e) => setSelectedProjectId(e.target.value)}
-              className={inputBaseClass}
-            >
-              <option value="">
-                {filteredProjects.length === 0
-                  ? '-- No Matching Projects Available --'
-                  : `-- Choose a Project (${filteredProjects.length}) --`}
-              </option>
-              {filteredProjects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.title} ({p.year || p.category})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-micro uppercase tracking-wider block opacity-70 mb-1">
-              Role in Project (from Manage Roles) <span className="text-space-sparkle">*</span>
-            </label>
-            <select
-              value={selectedRoleId}
-              onChange={(e) => setSelectedRoleId(e.target.value)}
-              className={inputBaseClass}
-            >
-              <option value="">-- Choose Role from Manage Roles --</option>
-              {designerRoles.length > 0 && (
-                <optgroup label="Designers">
-                  {designerRoles.map((r) => (
-                    <option key={r.id} value={r.title}>
-                      {r.title}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {managerRoles.length > 0 && (
-                <optgroup label="Managers">
-                  {managerRoles.map((r) => (
-                    <option key={r.id} value={r.title}>
-                      {r.title}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {builderRoles.length > 0 && (
-                <optgroup label="Builders">
-                  {builderRoles.map((r) => (
-                    <option key={r.id} value={r.title}>
-                      {r.title}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              <option value="__custom__">✍️ Other / Custom Role...</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Optional Custom Role Input when __custom__ is selected */}
-        {selectedRoleId === '__custom__' && (
-          <div>
-            <label className="text-micro uppercase tracking-wider block opacity-70 mb-1">
-              Custom Role Title <span className="text-space-sparkle">*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Special Lighting Consultant, Landscape Associate"
-              value={customRole}
-              onChange={(e) => setCustomRole(e.target.value)}
-              className={inputBaseClass}
-              autoFocus
-            />
-          </div>
-        )}
-
-        {/* Description field */}
+        {/* Project selector */}
         <div>
           <label className="text-micro uppercase tracking-wider block opacity-70 mb-1">
-            Involvement Description / Scope (Optional)
+            Select Project <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            placeholder="e.g. Spearheaded spatial zoning and passive ventilation design."
+          <select
+            value={selectedProjectId}
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+            disabled={!selectedTypology}
+            className={`${inputBaseClass} ${!selectedTypology ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <option value="">
+              {!selectedTypology
+                ? '[ Select a Typology First ]'
+                : filteredProjects.length === 0
+                  ? '-- No Matching Projects Available --'
+                  : `[ Select Project ] (${filteredProjects.length})`}
+            </option>
+            {filteredProjects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title} ({p.year || p.category})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Role in Project (Multi-chip Combobox from separate project_roles schema) */}
+        <div>
+          <label className="text-micro uppercase tracking-wider block opacity-70 mb-1">
+            Role in Project <span className="text-red-500">*</span>
+          </label>
+          <ComboboxMultiSelect
+            options={projectRoles.map((pr) => ({
+              id: pr.id,
+              label: pr.name,
+              sublabel: pr.code,
+            }))}
+            selectedIds={selectedProjectRoleIds}
+            onChange={setSelectedProjectRoleIds}
+            placeholder="[ Select Role/s ]"
+            searchPlaceholder="Search project roles..."
+          />
+        </div>
+
+        {/* Role Description Textarea */}
+        <div>
+          <label className="text-micro uppercase tracking-wider block opacity-70 mb-1">
+            Role Description <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            rows={2}
+            placeholder="e.g. Spearheaded spatial zoning and passive ventilation system."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className={inputBaseClass}
           />
         </div>
 
-        <div className="flex justify-end pt-1">
+        <div className="flex items-center justify-between pt-1">
+          <p className="text-micro opacity-50">
+            {!canAssociate && 'All 5 fields must be filled to associate project.'}
+          </p>
+
           <Button
             type="filled"
             onClick={handleAdd}
-            disabled={!selectedProjectId || (selectedRoleId === '__custom__' && !customRole.trim())}
+            disabled={!canAssociate}
             className="!py-1.5 !px-4 text-mini"
           >
             <Plus size={13} className="mr-1 inline" /> Associate Project
