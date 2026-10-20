@@ -229,6 +229,15 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
           <div className="space-y-2 text-caption opacity-80 leading-relaxed">
             <p>{currentPhilosophy.description}</p>
           </div>
+
+          {currentPhilosophy.subtext && (
+            <div className="pt-3 border-t border-black/5 dark:border-white/5">
+              <span className="text-micro font-semibold uppercase tracking-wider block opacity-60 mb-0.5">
+                Footer Note
+              </span>
+              <p className="text-mini italic opacity-75">{currentPhilosophy.subtext}</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -435,6 +444,20 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
                   required
                   value={editingPhilosophy.description}
                   onChange={(e) => setEditingPhilosophy({ ...editingPhilosophy, description: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                  Bottom Subtext (Footer Row)
+                </label>
+                <textarea
+                  rows={2}
+                  required
+                  value={editingPhilosophy.subtext || ''}
+                  onChange={(e) => setEditingPhilosophy({ ...editingPhilosophy, subtext: e.target.value })}
+                  placeholder="e.g. Purpose-built architectural and design-build responses..."
                   className={inputClass}
                 />
               </div>

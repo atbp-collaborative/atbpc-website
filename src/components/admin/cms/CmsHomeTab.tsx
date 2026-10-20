@@ -133,6 +133,10 @@ export const CmsHomeTab: React.FC<CmsHomeTabProps> = ({
                       No Image Set
                     </div>
                   )}
+                  <div className="absolute top-2 left-2 px-2 py-0.5 rounded text-micro font-mono font-bold bg-black/80 text-white backdrop-blur-xs flex items-center gap-1 shadow-xs">
+                    <span>#{index + 1}</span>
+                    <span className="text-[10px] opacity-60 font-normal">of {sortedSlides.length}</span>
+                  </div>
                 </div>
 
                 <div>
@@ -149,25 +153,25 @@ export const CmsHomeTab: React.FC<CmsHomeTabProps> = ({
                     disabled={true}
                     onToggle={() => {}}
                   />
-                  <div className="flex items-center border border-black/10 dark:border-white/10 rounded-lg overflow-hidden bg-black/5 dark:bg-white/5">
+                  <div className="flex items-center border border-black/15 dark:border-white/15 rounded-lg overflow-hidden bg-black/5 dark:bg-white/5 shadow-xs">
                     <button
                       type="button"
                       onClick={() => handleMoveSlide(index, 'up')}
                       disabled={index === 0}
-                      className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 text-vintage-charcoal dark:text-bright-gray disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-                      title="Move slide up"
+                      className="px-2.5 py-1.5 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center gap-1 font-mono text-micro font-semibold cursor-pointer"
+                      title={index === 0 ? 'First slide' : `Move slide earlier (${index + 1} → ${index})`}
                     >
-                      <ArrowUp size={13} />
+                      <ArrowUp size={14} />
                     </button>
-                    <div className="w-[1px] h-3 bg-black/10 dark:bg-white/10" />
+                    <div className="w-[1px] h-4 bg-black/15 dark:bg-white/15" />
                     <button
                       type="button"
                       onClick={() => handleMoveSlide(index, 'down')}
                       disabled={index === sortedSlides.length - 1}
-                      className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 text-vintage-charcoal dark:text-bright-gray disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-                      title="Move slide down"
+                      className="px-2.5 py-1.5 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center gap-1 font-mono text-micro font-semibold cursor-pointer"
+                      title={index === sortedSlides.length - 1 ? 'Last slide' : `Move slide later (${index + 1} → ${index + 2})`}
                     >
-                      <ArrowDown size={13} />
+                      <ArrowDown size={14} />
                     </button>
                   </div>
                 </div>

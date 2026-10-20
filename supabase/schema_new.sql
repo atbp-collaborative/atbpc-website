@@ -69,7 +69,6 @@ CREATE TABLE IF NOT EXISTS public.project_roles (
     code VARCHAR(50) NOT NULL UNIQUE,
     name TEXT NOT NULL UNIQUE,
     description TEXT,
-    sort_order INTEGER NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -288,6 +287,21 @@ CREATE TABLE IF NOT EXISTS public.service_offerings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 3B. Service Accordions (Dynamic Modular Deliverables & Subpage Sections)
+CREATE TABLE IF NOT EXISTS public.service_accordions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    service_id VARCHAR(50) NOT NULL REFERENCES public.service_offerings(id) ON DELETE CASCADE,
+    column_index INTEGER NOT NULL DEFAULT 0,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    link_text TEXT,
+    link_href TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_draft BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- 4. Process Philosophies (Values, Integrity, Culture)
 CREATE TABLE IF NOT EXISTS public.process_philosophies (
     id VARCHAR(50) PRIMARY KEY,                                      -- SEO LOCKED: 'designing-with-values', 'managing-with-integrity', 'building-with-culture'
@@ -485,6 +499,11 @@ CREATE TRIGGER trg_site_settings_updated_at BEFORE UPDATE ON public.site_setting
 CREATE TRIGGER trg_site_pages_updated_at BEFORE UPDATE ON public.site_pages FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER trg_navigation_cards_updated_at BEFORE UPDATE ON public.navigation_cards FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER trg_service_offerings_updated_at BEFORE UPDATE ON public.service_offerings FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+DROP TRIGGER IF EXISTS trg_service_accordions_updated_at ON public.service_accordions;
+CREATE TRIGGER trg_service_accordions_updated_at
+BEFORE UPDATE ON public.service_accordions
+FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
 CREATE TRIGGER trg_process_philosophies_updated_at BEFORE UPDATE ON public.process_philosophies FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER trg_stage_groups_updated_at BEFORE UPDATE ON public.stage_groups FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER trg_process_stages_updated_at BEFORE UPDATE ON public.process_stages FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -520,6 +539,10 @@ CREATE INDEX IF NOT EXISTS idx_project_proposals_status ON public.project_propos
 CREATE INDEX IF NOT EXISTS idx_site_pages_is_draft ON public.site_pages(is_draft);
 CREATE INDEX IF NOT EXISTS idx_navigation_cards_hub ON public.navigation_cards(hub_id, is_draft, sort_order);
 CREATE INDEX IF NOT EXISTS idx_service_offerings_is_draft ON public.service_offerings(is_draft, sort_order);
+CREATE INDEX IF NOT EXISTS idx_service_accordions_service_id ON public.service_accordions(service_id);
+CREATE INDEX IF NOT EXISTS idx_service_accordions_col_sort ON public.service_accordions(service_id, column_index, sort_order);
+CREATE INDEX IF NOT EXISTS idx_service_accordions_is_draft ON public.service_accordions(is_draft);
+
 CREATE INDEX IF NOT EXISTS idx_process_philosophies_is_draft ON public.process_philosophies(is_draft, sort_order);
 CREATE INDEX IF NOT EXISTS idx_stage_groups_page ON public.stage_groups(process_page_id, is_draft, sort_order);
 CREATE INDEX IF NOT EXISTS idx_process_stages_page ON public.process_stages(process_page_id, stage_group_id, is_draft, sort_order);
@@ -555,6 +578,31 @@ $$;
 -- ==============================================================================
 -- 10. ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
+
+
+ALTER TABLE public.licenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.project_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.service_accordions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read access for licenses" ON public.licenses
+    FOR SELECT USING (true);
+CREATE POLICY "Admin write access for licenses" ON public.licenses
+    FOR ALL USING (auth.role() = 'authenticated' OR auth.role() = 'service_role');
+
+CREATE POLICY "Public read access for project_roles" ON public.project_roles
+    FOR SELECT USING (true);
+CREATE POLICY "Admin write access for project_roles" ON public.project_roles
+    FOR ALL USING (auth.role() = 'authenticated' OR auth.role() = 'service_role');
+
+CREATE POLICY "Public can view published service accordions"
+    ON public.service_accordions FOR SELECT
+    USING (is_draft = FALSE OR public.get_current_admin_role() IN ('superadmin', 'admin', 'editor'));
+
+CREATE POLICY "Admin and Superadmin can manage service accordions"
+    ON public.service_accordions FOR ALL
+    TO authenticated
+    USING (public.get_current_admin_role() IN ('superadmin', 'admin'))
+    WITH CHECK (public.get_current_admin_role() IN ('superadmin', 'admin'));
 
 ALTER TABLE public.tracks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;

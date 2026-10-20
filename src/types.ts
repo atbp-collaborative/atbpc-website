@@ -209,6 +209,27 @@ export interface StudioWriteups {
   cultureStatement: string;
 }
 
+export interface CareerPrivacyData {
+  title: string;
+  subtitle: string;
+  badge?: string;
+  items: string[];
+  closeLabel?: string;
+}
+
+export interface PartnerConditionCategory {
+  title: string;
+  subtitle: string;
+  badge?: string;
+  items: string[];
+}
+
+export interface PartnerConditionsData {
+  builder: PartnerConditionCategory;
+  consultant: PartnerConditionCategory;
+  supplier: PartnerConditionCategory;
+}
+
 export interface SitePage {
   id: string;
   title: string;

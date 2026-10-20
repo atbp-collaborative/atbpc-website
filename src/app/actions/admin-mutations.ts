@@ -1490,3 +1490,54 @@ export async function saveHomepageSlogansAction(slogans: HomepageSlogans) {
     return { success: false, error: err?.message || 'Failed to save slogans' };
   }
 }
+
+// ==============================================================================
+// 7. SITE SETTINGS (General Info)
+// ==============================================================================
+
+export async function saveSiteSettingAction<T = any>(key: string, content: T) {
+  try {
+    const supabase = getAdminClient();
+
+    const { error } = await supabase.from('site_settings').upsert({
+      key,
+      content,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.error(`[saveSiteSettingAction:${key}] Error:`, error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/', 'layout');
+
+    return { success: true, data: content };
+  } catch (err: any) {
+    console.error(`[saveSiteSettingAction:${key}] Exception:`, err);
+    return { success: false, error: err?.message || `Failed to save site setting ${key}` };
+  }
+}
+
+export async function fetchSiteSettingAction<T = any>(key: string): Promise<T | null> {
+  try {
+    const supabase = getAdminClient();
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('content')
+      .eq('key', key)
+      .single();
+
+    if (error || !data) {
+      if (error?.code !== 'PGRST116') {
+        console.error(`[fetchSiteSettingAction:${key}] Error:`, error);
+      }
+      return null;
+    }
+
+    return data.content as T;
+  } catch (err: any) {
+    console.error(`[fetchSiteSettingAction:${key}] Exception:`, err);
+    return null;
+  }
+}

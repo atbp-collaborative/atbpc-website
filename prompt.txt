@@ -1,0 +1,10 @@
+here's what i want for authentication and RBAC within admin/*:
+- all admins can stay logged in on multiple devices. here is the tiered list for RBAC
+
+- superadmin: has CRUD access to all admin dashboard.
+- admin: has Read access to all, has CRU access to manage people, manage projects, manage content
+- editor: has RU access to manage projects only
+
+then the account creation. the superadmin is the only one who can create an admin and editor account.
+
+all admins accounts need to have passkeys setup upon logging in.

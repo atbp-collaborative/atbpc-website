@@ -11,12 +11,11 @@ import {
   Phone,
   ShieldCheck,
   Scale,
-  Sparkles,
+  Handshake,
   Save,
   RotateCcw,
   Plus,
   Trash2,
-  ExternalLink,
 } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { Button } from '@/components/primitives/buttons/Button';
@@ -25,31 +24,36 @@ import { useAdminGeneralInfo } from '@/hooks/admin/useAdminGeneralInfo';
 import { useTheme } from '@/context/ThemeContext';
 import { ContactInfo } from '@/lib/dummy-data/contact/contact-info';
 import { ModalData, ModalSection } from '@/lib/modals/types';
-import { StudioWriteups } from '@/types';
+import { CareerPrivacyData, PartnerConditionsData } from '@/types';
 
-type TabKey = 'contact' | 'privacy' | 'legal' | 'writeups';
+type TabKey = 'contact' | 'privacy' | 'career' | 'partner' | 'legal';
+type PartnerCategory = 'builder' | 'consultant' | 'supplier';
 
 export default function AdminGeneralInfoPage() {
   const { isDarkMode } = useTheme();
   const {
     contactInfo,
     privacyPolicy,
+    careerPrivacy,
+    partnerConditions,
     legalNotices,
-    studioWriteups,
     saveContact,
     savePrivacy,
+    saveCareerPrivacy,
+    savePartnerConditions,
     saveLegal,
-    saveWriteups,
     resetDefaults,
   } = useAdminGeneralInfo();
 
   const [activeTab, setActiveTab] = useState<TabKey>('contact');
+  const [activePartnerCategory, setActivePartnerCategory] = useState<PartnerCategory>('builder');
 
   // Local form states
   const [contactForm, setContactForm] = useState<ContactInfo | null>(null);
   const [privacyForm, setPrivacyForm] = useState<ModalData | null>(null);
+  const [careerPrivacyForm, setCareerPrivacyForm] = useState<CareerPrivacyData | null>(null);
+  const [partnerConditionsForm, setPartnerConditionsForm] = useState<PartnerConditionsData | null>(null);
   const [legalForm, setLegalForm] = useState<ModalData | null>(null);
-  const [writeupsForm, setWriteupsForm] = useState<StudioWriteups | null>(null);
 
   // Reset confirmation modal state
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
@@ -63,22 +67,28 @@ export default function AdminGeneralInfoPage() {
   }, [privacyPolicy]);
 
   useEffect(() => {
-    if (legalNotices) setLegalForm(JSON.parse(JSON.stringify(legalNotices)));
-  }, [legalNotices]);
+    if (careerPrivacy) setCareerPrivacyForm(JSON.parse(JSON.stringify(careerPrivacy)));
+  }, [careerPrivacy]);
 
   useEffect(() => {
-    if (studioWriteups) setWriteupsForm(JSON.parse(JSON.stringify(studioWriteups)));
-  }, [studioWriteups]);
+    if (partnerConditions) setPartnerConditionsForm(JSON.parse(JSON.stringify(partnerConditions)));
+  }, [partnerConditions]);
+
+  useEffect(() => {
+    if (legalNotices) setLegalForm(JSON.parse(JSON.stringify(legalNotices)));
+  }, [legalNotices]);
 
   const handleSaveCurrentTab = () => {
     if (activeTab === 'contact' && contactForm) {
       saveContact(contactForm);
     } else if (activeTab === 'privacy' && privacyForm) {
       savePrivacy(privacyForm);
+    } else if (activeTab === 'career' && careerPrivacyForm) {
+      saveCareerPrivacy(careerPrivacyForm);
+    } else if (activeTab === 'partner' && partnerConditionsForm) {
+      savePartnerConditions(partnerConditionsForm);
     } else if (activeTab === 'legal' && legalForm) {
       saveLegal(legalForm);
-    } else if (activeTab === 'writeups' && writeupsForm) {
-      saveWriteups(writeupsForm);
     }
   };
 
@@ -91,8 +101,15 @@ export default function AdminGeneralInfoPage() {
   const tabs: { key: TabKey; label: string; icon: any }[] = [
     { key: 'contact', label: 'Contact & Socials', icon: Phone },
     { key: 'privacy', label: 'Privacy Policy', icon: ShieldCheck },
+    { key: 'career', label: 'Grow With Us Privacy', icon: FileText },
+    { key: 'partner', label: 'Partner Conditions', icon: Handshake },
     { key: 'legal', label: 'Legal & Regulatory', icon: Scale },
-    { key: 'writeups', label: 'Studio Writeups', icon: Sparkles },
+  ];
+
+  const partnerTabs: { key: PartnerCategory; label: string }[] = [
+    { key: 'builder', label: 'Builder Partnership' },
+    { key: 'consultant', label: 'Consultant Partnership' },
+    { key: 'supplier', label: 'Product Qualification' },
   ];
 
   return (
@@ -123,7 +140,7 @@ export default function AdminGeneralInfoPage() {
       />
 
       <div className="p-4 sm:p-8 space-y-6 max-w-5xl w-full mx-auto">
-        {/* Tab Selection Row (Strictly non-modal) */}
+        {/* Tab Selection Row */}
         <div
           className={`p-1.5 rounded-xl border flex items-center gap-1 overflow-x-auto ${
             isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
@@ -513,7 +530,344 @@ export default function AdminGeneralInfoPage() {
           </div>
         )}
 
-        {/* Tab 3: Legal Notices */}
+        {/* Tab 3: Grow With Us Privacy Statement */}
+        {activeTab === 'career' && careerPrivacyForm && (
+          <div
+            className={`p-6 sm:p-8 rounded-xl border space-y-6 ${
+              isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+            }`}
+          >
+            <div className="border-b pb-4 border-black/5 dark:border-white/5">
+              <h3 className="text-body font-major font-bold tracking-tight lowercase">
+                grow with us privacy statement
+              </h3>
+              <p className="text-caption opacity-70">
+                Official privacy terms and RA 10173 disclosures displayed on careers, apprenticeships, and internship application portals.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                    Statement Title
+                  </label>
+                  <input
+                    type="text"
+                    value={careerPrivacyForm.title}
+                    onChange={(e) =>
+                      setCareerPrivacyForm((prev) => (prev ? { ...prev, title: e.target.value } : null))
+                    }
+                    className={inputClass}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                    Subtitle / Scope
+                  </label>
+                  <input
+                    type="text"
+                    value={careerPrivacyForm.subtitle}
+                    onChange={(e) =>
+                      setCareerPrivacyForm((prev) => (prev ? { ...prev, subtitle: e.target.value } : null))
+                    }
+                    className={inputClass}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                    Regulatory Badge
+                  </label>
+                  <input
+                    type="text"
+                    value={careerPrivacyForm.badge || ''}
+                    onChange={(e) =>
+                      setCareerPrivacyForm((prev) => (prev ? { ...prev, badge: e.target.value } : null))
+                    }
+                    placeholder="Republic Act No. 10173"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              {/* Items Clauses Editor */}
+              <div className="space-y-4 pt-4 border-t border-black/5 dark:border-white/5">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-caption font-semibold uppercase tracking-wider opacity-80">
+                    Statement Clauses &amp; Paragraphs ({careerPrivacyForm.items?.length || 0})
+                  </h4>
+                  <Button
+                    type="ghost"
+                    onClick={() => {
+                      setCareerPrivacyForm((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              items: [
+                                ...(prev.items || []),
+                                '<p>New data privacy clause regarding applicant materials and confidentiality.</p>',
+                              ],
+                            }
+                          : null
+                      );
+                    }}
+                    className="!py-1 !px-2 text-micro border border-black/10 dark:border-white/10"
+                  >
+                    <Plus size={12} className="mr-1 inline" /> Add Clause
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  {careerPrivacyForm.items?.map((itemHtml, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-4 rounded-lg border space-y-2 ${
+                        isDarkMode ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-micro font-mono uppercase tracking-wider opacity-60">
+                          Clause #{idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newItems = (careerPrivacyForm.items || []).filter((_, i) => i !== idx);
+                            setCareerPrivacyForm((prev) => (prev ? { ...prev, items: newItems } : null));
+                          }}
+                          className="p-1.5 text-red-500 hover:bg-red-500/10 rounded cursor-pointer shrink-0"
+                          title="Remove clause"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+
+                      <textarea
+                        rows={3}
+                        value={itemHtml}
+                        onChange={(e) => {
+                          const newItems = [...(careerPrivacyForm.items || [])];
+                          newItems[idx] = e.target.value;
+                          setCareerPrivacyForm((prev) => (prev ? { ...prev, items: newItems } : null));
+                        }}
+                        placeholder="Clause content (HTML tags like <p>, <a>, <strong> supported)..."
+                        className={inputClass}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4 border-t border-black/5 dark:border-white/5">
+              <Button type="filled" onClick={handleSaveCurrentTab} className="!py-2 !px-6 text-mini">
+                Save Grow-With-Us Privacy
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Partner With Us General Conditions */}
+        {activeTab === 'partner' && partnerConditionsForm && (
+          <div
+            className={`p-6 sm:p-8 rounded-xl border space-y-6 ${
+              isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+            }`}
+          >
+            <div className="border-b pb-4 border-black/5 dark:border-white/5">
+              <h3 className="text-body font-major font-bold tracking-tight lowercase">
+                partner with us general conditions
+              </h3>
+              <p className="text-caption opacity-70">
+                Accreditation standards, workmanship covenants, and qualification prerequisites for builders, consultants, and suppliers.
+              </p>
+            </div>
+
+            {/* Sub-tabs for Partner Category */}
+            <div className="flex items-center gap-2 border-b pb-3 border-black/5 dark:border-white/5">
+              {partnerTabs.map(({ key, label }) => {
+                const isSelected = activePartnerCategory === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setActivePartnerCategory(key)}
+                    className={`px-3 py-1.5 rounded-lg text-micro font-medium transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-space-sparkle text-white shadow-xs font-semibold'
+                        : isDarkMode
+                          ? 'bg-vintage-charcoal/80 text-bright-gray/70 hover:bg-white/5 border border-white/10'
+                          : 'bg-white text-vintage-charcoal/70 hover:bg-black/5 border border-black/10'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active Category Content */}
+            {partnerConditionsForm[activePartnerCategory] && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Conditions Title ({activePartnerCategory})
+                    </label>
+                    <input
+                      type="text"
+                      value={partnerConditionsForm[activePartnerCategory].title}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setPartnerConditionsForm((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                [activePartnerCategory]: {
+                                  ...prev[activePartnerCategory],
+                                  title: val,
+                                },
+                              }
+                            : null
+                        );
+                      }}
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Badge / Accreditation Type
+                    </label>
+                    <input
+                      type="text"
+                      value={partnerConditionsForm[activePartnerCategory].badge || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setPartnerConditionsForm((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                [activePartnerCategory]: {
+                                  ...prev[activePartnerCategory],
+                                  badge: val,
+                                },
+                              }
+                            : null
+                        );
+                      }}
+                      placeholder="e.g. PCAB Standards"
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                {/* Clauses list */}
+                <div className="space-y-4 pt-4 border-t border-black/5 dark:border-white/5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-caption font-semibold uppercase tracking-wider opacity-80">
+                      Clauses &amp; Specifications ({partnerConditionsForm[activePartnerCategory].items?.length || 0})
+                    </h4>
+                    <Button
+                      type="ghost"
+                      onClick={() => {
+                        setPartnerConditionsForm((prev) => {
+                          if (!prev) return null;
+                          const currentItems = prev[activePartnerCategory].items || [];
+                          const nextNum = currentItems.length + 1;
+                          return {
+                            ...prev,
+                            [activePartnerCategory]: {
+                              ...prev[activePartnerCategory],
+                              items: [
+                                ...currentItems,
+                                `<p>${nextNum}. <strong>New Specification:</strong> Detail covenant standards here.</p>`,
+                              ],
+                            },
+                          };
+                        });
+                      }}
+                      className="!py-1 !px-2 text-micro border border-black/10 dark:border-white/10"
+                    >
+                      <Plus size={12} className="mr-1 inline" /> Add Clause
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {partnerConditionsForm[activePartnerCategory].items?.map((clauseHtml, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-4 rounded-lg border space-y-2 ${
+                          isDarkMode ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-micro font-mono uppercase tracking-wider opacity-60">
+                            Clause #{idx + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPartnerConditionsForm((prev) => {
+                                if (!prev) return null;
+                                const newItems = (prev[activePartnerCategory].items || []).filter(
+                                  (_, i) => i !== idx
+                                );
+                                return {
+                                  ...prev,
+                                  [activePartnerCategory]: {
+                                    ...prev[activePartnerCategory],
+                                    items: newItems,
+                                  },
+                                };
+                              });
+                            }}
+                            className="p-1.5 text-red-500 hover:bg-red-500/10 rounded cursor-pointer shrink-0"
+                            title="Remove clause"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+
+                        <textarea
+                          rows={3}
+                          value={clauseHtml}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPartnerConditionsForm((prev) => {
+                              if (!prev) return null;
+                              const newItems = [...(prev[activePartnerCategory].items || [])];
+                              newItems[idx] = val;
+                              return {
+                                ...prev,
+                                [activePartnerCategory]: {
+                                  ...prev[activePartnerCategory],
+                                  items: newItems,
+                                },
+                              };
+                            });
+                          }}
+                          placeholder="Condition text (HTML tags like <p>, <strong> supported)..."
+                          className={inputClass}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-4 border-t border-black/5 dark:border-white/5">
+              <Button type="filled" onClick={handleSaveCurrentTab} className="!py-2 !px-6 text-mini">
+                Save Partner Conditions
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 5: Legal Notices */}
         {activeTab === 'legal' && legalForm && (
           <div
             className={`p-6 sm:p-8 rounded-xl border space-y-6 ${
@@ -634,103 +988,13 @@ export default function AdminGeneralInfoPage() {
             </div>
           </div>
         )}
-
-        {/* Tab 4: Studio Philosophy & Writeups */}
-        {activeTab === 'writeups' && writeupsForm && (
-          <div
-            className={`p-6 sm:p-8 rounded-xl border space-y-6 ${
-              isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
-            }`}
-          >
-            <div className="border-b pb-4 border-black/5 dark:border-white/5">
-              <h3 className="text-body font-major font-bold tracking-tight lowercase">
-                studio brand philosophy &amp; slogans
-              </h3>
-              <p className="text-caption opacity-70">
-                Core philosophical writeups and taglines represented throughout hero banners and about sections.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                  Core Triad Tagline
-                </label>
-                <input
-                  type="text"
-                  value={writeupsForm.tagline}
-                  onChange={(e) =>
-                    setWriteupsForm((prev) =>
-                      prev ? { ...prev, tagline: e.target.value } : null
-                    )
-                  }
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                  Sub-Slogan
-                </label>
-                <textarea
-                  rows={2}
-                  value={writeupsForm.subSlogan}
-                  onChange={(e) =>
-                    setWriteupsForm((prev) =>
-                      prev ? { ...prev, subSlogan: e.target.value } : null
-                    )
-                  }
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                  Practice Philosophy Statement
-                </label>
-                <textarea
-                  rows={4}
-                  value={writeupsForm.philosophy}
-                  onChange={(e) =>
-                    setWriteupsForm((prev) =>
-                      prev ? { ...prev, philosophy: e.target.value } : null
-                    )
-                  }
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                  Cultural &amp; Craft Statement
-                </label>
-                <textarea
-                  rows={3}
-                  value={writeupsForm.cultureStatement}
-                  onChange={(e) =>
-                    setWriteupsForm((prev) =>
-                      prev ? { ...prev, cultureStatement: e.target.value } : null
-                    )
-                  }
-                  className={inputClass}
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-4 border-t border-black/5 dark:border-white/5">
-              <Button type="filled" onClick={handleSaveCurrentTab} className="!py-2 !px-6 text-mini">
-                Save Studio Writeups
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Confirmation Modal for Resetting to Defaults */}
       <ConfirmModal
         isOpen={isResetModalOpen}
         title="Reset Content to Defaults?"
-        description="This will restore all simulated studio content (contact info, legal notices, privacy policy, and writeups) to system defaults. Any unsaved edits will be discarded."
+        description="This will restore all simulated studio content (contact info, legal notices, privacy policy, and partner conditions) to system defaults. Any unsaved edits will be discarded."
         confirmLabel="Reset to Defaults"
         cancelLabel="Keep Current Changes"
         isDestructive={false}
