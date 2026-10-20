@@ -21,6 +21,7 @@ interface CmsHomeTabProps {
   onDeleteSlide: (slideId: string) => void;
   onReorderSlides: (slides: HomeSlideItem[]) => void;
   onSaveSlogans?: (slogans: HomepageSlogans) => void;
+  createSlideTriggerRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 export const CmsHomeTab: React.FC<CmsHomeTabProps> = ({
@@ -28,6 +29,7 @@ export const CmsHomeTab: React.FC<CmsHomeTabProps> = ({
   onSaveSlide,
   onDeleteSlide,
   onReorderSlides,
+  createSlideTriggerRef,
 }) => {
   const { isDarkMode } = useTheme();
 
@@ -50,7 +52,7 @@ export const CmsHomeTab: React.FC<CmsHomeTabProps> = ({
     return JSON.stringify(editingSlide) !== JSON.stringify(initialSlideRef.current);
   }, [editingSlide]);
 
-  const handleStartCreateSlide = () => {
+  const handleStartCreateSlide = React.useCallback(() => {
     const newSlide: HomeSlideItem = {
       id: `slide-${Date.now()}`,
       title: '',
@@ -60,7 +62,13 @@ export const CmsHomeTab: React.FC<CmsHomeTabProps> = ({
     };
     setEditingSlide(newSlide);
     initialSlideRef.current = { ...newSlide };
-  };
+  }, [slides.length]);
+
+  React.useEffect(() => {
+    if (createSlideTriggerRef) {
+      createSlideTriggerRef.current = handleStartCreateSlide;
+    }
+  }, [createSlideTriggerRef, handleStartCreateSlide]);
 
   const handleStartEditSlide = (slide: HomeSlideItem) => {
     setEditingSlide({ ...slide });
@@ -97,27 +105,9 @@ export const CmsHomeTab: React.FC<CmsHomeTabProps> = ({
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       {/* 1. HERO CAROUSEL SLIDES */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between border-b pb-3 border-black/10 dark:border-white/10">
-          <div>
-            <h3 className="text-body font-bold flex items-center gap-2">
-              <ImageIcon size={18} className="text-space-sparkle" /> Hero Carousel Slides ({sortedSlides.length})
-            </h3>
-            <p className="text-mini opacity-60">
-              Manage the full-screen hero imagery rotating on the website homepage splash section.
-            </p>
-          </div>
-          <Button
-            type="filled"
-            onClick={handleStartCreateSlide}
-            className="!py-2 !px-4 text-mini font-semibold"
-          >
-            <Plus size={14} className="mr-1 inline" /> Add Hero Slide
-          </Button>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {sortedSlides.map((slide, index) => (
             <div

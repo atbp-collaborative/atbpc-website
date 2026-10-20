@@ -2,20 +2,20 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Service, SitePage } from '@/types';
-import { getServices, getSitePagesData } from '@/services/dummy-data.service';
+import { NavigationCardItem, SitePage } from '@/types';
+import { getNavigationCardsData, getSitePagesData } from '@/services/dummy-data.service';
 import { SubLandingPage } from '@/components/blocks/SubLandingPage';
 import { LandingCard } from '@/components/blocks/LandingPage';
 import { DraftNotice } from '@/components/global/DraftNotice';
 import { ROUTES } from '@/lib/navigation/routes';
 
 export default function OurServicesPage() {
-  const [services, setServices] = React.useState<Service[]>([]);
+  const [navCards, setNavCards] = React.useState<NavigationCardItem[]>([]);
   const [pageInfo, setPageInfo] = React.useState<SitePage | null>(null);
   const router = useRouter();
 
   React.useEffect(() => {
-    getServices().then(setServices);
+    getNavigationCardsData('services').then(setNavCards);
     getSitePagesData().then((pages) => {
       const p = pages.find((page) => page.id === 'services-hub');
       if (p) setPageInfo(p);
@@ -31,18 +31,20 @@ export default function OurServicesPage() {
     );
   }
 
-  const cards: LandingCard[] = services.map(service => ({
-    id: service.title,
-    title: service.title,
-    tagline: service.desc,
-    subtext: service.desc,
-    image: service.image,
+  const cards: LandingCard[] = navCards.map((card) => ({
+    id: card.id,
+    title: card.title,
+    tagline: card.tagline,
+    subtext: card.subtext,
+    image: card.imageUrl,
     onSelect: () => {
-      if (service.title === 'comprehensive design') {
+      if (card.targetHref) {
+        router.push(card.targetHref);
+      } else if (card.cardKey === 'comprehensive-services' || card.title.includes('comprehensive')) {
         router.push(ROUTES.comprehensiveServices);
-      } else if (service.title === 'piecework services') {
+      } else if (card.cardKey === 'piecework-services' || card.title.includes('piecework')) {
         router.push(ROUTES.pieceworkServices);
-      } else if (service.title === 'consultation') {
+      } else {
         router.push(ROUTES.consultationRetainerServices);
       }
     },

@@ -1,14 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudioSubpageData } from '@/lib/dummy-data/our-services/services-data';
+import { ServiceOffering } from '@/types';
+import { getServiceOfferingByIdData } from '@/services/dummy-data.service';
 import { ROUTES } from '@/lib/navigation/routes';
 import { useTheme } from '@/context/ThemeContext';
 
 interface StudioServicesPageProps {
   data: StudioSubpageData;
+  initialOffering?: ServiceOffering;
 }
 
 // Custom Accordion Item for Piecework and Consultation/Retainer Services
@@ -221,11 +224,25 @@ const CONSULTATION_RETAINER_COLUMNS = [
 
 export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
   data,
+  initialOffering,
 }) => {
   const { isDarkMode } = useTheme();
+  const [liveOffering, setLiveOffering] = useState<ServiceOffering | null>(initialOffering || null);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [openItemId, setOpenItemId] = useState<string | null>(null);
   const [openCols, setOpenCols] = useState<boolean[]>([true, true, true]);
+
+  useEffect(() => {
+    if (!initialOffering) {
+      getServiceOfferingByIdData(data.id)
+        .then((res) => {
+          if (res) setLiveOffering(res);
+        })
+        .catch((err) => {
+          console.warn('Failed to fetch dynamic service offering:', err);
+        });
+    }
+  }, [data.id, initialOffering]);
 
   const toggleCol = (idx: number) => {
     setOpenCols(prev => {
@@ -248,38 +265,84 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
   const isComprehensive = data.id === 'comprehensive-services';
   const isConsultationRetainer = data.id === 'consultation-retainer-services';
 
+  // Computed page copy
+  const pageTitle = liveOffering?.title || data.title;
+  const pageTagline = liveOffering?.tagline || data.tagline;
+  const pageDescription = liveOffering?.description || data.description;
+  const pageExtraDescription = liveOffering?.extraDescription || data.extraDescription;
+  const pageSubtext = liveOffering?.subtext || data.subtext;
+
+  // Computed dynamic accordions
+  const accordions = liveOffering?.accordions && liveOffering.accordions.length > 0
+    ? liveOffering.accordions.filter((a) => !a.isDraft).sort((a, b) => a.sortOrder - b.sortOrder)
+    : null;
+
+  const pieceworkColumns = useMemo(() => {
+    if (!accordions || accordions.length === 0) return PIECEWORK_COLUMNS;
+    const col0 = accordions.filter((a) => a.columnIndex === 0);
+    const col1 = accordions.filter((a) => a.columnIndex === 1);
+    const col2 = accordions.filter((a) => a.columnIndex === 2);
+    if (col0.length === 0 && col1.length === 0 && col2.length === 0) return PIECEWORK_COLUMNS;
+    return [
+      { items: col0.map((a) => ({ title: a.title, content: a.content })) },
+      { items: col1.map((a) => ({ title: a.title, content: a.content })) },
+      { items: col2.map((a) => ({ title: a.title, content: a.content })) },
+    ];
+  }, [accordions]);
+
+  const comprehensiveColumns = useMemo(() => {
+    if (!accordions || accordions.length === 0) return COMPREHENSIVE_COLUMNS;
+    return [0, 1, 2].map((colIdx) => {
+      const item = accordions.find((a) => a.columnIndex === colIdx);
+      if (!item) return COMPREHENSIVE_COLUMNS[colIdx];
+      const paras = item.content.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
+      return {
+        title: item.title,
+        paragraphs: paras.length > 0 ? paras : [item.content],
+        linkText: item.linkText || COMPREHENSIVE_COLUMNS[colIdx]?.linkText || 'Learn more',
+        href: item.linkHref || COMPREHENSIVE_COLUMNS[colIdx]?.href || '#',
+      };
+    });
+  }, [accordions]);
+
+  const consultationColumns = useMemo(() => {
+    if (!accordions || accordions.length === 0) return CONSULTATION_RETAINER_COLUMNS;
+    const items = accordions.map((a) => ({ title: a.title, content: a.content }));
+    return items.length > 0 ? items : CONSULTATION_RETAINER_COLUMNS;
+  }, [accordions]);
+
   return (
     <div className="w-full h-full px-4 sm:px-8 md:px-12 py-3 flex flex-col overflow-hidden select-none min-h-0 flex-1">
       {/* Top Left Header Section: Title, Subtext */}
       <div className="shrink-0 text-left pt-3 pb-2 lg:pb-4 space-y-1">
         <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight lowercase leading-tight">
-          {data.title}
+          {pageTitle}
         </h1>
-        {data.tagline && (
+        {pageTagline && (
           <p className="text-mini sm:text-caption font-semibold tracking-wider opacity-80 uppercase text-space-sparkle">
-            {data.tagline}
+            {pageTagline}
           </p>
         )}
-        {data.description && (
+        {pageDescription && (
           <div className="hidden lg:block text-caption font-light leading-relaxed opacity-85 max-w-3xl pt-0.5 space-y-2">
-            <p>{data.description}</p>
-            {data.extraDescription && <p>{data.extraDescription}</p>}
+            <p>{pageDescription}</p>
+            {pageExtraDescription && <p>{pageExtraDescription}</p>}
           </div>
         )}
       </div>
 
       {/* Center Section: Dynamic Grid Content */}
       <div className="flex-1 flex flex-col justify-start items-stretch w-full min-h-0 py-1 overflow-y-auto lg:overflow-hidden no-scrollbar">
-        {data.description && (
+        {pageDescription && (
           <div className="block lg:hidden text-caption font-light leading-relaxed opacity-85 max-w-3xl pt-0.5 space-y-2 shrink-0 mb-4">
-            <p>{data.description}</p>
-            {data.extraDescription && <p>{data.extraDescription}</p>}
+            <p>{pageDescription}</p>
+            {pageExtraDescription && <p>{pageExtraDescription}</p>}
           </div>
         )}
 
         {isPiecework && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 w-full lg:h-full lg:min-h-0 mr-auto overflow-y-visible lg:overflow-y-hidden py-2">
-            {PIECEWORK_COLUMNS.map((col, colIdx) => (
+            {pieceworkColumns.map((col, colIdx) => (
               <div key={colIdx} className="flex flex-col space-y-4 lg:overflow-y-auto no-scrollbar lg:pr-2">
                 {col.items.map((item, itemIdx) => {
                   const itemId = `piecework-${colIdx}-${itemIdx}`;
@@ -301,7 +364,7 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
 
         {isComprehensive && isLargeScreen && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 w-full mr-auto overflow-y-hidden py-2 h-full min-h-0 flex-1">
-            {COMPREHENSIVE_COLUMNS.map((col, colIdx) => (
+            {comprehensiveColumns.map((col, colIdx) => (
               <div key={colIdx} className="flex flex-col h-full min-h-0 justify-start relative">
                 {/* Sticky Heading */}
                 <h3 
@@ -357,7 +420,7 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
 
         {isComprehensive && !isLargeScreen && (
           <div className="flex flex-col space-y-4 w-full py-2">
-            {COMPREHENSIVE_COLUMNS.map((col, colIdx) => (
+            {comprehensiveColumns.map((col, colIdx) => (
               <ComprehensiveAccordionItem
                 key={colIdx}
                 title={col.title}
@@ -374,7 +437,7 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
 
         {isConsultationRetainer && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 w-full lg:h-full lg:min-h-0 mr-auto overflow-y-visible lg:overflow-y-hidden py-2">
-            {CONSULTATION_RETAINER_COLUMNS.map((item, idx) => (
+            {consultationColumns.map((item, idx) => (
               <div key={`${idx}-${isLargeScreen}`} className="lg:overflow-y-auto no-scrollbar lg:pr-2">
                 <PieceworkAccordionItem
                   title={item.title}
@@ -392,7 +455,7 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
       {/* Bottom Subtext Row */}
       <div className="shrink-0 text-center border-t border-space-sparkle/10 pt-2 mt-2">
         <p className="text-micro sm:text-mini font-light opacity-75 leading-tight max-w-2xl mx-auto tracking-wide italic">
-          {data.subtext}
+          {pageSubtext}
         </p>
       </div>
     </div>

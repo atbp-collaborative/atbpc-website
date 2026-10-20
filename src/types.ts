@@ -240,6 +240,20 @@ export interface ServicePillar {
   desc: string;
 }
 
+export interface ServiceAccordionItem {
+  id: string;
+  serviceId: string;
+  columnIndex: number;
+  title: string;
+  content: string;
+  linkText?: string | null;
+  linkHref?: string | null;
+  sortOrder: number;
+  isDraft: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface ServiceOffering {
   id: string;
   title: string;
@@ -249,8 +263,9 @@ export interface ServiceOffering {
   extraDescription?: string | null;
   imageUrl?: string | null;
   subtext: string;
-  pillars: ServicePillar[];
-  contentColumns: unknown[];
+  pillars?: ServicePillar[];
+  contentColumns?: unknown[];
+  accordions?: ServiceAccordionItem[];
   sortOrder: number;
   isDraft: boolean;
 }

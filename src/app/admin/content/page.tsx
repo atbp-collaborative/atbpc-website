@@ -44,6 +44,8 @@ export default function AdminContentPage() {
     selectedServiceId,
     setSelectedServiceId,
     saveService,
+    saveServiceAccordion,
+    deleteServiceAccordion,
     // Tab 4
     slides,
     saveSlide,
@@ -52,8 +54,7 @@ export default function AdminContentPage() {
   } = useAdminCms();
 
   const tabs: { id: CmsTab; label: string; icon: React.ElementType }[] = [
-    { id: 'home', label: 'Homepage', icon: Sparkles },
-    { id: 'landing-pages', label: 'Landing Pages', icon: LayoutTemplate },
+    { id: 'landing-pages', label: 'Navigation Cards', icon: LayoutTemplate },
     { id: 'pages', label: 'Content Pages', icon: Globe },
     { id: 'services', label: 'Services', icon: Briefcase },
     { id: 'process', label: 'Processes', icon: Compass },
@@ -111,8 +112,10 @@ export default function AdminContentPage() {
           </div>
         ) : (
           <div>
-            {activeTab === 'home' && (
-              <CmsHomeTab
+            {activeTab === 'landing-pages' && (
+              <CmsLandingPagesTab
+                cards={cards}
+                onSaveCard={saveCard}
                 slides={slides}
                 onSaveSlide={saveSlide}
                 onDeleteSlide={deleteSlide}
@@ -120,17 +123,11 @@ export default function AdminContentPage() {
               />
             )}
 
-            {activeTab === 'landing-pages' && (
-              <CmsLandingPagesTab
-                cards={cards}
-                onSaveCard={saveCard}
-              />
-            )}
-
             {activeTab === 'pages' && (
               <CmsPagesTab
                 pages={pages}
                 onSavePage={savePage}
+                cards={cards}
               />
             )}
 
@@ -140,6 +137,10 @@ export default function AdminContentPage() {
                 selectedServiceId={selectedServiceId}
                 onSelectServiceId={setSelectedServiceId}
                 onSaveService={saveService}
+                onSaveServiceAccordion={saveServiceAccordion}
+                onDeleteServiceAccordion={deleteServiceAccordion}
+                cards={cards}
+                onSaveCard={saveCard}
               />
             )}
 

@@ -7,34 +7,47 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import Image from 'next/image';
-import { LayoutTemplate, Edit2, Save, X } from 'lucide-react';
-import { NavigationCardItem } from '@/types';
+import { LayoutTemplate, Edit2, Save, X, Plus } from 'lucide-react';
+import { NavigationCardItem, HomeSlideItem } from '@/types';
 import { Button } from '@/components/primitives/buttons/Button';
 import { useTheme } from '@/context/ThemeContext';
 import { ImageManagerField } from '@/components/admin/ImageManagerField';
+import { CmsHomeTab } from '@/components/admin/cms/CmsHomeTab';
 
 interface CmsLandingPagesTabProps {
   cards: NavigationCardItem[];
   onSaveCard: (card: NavigationCardItem) => void;
+  slides?: HomeSlideItem[];
+  onSaveSlide?: (slide: HomeSlideItem) => Promise<HomeSlideItem>;
+  onDeleteSlide?: (slideId: string) => Promise<void>;
+  onReorderSlides?: (newSlides: HomeSlideItem[]) => Promise<void>;
 }
 
 const HUB_CATEGORIES = [
-  { id: 'all', label: 'All Cards' },
+  { id: 'home', label: 'Homepage' },
+  { id: 'services', label: 'Our Services' },
+  { id: 'process', label: 'Our Process' },
+  { id: 'studio', label: 'Studio Hub' },
   { id: 'case-study-house', label: 'Case Study House' },
   { id: 'grow-with-us', label: 'Grow With Us' },
   { id: 'partner-with-us', label: 'Partner With Us' },
-  { id: 'process', label: 'Our Process' },
-  { id: 'studio', label: 'Studio Hub' },
 ];
 
 export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
   cards,
   onSaveCard,
+  slides = [],
+  onSaveSlide = async () => ({} as any),
+  onDeleteSlide = async () => {},
+  onReorderSlides = async () => {},
 }) => {
   const { isDarkMode } = useTheme();
 
-  // Category filter state
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+  // Category filter state: 'home' is the first tab by default
+  const [activeCategory, setActiveCategory] = useState<string>('home');
+
+  // Trigger ref for Home slide creation from header
+  const createSlideTriggerRef = useRef<(() => void) | null>(null);
 
   // Card editing modal state
   const [editingCard, setEditingCard] = useState<NavigationCardItem | null>(null);
@@ -51,7 +64,6 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
   }, [editingCard]);
 
   const filteredCards = useMemo(() => {
-    if (activeCategory === 'all') return cards;
     return cards.filter((c) => c.hubId.toLowerCase() === activeCategory.toLowerCase());
   }, [cards, activeCategory]);
 
@@ -73,20 +85,35 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3 border-black/10 dark:border-white/10">
         <div>
           <h3 className="text-body font-bold flex items-center gap-2">
-            <LayoutTemplate size={18} className="text-space-sparkle" /> Landing Pages &amp; Navigation Cards ({filteredCards.length})
+            <LayoutTemplate size={18} className="text-space-sparkle" />{' '}
+            {activeCategory === 'home'
+              ? `Homepage Hero Slides (${slides.length})`
+              : `Navigation Cards (${filteredCards.length})`}
           </h3>
           <p className="text-mini opacity-60">
-            Control the teaser cards displayed across hubs (titles, taglines, and imagery). All cards are permanently live.
+            {activeCategory === 'home'
+              ? 'Manage fullscreen hero carousel imagery and sequence on the public frontpage.'
+              : 'Control the teaser cards displayed across hubs (titles, taglines, and imagery). All cards are permanently live.'}
           </p>
         </div>
+
+        {activeCategory === 'home' && (
+          <Button
+            type="filled"
+            onClick={() => createSlideTriggerRef.current?.()}
+            className="!py-2 !px-4 text-mini font-semibold shrink-0"
+          >
+            <Plus size={14} className="mr-1 inline" /> Add Hero Slide
+          </Button>
+        )}
       </div>
 
-      {/* Hub Filter Chips */}
+      {/* Hub Filter Chips (Homepage first, no "All Cards") */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {HUB_CATEGORIES.map((cat) => {
           const count =
-            cat.id === 'all'
-              ? cards.length
+            cat.id === 'home'
+              ? slides.length
               : cards.filter((c) => c.hubId.toLowerCase() === cat.id.toLowerCase()).length;
           const isSelected = activeCategory === cat.id;
           return (
@@ -108,62 +135,79 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
         })}
       </div>
 
-      {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredCards.map((card) => (
-          <div
-            key={card.id}
-            className={`p-5 rounded-xl border flex flex-col justify-between transition-all ${
-              isDarkMode
-                ? 'bg-vintage-charcoal/60 border-white/10 hover:border-space-sparkle/40'
-                : 'bg-white border-black/10 hover:border-space-sparkle/40 shadow-xs'
-            }`}
-          >
-            <div className="space-y-3">
-              <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-black/10 border border-black/10 dark:border-white/10">
-                {card.imageUrl ? (
-                  <Image
-                    src={card.imageUrl}
-                    alt={card.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center opacity-40 text-micro font-mono">
-                    No Image
+      {/* Active Tab Content */}
+      {activeCategory === 'home' ? (
+        <CmsHomeTab
+          slides={slides}
+          onSaveSlide={onSaveSlide}
+          onDeleteSlide={onDeleteSlide}
+          onReorderSlides={onReorderSlides}
+          createSlideTriggerRef={createSlideTriggerRef}
+        />
+      ) : (
+        /* Cards Grid */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredCards.length === 0 ? (
+            <div className="col-span-full py-12 text-center opacity-50 text-mini font-mono">
+              No navigation cards found in this category.
+            </div>
+          ) : (
+            filteredCards.map((card) => (
+              <div
+                key={card.id}
+                className={`p-5 rounded-xl border flex flex-col justify-between transition-all ${
+                  isDarkMode
+                    ? 'bg-vintage-charcoal/60 border-white/10 hover:border-space-sparkle/40'
+                    : 'bg-white border-black/10 hover:border-space-sparkle/40 shadow-xs'
+                }`}
+              >
+                <div className="space-y-3">
+                  <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-black/10 border border-black/10 dark:border-white/10">
+                    {card.imageUrl ? (
+                      <Image
+                        src={card.imageUrl}
+                        alt={card.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center opacity-40 text-micro font-mono">
+                        No Image
+                      </div>
+                    )}
+                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded text-micro font-mono uppercase bg-black/70 text-white backdrop-blur-xs">
+                      {card.hubId}
+                    </div>
                   </div>
-                )}
-                <div className="absolute top-2 left-2 px-2 py-0.5 rounded text-micro font-mono uppercase bg-black/70 text-white backdrop-blur-xs">
-                  {card.hubId}
+
+                  <div>
+                    <h4 className="font-bold text-caption sm:text-body line-clamp-1 lowercase">
+                      {card.title}
+                    </h4>
+                    <p className="text-mini font-medium text-space-sparkle line-clamp-1">
+                      {card.tagline}
+                    </p>
+                    <span className="text-micro font-mono opacity-50 truncate block mt-1" title={card.targetHref}>
+                      {card.targetHref}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-black/5 dark:border-white/5 flex items-center justify-end gap-2 mt-4">
+                  <Button
+                    type="ghost"
+                    onClick={() => handleStartEditCard(card)}
+                    className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
+                  >
+                    <Edit2 size={13} className="mr-1 inline" /> Edit Card
+                  </Button>
                 </div>
               </div>
-
-              <div>
-                <h4 className="font-bold text-caption sm:text-body line-clamp-1 lowercase">
-                  {card.title}
-                </h4>
-                <p className="text-mini font-medium text-space-sparkle line-clamp-1">
-                  {card.tagline}
-                </p>
-                <span className="text-micro font-mono opacity-50 truncate block mt-1" title={card.targetHref}>
-                  {card.targetHref}
-                </span>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-black/5 dark:border-white/5 flex items-center justify-end gap-2 mt-4">
-              <Button
-                type="ghost"
-                onClick={() => handleStartEditCard(card)}
-                className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
-              >
-                <Edit2 size={13} className="mr-1 inline" /> Edit Card
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
+            ))
+          )}
+        </div>
+      )}
 
       {/* EDIT NAVIGATION CARD MODAL */}
       {editingCard && (
@@ -176,13 +220,7 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
             }`}
           >
             <div className="flex items-center justify-between pb-3 border-b border-black/10 dark:border-white/10 mb-4">
-              <div>
-                <h3 className="text-body font-bold lowercase">edit card: {editingCard.title}</h3>
-                {/* Destination URL on top of card below title replacing Hub: <hub> | Key: <key> */}
-                <span className="text-micro font-mono opacity-60 break-all block mt-0.5">
-                  {editingCard.targetHref}
-                </span>
-              </div>
+              <h3 className="text-body font-bold lowercase">edit card: {editingCard.title}</h3>
               <button
                 type="button"
                 onClick={() => setEditingCard(null)}

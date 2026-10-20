@@ -5,68 +5,21 @@
 
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { Lock, Edit2, Globe, Save, X, LayoutGrid, List } from 'lucide-react';
-import { SitePage } from '@/types';
+import { Globe } from 'lucide-react';
+import { SitePage, NavigationCardItem } from '@/types';
 import { PublicationToggle } from '@/components/admin/PublicationToggle';
-import { Button } from '@/components/primitives/buttons/Button';
 import { useTheme } from '@/context/ThemeContext';
-import { ImageManagerField } from '@/components/admin/ImageManagerField';
 
 interface CmsPagesTabProps {
   pages: SitePage[];
   onSavePage: (page: SitePage) => void;
+  cards?: NavigationCardItem[];
 }
 
 const SUBPAGE_TEMPLATES: SitePage[] = [
-  // 1. studio/our-services subpages
-  {
-    id: 'studio/our-services/comprehensive-services',
-    title: 'comprehensive services',
-    subtitle: 'full-lifecycle architectural design, technical engineering, & turnkey delivery',
-    heroImageUrl: '/images/hero_modern_villa_1783495183350.jpg',
-    isDraft: false,
-  },
-  {
-    id: 'studio/our-services/piecework-services',
-    title: 'piecework services',
-    subtitle: 'targeted architectural, engineering, or modular consulting scopes',
-    heroImageUrl: '/images/studio_services_img_1785469964556.jpg',
-    isDraft: false,
-  },
-  {
-    id: 'studio/our-services/consultation-retainer-services',
-    title: 'consultation & retainer services',
-    subtitle: 'on-call technical advisory, peer reviews, and ongoing design management',
-    heroImageUrl: '/images/production_drawings_1783495233053.jpg',
-    isDraft: false,
-  },
-
-  // 2. studio/our-process subpages
-  {
-    id: 'studio/our-process/designing-with-values',
-    title: 'designing with values',
-    subtitle: 'purpose-driven spatial concepts anchored in environmental & social context',
-    heroImageUrl: '/images/contact_case_study_house_img_1785469986420.jpg',
-    isDraft: false,
-  },
-  {
-    id: 'studio/our-process/managing-with-integrity',
-    title: 'managing with integrity',
-    subtitle: 'uncompromising fiscal clarity, transparent procurement & rigorous oversight',
-    heroImageUrl: '/images/contact_headquarters_img_1785470005846.jpg',
-    isDraft: false,
-  },
-  {
-    id: 'studio/our-process/building-with-culture',
-    title: 'building with culture',
-    subtitle: 'synthesizing regional craftsmanship with modern architectural technology',
-    heroImageUrl: '/images/studio_process_img_1785469980353.jpg',
-    isDraft: false,
-  },
-
-  // 3. contact/case-study-house subpages
+  // 1. contact/case-study-house subpages
   {
     id: 'contact/case-study-house/discovery-session',
     title: 'schedule a discovery session',
@@ -89,7 +42,7 @@ const SUBPAGE_TEMPLATES: SitePage[] = [
     isDraft: false,
   },
 
-  // 4. contact/grow-with-us subpages
+  // 2. contact/grow-with-us subpages
   {
     id: 'contact/grow-with-us/apprenticeship-programs',
     title: 'apprenticeship programs',
@@ -105,7 +58,7 @@ const SUBPAGE_TEMPLATES: SitePage[] = [
     isDraft: false,
   },
 
-  // 5. contact/partner-with-us subpages
+  // 3. contact/partner-with-us subpages
   {
     id: 'contact/partner-with-us/supplier',
     title: 'suppliers',
@@ -131,8 +84,6 @@ const SUBPAGE_TEMPLATES: SitePage[] = [
 
 const SUBPAGE_CATEGORIES = [
   { id: 'all', label: 'All Subpages' },
-  { id: 'our-services', label: 'Our Services' },
-  { id: 'our-process', label: 'Our Process' },
   { id: 'case-study-house', label: 'Case Study House' },
   { id: 'grow-with-us', label: 'Grow With Us' },
   { id: 'partner-with-us', label: 'Partner With Us' },
@@ -140,41 +91,42 @@ const SUBPAGE_CATEGORIES = [
 
 function getSubpageCategory(id: string): { label: string; id: string } {
   const norm = id.toLowerCase();
-  if (norm.includes('our-services')) return { label: 'Our Services', id: 'our-services' };
-  if (norm.includes('our-process')) return { label: 'Our Process', id: 'our-process' };
   if (norm.includes('case-study-house')) return { label: 'Case Study House', id: 'case-study-house' };
   if (norm.includes('grow-with-us')) return { label: 'Grow With Us', id: 'grow-with-us' };
   if (norm.includes('partner-with-us')) return { label: 'Partner With Us', id: 'partner-with-us' };
   return { label: 'Subpage', id: 'all' };
 }
 
+function getThumbnailForPage(page: SitePage, cards: NavigationCardItem[] = []): string {
+  const normPageId = page.id.toLowerCase().replace(/^\/+|\/+$/g, '');
+  const lastSegment = normPageId.split('/').pop() || '';
+
+  const matched = cards.find((c) => {
+    const normTarget = (c.targetHref || '').toLowerCase().replace(/^\/+|\/+$/g, '');
+    if (normTarget && (normTarget === normPageId || normTarget.endsWith(normPageId) || normPageId.endsWith(normTarget))) {
+      return true;
+    }
+    const normKey = (c.cardKey || '').toLowerCase();
+    if (normKey && normKey === lastSegment) {
+      return true;
+    }
+    return false;
+  });
+
+  return matched?.imageUrl || page.heroImageUrl || '';
+}
+
 export const CmsPagesTab: React.FC<CmsPagesTabProps> = ({
   pages,
   onSavePage,
+  cards = [],
 }) => {
   const { isDarkMode } = useTheme();
 
   // Category filter state
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
-  // View mode state: grid vs list
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-
-  // Page editing modal state
-  const [editingPage, setEditingPage] = useState<SitePage | null>(null);
-  const initialPageRef = useRef<SitePage | null>(null);
-
-  const handleStartEditPage = (page: SitePage) => {
-    setEditingPage({ ...page });
-    initialPageRef.current = { ...page };
-  };
-
-  const isDirty = useMemo(() => {
-    if (!editingPage || !initialPageRef.current) return false;
-    return JSON.stringify(editingPage) !== JSON.stringify(initialPageRef.current);
-  }, [editingPage]);
-
-  // Merge incoming pages from DB with SUBPAGE_TEMPLATES; parent hubs are excluded
+  // Merge incoming pages from DB with SUBPAGE_TEMPLATES
   const activeSubpages = useMemo(() => {
     return SUBPAGE_TEMPLATES.map((tmpl) => {
       const match = pages.find((p) => {
@@ -194,59 +146,17 @@ export const CmsPagesTab: React.FC<CmsPagesTabProps> = ({
     return activeSubpages.filter((p) => getSubpageCategory(p.id).id === activeCategory);
   }, [activeSubpages, activeCategory]);
 
-  const inputClass = `w-full text-caption px-3.5 py-2 rounded-lg border outline-none transition-all ${
-    isDarkMode
-      ? 'border-bright-gray/20 bg-vintage-charcoal/50 text-white placeholder-bright-gray/40 focus:border-space-sparkle'
-      : 'border-vintage-charcoal/20 bg-white text-vintage-charcoal placeholder-vintage-charcoal/40 focus:border-space-sparkle'
-  }`;
-
-  const handleSavePageSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingPage || !isDirty) return;
-    onSavePage(editingPage);
-    setEditingPage(null);
-  };
-
   return (
     <div className="space-y-6">
-      {/* SECTION 1: CONTENT PAGES */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3 border-black/10 dark:border-white/10">
           <div>
             <h3 className="text-body font-bold flex items-center gap-2">
-              <Globe size={18} className="text-space-sparkle" /> Content Pages &amp; Metadata ({filteredSubpages.length})
+              <Globe size={18} className="text-space-sparkle" /> Content Pages ({filteredSubpages.length})
             </h3>
             <p className="text-mini opacity-60">
-              Only subpages under the 5 sections can be published or unpublished. Parent hubs and navigation menus are permanent and always displayed.
+              Manage publication visibility for contact and outreach subpages.
             </p>
-          </div>
-
-          {/* List vs Grid View Toggle */}
-          <div className="flex items-center gap-1 border rounded-lg p-0.5 border-black/10 dark:border-white/10 shrink-0 self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setViewMode('grid')}
-              title="Grid View"
-              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                viewMode === 'grid'
-                  ? 'bg-space-sparkle text-white shadow-xs'
-                  : 'text-vintage-charcoal/60 dark:text-bright-gray/60 hover:text-black dark:hover:text-white'
-              }`}
-            >
-              <LayoutGrid size={15} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              title="List View"
-              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                viewMode === 'list'
-                  ? 'bg-space-sparkle text-white shadow-xs'
-                  : 'text-vintage-charcoal/60 dark:text-bright-gray/60 hover:text-black dark:hover:text-white'
-              }`}
-            >
-              <List size={15} />
-            </button>
           </div>
         </div>
 
@@ -277,266 +187,60 @@ export const CmsPagesTab: React.FC<CmsPagesTabProps> = ({
           })}
         </div>
 
-        {/* GRID VIEW */}
-        {viewMode === 'grid' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredSubpages.map((page) => {
-              const category = getSubpageCategory(page.id);
-              const displaySlug = page.id.startsWith('/') ? page.id : `/${page.id}`;
+        {/* LIST ONLY VIEW */}
+        <div className="space-y-3">
+          {filteredSubpages.map((page) => {
+            const category = getSubpageCategory(page.id);
+            const displaySlug = page.id.startsWith('/') ? page.id : `/${page.id}`;
+            const thumbnail = getThumbnailForPage(page, cards);
 
-              return (
-                <div
-                  key={page.id}
-                  className={`p-5 rounded-xl border flex flex-col justify-between transition-all ${
-                    isDarkMode
-                      ? 'bg-vintage-charcoal/60 border-white/10 hover:border-space-sparkle/40'
-                      : 'bg-white border-black/10 hover:border-space-sparkle/40 shadow-xs'
-                  }`}
-                >
-                  <div className="space-y-3">
-                    {/* Hero preview or placeholder */}
-                    <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-black/10 border border-black/10 dark:border-white/10">
-                      {page.heroImageUrl ? (
-                        <Image
-                          src={page.heroImageUrl}
-                          alt={page.title}
-                          fill
-                          sizes="(max-width: 768px) 100vw, 33vw"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center opacity-40 text-micro font-mono">
-                          No Hero Media
-                        </div>
-                      )}
-
-                      {/* Category badge */}
-                      <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded text-micro font-mono uppercase bg-black/70 text-white backdrop-blur-xs">
-                        {category.label}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 text-micro font-mono opacity-50 uppercase truncate">
-                        <span title={displaySlug}>{displaySlug}</span>
-                      </div>
-                      <h4 className="font-bold text-caption sm:text-body line-clamp-1 lowercase">
-                        {page.title}
-                      </h4>
-                      <p className="text-mini opacity-70 line-clamp-2 mt-1">
-                        {page.subtitle || 'No subtitle provided.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-2 mt-4">
-                    {/* Non-clickable status chip on card: only toggleable inside modal */}
-                    <PublicationToggle
-                      isDraft={Boolean(page.isDraft)}
-                      onToggle={() => {}}
-                      disabled={true}
-                    />
-                    <Button
-                      type="ghost"
-                      onClick={() => handleStartEditPage(page)}
-                      className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
-                    >
-                      <Edit2 size={13} className="mr-1 inline" /> Edit Page
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* LIST VIEW */}
-        {viewMode === 'list' && (
-          <div className="space-y-3">
-            {filteredSubpages.map((page) => {
-              const category = getSubpageCategory(page.id);
-              const displaySlug = page.id.startsWith('/') ? page.id : `/${page.id}`;
-
-              return (
-                <div
-                  key={page.id}
-                  className={`p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all ${
-                    isDarkMode
-                      ? 'bg-vintage-charcoal/60 border-white/10 hover:border-space-sparkle/40'
-                      : 'bg-white border-black/10 hover:border-space-sparkle/40 shadow-xs'
-                  }`}
-                >
-                  <div className="flex items-center gap-4 min-w-0 flex-1">
-                    <div className="relative w-20 h-14 sm:w-28 sm:h-18 rounded-lg overflow-hidden bg-black/10 shrink-0 border border-black/10 dark:border-white/10">
-                      {page.heroImageUrl ? (
-                        <Image
-                          src={page.heroImageUrl}
-                          alt={page.title}
-                          fill
-                          sizes="120px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center opacity-40 text-micro font-mono">
-                          No Media
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2 py-0.5 rounded text-micro font-mono uppercase bg-black/5 dark:bg-white/10 text-vintage-charcoal dark:text-white">
-                          {category.label}
-                        </span>
-                        <span className="text-micro font-mono opacity-50 uppercase truncate" title={displaySlug}>
-                          {displaySlug}
-                        </span>
-                      </div>
-                      <h4 className="font-bold text-caption sm:text-body line-clamp-1 lowercase">
-                        {page.title}
-                      </h4>
-                      <p className="text-mini opacity-70 line-clamp-1">
-                        {page.subtitle || 'No subtitle provided.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
-                    {/* Non-clickable status chip on card */}
-                    <PublicationToggle
-                      isDraft={Boolean(page.isDraft)}
-                      onToggle={() => {}}
-                      disabled={true}
-                    />
-                    <Button
-                      type="ghost"
-                      onClick={() => handleStartEditPage(page)}
-                      className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
-                    >
-                      <Edit2 size={13} className="mr-1 inline" /> Edit Page
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* EDIT SITE PAGE MODAL */}
-      {editingPage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div
-            className={`w-full max-w-2xl rounded-xl border p-6 max-h-[90vh] overflow-y-auto ${
-              isDarkMode
-                ? 'bg-vintage-charcoal border-white/10 text-bright-gray'
-                : 'bg-white border-black/10 text-vintage-charcoal'
-            }`}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-black/10 dark:border-white/10 mb-4">
-              <div>
-                <h3 className="text-body font-bold lowercase">edit page: {editingPage.title}</h3>
-                <span className="text-micro font-mono opacity-50">
-                  Slug: {editingPage.id.startsWith('/') ? editingPage.id : `/${editingPage.id}`} (SEO Locked)
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingPage(null)}
-                className="p-1 opacity-60 hover:opacity-100 cursor-pointer"
+            return (
+              <div
+                key={page.id}
+                className={`p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all ${
+                  isDarkMode
+                    ? 'bg-vintage-charcoal/60 border-white/10 hover:border-space-sparkle/40'
+                    : 'bg-white border-black/10 hover:border-space-sparkle/40 shadow-xs'
+                }`}
               >
-                <X size={18} />
-              </button>
-            </div>
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  <div className="relative w-20 h-14 sm:w-28 sm:h-18 rounded-lg overflow-hidden bg-black/10 shrink-0 border border-black/10 dark:border-white/10">
+                    {thumbnail ? (
+                      <Image
+                        src={thumbnail}
+                        alt={page.title}
+                        fill
+                        sizes="120px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center opacity-40 text-micro font-mono">
+                        No Media
+                      </div>
+                    )}
+                  </div>
 
-            <form onSubmit={handleSavePageSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80 flex items-center gap-1.5">
-                  <Lock size={12} className="text-amber-500" /> Page Title
-                </label>
-                <input
-                  type="text"
-                  disabled
-                  value={editingPage.title}
-                  className={`${inputClass} opacity-60 cursor-not-allowed`}
-                />
-                <p className="text-micro opacity-40">Page titles and URL slugs are locked to preserve search indexing.</p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                  Page Subtitle / Tagline <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  value={editingPage.subtitle}
-                  onChange={(e) => setEditingPage({ ...editingPage, subtitle: e.target.value })}
-                  placeholder="Enter page subtitle or introductory philosophy..."
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <ImageManagerField
-                  single={true}
-                  label="Hero Banner Image"
-                  helperText="High-resolution banner photo for the top of this page."
-                  images={editingPage.heroImageUrl ? [editingPage.heroImageUrl] : []}
-                  onChange={(imgs) => setEditingPage({ ...editingPage, heroImageUrl: imgs[0] || '' })}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="space-y-1">
-                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Meta Title (Browser Tab &amp; Google)
-                  </label>
-                  <input
-                    type="text"
-                    value={editingPage.metaTitle || ''}
-                    onChange={(e) => setEditingPage({ ...editingPage, metaTitle: e.target.value })}
-                    placeholder="e.g. Services — ATBP Collaborative"
-                    className={inputClass}
-                  />
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <h4 className="font-bold text-caption sm:text-body line-clamp-1 lowercase">
+                      {page.title}
+                    </h4>
+                    <p className="text-micro font-mono opacity-50 uppercase truncate" title={displaySlug}>
+                      {displaySlug}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Meta Description
-                  </label>
-                  <input
-                    type="text"
-                    value={editingPage.metaDescription || ''}
-                    onChange={(e) => setEditingPage({ ...editingPage, metaDescription: e.target.value })}
-                    placeholder="Brief description for search engines..."
-                    className={inputClass}
+                <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                  <PublicationToggle
+                    isDraft={Boolean(page.isDraft)}
+                    onToggle={() => onSavePage({ ...page, isDraft: !page.isDraft })}
                   />
                 </div>
               </div>
-
-              {/* Publication status inside modal: toggleable */}
-              <div className="flex items-center justify-between p-3 rounded-lg border border-black/10 dark:border-white/10 mt-4">
-                <div>
-                  <span className="text-mini font-semibold block">Page Publication Status</span>
-                  <span className="text-micro opacity-60">Control public visibility and visitor access</span>
-                </div>
-                <PublicationToggle
-                  isDraft={Boolean(editingPage.isDraft)}
-                  onToggle={() => setEditingPage({ ...editingPage, isDraft: !editingPage.isDraft })}
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/10 dark:border-white/10">
-                <Button type="ghost" onClick={() => setEditingPage(null)} label="Cancel" />
-                <Button type="filled" htmlType="submit" disabled={!isDirty}>
-                  <Save size={14} className="mr-1.5 inline" /> Save Page
-                </Button>
-              </div>
-            </form>
-          </div>
+            );
+          })}
         </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -65,7 +65,30 @@ export async function getContactInfo(): Promise<ContactInfo> {
 }
 
 export async function getServices(): Promise<Service[]> {
+  try {
+    const cards = await getNavigationCardsData('services');
+    if (cards && cards.length > 0) {
+      return cards.map((c) => {
+        let iconName = 'Briefcase';
+        if (c.cardKey === 'comprehensive-services' || c.title.includes('comprehensive')) iconName = 'Layers';
+        else if (c.cardKey === 'piecework-services' || c.title.includes('piecework')) iconName = 'LayoutGrid';
+        return {
+          title: c.title,
+          iconName,
+          desc: c.tagline || c.subtext,
+          image: c.imageUrl,
+        };
+      });
+    }
+  } catch (err) {
+    console.warn('[DataService] Failed to load services navigation cards:', err);
+  }
   return SERVICES_DATA;
+}
+
+export async function getServiceOfferingByIdData(id: string): Promise<ServiceOffering | null> {
+  const all = await getServiceOfferingsData();
+  return all.find((s) => s.id === id) || null;
 }
 
 export async function getHomeCarouselImages(): Promise<HomeCarouselImage[]> {

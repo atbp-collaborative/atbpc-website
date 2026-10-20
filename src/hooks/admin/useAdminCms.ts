@@ -10,6 +10,7 @@ import {
   SitePage,
   NavigationCardItem,
   ServiceOffering,
+  ServiceAccordionItem,
   ProcessPhilosophy,
   StageGroup,
   ProcessStageItem,
@@ -30,6 +31,8 @@ import {
   deleteAdminProcessStage,
   fetchAdminServiceOfferings,
   saveAdminServiceOffering,
+  saveAdminServiceAccordion,
+  deleteAdminServiceAccordion,
   fetchAdminHomeSlides,
   saveAdminHomeSlide,
   deleteAdminHomeSlide,
@@ -42,7 +45,7 @@ import { toast } from 'sonner';
 export type CmsTab = 'pages' | 'landing-pages' | 'process' | 'services' | 'home';
 
 export function useAdminCms() {
-  const [activeTab, setActiveTab] = useState<CmsTab>('home');
+  const [activeTab, setActiveTab] = useState<CmsTab>('landing-pages');
   const [isLoading, setIsLoading] = useState(true);
 
   // Tab 1: Pages & Nav
@@ -56,7 +59,7 @@ export function useAdminCms() {
 
   // Tab 3: Services
   const [services, setServices] = useState<ServiceOffering[]>([]);
-  const [selectedServiceId, setSelectedServiceId] = useState<string>('comprehensive');
+  const [selectedServiceId, setSelectedServiceId] = useState<string>('comprehensive-services');
 
   // Tab 4: Home
   const [slides, setSlides] = useState<HomeSlideItem[]>([]);
@@ -183,7 +186,7 @@ export function useAdminCms() {
   const handleSaveStageGroup = useCallback(async (group: StageGroup) => {
     const saved = await saveAdminStageGroup(group);
     setStageGroups((prev) => {
-      const idx = prev.findIndex((g) => g.id === saved.id);
+      const idx = prev.findIndex((g) => g.id === saved.id || g.id === group.id);
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = saved;
@@ -208,7 +211,7 @@ export function useAdminCms() {
       prev.map((g) => {
         if (g.id === saved.stageGroupId) {
           const stgs = g.stages || [];
-          const sIdx = stgs.findIndex((s) => s.id === saved.id);
+          const sIdx = stgs.findIndex((s) => s.id === saved.id || s.id === stage.id);
           let newStgs: ProcessStageItem[];
           if (sIdx >= 0) {
             newStgs = [...stgs];
@@ -258,11 +261,63 @@ export function useAdminCms() {
     }
   }, []);
 
+  // Service Accordion mutations
+  const handleSaveServiceAccordion = useCallback(async (item: ServiceAccordionItem) => {
+    try {
+      const saved = await saveAdminServiceAccordion(item);
+      setServices((prev) =>
+        prev.map((s) => {
+          if (s.id === saved.serviceId) {
+            const accs = s.accordions || [];
+            const idx = accs.findIndex((a) => a.id === item.id || a.id === saved.id);
+            let nextAccs: ServiceAccordionItem[];
+            if (idx >= 0) {
+              nextAccs = [...accs];
+              nextAccs[idx] = saved;
+            } else {
+              nextAccs = [...accs, saved];
+            }
+            return { ...s, accordions: nextAccs };
+          }
+          return s;
+        })
+      );
+      toast.success(`Accordion "${saved.title}" saved`);
+      return saved;
+    } catch (err: any) {
+      console.error('Failed to save service accordion:', err);
+      toast.error(err?.message || `Failed to save accordion "${item.title}"`);
+      throw err;
+    }
+  }, []);
+
+  const handleDeleteServiceAccordion = useCallback(async (itemId: string, serviceId: string) => {
+    try {
+      await deleteAdminServiceAccordion(itemId, serviceId);
+      setServices((prev) =>
+        prev.map((s) => {
+          if (s.id === serviceId) {
+            return {
+              ...s,
+              accordions: (s.accordions || []).filter((a) => a.id !== itemId),
+            };
+          }
+          return s;
+        })
+      );
+      toast.info('Accordion item removed');
+    } catch (err: any) {
+      console.error('Failed to delete service accordion:', err);
+      toast.error(err?.message || 'Failed to delete accordion');
+      throw err;
+    }
+  }, []);
+
   // Home Slide mutations
   const handleSaveSlide = useCallback(async (slide: HomeSlideItem) => {
     const saved = await saveAdminHomeSlide(slide);
     setSlides((prev) => {
-      const idx = prev.findIndex((s) => s.id === saved.id);
+      const idx = prev.findIndex((s) => s.id === saved.id || s.id === slide.id);
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = saved;
@@ -326,6 +381,8 @@ export function useAdminCms() {
     selectedServiceId,
     setSelectedServiceId,
     saveService: handleSaveService,
+    saveServiceAccordion: handleSaveServiceAccordion,
+    deleteServiceAccordion: handleDeleteServiceAccordion,
     // Tab 4
     slides,
     slogans,

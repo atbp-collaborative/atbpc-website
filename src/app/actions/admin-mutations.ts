@@ -19,6 +19,7 @@ import {
   StageGroup,
   ProcessStageItem,
   ServiceOffering,
+  ServiceAccordionItem,
   HomeSlideItem,
   HomepageSlogans,
 } from '@/types';
@@ -1014,10 +1015,16 @@ export async function saveProcessPhilosophyAction(item: ProcessPhilosophy) {
       return { success: false, error: error.message };
     }
 
+    const pageId = `studio/our-process/${item.id}`;
+    await supabase
+      .from('site_pages')
+      .update({ is_draft: Boolean(item.isDraft), updated_at: new Date().toISOString() })
+      .or(`id.eq.${pageId},id.eq./${pageId},id.eq.${item.id}`);
+
     revalidatePath('/studio/our-process');
-    revalidatePath('/studio/designing-with-values');
-    revalidatePath('/studio/managing-with-integrity');
-    revalidatePath('/studio/building-with-culture');
+    revalidatePath('/studio/our-process/designing-with-values');
+    revalidatePath('/studio/our-process/managing-with-integrity');
+    revalidatePath('/studio/our-process/building-with-culture');
     revalidatePath('/', 'layout');
 
     return { success: true, data: item };
@@ -1030,27 +1037,64 @@ export async function saveProcessPhilosophyAction(item: ProcessPhilosophy) {
 export async function saveStageGroupAction(group: StageGroup) {
   try {
     const supabase = getAdminClient();
+    const hasValidUuid = isUuid(group.id);
 
-    const { error } = await supabase.from('stage_groups').upsert({
-      id: group.id,
+    const payload: any = {
       process_page_id: group.processPageId,
       name: group.name,
       col_span: group.colSpan,
       sort_order: group.sortOrder,
       is_draft: Boolean(group.isDraft),
       updated_at: new Date().toISOString(),
-    });
+    };
 
-    if (error) {
-      console.error('[saveStageGroupAction] Error:', error);
-      return { success: false, error: error.message };
+    let resultData: any = null;
+
+    if (hasValidUuid) {
+      payload.id = group.id;
+      const { data, error } = await supabase
+        .from('stage_groups')
+        .upsert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[saveStageGroupAction] Error:', error);
+        return { success: false, error: error.message };
+      }
+      resultData = data;
+    } else {
+      const { data, error } = await supabase
+        .from('stage_groups')
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[saveStageGroupAction] Error:', error);
+        return { success: false, error: error.message };
+      }
+      resultData = data;
     }
 
     revalidatePath('/studio/our-process');
     revalidatePath(`/studio/${group.processPageId}`);
     revalidatePath('/', 'layout');
 
-    return { success: true, data: group };
+    return {
+      success: true,
+      data: resultData
+        ? {
+            id: resultData.id,
+            processPageId: resultData.process_page_id,
+            name: resultData.name,
+            colSpan: resultData.col_span,
+            sortOrder: resultData.sort_order,
+            isDraft: Boolean(resultData.is_draft),
+            stages: group.stages || [],
+          }
+        : group,
+    };
   } catch (err: any) {
     console.error('[saveStageGroupAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to save stage group' };
@@ -1081,9 +1125,9 @@ export async function deleteStageGroupAction(groupId: string, processPageId: str
 export async function saveProcessStageAction(stage: ProcessStageItem) {
   try {
     const supabase = getAdminClient();
+    const hasValidUuid = isUuid(stage.id);
 
-    const { error } = await supabase.from('process_stages').upsert({
-      id: stage.id,
+    const payload: any = {
       process_page_id: stage.processPageId,
       stage_group_id: stage.stageGroupId,
       step_number: stage.stepNumber,
@@ -1095,18 +1139,59 @@ export async function saveProcessStageAction(stage: ProcessStageItem) {
       sort_order: stage.sortOrder,
       is_draft: Boolean(stage.isDraft),
       updated_at: new Date().toISOString(),
-    });
+    };
 
-    if (error) {
-      console.error('[saveProcessStageAction] Error:', error);
-      return { success: false, error: error.message };
+    let resultData: any = null;
+
+    if (hasValidUuid) {
+      payload.id = stage.id;
+      const { data, error } = await supabase
+        .from('process_stages')
+        .upsert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[saveProcessStageAction] Error:', error);
+        return { success: false, error: error.message };
+      }
+      resultData = data;
+    } else {
+      const { data, error } = await supabase
+        .from('process_stages')
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[saveProcessStageAction] Error:', error);
+        return { success: false, error: error.message };
+      }
+      resultData = data;
     }
 
     revalidatePath('/studio/our-process');
     revalidatePath(`/studio/${stage.processPageId}`);
     revalidatePath('/', 'layout');
 
-    return { success: true, data: stage };
+    return {
+      success: true,
+      data: resultData
+        ? {
+            id: resultData.id,
+            processPageId: resultData.process_page_id,
+            stageGroupId: resultData.stage_group_id,
+            stepNumber: resultData.step_number,
+            title: resultData.title,
+            subtitle: resultData.subtitle,
+            description: resultData.description,
+            deliverables: resultData.deliverables,
+            duration: resultData.duration,
+            sortOrder: resultData.sort_order,
+            isDraft: Boolean(resultData.is_draft),
+          }
+        : stage,
+    };
   } catch (err: any) {
     console.error('[saveProcessStageAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to save process stage' };
@@ -1141,6 +1226,7 @@ export async function saveServiceOfferingAction(offering: ServiceOffering) {
     const { error } = await supabase
       .from('service_offerings')
       .update({
+        title: offering.title,
         tagline: offering.tagline,
         description: offering.description,
         extra_description: offering.extraDescription,
@@ -1159,10 +1245,16 @@ export async function saveServiceOfferingAction(offering: ServiceOffering) {
       return { success: false, error: error.message };
     }
 
+    const pageId = `studio/our-services/${offering.id}`;
+    await supabase
+      .from('site_pages')
+      .update({ is_draft: Boolean(offering.isDraft), updated_at: new Date().toISOString() })
+      .or(`id.eq.${pageId},id.eq./${pageId},id.eq.${offering.id}`);
+
     revalidatePath('/studio/our-services');
-    revalidatePath('/studio/comprehensive-services');
-    revalidatePath('/studio/piecework-services');
-    revalidatePath('/studio/consultation-retainer-services');
+    revalidatePath('/studio/our-services/comprehensive-services');
+    revalidatePath('/studio/our-services/piecework-services');
+    revalidatePath('/studio/our-services/consultation-retainer-services');
     revalidatePath('/', 'layout');
 
     return { success: true, data: offering };
@@ -1172,27 +1264,158 @@ export async function saveServiceOfferingAction(offering: ServiceOffering) {
   }
 }
 
+export async function saveServiceAccordionAction(item: ServiceAccordionItem) {
+  try {
+    const supabase = getAdminClient();
+    const isNew = !item.id || item.id.startsWith('acc-') || item.id.startsWith('comp-') || item.id.startsWith('piece-') || item.id.startsWith('consult-');
+    const hasValidUuid = isUuid(item.id);
+
+    const payload: any = {
+      service_id: item.serviceId,
+      column_index: item.columnIndex,
+      title: item.title,
+      content: item.content,
+      link_text: item.linkText || null,
+      link_href: item.linkHref || null,
+      sort_order: item.sortOrder,
+      is_draft: Boolean(item.isDraft),
+      updated_at: new Date().toISOString(),
+    };
+
+    let resultData: any = null;
+
+    if (!isNew && hasValidUuid) {
+      payload.id = item.id;
+      const { data, error } = await supabase
+        .from('service_accordions')
+        .upsert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[saveServiceAccordionAction] Error:', error);
+        return { success: false, error: error.message };
+      }
+      resultData = data;
+    } else {
+      const { data, error } = await supabase
+        .from('service_accordions')
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[saveServiceAccordionAction] Error:', error);
+        return { success: false, error: error.message };
+      }
+      resultData = data;
+    }
+
+    const saved: ServiceAccordionItem = {
+      id: resultData.id,
+      serviceId: resultData.service_id,
+      columnIndex: resultData.column_index,
+      title: resultData.title,
+      content: resultData.content,
+      linkText: resultData.link_text,
+      linkHref: resultData.link_href,
+      sortOrder: resultData.sort_order,
+      isDraft: Boolean(resultData.is_draft),
+      createdAt: resultData.created_at,
+      updatedAt: resultData.updated_at,
+    };
+
+    revalidatePath('/studio/our-services');
+    revalidatePath(`/studio/our-services/${item.serviceId}`);
+    revalidatePath('/', 'layout');
+
+    return { success: true, data: saved };
+  } catch (err: any) {
+    console.error('[saveServiceAccordionAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to save service accordion' };
+  }
+}
+
+export async function deleteServiceAccordionAction(itemId: string, serviceId: string) {
+  try {
+    const supabase = getAdminClient();
+    const { error } = await supabase
+      .from('service_accordions')
+      .delete()
+      .eq('id', itemId);
+
+    if (error) {
+      console.error('[deleteServiceAccordionAction] Error:', error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/studio/our-services');
+    revalidatePath(`/studio/our-services/${serviceId}`);
+    revalidatePath('/', 'layout');
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[deleteServiceAccordionAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to delete service accordion' };
+  }
+}
+
 export async function saveHomeSlideAction(slide: HomeSlideItem) {
   try {
     const supabase = getAdminClient();
+    const hasValidUuid = isUuid(slide.id);
 
-    const { error } = await supabase.from('home_slides').upsert({
-      id: slide.id,
+    const payload: any = {
       title: slide.title,
       image_url: slide.imageUrl,
       sort_order: slide.sortOrder,
       is_draft: Boolean(slide.isDraft),
       updated_at: new Date().toISOString(),
-    });
+    };
 
-    if (error) {
-      console.error('[saveHomeSlideAction] Error:', error);
-      return { success: false, error: error.message };
+    let resultData: any = null;
+
+    if (hasValidUuid) {
+      payload.id = slide.id;
+      const { data, error } = await supabase
+        .from('home_slides')
+        .upsert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[saveHomeSlideAction] Error:', error);
+        return { success: false, error: error.message };
+      }
+      resultData = data;
+    } else {
+      const { data, error } = await supabase
+        .from('home_slides')
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[saveHomeSlideAction] Error:', error);
+        return { success: false, error: error.message };
+      }
+      resultData = data;
     }
 
     revalidatePath('/');
 
-    return { success: true, data: slide };
+    return {
+      success: true,
+      data: resultData
+        ? {
+            id: resultData.id,
+            title: resultData.title,
+            imageUrl: resultData.image_url,
+            sortOrder: resultData.sort_order,
+            isDraft: Boolean(resultData.is_draft),
+          }
+        : slide,
+    };
   } catch (err: any) {
     console.error('[saveHomeSlideAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to save home slide' };
