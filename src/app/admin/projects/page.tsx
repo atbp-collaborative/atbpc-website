@@ -328,7 +328,7 @@ export default function AdminProjectsPage() {
                 onClick={handleResetDefaults}
                 className="!py-2 !px-3 sm:!px-4 text-mini"
               >
-                <RotateCcw size={13} className="mr-1.5 inline" /> Reset Defaults
+                <RotateCcw size={13} className="mr-1.5 inline" /> Reset Changes
               </Button>
 
               <Button
@@ -871,7 +871,7 @@ export default function AdminProjectsPage() {
                       fullWidth
                       className="!py-2 text-mini border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
                     >
-                      <RotateCcw size={13} className="mr-1.5 inline" /> Reset Defaults
+                      <RotateCcw size={13} className="mr-1.5 inline" /> Reset Changes
                     </Button>
                   </div>
                 </div>

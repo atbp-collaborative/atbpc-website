@@ -9,7 +9,7 @@ import React from 'react';
 import { Shield, Users, FolderKanban } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
-export type RolesViewMode = 'roles' | 'persons' | 'projects';
+export type RolesViewMode = 'roles' | 'persons' | 'project-roles';
 
 interface RolesViewTabsProps {
   viewMode: RolesViewMode;
@@ -50,11 +50,11 @@ export const RolesViewTabs: React.FC<RolesViewTabsProps> = ({
       description: 'Persons & their active roles',
     },
     {
-      key: 'projects',
-      label: 'Project Roles',
+      key: 'project-roles',
+      label: 'By Project Role',
       icon: FolderKanban,
       count: projectRolesCount,
-      description: 'Roles of persons per project',
+      description: 'Roles from the project roles database',
     },
   ];
 

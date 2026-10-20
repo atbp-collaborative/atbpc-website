@@ -5,9 +5,9 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import Image from 'next/image';
-import { Lock, Edit2, Globe, Save, X } from 'lucide-react';
+import { Lock, Edit2, Globe, Save, X, LayoutGrid, List } from 'lucide-react';
 import { SitePage } from '@/types';
 import { PublicationToggle } from '@/components/admin/PublicationToggle';
 import { Button } from '@/components/primitives/buttons/Button';
@@ -157,8 +157,22 @@ export const CmsPagesTab: React.FC<CmsPagesTabProps> = ({
   // Category filter state
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
+  // View mode state: grid vs list
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
   // Page editing modal state
   const [editingPage, setEditingPage] = useState<SitePage | null>(null);
+  const initialPageRef = useRef<SitePage | null>(null);
+
+  const handleStartEditPage = (page: SitePage) => {
+    setEditingPage({ ...page });
+    initialPageRef.current = { ...page };
+  };
+
+  const isDirty = useMemo(() => {
+    if (!editingPage || !initialPageRef.current) return false;
+    return JSON.stringify(editingPage) !== JSON.stringify(initialPageRef.current);
+  }, [editingPage]);
 
   // Merge incoming pages from DB with SUBPAGE_TEMPLATES; parent hubs are excluded
   const activeSubpages = useMemo(() => {
@@ -188,7 +202,7 @@ export const CmsPagesTab: React.FC<CmsPagesTabProps> = ({
 
   const handleSavePageSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingPage) return;
+    if (!editingPage || !isDirty) return;
     onSavePage(editingPage);
     setEditingPage(null);
   };
@@ -205,6 +219,34 @@ export const CmsPagesTab: React.FC<CmsPagesTabProps> = ({
             <p className="text-mini opacity-60">
               Only subpages under the 5 sections can be published or unpublished. Parent hubs and navigation menus are permanent and always displayed.
             </p>
+          </div>
+
+          {/* List vs Grid View Toggle */}
+          <div className="flex items-center gap-1 border rounded-lg p-0.5 border-black/10 dark:border-white/10 shrink-0 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              title="Grid View"
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-space-sparkle text-white shadow-xs'
+                  : 'text-vintage-charcoal/60 dark:text-bright-gray/60 hover:text-black dark:hover:text-white'
+              }`}
+            >
+              <LayoutGrid size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              title="List View"
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-space-sparkle text-white shadow-xs'
+                  : 'text-vintage-charcoal/60 dark:text-bright-gray/60 hover:text-black dark:hover:text-white'
+              }`}
+            >
+              <List size={15} />
+            </button>
           </div>
         </div>
 
@@ -235,89 +277,151 @@ export const CmsPagesTab: React.FC<CmsPagesTabProps> = ({
           })}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredSubpages.map((page) => {
-            const category = getSubpageCategory(page.id);
-            const displaySlug = page.id.startsWith('/') ? page.id : `/${page.id}`;
+        {/* GRID VIEW */}
+        {viewMode === 'grid' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredSubpages.map((page) => {
+              const category = getSubpageCategory(page.id);
+              const displaySlug = page.id.startsWith('/') ? page.id : `/${page.id}`;
 
-            return (
-              <div
-                key={page.id}
-                className={`p-5 rounded-xl border flex flex-col justify-between transition-all ${
-                  isDarkMode
-                    ? 'bg-vintage-charcoal/60 border-white/10 hover:border-space-sparkle/40'
-                    : 'bg-white border-black/10 hover:border-space-sparkle/40 shadow-xs'
-                }`}
-              >
-                <div className="space-y-3">
-                  {/* Hero preview or placeholder */}
-                  <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-black/10 border border-black/10 dark:border-white/10">
-                    {page.heroImageUrl ? (
-                      <Image
-                        src={page.heroImageUrl}
-                        alt={page.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center opacity-40 text-micro font-mono">
-                        No Hero Media
+              return (
+                <div
+                  key={page.id}
+                  className={`p-5 rounded-xl border flex flex-col justify-between transition-all ${
+                    isDarkMode
+                      ? 'bg-vintage-charcoal/60 border-white/10 hover:border-space-sparkle/40'
+                      : 'bg-white border-black/10 hover:border-space-sparkle/40 shadow-xs'
+                  }`}
+                >
+                  <div className="space-y-3">
+                    {/* Hero preview or placeholder */}
+                    <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-black/10 border border-black/10 dark:border-white/10">
+                      {page.heroImageUrl ? (
+                        <Image
+                          src={page.heroImageUrl}
+                          alt={page.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center opacity-40 text-micro font-mono">
+                          No Hero Media
+                        </div>
+                      )}
+
+                      {/* Category badge */}
+                      <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded text-micro font-mono uppercase bg-black/70 text-white backdrop-blur-xs">
+                        {category.label}
                       </div>
-                    )}
-
-                    {/* Category badge */}
-                    <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded text-micro font-mono uppercase bg-black/70 text-white backdrop-blur-xs">
-                      {category.label}
                     </div>
 
-                    {/* Status chip */}
-                    <div className="absolute top-2 right-2">
-                      <span
-                        className={`px-2 py-0.5 rounded text-micro font-mono uppercase font-semibold ${
-                          page.isDraft
-                            ? 'bg-amber-500/90 text-white'
-                            : 'bg-emerald-600/90 text-white'
-                        }`}
-                      >
-                        {page.isDraft ? 'Draft (Under Construction)' : 'Published'}
-                      </span>
+                    <div>
+                      <div className="flex items-center gap-2 text-micro font-mono opacity-50 uppercase truncate">
+                        <span title={displaySlug}>{displaySlug}</span>
+                      </div>
+                      <h4 className="font-bold text-caption sm:text-body line-clamp-1 lowercase">
+                        {page.title}
+                      </h4>
+                      <p className="text-mini opacity-70 line-clamp-2 mt-1">
+                        {page.subtitle || 'No subtitle provided.'}
+                      </p>
                     </div>
                   </div>
 
-                  <div>
-                    <div className="flex items-center gap-2 text-micro font-mono opacity-50 uppercase truncate">
-                      <span title={displaySlug}>{displaySlug}</span>
-                    </div>
-                    <h4 className="font-bold text-caption sm:text-body line-clamp-1 lowercase">
-                      {page.title}
-                    </h4>
-                    <p className="text-mini opacity-70 line-clamp-2 mt-1">
-                      {page.subtitle || 'No subtitle provided.'}
-                    </p>
+                  <div className="pt-4 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-2 mt-4">
+                    {/* Non-clickable status chip on card: only toggleable inside modal */}
+                    <PublicationToggle
+                      isDraft={Boolean(page.isDraft)}
+                      onToggle={() => {}}
+                      disabled={true}
+                    />
+                    <Button
+                      type="ghost"
+                      onClick={() => handleStartEditPage(page)}
+                      className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
+                    >
+                      <Edit2 size={13} className="mr-1 inline" /> Edit Page
+                    </Button>
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        )}
 
-                <div className="pt-4 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-2 mt-4">
-                  <PublicationToggle
-                    isDraft={Boolean(page.isDraft)}
-                    onToggle={() => onSavePage({ ...page, isDraft: !page.isDraft })}
-                  />
-                  <Button
-                    type="ghost"
-                    onClick={() => setEditingPage({ ...page })}
-                    className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
-                  >
-                    <Edit2 size={13} className="mr-1 inline" /> Edit Page
-                  </Button>
+        {/* LIST VIEW */}
+        {viewMode === 'list' && (
+          <div className="space-y-3">
+            {filteredSubpages.map((page) => {
+              const category = getSubpageCategory(page.id);
+              const displaySlug = page.id.startsWith('/') ? page.id : `/${page.id}`;
+
+              return (
+                <div
+                  key={page.id}
+                  className={`p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all ${
+                    isDarkMode
+                      ? 'bg-vintage-charcoal/60 border-white/10 hover:border-space-sparkle/40'
+                      : 'bg-white border-black/10 hover:border-space-sparkle/40 shadow-xs'
+                  }`}
+                >
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <div className="relative w-20 h-14 sm:w-28 sm:h-18 rounded-lg overflow-hidden bg-black/10 shrink-0 border border-black/10 dark:border-white/10">
+                      {page.heroImageUrl ? (
+                        <Image
+                          src={page.heroImageUrl}
+                          alt={page.title}
+                          fill
+                          sizes="120px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center opacity-40 text-micro font-mono">
+                          No Media
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2 py-0.5 rounded text-micro font-mono uppercase bg-black/5 dark:bg-white/10 text-vintage-charcoal dark:text-white">
+                          {category.label}
+                        </span>
+                        <span className="text-micro font-mono opacity-50 uppercase truncate" title={displaySlug}>
+                          {displaySlug}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-caption sm:text-body line-clamp-1 lowercase">
+                        {page.title}
+                      </h4>
+                      <p className="text-mini opacity-70 line-clamp-1">
+                        {page.subtitle || 'No subtitle provided.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                    {/* Non-clickable status chip on card */}
+                    <PublicationToggle
+                      isDraft={Boolean(page.isDraft)}
+                      onToggle={() => {}}
+                      disabled={true}
+                    />
+                    <Button
+                      type="ghost"
+                      onClick={() => handleStartEditPage(page)}
+                      className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
+                    >
+                      <Edit2 size={13} className="mr-1 inline" /> Edit Page
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
-
-
 
       {/* EDIT SITE PAGE MODAL */}
       {editingPage && (
@@ -348,7 +452,7 @@ export const CmsPagesTab: React.FC<CmsPagesTabProps> = ({
             <form onSubmit={handleSavePageSubmit} className="space-y-4">
               <div className="space-y-1">
                 <label className="text-micro font-semibold uppercase tracking-wider block opacity-80 flex items-center gap-1.5">
-                  <Lock size={12} className="text-amber-500" /> Canonical Title (SEO Locked)
+                  <Lock size={12} className="text-amber-500" /> Page Title
                 </label>
                 <input
                   type="text"
@@ -411,6 +515,7 @@ export const CmsPagesTab: React.FC<CmsPagesTabProps> = ({
                 </div>
               </div>
 
+              {/* Publication status inside modal: toggleable */}
               <div className="flex items-center justify-between p-3 rounded-lg border border-black/10 dark:border-white/10 mt-4">
                 <div>
                   <span className="text-mini font-semibold block">Page Publication Status</span>
@@ -424,7 +529,7 @@ export const CmsPagesTab: React.FC<CmsPagesTabProps> = ({
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/10 dark:border-white/10">
                 <Button type="ghost" onClick={() => setEditingPage(null)} label="Cancel" />
-                <Button type="filled" htmlType="submit">
+                <Button type="filled" htmlType="submit" disabled={!isDirty}>
                   <Save size={14} className="mr-1.5 inline" /> Save Page
                 </Button>
               </div>
@@ -432,8 +537,6 @@ export const CmsPagesTab: React.FC<CmsPagesTabProps> = ({
           </div>
         </div>
       )}
-
-
     </div>
   );
 };

@@ -97,7 +97,6 @@ export interface ProjectRole {
   code: string;
   name: string;
   description?: string;
-  sortOrder?: number;
   isActive?: boolean;
 }
 

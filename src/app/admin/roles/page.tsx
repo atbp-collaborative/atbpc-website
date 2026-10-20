@@ -10,18 +10,19 @@ import { Plus, Shield, Users, FolderKanban, RotateCcw } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { Button } from '@/components/primitives/buttons/Button';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
-import { useAdminRoles, ProjectRoleEntry } from '@/hooks/admin/useAdminRoles';
+import { useAdminRoles } from '@/hooks/admin/useAdminRoles';
 import { RolesFilterBar } from '@/components/admin/roles/RolesFilterBar';
 import { RolesViewTabs, RolesViewMode } from '@/components/admin/roles/RolesViewTabs';
 import { RolesByRoleTable } from '@/components/admin/roles/RolesByRoleTable';
 import { RolesByPersonTable } from '@/components/admin/roles/RolesByPersonTable';
-import { RolesProjectTable } from '@/components/admin/roles/RolesProjectTable';
+import { RolesByProjectRoleTable } from '@/components/admin/roles/RolesByProjectRoleTable';
 import { RoleFormModal } from '@/components/admin/roles/RoleFormModal';
 import { AssignMemberRoleModal } from '@/components/admin/roles/AssignMemberRoleModal';
-import { ProjectRoleModal } from '@/components/admin/roles/ProjectRoleModal';
-import { Role, Member } from '@/types';
+import { ProjectRoleFormModal } from '@/components/admin/roles/ProjectRoleFormModal';
+import { PersonInvolvementsModal } from '@/components/admin/roles/PersonInvolvementsModal';
+import { Role, Member, ProjectRole } from '@/types';
 import { useTheme } from '@/context/ThemeContext';
-import { memberHasRole } from '@/lib/roles/role-helpers';
+import { memberHasRole, detectIntelligentRolesViewMode } from '@/lib/roles/role-helpers';
 
 export default function AdminRolesPage() {
   const { isDarkMode } = useTheme();
@@ -29,6 +30,8 @@ export default function AdminRolesPage() {
   const {
     roles,
     filteredRoles,
+    projectRoles,
+    filteredProjectRoles,
     members,
     filteredMembers,
     projects,
@@ -44,12 +47,15 @@ export default function AdminRolesPage() {
     setSelectedProjectId,
     saveRole,
     deleteRole,
+    saveProjectRole,
+    deleteProjectRole,
     setMemberRoles,
     associateMemberToProject,
     disassociateMemberFromProject,
+    saveMemberInvolvements,
   } = useAdminRoles();
 
-  // Active view tab: 'roles' | 'persons' | 'projects'
+  // Active view tab: 'roles' | 'persons' | 'project-roles'
   const [viewMode, setViewMode] = useState<RolesViewMode>('roles');
 
   // Modal states: Role Form
@@ -61,13 +67,15 @@ export default function AdminRolesPage() {
   const [targetMemberForAssign, setTargetMemberForAssign] = useState<Member | null>(null);
   const [targetRoleForAssign, setTargetRoleForAssign] = useState<Role | null>(null);
 
-  // Modal states: Project Role
-  const [isProjectRoleModalOpen, setIsProjectRoleModalOpen] = useState(false);
-  const [editingProjectRoleEntry, setEditingProjectRoleEntry] = useState<ProjectRoleEntry | null>(null);
+  // Modal states: Person Involvements
+  const [involvementMember, setInvolvementMember] = useState<Member | null>(null);
+
+  // Modal states: Project Role Form
+  const [isProjectRoleFormOpen, setIsProjectRoleFormOpen] = useState(false);
+  const [editingProjectRole, setEditingProjectRole] = useState<ProjectRole | null>(null);
 
   // Modal states: Deletion confirmation
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
-  const [projectRoleToDelete, setProjectRoleToDelete] = useState<ProjectRoleEntry | null>(null);
 
   // Category counts
   const categoryCounts = useMemo(() => {
@@ -112,7 +120,7 @@ export default function AdminRolesPage() {
     setIsAssignModalOpen(true);
   };
 
-  const handleSaveRoleMembers = (roleId: string, memberIds: string[]) => {
+  const handleSaveRoleMembers = async (roleId: string, memberIds: string[]) => {
     // For each member, update whether they hold this role
     for (const member of members) {
       const currentRoles = member.roles || [];
@@ -120,25 +128,34 @@ export default function AdminRolesPage() {
       const shouldHave = memberIds.includes(member.id);
 
       if (hasCurrently && !shouldHave) {
-        setMemberRoles(
+        await setMemberRoles(
           member.id,
           currentRoles.filter((id) => id !== roleId)
         );
       } else if (!hasCurrently && shouldHave) {
-        setMemberRoles(member.id, [...currentRoles, roleId]);
+        await setMemberRoles(member.id, [...currentRoles, roleId]);
       }
+    }
+  };
+
+  // Search input handler with intelligent auto-tab switching
+  const handleSearchTermChange = (term: string) => {
+    setSearchTerm(term);
+    const intelligentMode = detectIntelligentRolesViewMode(term, roles, members, projectRoles);
+    if (intelligentMode && intelligentMode !== viewMode) {
+      setViewMode(intelligentMode);
     }
   };
 
   // Project Role Handlers
   const handleOpenAddProjectRole = () => {
-    setEditingProjectRoleEntry(null);
-    setIsProjectRoleModalOpen(true);
+    setEditingProjectRole(null);
+    setIsProjectRoleFormOpen(true);
   };
 
-  const handleOpenEditProjectRole = (entry: ProjectRoleEntry) => {
-    setEditingProjectRoleEntry(entry);
-    setIsProjectRoleModalOpen(true);
+  const handleOpenEditProjectRole = (pr: ProjectRole) => {
+    setEditingProjectRole(pr);
+    setIsProjectRoleFormOpen(true);
   };
 
   return (
@@ -147,13 +164,23 @@ export default function AdminRolesPage() {
         title="manage roles"
         breadcrumbs={[{ label: 'Admin' }, { label: 'Manage Roles' }]}
         actions={
-          <Button
-            type="filled"
-            onClick={handleOpenCreateRole}
-            className="!py-2 !px-4 text-caption !bg-space-sparkle text-white"
-          >
-            <Plus size={16} className="mr-1.5 inline" /> New Role
-          </Button>
+          viewMode === 'project-roles' ? (
+            <Button
+              type="filled"
+              onClick={handleOpenAddProjectRole}
+              className="!py-2 !px-4 text-caption !bg-space-sparkle text-white"
+            >
+              <Plus size={16} className="mr-1.5 inline" /> New Project Role
+            </Button>
+          ) : (
+            <Button
+              type="filled"
+              onClick={handleOpenCreateRole}
+              className="!py-2 !px-4 text-caption !bg-space-sparkle text-white"
+            >
+              <Plus size={16} className="mr-1.5 inline" /> New Role
+            </Button>
+          )
         }
       />
 
@@ -199,9 +226,9 @@ export default function AdminRolesPage() {
           >
             <div>
               <span className="text-micro font-mono uppercase tracking-wider opacity-60 block">
-                Project Assignments
+                Project Roles
               </span>
-              <span className="text-h2 font-major font-bold">{projectRoleEntries.length}</span>
+              <span className="text-h2 font-major font-bold">{projectRoles.length}</span>
             </div>
             <div className="p-2.5 rounded-lg bg-purple-500/15 text-purple-400">
               <FolderKanban size={20} />
@@ -234,18 +261,18 @@ export default function AdminRolesPage() {
           trackFilter={trackFilter}
           setTrackFilter={setTrackFilter}
           searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
+          setSearchTerm={handleSearchTermChange}
           categoryCounts={categoryCounts}
           trackCounts={trackCounts}
         />
 
-        {/* View Mode Tabs (By Role, By Person, Project Roles) */}
+        {/* View Mode Tabs (By Role, By Person, By Project Role) */}
         <RolesViewTabs
           viewMode={viewMode}
           setViewMode={setViewMode}
           rolesCount={filteredRoles.length}
           personsCount={filteredMembers.length}
-          projectRolesCount={projectRoleEntries.length}
+          projectRolesCount={filteredProjectRoles.length}
         />
 
         {/* Active View Table Content */}
@@ -270,18 +297,17 @@ export default function AdminRolesPage() {
                 members={filteredMembers}
                 allRoles={roles}
                 onManageMemberRoles={handleOpenAssignForMember}
+                onSelectPerson={setInvolvementMember}
               />
             )}
 
-            {viewMode === 'projects' && (
-              <RolesProjectTable
-                entries={projectRoleEntries}
-                projects={projects}
-                selectedProjectId={selectedProjectId}
-                setSelectedProjectId={setSelectedProjectId}
+            {viewMode === 'project-roles' && (
+              <RolesByProjectRoleTable
+                projectRoles={filteredProjectRoles}
+                members={members}
                 onAddProjectRole={handleOpenAddProjectRole}
                 onEditProjectRole={handleOpenEditProjectRole}
-                onRemoveProjectRole={(entry) => setProjectRoleToDelete(entry)}
+                onSelectPerson={setInvolvementMember}
               />
             )}
           </>
@@ -293,6 +319,7 @@ export default function AdminRolesPage() {
         isOpen={isRoleFormOpen}
         role={editingRole}
         onSave={saveRole}
+        onDelete={deleteRole}
         onClose={() => setIsRoleFormOpen(false)}
       />
 
@@ -308,18 +335,28 @@ export default function AdminRolesPage() {
         onClose={() => setIsAssignModalOpen(false)}
       />
 
-      {/* Project Role Modal */}
-      <ProjectRoleModal
-        isOpen={isProjectRoleModalOpen}
-        entry={editingProjectRoleEntry}
-        projects={projects}
-        members={members}
-        allRoles={roles}
-        onSave={associateMemberToProject}
-        onClose={() => setIsProjectRoleModalOpen(false)}
+      {/* Person Project Involvements Modal */}
+      <PersonInvolvementsModal
+        isOpen={Boolean(involvementMember)}
+        member={involvementMember}
+        allProjects={projects}
+        onSave={async (memberId, involvements) => {
+          await saveMemberInvolvements(memberId, involvements);
+          setInvolvementMember(null);
+        }}
+        onClose={() => setInvolvementMember(null)}
       />
 
-      {/* Confirm Modal: Delete Role */}
+      {/* Project Role Create/Edit Modal */}
+      <ProjectRoleFormModal
+        isOpen={isProjectRoleFormOpen}
+        projectRole={editingProjectRole}
+        onSave={saveProjectRole}
+        onDelete={deleteProjectRole}
+        onClose={() => setIsProjectRoleFormOpen(false)}
+      />
+
+      {/* Confirm Modal: Delete Role (Safeguard) */}
       <ConfirmModal
         isOpen={Boolean(roleToDelete)}
         title="Delete Role"
@@ -333,25 +370,6 @@ export default function AdminRolesPage() {
           }
         }}
         onCancel={() => setRoleToDelete(null)}
-      />
-
-      {/* Confirm Modal: Remove Project Role Assignment */}
-      <ConfirmModal
-        isOpen={Boolean(projectRoleToDelete)}
-        title="Remove Project Role"
-        description={`Are you sure you want to remove ${projectRoleToDelete?.memberName}'s involvement as "${projectRoleToDelete?.roleInProject}" from ${projectRoleToDelete?.projectTitle}?`}
-        confirmLabel="Remove Assignment"
-        isDestructive={true}
-        onConfirm={() => {
-          if (projectRoleToDelete) {
-            disassociateMemberFromProject(
-              projectRoleToDelete.memberId,
-              projectRoleToDelete.projectId
-            );
-            setProjectRoleToDelete(null);
-          }
-        }}
-        onCancel={() => setProjectRoleToDelete(null)}
       />
     </div>
   );

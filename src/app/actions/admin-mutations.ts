@@ -9,8 +9,10 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import { getAdminClient } from '@/lib/supabase/admin';
 import {
   Member,
+  MemberInvolvement,
   Project,
   Role,
+  ProjectRole,
   SitePage,
   NavigationCardItem,
   ProcessPhilosophy,
@@ -29,10 +31,59 @@ import {
 } from '@/lib/projects/project-helpers';
 import { getFallbackSitePages } from '@/services/supabase/cms.service';
 import { optimizeImageBuffer } from '@/lib/images/server-image-optimizer';
+import { mapPersonRecord } from '@/services/supabase/people.service';
+import { mapProjectRecord, PROJECT_SELECT_QUERY } from '@/services/supabase/projects.service';
 
 // ==============================================================================
-// 1. PEOPLE MUTATIONS
+// 1. PEOPLE MUTATIONS & QUERIES
 // ==============================================================================
+
+export async function fetchAdminPeopleAction(): Promise<Member[]> {
+  try {
+    const supabase = getAdminClient();
+    const { data: people, error } = await supabase
+      .from('people')
+      .select(`
+        *,
+        credentials:person_credentials(*),
+        involvements:project_contributors(
+          *,
+          project:projects(id, slug, project_title)
+        )
+      `)
+      .order('display_order', { ascending: true });
+
+    if (error || !people) {
+      console.error('[fetchAdminPeopleAction] Error:', error);
+      return [];
+    }
+
+    return people.map(mapPersonRecord);
+  } catch (err) {
+    console.error('[fetchAdminPeopleAction] Exception:', err);
+    return [];
+  }
+}
+
+export async function fetchAdminProjectsAction(): Promise<Project[]> {
+  try {
+    const supabase = getAdminClient();
+    const { data: projects, error } = await supabase
+      .from('projects')
+      .select(PROJECT_SELECT_QUERY)
+      .order('sort_order', { ascending: true });
+
+    if (error || !projects) {
+      console.error('[fetchAdminProjectsAction] Error:', error);
+      return [];
+    }
+
+    return projects.map(mapProjectRecord);
+  } catch (err) {
+    console.error('[fetchAdminProjectsAction] Exception:', err);
+    return [];
+  }
+}
 
 export async function savePersonAction(member: Member) {
   try {
@@ -89,7 +140,7 @@ export async function savePersonAction(member: Member) {
       date_of_hiring: member.dateOfHiring || new Date().toISOString().split('T')[0],
       date_of_separation: member.dateOfSeparation || null,
       is_currently_hired: member.isCurrentlyHired !== false,
-      is_draft: Boolean(member.isDraft),
+      is_draft: member.isCurrentlyHired === false ? true : Boolean(member.isDraft),
       display_order: member.displayOrder ?? 99,
       updated_at: new Date().toISOString(),
     };
@@ -202,6 +253,59 @@ export async function togglePersonDraftAction(id: string, isDraft: boolean) {
   } catch (err: any) {
     console.error('[togglePersonDraftAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to toggle draft status' };
+  }
+}
+
+export async function updatePersonInvolvementsAction(personId: string, involvements: MemberInvolvement[]) {
+  try {
+    const supabase = getAdminClient();
+
+    // 1. Delete existing contributors for this person
+    const { error: deleteError } = await supabase
+      .from('project_contributors')
+      .delete()
+      .eq('person_id', personId);
+
+    if (deleteError) {
+      console.error('[updatePersonInvolvementsAction] Delete error:', deleteError);
+      return { success: false, error: deleteError.message };
+    }
+
+    // 2. Insert new involvements if any
+    const validInvolvements = (involvements || []).filter((inv) => inv.projectId);
+    if (validInvolvements.length > 0) {
+      const invsToInsert = validInvolvements.map((inv, idx) => ({
+        person_id: personId,
+        project_id: inv.projectId,
+        role_in_project: inv.roleInProject || 'Contributor',
+        project_role_ids: inv.projectRoleIds || [],
+        contribution_narrative: inv.description || '',
+        sort_order: idx + 1,
+      }));
+
+      const { error: insertError } = await supabase
+        .from('project_contributors')
+        .insert(invsToInsert);
+
+      if (insertError) {
+        console.error('[updatePersonInvolvementsAction] Insert error:', insertError);
+        return { success: false, error: insertError.message };
+      }
+    }
+
+    // 3. Revalidate paths
+    revalidatePath('/studio/our-people');
+    revalidatePath('/studio/our-people/[category]', 'page');
+    revalidatePath('/studio/our-people/[category]/[slug]', 'page');
+    revalidatePath('/admin/roles');
+    revalidatePath('/admin/people');
+    revalidatePath('/admin/projects');
+    revalidatePath('/', 'layout');
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[updatePersonInvolvementsAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to update involvements' };
   }
 }
 
@@ -627,6 +731,93 @@ export async function deleteRoleAction(id: string) {
   } catch (err: any) {
     console.error('[deleteRoleAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to delete role' };
+  }
+}
+
+export async function saveProjectRoleAction(projectRole: ProjectRole) {
+  try {
+    const supabase = getAdminClient();
+
+    const code = (projectRole.code || projectRole.name || 'PR')
+      .toUpperCase()
+      .replace(/[^A-Z0-9_-]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+    const id =
+      projectRole.id ||
+      `proj-role-${code.toLowerCase()}`;
+
+    const payload = {
+      id,
+      code,
+      name: projectRole.name.trim(),
+      description: projectRole.description || null,
+      is_active: projectRole.isActive !== false,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from('project_roles').upsert(payload);
+
+    if (error) {
+      console.error('[saveProjectRoleAction] Error:', error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/admin/roles');
+    revalidatePath('/admin/projects');
+    revalidatePath('/admin/people');
+
+    return { success: true, data: { ...projectRole, id, code } };
+  } catch (err: any) {
+    console.error('[saveProjectRoleAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to save project role' };
+  }
+}
+
+export async function deleteProjectRoleAction(id: string) {
+  try {
+    const supabase = getAdminClient();
+    const { error } = await supabase.from('project_roles').delete().eq('id', id);
+
+    if (error) {
+      console.error('[deleteProjectRoleAction] Error:', error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/admin/roles');
+    revalidatePath('/admin/projects');
+    revalidatePath('/admin/people');
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[deleteProjectRoleAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to delete project role' };
+  }
+}
+
+export async function updatePersonRolesAction(personId: string, roleIds: string[]) {
+  try {
+    const supabase = getAdminClient();
+    const { error } = await supabase
+      .from('people')
+      .update({
+        other_role_ids: roleIds,
+        primary_role_id: roleIds[0] || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', personId);
+
+    if (error) {
+      console.error('[updatePersonRolesAction] Error:', error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/admin/roles');
+    revalidatePath('/admin/people');
+    return { success: true };
+  } catch (err: any) {
+    console.error('[updatePersonRolesAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to update person roles' };
   }
 }
 

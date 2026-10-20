@@ -158,19 +158,27 @@ export async function getMembers(includeDrafts: boolean = false): Promise<Member
       console.warn('[DataService] Supabase getMembers failed, falling back to mock data:', err);
     }
   }
+  if (!includeDrafts) {
+    return MEMBERS_DATA.filter((m) => !m.isDraft && m.isCurrentlyHired !== false);
+  }
   return MEMBERS_DATA;
 }
 
-export async function getMemberById(id: string): Promise<Member | undefined> {
+export async function getMemberById(id: string, includeDrafts: boolean = false): Promise<Member | undefined> {
   if (shouldQuerySupabase()) {
     try {
-      const person = await getPersonByIdFromSupabase(id);
+      const person = await getPersonByIdFromSupabase(id, includeDrafts);
       if (person) return person;
     } catch (err) {
       console.warn(`[DataService] Supabase getMemberById(${id}) failed, falling back to mock data:`, err);
     }
   }
-  return MEMBERS_DATA.find((member) => member.id === id);
+  const found = MEMBERS_DATA.find((member) => member.id === id);
+  if (!found) return undefined;
+  if (!includeDrafts && (found.isDraft || found.isCurrentlyHired === false)) {
+    return undefined;
+  }
+  return found;
 }
 
 export async function getProjects(includeDrafts: boolean = false): Promise<Project[]> {

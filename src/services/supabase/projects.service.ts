@@ -64,7 +64,7 @@ export function mapProjectRecord(p: any): Project {
   };
 }
 
-const PROJECT_SELECT_QUERY = `
+export const PROJECT_SELECT_QUERY = `
   *,
   media:project_media(*),
   category:project_categories(id, name),

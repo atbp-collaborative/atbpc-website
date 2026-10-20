@@ -41,7 +41,7 @@ import { toast } from 'sonner';
 export type CmsTab = 'pages' | 'landing-pages' | 'process' | 'services' | 'home';
 
 export function useAdminCms() {
-  const [activeTab, setActiveTab] = useState<CmsTab>('pages');
+  const [activeTab, setActiveTab] = useState<CmsTab>('home');
   const [isLoading, setIsLoading] = useState(true);
 
   // Tab 1: Pages & Nav
@@ -320,3 +320,4 @@ export function useAdminCms() {
     saveSlogans: handleSaveSlogans,
   };
 }
+

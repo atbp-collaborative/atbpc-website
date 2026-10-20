@@ -634,12 +634,12 @@ export const INITIAL_LICENSES_DATA: License[] = [
 ];
 
 export const INITIAL_PROJECT_ROLES_DATA: ProjectRole[] = [
-  { id: 'proj-role-arch-design', code: 'PR-ARCH', name: 'Architectural Design', description: 'Spatial programming, schematic concepts, exterior massing, and construction drawings.', sortOrder: 10, isActive: true },
-  { id: 'proj-role-cost-est', code: 'PR-COST', name: 'Cost Estimates', description: 'Bill of quantities, cost feasibility, material takeoffs, and procurement budget control.', sortOrder: 20, isActive: true },
-  { id: 'proj-role-elec-sys', code: 'PR-ELEC', name: 'Electrical Systems', description: 'Power distribution, lighting fixture layout, auxiliary communication, and solar load calculations.', sortOrder: 30, isActive: true },
-  { id: 'proj-role-plumb-sys', code: 'PR-PLUMB', name: 'Plumbing Systems', description: 'Sanitary piping, domestic potable water supply, rainwater catchment, and drainage routing.', sortOrder: 40, isActive: true },
-  { id: 'proj-role-bim-lead', code: 'PR-BIM', name: 'BIM Lead', description: 'Building information modeling coordination, 3D clash detection, and parametric Revit/IFC execution.', sortOrder: 50, isActive: true },
-  { id: 'proj-role-arch-rend', code: 'PR-REND', name: 'Architectural Renderer', description: 'Photorealistic visual simulation, lighting ambiance studies, material texture mapping, and animations.', sortOrder: 60, isActive: true },
+  { id: 'proj-role-arch-design', code: 'PR-ARCH', name: 'Architectural Design', description: 'Spatial programming, schematic concepts, exterior massing, and construction drawings.', isActive: true },
+  { id: 'proj-role-cost-est', code: 'PR-COST', name: 'Cost Estimates', description: 'Bill of quantities, cost feasibility, material takeoffs, and procurement budget control.', isActive: true },
+  { id: 'proj-role-elec-sys', code: 'PR-ELEC', name: 'Electrical Systems', description: 'Power distribution, lighting fixture layout, auxiliary communication, and solar load calculations.', isActive: true },
+  { id: 'proj-role-plumb-sys', code: 'PR-PLUMB', name: 'Plumbing Systems', description: 'Sanitary piping, domestic potable water supply, rainwater catchment, and drainage routing.', isActive: true },
+  { id: 'proj-role-bim-lead', code: 'PR-BIM', name: 'BIM Lead', description: 'Building information modeling coordination, 3D clash detection, and parametric Revit/IFC execution.', isActive: true },
+  { id: 'proj-role-arch-rend', code: 'PR-REND', name: 'Architectural Renderer', description: 'Photorealistic visual simulation, lighting ambiance studies, material texture mapping, and animations.', isActive: true },
 ];
 
 export function getTracks(): Track[] {
@@ -655,6 +655,28 @@ export function getLicenses(): License[] {
 export function getProjectRoles(): ProjectRole[] {
   initializeAdminStorage();
   return getStored<ProjectRole[]>(STORAGE_KEYS.PROJECT_ROLES, INITIAL_PROJECT_ROLES_DATA);
+}
+
+export function saveProjectRole(projectRole: ProjectRole): ProjectRole {
+  const list = getProjectRoles();
+  const idx = list.findIndex((r) => r.id === projectRole.id);
+
+  let updated: ProjectRole[];
+  if (idx >= 0) {
+    updated = [...list];
+    updated[idx] = projectRole;
+  } else {
+    updated = [...list, projectRole];
+  }
+
+  setStored(STORAGE_KEYS.PROJECT_ROLES, updated);
+  return projectRole;
+}
+
+export function deleteProjectRole(id: string): void {
+  const list = getProjectRoles();
+  const updated = list.filter((r) => r.id !== id);
+  setStored(STORAGE_KEYS.PROJECT_ROLES, updated);
 }
 
 export function getProjectCategories(): ProjectCategoryItem[] {

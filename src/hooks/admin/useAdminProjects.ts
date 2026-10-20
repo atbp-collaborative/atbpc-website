@@ -22,6 +22,7 @@ import {
   saveProjectAction,
   deleteProjectAction,
   toggleProjectDraftAction,
+  fetchAdminProjectsAction,
 } from '@/app/actions/admin-mutations';
 import { toast } from 'sonner';
 
@@ -42,7 +43,8 @@ export function useAdminProjects() {
   const refresh = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await getProjectsFromDataService(true);
+      const dbProjects = await fetchAdminProjectsAction();
+      const data = dbProjects.length > 0 ? dbProjects : await getProjectsFromDataService(true);
       setProjects(data);
     } catch (err) {
       console.warn('Failed to fetch projects from Supabase, falling back to local storage:', err);

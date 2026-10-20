@@ -53,11 +53,11 @@ export default function AdminContentPage() {
   } = useAdminCms();
 
   const tabs: { id: CmsTab; label: string; icon: React.ElementType }[] = [
-    { id: 'pages', label: 'Content Pages', icon: Globe },
+    { id: 'home', label: 'Homepage', icon: Sparkles },
     { id: 'landing-pages', label: 'Landing Pages', icon: LayoutTemplate },
-    { id: 'process', label: 'Process & Stages', icon: Compass },
-    { id: 'services', label: 'Services & Scopes', icon: Briefcase },
-    { id: 'home', label: 'Homepage & Slogans', icon: Sparkles },
+    { id: 'pages', label: 'Content Pages', icon: Globe },
+    { id: 'services', label: 'Services', icon: Briefcase },
+    { id: 'process', label: 'Processes', icon: Compass },
   ];
 
   return (
@@ -112,10 +112,13 @@ export default function AdminContentPage() {
           </div>
         ) : (
           <div>
-            {activeTab === 'pages' && (
-              <CmsPagesTab
-                pages={pages}
-                onSavePage={savePage}
+            {activeTab === 'home' && (
+              <CmsHomeTab
+                slides={slides}
+                slogans={slogans}
+                onSaveSlide={saveSlide}
+                onDeleteSlide={deleteSlide}
+                onSaveSlogans={saveSlogans}
               />
             )}
 
@@ -123,6 +126,22 @@ export default function AdminContentPage() {
               <CmsLandingPagesTab
                 cards={cards}
                 onSaveCard={saveCard}
+              />
+            )}
+
+            {activeTab === 'pages' && (
+              <CmsPagesTab
+                pages={pages}
+                onSavePage={savePage}
+              />
+            )}
+
+            {activeTab === 'services' && (
+              <CmsServicesTab
+                services={services}
+                selectedServiceId={selectedServiceId}
+                onSelectServiceId={setSelectedServiceId}
+                onSaveService={saveService}
               />
             )}
 
@@ -137,25 +156,7 @@ export default function AdminContentPage() {
                 onDeleteStageGroup={deleteStageGroup}
                 onSaveProcessStage={saveProcessStage}
                 onDeleteProcessStage={deleteProcessStage}
-              />
-            )}
-
-            {activeTab === 'services' && (
-              <CmsServicesTab
-                services={services}
-                selectedServiceId={selectedServiceId}
-                onSelectServiceId={setSelectedServiceId}
-                onSaveService={saveService}
-              />
-            )}
-
-            {activeTab === 'home' && (
-              <CmsHomeTab
-                slides={slides}
-                slogans={slogans}
-                onSaveSlide={saveSlide}
-                onDeleteSlide={deleteSlide}
-                onSaveSlogans={saveSlogans}
+                cards={cards}
               />
             )}
           </div>

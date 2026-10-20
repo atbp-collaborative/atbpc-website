@@ -5,9 +5,9 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
-import { Edit2, Trash2, UserPlus, UserCheck, Shield, AlertCircle } from 'lucide-react';
+import { Edit2, UserPlus, UserCheck, AlertCircle } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { Role, Member } from '@/types';
 import {
@@ -22,7 +22,7 @@ interface RolesByRoleTableProps {
   roles: Role[];
   allMembers: Member[];
   onEditRole: (role: Role) => void;
-  onDeleteRole: (role: Role) => void;
+  onDeleteRole?: (role: Role) => void;
   onAssignPersons: (role: Role) => void;
 }
 
@@ -34,6 +34,47 @@ export const RolesByRoleTable: React.FC<RolesByRoleTableProps> = ({
   onAssignPersons,
 }) => {
   const { isDarkMode } = useTheme();
+  const [expandedPastRoles, setExpandedPastRoles] = useState<Record<string, boolean>>({});
+
+  const togglePastRole = (roleId: string) => {
+    setExpandedPastRoles((prev) => ({
+      ...prev,
+      [roleId]: !prev[roleId],
+    }));
+  };
+
+  const renderMemberChip = (member: Member, isPast: boolean = false) => (
+    <div
+      key={member.id}
+      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-micro transition-colors ${
+        isPast ? 'opacity-65' : ''
+      } ${
+        isDarkMode
+          ? 'bg-white/5 border-white/10'
+          : 'bg-black/5 border-black/10'
+      }`}
+    >
+      <div className="relative w-4 h-4 rounded-full overflow-hidden shrink-0">
+        {member.image ? (
+          <Image
+            src={member.image}
+            alt={member.name}
+            fill
+            sizes="16px"
+            className="object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-space-sparkle/20 flex items-center justify-center">
+            <UserCheck size={10} className="text-space-sparkle" />
+          </div>
+        )}
+      </div>
+      <span className="font-medium truncate max-w-[120px]">{member.name}</span>
+      {isPast && (
+        <span className="text-[9px] font-mono opacity-60 uppercase tracking-tight">Past</span>
+      )}
+    </div>
+  );
 
   if (roles.length === 0) {
     return (
@@ -76,7 +117,6 @@ export const RolesByRoleTable: React.FC<RolesByRoleTableProps> = ({
               <th className="py-3.5 px-4 font-semibold">Role & Code</th>
               <th className="py-3.5 px-4 font-semibold">Category</th>
               <th className="py-3.5 px-4 font-semibold">Track</th>
-              <th className="py-3.5 px-4 font-semibold">Department</th>
               <th className="py-3.5 px-4 font-semibold">Persons in this Role</th>
               <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
             </tr>
@@ -84,6 +124,10 @@ export const RolesByRoleTable: React.FC<RolesByRoleTableProps> = ({
           <tbody className="divide-y divide-black/5 dark:divide-white/5">
             {roles.map((role) => {
               const assignedMembers = getMembersForRole(role, allMembers);
+              const activeMembers = assignedMembers.filter((m) => m.isCurrentlyHired !== false);
+              const pastMembers = assignedMembers.filter((m) => m.isCurrentlyHired === false);
+              const isPastExpanded = Boolean(expandedPastRoles[role.id]);
+
               const categoryBadge = getCategoryBadgeClasses(role.category, isDarkMode);
               const trackBadge = getTrackBadgeClasses(role.track, isDarkMode);
 
@@ -133,57 +177,46 @@ export const RolesByRoleTable: React.FC<RolesByRoleTableProps> = ({
                     </span>
                   </td>
 
-                  {/* Department */}
-                  <td className="py-3.5 px-4 align-top">
-                    <span className="text-caption opacity-80 block max-w-[200px] leading-snug">
-                      {role.department || '—'}
-                    </span>
-                  </td>
-
                   {/* Assigned Persons */}
                   <td className="py-3.5 px-4 align-top">
-                    {assignedMembers.length > 0 ? (
+                    {activeMembers.length === 0 && pastMembers.length === 0 ? (
+                      <span className="text-micro opacity-40 italic">
+                        No person/s assigned
+                      </span>
+                    ) : (
                       <div className="space-y-1.5">
-                        <div className="flex flex-wrap items-center gap-1.5 max-w-md">
-                          {assignedMembers.map((member) => (
-                            <div
-                              key={member.id}
-                              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-micro transition-colors ${
-                                isDarkMode
-                                  ? 'bg-white/5 border-white/10 hover:border-space-sparkle'
-                                  : 'bg-black/5 border-black/10 hover:border-space-sparkle'
-                              }`}
+                        {activeMembers.length > 0 ? (
+                          <div className="flex flex-wrap items-center gap-1.5 max-w-md">
+                            {activeMembers.map((member) => renderMemberChip(member, false))}
+                          </div>
+                        ) : (
+                          <span className="text-micro opacity-40 italic block">
+                            No active person/s assigned
+                          </span>
+                        )}
+
+                        {pastMembers.length > 0 && (
+                          <div className="space-y-1.5 pt-0.5">
+                            <button
+                              type="button"
+                              onClick={() => togglePastRole(role.id)}
+                              className="text-micro text-space-sparkle hover:underline cursor-pointer block font-medium"
                             >
-                              <div className="relative w-4 h-4 rounded-full overflow-hidden shrink-0">
-                                {member.image ? (
-                                  <Image
-                                    src={member.image}
-                                    alt={member.name}
-                                    fill
-                                    sizes="16px"
-                                    className="object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full bg-space-sparkle/20 flex items-center justify-center">
-                                    <UserCheck size={10} className="text-space-sparkle" />
-                                  </div>
-                                )}
+                              {isPastExpanded ? 'Hide Past Contributors' : 'Show Past Contributors'}
+                            </button>
+
+                            {isPastExpanded && (
+                              <div className="flex flex-wrap items-center gap-1.5 max-w-md">
+                                {pastMembers.map((member) => renderMemberChip(member, true))}
                               </div>
-                              <span className="font-medium truncate max-w-[120px]">{member.name}</span>
-                            </div>
-                          ))}
-                        </div>
+                            )}
+                          </div>
+                        )}
+
                         <span className="text-micro font-mono opacity-50 block">
-                          Total: {assignedMembers.length} {assignedMembers.length === 1 ? 'person' : 'persons'}
+                          Total: {activeMembers.length} active{pastMembers.length > 0 ? `, ${pastMembers.length} past` : ''}
                         </span>
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => onAssignPersons(role)}
-                        className="text-micro opacity-50 hover:opacity-100 hover:text-space-sparkle flex items-center gap-1 cursor-pointer transition-colors"
-                      >
-                        <UserPlus size={12} /> Assign person
-                      </button>
                     )}
                   </td>
 
@@ -205,14 +238,6 @@ export const RolesByRoleTable: React.FC<RolesByRoleTableProps> = ({
                         aria-label="Edit role"
                       >
                         <Edit2 size={15} />
-                      </button>
-                      <button
-                        onClick={() => onDeleteRole(role)}
-                        title="Delete Role"
-                        className="p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all cursor-pointer"
-                        aria-label="Delete role"
-                      >
-                        <Trash2 size={15} />
                       </button>
                     </div>
                   </td>

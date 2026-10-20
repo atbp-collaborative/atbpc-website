@@ -129,7 +129,7 @@ export const ImageManagerField: React.FC<ImageManagerFieldProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <label className="text-caption font-semibold uppercase tracking-wider block">
-            {label} ({images.length})
+            {label} {!single && `(${images.length})`}
           </label>
           {helperText && <p className="text-micro opacity-60 mt-0.5">{helperText}</p>}
         </div>

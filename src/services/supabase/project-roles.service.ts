@@ -7,13 +7,18 @@ import { supabasePublic } from '@/lib/supabase/public';
 import { ProjectRole } from '@/types';
 import { INITIAL_PROJECT_ROLES_DATA } from '@/services/mock/adminMockStorage';
 
-export async function getProjectRolesFromSupabase(): Promise<ProjectRole[]> {
+export async function getProjectRolesFromSupabase(includeInactive = false): Promise<ProjectRole[]> {
   try {
-    const { data, error } = await supabasePublic
+    let query = supabasePublic
       .from('project_roles')
       .select('*')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
+      .order('name', { ascending: true });
+
+    if (!includeInactive) {
+      query = query.eq('is_active', true);
+    }
+
+    const { data, error } = await query;
 
     if (error || !data || data.length === 0) {
       return INITIAL_PROJECT_ROLES_DATA;
@@ -24,7 +29,6 @@ export async function getProjectRolesFromSupabase(): Promise<ProjectRole[]> {
       code: item.code,
       name: item.name,
       description: item.description,
-      sortOrder: item.sort_order,
       isActive: item.is_active,
     }));
   } catch (err) {

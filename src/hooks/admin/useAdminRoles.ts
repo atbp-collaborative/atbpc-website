@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Role, RoleCategory, RoleTrack, Member, MemberCategory, Project } from '@/types';
+import { Role, RoleCategory, RoleTrack, Member, MemberCategory, Project, ProjectRole, MemberInvolvement } from '@/types';
 import {
   getRoles,
   saveRole as saveRoleStorage,
@@ -14,13 +14,26 @@ import {
   toggleRoleDraft as toggleRoleDraftStorage,
   getMembers,
   getProjects,
+  getProjectRoles,
+  saveProjectRole as saveProjectRoleStorage,
+  deleteProjectRole as deleteProjectRoleStorage,
   assignRoleToMember as assignRoleStorage,
   unassignRoleFromMember as unassignRoleStorage,
   setMemberRoles as setMemberRolesStorage,
   associateMemberToProject as associateMemberToProjectStorage,
   disassociateMemberFromProject as disassociateMemberFromProjectStorage,
 } from '@/services/mock/adminMockStorage';
-import { saveRoleAction, deleteRoleAction } from '@/app/actions/admin-mutations';
+import { getProjectRolesFromSupabase } from '@/services/supabase/project-roles.service';
+import { getMembers as getMembersFromDataService } from '@/services/dummy-data.service';
+import {
+  saveRoleAction,
+  deleteRoleAction,
+  saveProjectRoleAction,
+  deleteProjectRoleAction,
+  updatePersonRolesAction,
+  updatePersonInvolvementsAction,
+  fetchAdminPeopleAction,
+} from '@/app/actions/admin-mutations';
 import { memberHasRole } from '@/lib/roles/role-helpers';
 import { toast } from 'sonner';
 
@@ -41,6 +54,7 @@ export interface ProjectRoleEntry {
 
 export function useAdminRoles() {
   const [roles, setRoles] = useState<Role[]>([]);
+  const [projectRoles, setProjectRoles] = useState<ProjectRole[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,10 +70,32 @@ export function useAdminRoles() {
     const r = getRoles();
     const m = getMembers();
     const p = getProjects();
+    const prLocal = getProjectRoles();
     setRoles(r);
     setMembers(m);
     setProjects(p);
-    setIsLoading(false);
+    setProjectRoles(prLocal);
+
+    // Asynchronously fetch latest project roles and members from Supabase
+    Promise.all([
+      getProjectRolesFromSupabase(true).catch((err) => {
+        console.warn('Failed to load project roles from Supabase:', err);
+        return null;
+      }),
+      fetchAdminPeopleAction().catch((err) => {
+        console.warn('Failed to load admin people from Supabase:', err);
+        return null;
+      }),
+    ]).then(([dbProjectRoles, dbMembers]) => {
+      if (dbProjectRoles && dbProjectRoles.length > 0) {
+        setProjectRoles(dbProjectRoles);
+      }
+      if (dbMembers && dbMembers.length > 0) {
+        setMembers(dbMembers);
+      }
+    }).finally(() => {
+      setIsLoading(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -132,6 +168,13 @@ export function useAdminRoles() {
       }
 
       return true;
+    })
+    .sort((a, b) => {
+      const aHired = a.isCurrentlyHired !== false;
+      const bHired = b.isCurrentlyHired !== false;
+      if (aHired && !bHired) return -1;
+      if (!aHired && bHired) return 1;
+      return (a.displayOrder ?? 99) - (b.displayOrder ?? 99);
     });
   }, [members, categoryFilter, trackFilter, searchTerm, roles]);
 
@@ -182,6 +225,56 @@ export function useAdminRoles() {
 
     return entries;
   }, [members, selectedProjectId, categoryFilter, searchTerm]);
+
+  // Filtered Project Roles (for By Project Role View)
+  const filteredProjectRoles = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) return projectRoles;
+
+    return projectRoles.filter((pr) => {
+      const matchName = pr.name.toLowerCase().includes(term);
+      const matchCode = pr.code ? pr.code.toLowerCase().includes(term) : false;
+      const matchDesc = pr.description ? pr.description.toLowerCase().includes(term) : false;
+      return matchName || matchCode || matchDesc;
+    });
+  }, [projectRoles, searchTerm]);
+
+  // CRUD for Project Roles
+  const saveProjectRole = useCallback(async (projectRoleData: ProjectRole) => {
+    saveProjectRoleStorage(projectRoleData);
+
+    const res = await saveProjectRoleAction(projectRoleData);
+    if (!res.success) {
+      toast.error(`Database error: ${res.error}`);
+      return projectRoleData;
+    }
+
+    const saved = res.data || projectRoleData;
+    setProjectRoles((prev) => {
+      const idx = prev.findIndex((r) => r.id === saved.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = saved;
+        return copy;
+      }
+      return [saved, ...prev];
+    });
+    toast.success(`Project role "${saved.name}" saved successfully`);
+    return saved;
+  }, []);
+
+  const deleteProjectRole = useCallback(async (id: string) => {
+    const target = projectRoles.find((r) => r.id === id);
+    deleteProjectRoleStorage(id);
+    setProjectRoles((prev) => prev.filter((r) => r.id !== id));
+
+    const res = await deleteProjectRoleAction(id);
+    if (!res.success) {
+      toast.error(`Database error: ${res.error}`);
+      return;
+    }
+    toast.success(`Project role "${target?.name || id}" removed from database`);
+  }, [projectRoles]);
 
   // CRUD for Roles
   const saveRole = useCallback(async (roleData: Role) => {
@@ -241,39 +334,50 @@ export function useAdminRoles() {
   }, []);
 
   // Member Role assignment
-  const assignRoleToMember = useCallback((memberId: string, roleId: string) => {
+  const assignRoleToMember = useCallback(async (memberId: string, roleId: string) => {
     assignRoleStorage(memberId, roleId);
+    let updatedRoleIds: string[] = [];
     setMembers((prev) =>
       prev.map((m) => {
         if (m.id === memberId) {
           const current = m.roles || [];
-          return current.includes(roleId) ? m : { ...m, roles: [...current, roleId] };
+          updatedRoleIds = current.includes(roleId) ? current : [...current, roleId];
+          return { ...m, roles: updatedRoleIds, otherRoleIds: updatedRoleIds };
         }
         return m;
       })
     );
+    await updatePersonRolesAction(memberId, updatedRoleIds);
     toast.success('Role assigned to member');
   }, []);
 
-  const unassignRoleFromMember = useCallback((memberId: string, roleId: string) => {
+  const unassignRoleFromMember = useCallback(async (memberId: string, roleId: string) => {
     unassignRoleStorage(memberId, roleId);
+    let updatedRoleIds: string[] = [];
     setMembers((prev) =>
       prev.map((m) => {
         if (m.id === memberId && m.roles) {
-          return { ...m, roles: m.roles.filter((r) => r !== roleId) };
+          updatedRoleIds = m.roles.filter((r) => r !== roleId);
+          return { ...m, roles: updatedRoleIds, otherRoleIds: updatedRoleIds };
         }
         return m;
       })
     );
+    await updatePersonRolesAction(memberId, updatedRoleIds);
     toast.success('Role unassigned from member');
   }, []);
 
-  const setMemberRoles = useCallback((memberId: string, roleIds: string[]) => {
+  const setMemberRoles = useCallback(async (memberId: string, roleIds: string[]) => {
     setMemberRolesStorage(memberId, roleIds);
     setMembers((prev) =>
-      prev.map((m) => (m.id === memberId ? { ...m, roles: roleIds } : m))
+      prev.map((m) => (m.id === memberId ? { ...m, roles: roleIds, otherRoleIds: roleIds } : m))
     );
-    toast.success('Member roles updated');
+    const res = await updatePersonRolesAction(memberId, roleIds);
+    if (!res.success) {
+      toast.error(`Database error: ${res.error}`);
+    } else {
+      toast.success('Member roles updated');
+    }
   }, []);
 
   // Project Role association
@@ -295,9 +399,29 @@ export function useAdminRoles() {
     [refresh]
   );
 
+  const saveMemberInvolvements = useCallback(
+    async (memberId: string, involvements: MemberInvolvement[]) => {
+      // Optimistically update local members state
+      setMembers((prev) =>
+        prev.map((m) => (m.id === memberId ? { ...m, involvement: involvements } : m))
+      );
+
+      const res = await updatePersonInvolvementsAction(memberId, involvements);
+      if (!res.success) {
+        toast.error(`Database error: ${res.error}`);
+        return false;
+      }
+      toast.success('Project involvements saved successfully');
+      return true;
+    },
+    []
+  );
+
   return {
     roles,
     filteredRoles,
+    projectRoles,
+    filteredProjectRoles,
     members,
     filteredMembers,
     projects,
@@ -313,12 +437,15 @@ export function useAdminRoles() {
     setSelectedProjectId,
     saveRole,
     deleteRole,
+    saveProjectRole,
+    deleteProjectRole,
     toggleDraft,
     assignRoleToMember,
     unassignRoleFromMember,
     setMemberRoles,
     associateMemberToProject,
     disassociateMemberFromProject,
+    saveMemberInvolvements,
     refresh,
   };
 }

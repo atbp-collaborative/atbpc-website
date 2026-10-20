@@ -108,47 +108,10 @@ export const RolesFilterBar: React.FC<RolesFilterBarProps> = ({
 
       {/* Filter Chips Groups */}
       <div className="space-y-3 pt-1 border-t border-black/5 dark:border-white/5">
-        {/* Category Filter */}
+        {/* Career Track Filter */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-micro font-mono uppercase tracking-wider opacity-60 flex items-center gap-1 mr-1">
-            <Filter size={12} /> Category:
-          </span>
-          {categories.map((cat) => {
-            const isSelected = categoryFilter === cat.key;
-            const count = categoryCounts[cat.key] ?? 0;
-            return (
-              <button
-                key={cat.key}
-                onClick={() => setCategoryFilter(cat.key)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-caption transition-all cursor-pointer ${
-                  isSelected
-                    ? 'bg-space-sparkle text-white shadow-xs font-medium'
-                    : isDarkMode
-                    ? 'bg-white/5 text-bright-gray/70 hover:bg-white/10 hover:text-white border border-white/5'
-                    : 'bg-black/5 text-vintage-charcoal/70 hover:bg-black/10 hover:text-vintage-charcoal border border-black/5'
-                }`}
-              >
-                <span>{cat.label}</span>
-                <span
-                  className={`text-micro px-1.5 py-0.5 rounded-full ${
-                    isSelected
-                      ? 'bg-white/20 text-white'
-                      : isDarkMode
-                      ? 'bg-white/10 text-bright-gray/60'
-                      : 'bg-black/10 text-vintage-charcoal/60'
-                  }`}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Track Filter */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-micro font-mono uppercase tracking-wider opacity-60 flex items-center gap-1 mr-1">
-            <Filter size={12} /> Track:
+            <Filter size={12} /> Career Track:
           </span>
           {tracks.map((track) => {
             const isSelected = trackFilter === track.key;
@@ -168,6 +131,43 @@ export const RolesFilterBar: React.FC<RolesFilterBarProps> = ({
                 }`}
               >
                 <span>{track.label}</span>
+                <span
+                  className={`text-micro px-1.5 py-0.5 rounded-full ${
+                    isSelected
+                      ? 'bg-white/20 text-white'
+                      : isDarkMode
+                      ? 'bg-white/10 text-bright-gray/60'
+                      : 'bg-black/10 text-vintage-charcoal/60'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Role Category Filter */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-micro font-mono uppercase tracking-wider opacity-60 flex items-center gap-1 mr-1">
+            <Filter size={12} /> Role Category:
+          </span>
+          {categories.map((cat) => {
+            const isSelected = categoryFilter === cat.key;
+            const count = categoryCounts[cat.key] ?? 0;
+            return (
+              <button
+                key={cat.key}
+                onClick={() => setCategoryFilter(cat.key)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-caption transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-space-sparkle text-white shadow-xs font-medium'
+                    : isDarkMode
+                    ? 'bg-white/5 text-bright-gray/70 hover:bg-white/10 hover:text-white border border-white/5'
+                    : 'bg-black/5 text-vintage-charcoal/70 hover:bg-black/10 hover:text-vintage-charcoal border border-black/5'
+                }`}
+              >
+                <span>{cat.label}</span>
                 <span
                   className={`text-micro px-1.5 py-0.5 rounded-full ${
                     isSelected

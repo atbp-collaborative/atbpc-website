@@ -5,11 +5,10 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { LayoutTemplate, Edit2, Save, X } from 'lucide-react';
 import { NavigationCardItem } from '@/types';
-import { PublicationToggle } from '@/components/admin/PublicationToggle';
 import { Button } from '@/components/primitives/buttons/Button';
 import { useTheme } from '@/context/ThemeContext';
 import { ImageManagerField } from '@/components/admin/ImageManagerField';
@@ -39,6 +38,17 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
 
   // Card editing modal state
   const [editingCard, setEditingCard] = useState<NavigationCardItem | null>(null);
+  const initialCardRef = useRef<NavigationCardItem | null>(null);
+
+  const handleStartEditCard = (card: NavigationCardItem) => {
+    setEditingCard({ ...card, isDraft: false });
+    initialCardRef.current = { ...card, isDraft: false };
+  };
+
+  const isDirty = useMemo(() => {
+    if (!editingCard || !initialCardRef.current) return false;
+    return JSON.stringify(editingCard) !== JSON.stringify(initialCardRef.current);
+  }, [editingCard]);
 
   const filteredCards = useMemo(() => {
     if (activeCategory === 'all') return cards;
@@ -53,8 +63,8 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
 
   const handleSaveCardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingCard) return;
-    onSaveCard(editingCard);
+    if (!editingCard || !isDirty) return;
+    onSaveCard({ ...editingCard, isDraft: false });
     setEditingCard(null);
   };
 
@@ -66,7 +76,7 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
             <LayoutTemplate size={18} className="text-space-sparkle" /> Landing Pages &amp; Navigation Cards ({filteredCards.length})
           </h3>
           <p className="text-mini opacity-60">
-            Control the teaser cards displayed across hubs (titles, taglines, subtexts, and imagery).
+            Control the teaser cards displayed across hubs (titles, taglines, and imagery). All cards are permanently live.
           </p>
         </div>
       </div>
@@ -127,15 +137,6 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
                 <div className="absolute top-2 left-2 px-2 py-0.5 rounded text-micro font-mono uppercase bg-black/70 text-white backdrop-blur-xs">
                   {card.hubId}
                 </div>
-                <div className="absolute top-2 right-2">
-                  <span
-                    className={`px-2 py-0.5 rounded text-micro font-mono uppercase font-semibold ${
-                      card.isDraft ? 'bg-amber-500/90 text-white' : 'bg-emerald-600/90 text-white'
-                    }`}
-                  >
-                    {card.isDraft ? 'Draft' : 'Live'}
-                  </span>
-                </div>
               </div>
 
               <div>
@@ -145,30 +146,16 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
                 <p className="text-mini font-medium text-space-sparkle line-clamp-1">
                   {card.tagline}
                 </p>
-                <p className="text-micro opacity-60 line-clamp-2 mt-1">
-                  {card.subtext}
-                </p>
-                <div className="flex items-center gap-1 flex-wrap pt-2">
-                  {card.tags?.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="text-micro font-mono px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 opacity-70"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
+                <span className="text-micro font-mono opacity-50 truncate block mt-1" title={card.targetHref}>
+                  {card.targetHref}
+                </span>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-2 mt-4">
-              <PublicationToggle
-                isDraft={Boolean(card.isDraft)}
-                onToggle={() => onSaveCard({ ...card, isDraft: !card.isDraft })}
-              />
+            <div className="pt-4 border-t border-black/5 dark:border-white/5 flex items-center justify-end gap-2 mt-4">
               <Button
                 type="ghost"
-                onClick={() => setEditingCard({ ...card })}
+                onClick={() => handleStartEditCard(card)}
                 className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
               >
                 <Edit2 size={13} className="mr-1 inline" /> Edit Card
@@ -191,7 +178,10 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-black/10 dark:border-white/10 mb-4">
               <div>
                 <h3 className="text-body font-bold lowercase">edit card: {editingCard.title}</h3>
-                <span className="text-micro font-mono opacity-50">Hub: {editingCard.hubId} | Key: {editingCard.cardKey}</span>
+                {/* Destination URL on top of card below title replacing Hub: <hub> | Key: <key> */}
+                <span className="text-micro font-mono opacity-60 break-all block mt-0.5">
+                  {editingCard.targetHref}
+                </span>
               </div>
               <button
                 type="button"
@@ -229,18 +219,6 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                  Subtext (Description paragraph)
-                </label>
-                <textarea
-                  rows={2}
-                  value={editingCard.subtext}
-                  onChange={(e) => setEditingCard({ ...editingCard, subtext: e.target.value })}
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="space-y-1">
                 <ImageManagerField
                   single={true}
                   label="Card Background Image"
@@ -250,46 +228,9 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Destination URL (Href)
-                  </label>
-                  <input
-                    type="text"
-                    value={editingCard.targetHref}
-                    onChange={(e) => setEditingCard({ ...editingCard, targetHref: e.target.value })}
-                    className={inputClass}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Sort Order
-                  </label>
-                  <input
-                    type="number"
-                    value={editingCard.sortOrder}
-                    onChange={(e) => setEditingCard({ ...editingCard, sortOrder: parseInt(e.target.value, 10) || 0 })}
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-lg border border-black/10 dark:border-white/10 mt-4">
-                <div>
-                  <span className="text-mini font-semibold block">Card Visibility</span>
-                  <span className="text-micro opacity-60">Control visibility on public hub pages</span>
-                </div>
-                <PublicationToggle
-                  isDraft={Boolean(editingCard.isDraft)}
-                  onToggle={() => setEditingCard({ ...editingCard, isDraft: !editingCard.isDraft })}
-                />
-              </div>
-
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/10 dark:border-white/10">
                 <Button type="ghost" onClick={() => setEditingCard(null)} label="Cancel" />
-                <Button type="filled" htmlType="submit">
+                <Button type="filled" htmlType="submit" disabled={!isDirty}>
                   <Save size={14} className="mr-1.5 inline" /> Save Card
                 </Button>
               </div>

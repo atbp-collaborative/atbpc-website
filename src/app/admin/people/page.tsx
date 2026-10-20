@@ -188,6 +188,7 @@ export default function AdminPeoplePage() {
       dateOfHiring: member.dateOfHiring || new Date().toISOString().split('T')[0],
       dateOfSeparation: member.dateOfSeparation || '',
       isCurrentlyHired: member.isCurrentlyHired !== undefined ? member.isCurrentlyHired : true,
+      isDraft: member.isCurrentlyHired === false ? true : Boolean(member.isDraft),
     };
     initialDataRef.current = { ...editData };
     setFormData({ ...editData });
@@ -239,12 +240,15 @@ export default function AdminPeoplePage() {
       .filter(Boolean)
       .join(' ');
 
+    const isCurrentlyHired = formData.isCurrentlyHired !== false;
     const memberToSave: Member = {
       ...formData,
       id: cleanId,
       name: fullName,
       roles: formData.otherRoleIds || formData.roles || [],
       otherRoleIds: formData.otherRoleIds || formData.roles || [],
+      isCurrentlyHired,
+      isDraft: !isCurrentlyHired ? true : Boolean(formData.isDraft),
     };
 
     saveMember(memberToSave);
@@ -298,7 +302,7 @@ export default function AdminPeoplePage() {
                 onClick={handleResetDefaults}
                 className="!py-2 !px-3 sm:!px-4 text-mini"
               >
-                <RotateCcw size={13} className="mr-1.5 inline" /> Reset Defaults
+                <RotateCcw size={13} className="mr-1.5 inline" /> Reset Changes
               </Button>
 
               <Button
@@ -643,10 +647,14 @@ export default function AdminPeoplePage() {
                     <button
                       type="button"
                       onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          isCurrentlyHired: !prev.isCurrentlyHired,
-                        }))
+                        setFormData((prev) => {
+                          const nextHired = !prev.isCurrentlyHired;
+                          return {
+                            ...prev,
+                            isCurrentlyHired: nextHired,
+                            isDraft: !nextHired ? true : prev.isDraft,
+                          };
+                        })
                       }
                       className={`w-full py-2 px-3 rounded-lg text-mini font-semibold uppercase tracking-wider transition-colors border cursor-pointer ${
                         formData.isCurrentlyHired
@@ -897,13 +905,19 @@ export default function AdminPeoplePage() {
                   <span className="text-mini">Visibility:</span>
                   <PublicationToggle
                     isDraft={Boolean(formData.isDraft)}
-                    onToggle={() =>
-                      setFormData((prev) => ({ ...prev, isDraft: !prev.isDraft }))
-                    }
+                    onToggle={() => {
+                      if (!formData.isCurrentlyHired) {
+                        toast.info('Separated members are automatically kept as Draft.');
+                        return;
+                      }
+                      setFormData((prev) => ({ ...prev, isDraft: !prev.isDraft }));
+                    }}
                   />
                 </div>
                 <p className="text-micro opacity-60">
-                  {formData.isDraft
+                  {!formData.isCurrentlyHired
+                    ? 'Separated members are automatically kept as Draft and hidden from the public website.'
+                    : formData.isDraft
                     ? 'Hidden from /studio/our-people on the public website.'
                     : 'Visible to all visitors on the public directory.'}
                 </p>
@@ -943,7 +957,7 @@ export default function AdminPeoplePage() {
                       fullWidth
                       className="!py-2 text-mini border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
                     >
-                      <RotateCcw size={13} className="mr-1.5 inline" /> Reset Defaults
+                      <RotateCcw size={13} className="mr-1.5 inline" /> Reset Changes
                     </Button>
                   </div>
                 </div>
@@ -1150,6 +1164,11 @@ export default function AdminPeoplePage() {
                           >
                             {member.isDraft ? 'Draft' : 'Published'}
                           </span>
+                          {member.isCurrentlyHired === false && (
+                            <span className="px-2 py-0.5 rounded text-micro font-mono uppercase tracking-wider font-semibold bg-amber-600/20 text-amber-700 dark:text-amber-300 border border-amber-600/30">
+                              Separated
+                            </span>
+                          )}
                         </div>
 
                         <p className="text-mini opacity-70 truncate">{member.role}</p>
@@ -1218,15 +1237,22 @@ export default function AdminPeoplePage() {
                         )}
                       </div>
 
-                      <span
-                        className={`px-2.5 py-0.5 rounded text-micro font-mono uppercase tracking-wider font-semibold ${
-                          member.isDraft
-                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                            : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                        }`}
-                      >
-                        {member.isDraft ? 'Draft' : 'Published'}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        <span
+                          className={`px-2.5 py-0.5 rounded text-micro font-mono uppercase tracking-wider font-semibold ${
+                            member.isDraft
+                              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                              : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                          }`}
+                        >
+                          {member.isDraft ? 'Draft' : 'Published'}
+                        </span>
+                        {member.isCurrentlyHired === false && (
+                          <span className="px-2 py-0.5 rounded text-micro font-mono uppercase tracking-wider font-semibold bg-amber-600/20 text-amber-700 dark:text-amber-300 border border-amber-600/30">
+                            Separated
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Name and Role */}
