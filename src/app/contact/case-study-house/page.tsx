@@ -1,12 +1,16 @@
 import React from 'react';
-import { getSitePagesData } from '@/services/dummy-data.service';
+import { getNavigationCardsData, getSitePagesData } from '@/services/dummy-data.service';
 import { DraftNotice } from '@/components/global/DraftNotice';
 import { CaseStudyHouseClient } from './CaseStudyHouseClient';
 
 export const revalidate = 60;
 
 export default async function CaseStudyHousePage() {
-  const pages = await getSitePagesData();
+  const [navCards, pages] = await Promise.all([
+    getNavigationCardsData('case-study-house'),
+    getSitePagesData(),
+  ]);
+
   const pageInfo = pages.find((page) => page.id === 'case-study-house') || null;
 
   if (pageInfo && pageInfo.isDraft) {
@@ -18,5 +22,5 @@ export default async function CaseStudyHousePage() {
     );
   }
 
-  return <CaseStudyHouseClient pageInfo={pageInfo} />;
+  return <CaseStudyHouseClient navCards={navCards} pageInfo={pageInfo} />;
 }

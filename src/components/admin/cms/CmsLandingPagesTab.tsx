@@ -28,6 +28,7 @@ const HUB_CATEGORIES = [
   { id: 'services', label: 'Our Services' },
   { id: 'process', label: 'Our Process' },
   { id: 'studio', label: 'Studio Hub' },
+  { id: 'contact', label: 'Contact Hub' },
   { id: 'case-study-house', label: 'Case Study House' },
   { id: 'grow-with-us', label: 'Grow With Us' },
   { id: 'partner-with-us', label: 'Partner With Us' },

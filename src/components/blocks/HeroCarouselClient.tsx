@@ -13,14 +13,14 @@ export function HeroCarouselClient({ initialImages }: HeroCarouselClientProps) {
   const [heroActiveIndex, setHeroActiveIndex] = useState<number>(0);
   const carouselImages = initialImages;
 
-  // Auto-play interval for carousel
+  // Auto-play interval for carousel (resets timer on manual user interaction)
   useEffect(() => {
     if (carouselImages.length <= 1) return;
     const interval = setInterval(() => {
       setHeroActiveIndex((prev) => (prev + 1) % carouselImages.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [carouselImages.length]);
+  }, [heroActiveIndex, carouselImages.length]);
 
   if (carouselImages.length === 0) {
     return <div className="relative w-full h-full flex-1 min-h-0 bg-black" />;

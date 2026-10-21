@@ -34,10 +34,18 @@ export const LegalPrivacyModals: React.FC<LegalPrivacyModalsProps> = ({
         const fetchedPrivacy = batch['privacy_policy'] as ModalData | undefined;
 
         if (fetchedLegal && (fetchedLegal.bodyHtml || fetchedLegal.sections?.length || fetchedLegal.intro)) {
-          setLegalData(fetchedLegal);
+          setLegalData({
+            ...legalModalData.contents,
+            ...fetchedLegal,
+            icon: legalModalData.contents.icon, // Retain valid Lucide icon component
+          });
         }
         if (fetchedPrivacy && (fetchedPrivacy.bodyHtml || fetchedPrivacy.sections?.length || fetchedPrivacy.intro)) {
-          setPrivacyData(fetchedPrivacy);
+          setPrivacyData({
+            ...privacyPolicyModalData.contents,
+            ...fetchedPrivacy,
+            icon: privacyPolicyModalData.contents.icon, // Retain valid Lucide icon component
+          });
         }
       })
       .catch(() => {});

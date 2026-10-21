@@ -23,6 +23,14 @@ export interface InfoModalProps {
   children?: React.ReactNode;
 }
 
+// Safely validates whether a value is an instantiable React component (function or forwardRef object)
+const isValidIconComponent = (comp: any): boolean => {
+  if (!comp) return false;
+  if (typeof comp === 'function') return true;
+  if (typeof comp === 'object' && comp !== null && ('$$typeof' in comp || 'render' in comp)) return true;
+  return false;
+};
+
 export const InfoModal: React.FC<InfoModalProps> = ({
   isOpen,
   onClose,
@@ -53,7 +61,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({
   const title = data?.title || legacyTitle || '';
   const subtitle = data?.subtitle || legacySubtitle || '';
   const closeLabel = data?.closeLabel || legacyCloseLabel || 'Close';
-  const IconComponent = data?.icon;
+  const IconComponent = isValidIconComponent(data?.icon) ? data?.icon : null;
   const icon = IconComponent ? <IconComponent size={20} /> : legacyIcon;
 
   return (
@@ -138,7 +146,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({
                       )}
 
                       {data.sections?.map((section, idx) => {
-                        const SectionIcon = section.icon;
+                        const SectionIcon = isValidIconComponent(section.icon) ? section.icon : null;
                         return (
                           <section key={idx} className="space-y-3">
                             {section.title && (

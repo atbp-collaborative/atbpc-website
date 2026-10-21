@@ -69,7 +69,7 @@ export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, su
               </h2>
 
               <p className="text-caption font-light italic opacity-90 lowercase leading-relaxed text-white">
-                {card.subtext || card.tagline}
+                {card.tagline || card.subtext}
               </p>
             </div>
           </div>

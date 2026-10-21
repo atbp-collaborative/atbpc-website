@@ -6,3 +6,4 @@ export { SubLandingSkeleton } from './SubLandingSkeleton';
 export { ProjectCarouselSkeleton } from './ProjectCarouselSkeleton';
 export { ProjectDetailSkeleton } from './ProjectDetailSkeleton';
 export { PersonDetailSkeleton } from './PersonDetailSkeleton';
+export { ProcessSubpageSkeleton } from './ProcessSubpageSkeleton';
