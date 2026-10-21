@@ -140,6 +140,7 @@ export interface ContractTypeItem {
 export type MemberCategory = 'designers' | 'managers' | 'builders';
 export type RoleCategory = MemberCategory;
 export type RoleTrack = 'internship' | 'professionals';
+export type RoleVisibility = 'superadmin' | 'admin' | 'editor' | 'public';
 
 export interface Role {
   id: string;
@@ -152,6 +153,7 @@ export interface Role {
   description?: string;
   isActive?: boolean;
   isDraft?: boolean;
+  role_visibility?: RoleVisibility;
 }
 
 export interface MemberAffiliation {

@@ -22,6 +22,7 @@ import {
   RotateCcw,
   ArrowUp,
   ArrowDown,
+  Lock,
 } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { PublicationToggle } from '@/components/admin/PublicationToggle';
@@ -36,6 +37,7 @@ import { ComboboxSelect } from '@/components/admin/ComboboxSelect';
 import { AddressField } from '@/components/forms/form-fields/AddressField';
 import { EMPTY_PH_ADDRESS } from '@/components/forms/form-fields/types';
 import { generateMemberSlug } from '@/lib/people/slug-helpers';
+import { isRoleSelectable } from '@/lib/roles/role-helpers';
 import { getLicensesFromSupabase } from '@/services/supabase/licenses.service';
 import {
   useAdminPeople,
@@ -85,6 +87,16 @@ const EMPTY_MEMBER: Member = {
   categories: ['designers'],
   involvement: [],
   isDraft: false,
+};
+
+const isFounder = (member?: { id?: string; role?: string; name?: string } | null) => {
+  if (!member) return false;
+  const r = (member.role || '').toLowerCase();
+  return (
+    r.includes('principal architect') ||
+    r.includes('founder') ||
+    member.id === 'marchie-borja'
+  );
 };
 
 interface AdminPeopleClientProps {
@@ -154,6 +166,19 @@ export function AdminPeopleClient({
   const initialDataRef = useRef<Member>(EMPTY_MEMBER);
   const [licenses, setLicenses] = useState<License[]>(initialLicenses);
 
+  const userTier = (user?.role as 'superadmin' | 'admin' | 'editor') || 'editor';
+  const selectableRoles = useMemo(() => {
+    return allRoles.filter((r) => {
+      const isAlreadyAssigned =
+        formData.primaryRoleId === r.id ||
+        (formData.otherRoleIds || []).includes(r.id) ||
+        formData.role === r.title;
+      if (isAlreadyAssigned) return true;
+
+      return isRoleSelectable(r.role_visibility, userTier);
+    });
+  }, [allRoles, userTier, formData.primaryRoleId, formData.otherRoleIds, formData.role]);
+
   useEffect(() => {
     if (initialLicenses && initialLicenses.length > 0) return;
     getLicensesFromSupabase().then((data) => {
@@ -179,6 +204,11 @@ export function AdminPeopleClient({
   };
 
   const startEdit = (member: Member) => {
+    if (!isSuperadmin && isFounder(member)) {
+      toast.error('The Principal Architect & Founder profile is protected and can only be modified by the Super Admin.');
+      return;
+    }
+
     // Populate atomic names if missing
     let fName = member.firstName || '';
     let mName = member.middleName || '';
@@ -511,7 +541,7 @@ export function AdminPeopleClient({
                       Primary Studio Role <span className="text-red-500">*</span>
                     </label>
                     <ComboboxSelect
-                      options={allRoles.map((r) => ({
+                      options={selectableRoles.map((r) => ({
                         id: r.id,
                         label: r.title,
                         sublabel: r.code,
@@ -535,7 +565,7 @@ export function AdminPeopleClient({
                       Other Studio Role
                     </label>
                     <ComboboxMultiSelect
-                      options={allRoles.map((r) => ({
+                      options={selectableRoles.map((r) => ({
                         id: r.id,
                         label: r.title,
                         sublabel: r.code,
@@ -987,17 +1017,26 @@ export function AdminPeopleClient({
                   <span className="text-caption font-semibold uppercase tracking-wider block text-red-600 dark:text-red-400">
                     Danger Zone
                   </span>
-                  <p className="text-micro opacity-70">
-                    Permanently delete this member profile and all associated project affiliations.
-                  </p>
-                  <Button
-                    type="ghost"
-                    onClick={() => setMemberToDelete(formData)}
-                    fullWidth
-                    className="!py-2 text-mini border border-red-500/30 text-red-500 hover:bg-red-500/10 cursor-pointer"
-                  >
-                    <Trash2 size={14} className="mr-1.5 inline" /> Delete Member Profile
-                  </Button>
+                  {isFounder(formData) ? (
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-micro">
+                      <Lock size={14} className="shrink-0" />
+                      <span>The Principal Architect &amp; Founder profile is protected and cannot be deleted.</span>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-micro opacity-70">
+                        Permanently delete this member profile and all associated project affiliations.
+                      </p>
+                      <Button
+                        type="ghost"
+                        onClick={() => setMemberToDelete(formData)}
+                        fullWidth
+                        className="!py-2 text-mini border border-red-500/30 text-red-500 hover:bg-red-500/10 cursor-pointer"
+                      >
+                        <Trash2 size={14} className="mr-1.5 inline" /> Delete Member Profile
+                      </Button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -1257,13 +1296,22 @@ export function AdminPeopleClient({
                         </button>
                       </div>
 
-                      <Button
-                        type="ghost"
-                        onClick={() => startEdit(member)}
-                        className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
-                      >
-                        <Edit2 size={13} className="mr-1 inline" /> Edit
-                      </Button>
+                      {!isSuperadmin && isFounder(member) ? (
+                        <span
+                          className="inline-flex items-center gap-1.5 py-1.5 px-3 text-micro font-mono uppercase tracking-wider rounded-lg border border-space-sparkle/30 bg-space-sparkle/10 text-space-sparkle font-medium"
+                          title="Protected Founder Profile"
+                        >
+                          <Lock size={12} /> Protected
+                        </span>
+                      ) : (
+                        <Button
+                          type="ghost"
+                          onClick={() => startEdit(member)}
+                          className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
+                        >
+                          <Edit2 size={13} className="mr-1 inline" /> Edit
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1375,13 +1423,22 @@ export function AdminPeopleClient({
                       </button>
                     </div>
 
-                    <Button
-                      type="ghost"
-                      onClick={() => startEdit(member)}
-                      className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle flex-1 justify-center"
-                    >
-                      <Edit2 size={13} className="mr-1 inline" /> Edit Member
-                    </Button>
+                    {!isSuperadmin && isFounder(member) ? (
+                      <span
+                        className="inline-flex items-center justify-center gap-1.5 py-1.5 px-3 text-micro font-mono uppercase tracking-wider rounded-lg border border-space-sparkle/30 bg-space-sparkle/10 text-space-sparkle font-medium flex-1"
+                        title="Protected Founder Profile"
+                      >
+                        <Lock size={12} /> Protected Profile
+                      </span>
+                    ) : (
+                      <Button
+                        type="ghost"
+                        onClick={() => startEdit(member)}
+                        className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle flex-1 justify-center"
+                      >
+                        <Edit2 size={13} className="mr-1 inline" /> Edit Member
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

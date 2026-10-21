@@ -10,10 +10,12 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, UserCheck, Shield, Check, Search, UserPlus } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
+import { useAdminAuth } from '@/hooks/admin/useAdminAuth';
 import { Member, Role } from '@/types';
 import { Button } from '@/components/primitives/buttons/Button';
 import {
   memberHasRole,
+  isRoleSelectable,
   getCategoryBadgeClasses,
   getTrackBadgeClasses,
   formatCategoryLabel,
@@ -42,6 +44,8 @@ export const AssignMemberRoleModal: React.FC<AssignMemberRoleModalProps> = ({
   onClose,
 }) => {
   const { isDarkMode } = useTheme();
+  const { user } = useAdminAuth();
+  const userTier = (user?.role as 'superadmin' | 'admin' | 'editor') || 'editor';
   const [filterSearch, setFilterSearch] = useState('');
 
   // Selected state when managing roles for a member
@@ -108,14 +112,21 @@ export const AssignMemberRoleModal: React.FC<AssignMemberRoleModalProps> = ({
 
   const filteredRoles = useMemo(() => {
     const term = filterSearch.toLowerCase().trim();
-    if (!term) return allRoles;
-    return allRoles.filter(
-      (r) =>
+    return allRoles.filter((r) => {
+      // Must be selectable for this tier (or already selected for this member)
+      const isSelected = selectedRoleIds.includes(r.id);
+      if (!isSelected && !isRoleSelectable(r.role_visibility, userTier)) {
+        return false;
+      }
+
+      if (!term) return true;
+      return (
         r.title.toLowerCase().includes(term) ||
         (r.code && r.code.toLowerCase().includes(term)) ||
         (r.department && r.department.toLowerCase().includes(term))
-    );
-  }, [allRoles, filterSearch]);
+      );
+    });
+  }, [allRoles, filterSearch, selectedRoleIds, userTier]);
 
   const filteredMembers = useMemo(() => {
     const term = filterSearch.toLowerCase().trim();

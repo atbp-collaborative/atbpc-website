@@ -23,6 +23,7 @@ import {
   HomeSlideItem,
   HomepageSlogans,
   AdminUser,
+  RoleVisibility,
 } from '@/types';
 import {
   isUuid,
@@ -217,6 +218,24 @@ export async function savePersonAction(member: Member) {
 export async function deletePersonAction(id: string) {
   try {
     const supabase = getAdminClient();
+
+    // Guard: Prevent deleting the Principal Architect & Founder
+    const { data: targetPerson } = await supabase
+      .from('people')
+      .select('role')
+      .eq('id', id)
+      .single();
+
+    if (
+      targetPerson?.role?.toLowerCase().includes('principal architect') ||
+      targetPerson?.role?.toLowerCase().includes('founder')
+    ) {
+      return {
+        success: false,
+        error: 'The Principal Architect & Founder profile is protected and cannot be deleted.',
+      };
+    }
+
     const { error } = await supabase.from('people').delete().eq('id', id);
 
     if (error) {
@@ -737,8 +756,39 @@ export async function toggleProjectDraftAction(id: string, isDraft: boolean) {
 }
 
 // ==============================================================================
-// 3. ROLES MUTATIONS
+// 3. ROLES (Studio Positions)
 // ==============================================================================
+
+export async function fetchAdminRolesAction(): Promise<Role[]> {
+  try {
+    const supabase = getAdminClient();
+    const { data: roles, error } = await supabase
+      .from('roles')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    if (error || !roles) {
+      console.error('[fetchAdminRolesAction] Error:', error);
+      return [];
+    }
+
+    return roles.map((r: any) => ({
+      id: r.id,
+      title: r.role_title,
+      code: r.role_code,
+      category: r.category,
+      trackId: r.track_id,
+      track: r.track_id === 'PROF' ? 'professionals' : 'internship',
+      department: r.department,
+      description: r.role_description || '',
+      role_visibility: r.role_visibility || 'public',
+      sortOrder: r.sort_order,
+    }));
+  } catch (err) {
+    console.error('[fetchAdminRolesAction] Exception:', err);
+    return [];
+  }
+}
 
 export async function saveRoleAction(role: Role) {
   try {
@@ -753,7 +803,7 @@ export async function saveRoleAction(role: Role) {
       role.id ||
       `role-${code.toLowerCase()}`;
 
-    const rolePayload = {
+    const rolePayload: Record<string, any> = {
       id,
       role_code: code,
       role_title: role.title.trim(),
@@ -761,8 +811,8 @@ export async function saveRoleAction(role: Role) {
       track_id: role.trackId || (role.track === 'internship' ? 'INTERN_CHED_240' : 'PROF'),
       department: role.department || 'Production Team',
       role_description: role.description || null,
-      is_active: role.isActive !== false && !role.isDraft,
       sort_order: (role as any).sortOrder ?? 0,
+      role_visibility: role.role_visibility || 'public',
       updated_at: new Date().toISOString(),
     };
 
@@ -775,11 +825,33 @@ export async function saveRoleAction(role: Role) {
 
     revalidatePath('/admin/roles');
     revalidatePath('/admin/people');
+    revalidatePath('/', 'layout');
 
-    return { success: true, data: { ...role, id } };
+    return { success: true, data: { ...role, id, role_visibility: rolePayload.role_visibility } };
   } catch (err: any) {
     console.error('[saveRoleAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to save role' };
+  }
+}
+
+export async function updateRoleVisibilityAction(id: string, visibility: RoleVisibility) {
+  try {
+    const supabase = getAdminClient();
+    const { error } = await supabase
+      .from('roles')
+      .update({ role_visibility: visibility, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/admin/roles');
+    revalidatePath('/admin/people');
+    revalidatePath('/', 'layout');
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to update role visibility' };
   }
 }
 

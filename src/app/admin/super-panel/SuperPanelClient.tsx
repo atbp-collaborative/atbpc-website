@@ -7,15 +7,26 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldAlert, Users, HardHat, ShieldCheck, KeyRound, Lock } from 'lucide-react';
+import {
+  ShieldAlert,
+  Users,
+  HardHat,
+  ShieldCheck,
+  KeyRound,
+  Lock,
+  Sliders,
+  Award,
+} from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { useAdminAuth } from '@/hooks/admin/useAdminAuth';
 import { useTheme } from '@/context/ThemeContext';
 import { AdminAccountsTab } from '@/components/admin/super-panel/AdminAccountsTab';
+import { RbacPermissionsTab } from '@/components/admin/super-panel/RbacPermissionsTab';
+import { FounderAssignmentTab } from '@/components/admin/super-panel/FounderAssignmentTab';
 import { MaintenanceModeTab } from '@/components/admin/super-panel/MaintenanceModeTab';
 import { ContentProtectionTab } from '@/components/admin/super-panel/ContentProtectionTab';
 
-type SuperPanelTab = 'accounts' | 'maintenance' | 'protection';
+type SuperPanelTab = 'accounts' | 'rbac' | 'founder' | 'maintenance' | 'protection';
 
 export function SuperPanelClient() {
   const router = useRouter();
@@ -68,25 +79,31 @@ export function SuperPanelClient() {
     key: SuperPanelTab;
     label: string;
     icon: React.ElementType;
-    description: string;
   }[] = [
     {
       key: 'accounts',
       label: 'Admin Accounts',
       icon: Users,
-      description: 'Provision, supervise, and revoke Admin and Editor accounts',
+    },
+    {
+      key: 'rbac',
+      label: 'RBAC Permissions',
+      icon: Sliders,
+    },
+    {
+      key: 'founder',
+      label: 'Founder Designation',
+      icon: Award,
     },
     {
       key: 'maintenance',
       label: 'Maintenance Mode',
       icon: HardHat,
-      description: 'Under construction gate and public visitor routing',
     },
     {
       key: 'protection',
       label: 'Content Protection',
       icon: ShieldCheck,
-      description: 'Right-click, dragging, and scraping shields for public media',
     },
   ];
 
@@ -99,7 +116,7 @@ export function SuperPanelClient() {
 
       <div className="p-4 sm:p-8 space-y-6 max-w-7xl w-full mx-auto">
         {/* Navigation Tabs */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-black/10 dark:border-white/10 pb-2">
+        <div className="border-b border-black/10 dark:border-white/10 pb-2">
           <div className="flex items-center gap-1.5 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 overflow-x-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -109,7 +126,7 @@ export function SuperPanelClient() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-caption transition-all whitespace-nowrap cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-caption transition-all whitespace-nowrap cursor-pointer ${
                     isActive
                       ? isDarkMode
                         ? 'bg-vintage-charcoal text-white shadow-sm font-semibold border border-space-sparkle/40'
@@ -126,14 +143,12 @@ export function SuperPanelClient() {
               );
             })}
           </div>
-
-          <div className="text-micro font-mono uppercase tracking-wider opacity-60 self-center hidden md:block">
-            {tabs.find((t) => t.key === activeTab)?.description}
-          </div>
         </div>
 
         {/* Tab Content Panes */}
         {activeTab === 'accounts' && <AdminAccountsTab />}
+        {activeTab === 'rbac' && <RbacPermissionsTab />}
+        {activeTab === 'founder' && <FounderAssignmentTab />}
         {activeTab === 'maintenance' && <MaintenanceModeTab />}
         {activeTab === 'protection' && <ContentProtectionTab />}
       </div>

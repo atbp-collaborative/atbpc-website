@@ -122,7 +122,7 @@ export function AdminDashboardClient({
         </div>
 
         {/* Primary Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {/* People Card */}
           <div className={cardClass}>
             <div className="flex items-center justify-between mb-4">
@@ -228,44 +228,6 @@ export function AdminDashboardClient({
               <div className="flex items-center gap-1.5 text-space-sparkle">
                 <Clock size={13} />
                 <span>{ongoingProjects} Ongoing</span>
-              </div>
-            </div>
-          </div>
-
-          {/* General Info Card */}
-          <div className={cardClass}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-lg bg-space-sparkle/15 text-space-sparkle flex items-center justify-center">
-                <FileText size={20} />
-              </div>
-              <Link
-                href="/admin/general-info"
-                className="text-micro font-semibold text-space-sparkle hover:underline flex items-center gap-1"
-              >
-                <span>Settings</span>
-                <ArrowRight size={12} />
-              </Link>
-            </div>
-
-            <div className="space-y-1 mb-4">
-              <span className="text-micro uppercase font-mono tracking-wider opacity-60">
-                Studio Specs
-              </span>
-              <div className="flex items-baseline gap-3">
-                <span className="text-hero font-bold font-major">
-                  {contactInfo ? 'Active' : 'Standby'}
-                </span>
-                <span className="text-mini opacity-60">system sync</span>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-black/5 dark:border-white/10 flex flex-col sm:flex-row min-[1340px]:flex-row gap-2 justify-between text-mini">
-              <div className="flex items-center gap-1.5 opacity-75">
-                <Building size={13} />
-                <span>QC Studio</span>
-              </div>
-              <div className="flex items-center gap-1.5 opacity-75">
-                <span>{privacyPolicy?.sections?.length || 5} Policies</span>
               </div>
             </div>
           </div>

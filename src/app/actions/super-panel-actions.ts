@@ -456,3 +456,223 @@ export async function setContentProtectionAction(
     return { success: false, error: err?.message || 'Failed to update content protection.' };
   }
 }
+
+
+// ==============================================================================
+// 4. RBAC PERMISSIONS MATRIX
+// ==============================================================================
+
+import {
+  type RoleCrudPermission,
+  type AdminTypePermissions,
+  type RbacMatrixSettings,
+  DEFAULT_RBAC_PERMISSIONS,
+} from '@/lib/admin/rbac-constants';
+
+export type { RoleCrudPermission, AdminTypePermissions, RbacMatrixSettings };
+
+export async function getRbacPermissionsAction(): Promise<RbacMatrixSettings> {
+  try {
+    const supabase = getAdminClient();
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('content, updated_at')
+      .eq('key', 'rbac_permissions')
+      .single();
+
+    if (error || !data) {
+      return DEFAULT_RBAC_PERMISSIONS;
+    }
+
+    const content = data.content as any;
+    return {
+      admin: content?.admin || DEFAULT_RBAC_PERMISSIONS.admin,
+      editor: content?.editor || DEFAULT_RBAC_PERMISSIONS.editor,
+      updatedAt: data.updated_at || content?.updated_at,
+    };
+  } catch {
+    return DEFAULT_RBAC_PERMISSIONS;
+  }
+}
+
+export async function setRbacPermissionsAction(
+  permissions: RbacMatrixSettings
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = getAdminClient();
+    const now = new Date().toISOString();
+
+    const { error } = await supabase.from('site_settings').upsert({
+      key: 'rbac_permissions',
+      content: { ...permissions, updated_at: now },
+      updated_at: now,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/admin/super-panel');
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to update RBAC policies.' };
+  }
+}
+
+// ==============================================================================
+// 5. FOUNDER DESIGNATION
+// ==============================================================================
+
+export interface FounderDesignationResult {
+  personId: string | null;
+  personName?: string;
+  license?: string;
+  image?: string;
+  bio?: string;
+  updatedAt?: string;
+}
+
+export async function getFounderDesignationAction(): Promise<FounderDesignationResult> {
+  try {
+    const supabase = getAdminClient();
+
+    // 1. Check site_settings for explicit founder_person_id
+    const { data: settingData } = await supabase
+      .from('site_settings')
+      .select('content, updated_at')
+      .eq('key', 'founder_person_id')
+      .single();
+
+    let founderId: string | null = (settingData?.content as any)?.personId || null;
+
+    // 2. Query people table
+    if (founderId) {
+      const { data: person } = await supabase
+        .from('people')
+        .select('*')
+        .eq('id', founderId)
+        .single();
+
+      if (person) {
+        return {
+          personId: person.id,
+          personName: person.full_name,
+          license: person.prc_license_no || person.license,
+          image: person.profile_photo_url || person.image,
+          bio: person.short_bio || person.bio,
+          updatedAt: settingData?.updated_at,
+        };
+      }
+    }
+
+    // 3. Fallback: Find anyone with Principal Architect in role
+    const { data: founderCandidate } = await supabase
+      .from('people')
+      .select('*')
+      .ilike('role', '%Principal Architect%')
+      .limit(1)
+      .single();
+
+    if (founderCandidate) {
+      return {
+        personId: founderCandidate.id,
+        personName: founderCandidate.full_name,
+        license: founderCandidate.prc_license_no || founderCandidate.license,
+        image: founderCandidate.profile_photo_url || founderCandidate.image,
+        bio: founderCandidate.short_bio || founderCandidate.bio,
+      };
+    }
+
+    // Default static fallback
+    return {
+      personId: 'marchie-borja',
+      personName: 'Marchie Teodoro Borja',
+      license: '0054827',
+      image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=600&auto=format&fit=crop',
+      bio: 'Licensed Architect, UAP Makati Chapter Member, and Lecturer.',
+    };
+  } catch (err) {
+    return {
+      personId: 'marchie-borja',
+      personName: 'Marchie Teodoro Borja',
+      license: '0054827',
+    };
+  }
+}
+
+export async function setFounderDesignationAction(
+  personId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!personId) return { success: false, error: 'Person ID is required.' };
+
+    const supabase = getAdminClient();
+    const now = new Date().toISOString();
+
+    // 1. Save in site_settings
+    const { error: settingErr } = await supabase.from('site_settings').upsert({
+      key: 'founder_person_id',
+      content: { personId, updated_at: now },
+      updated_at: now,
+    });
+
+    if (settingErr) {
+      return { success: false, error: settingErr.message };
+    }
+
+    // 2. Update person's role in people table to Principal Architect & Founder
+    await supabase
+      .from('people')
+      .update({
+        role: 'Principal Architect & Founder',
+        updated_at: now,
+      })
+      .eq('id', personId);
+
+    revalidatePath('/admin/super-panel');
+    revalidatePath('/admin/people');
+    revalidatePath('/studio/our-people');
+    revalidatePath('/', 'layout');
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to designate Founder.' };
+  }
+}
+
+export async function fetchAllPeopleForFounderSelectionAction(): Promise<
+  { id: string; name: string; role: string; image?: string }[]
+> {
+  try {
+    const supabase = getAdminClient();
+    const { data, error } = await supabase
+      .from('people')
+      .select('id, full_name, role, profile_photo_url')
+      .order('full_name', { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      const { MEMBERS_DATA } = await import('@/lib/dummy-data/works/members');
+      return MEMBERS_DATA.map((m) => ({
+        id: m.id,
+        name: m.name,
+        role: m.role,
+        image: m.image,
+      }));
+    }
+
+    return data.map((p) => ({
+      id: p.id,
+      name: p.full_name,
+      role: p.role || 'Studio Regular',
+      image: p.profile_photo_url,
+    }));
+  } catch {
+    const { MEMBERS_DATA } = await import('@/lib/dummy-data/works/members');
+    return MEMBERS_DATA.map((m) => ({
+      id: m.id,
+      name: m.name,
+      role: m.role,
+      image: m.image,
+    }));
+  }
+}
