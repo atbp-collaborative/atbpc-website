@@ -7,9 +7,25 @@
 -- and all seed data including media assets in ONE single execution.
 -- ==============================================================================
 
--- 0. RESET PUBLIC SCHEMA
+-- 0. RESET PUBLIC SCHEMA & PURGE STALE AUTH / STORAGE RECORDS
 DROP SCHEMA IF EXISTS public CASCADE;
 CREATE SCHEMA public;
+
+-- Purge existing auth accounts to ensure a clean slate for the Superadmin Turnover Ceremony (/admin/login/turn-over)
+DO $$
+BEGIN
+    DELETE FROM auth.users;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Skipping auth.users flush: %', SQLERRM;
+END $$;
+
+-- Purge existing portfolio media objects in storage so uploads start fresh
+DO $$
+BEGIN
+    DELETE FROM storage.objects WHERE bucket_id = 'portfolio-media';
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Skipping storage.objects flush: %', SQLERRM;
+END $$;
 
 -- Grant standard permissions to Supabase roles
 GRANT USAGE, CREATE ON SCHEMA public TO postgres, anon, authenticated, service_role;
@@ -2089,9 +2105,12 @@ ON CONFLICT (id) DO UPDATE SET
 -- ==============================================================================
 -- 19. AUTOMATIC STORAGE URL NORMALIZATION (SELF-HEALING)
 -- ==============================================================================
--- This block ensures that if you switch Supabase projects or domains in the future,
--- all storage image URLs across all CMS and portfolio tables are rewritten
--- to your active target URL in a single atomic transaction.
+-- NOTE FOR NEW WORKSTATION SETUP:
+-- If your new or company Supabase Project URL is different:
+--   Option A: Replace TARGET_BASE_URL below with your project URL before running this script.
+--   Option B: Leave this as-is, and run `npm run seed:storage` from your terminal.
+--             `seed:storage` automatically rewrites all image URLs in the database to 
+--             match the NEXT_PUBLIC_SUPABASE_URL specified in your `.env.local`.
 -- ==============================================================================
 DO $$
 DECLARE
