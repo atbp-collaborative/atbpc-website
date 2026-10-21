@@ -10,12 +10,15 @@ interface SubLandingPageProps {
   cards: LandingCard[];
   title?: string;
   subtitle?: string;
+  footerText?: string;
   isHeaderSticky?: boolean;
 }
 
-export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, subtitle, isHeaderSticky }) => {
+export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, subtitle, footerText, isHeaderSticky }) => {
   const { isDarkMode } = useTheme();
   const layout = useCardLayout();
+
+  const effectiveFooterText = footerText || cards.find((c) => c.footerText)?.footerText;
 
   return (
     <div className={`w-full h-full select-none flex flex-col flex-1 min-h-0 overflow-hidden px-4 sm:px-8 pb-4 ${isHeaderSticky ? 'pt-4 sm:pt-6' : 'pt-16 sm:pt-20'}`}>
@@ -75,6 +78,15 @@ export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, su
           </div>
         ))}
       </div>
+
+      {/* Bottom Subtext Row (Positioned directly above site footer) */}
+      {effectiveFooterText && (
+        <div className="shrink-0 text-center pt-2 mt-1">
+          <p className="text-micro sm:text-mini font-light opacity-75 tracking-wide italic lowercase">
+            {effectiveFooterText}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

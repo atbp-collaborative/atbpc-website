@@ -20,6 +20,7 @@ export function OurServicesClient({ navCards, pageInfo }: OurServicesClientProps
     title: card.title,
     tagline: card.tagline,
     subtext: card.subtext,
+    footerText: card.footerText,
     image: card.imageUrl,
     priority: idx < 3,
     onSelect: () => {

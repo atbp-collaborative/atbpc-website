@@ -10,6 +10,7 @@ export interface LandingCard {
   title: string;
   tagline: string;
   subtext?: string;
+  footerText?: string;
   image: string;
   onSelect: () => void;
   tags?: string[];

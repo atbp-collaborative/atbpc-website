@@ -1,24 +1,38 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { getMembers } from '@/services/dummy-data.service';
 import { Member, MemberCategory } from '@/types';
 import { PeopleCarousel } from '@/components/blocks/PeopleCarousel';
 import { PersonCardSkeleton } from '@/components/primitives/skeletons/PersonCardSkeleton';
+import { getOurPeopleFooterFromSupabase } from '@/services/supabase/settings.service';
+
+const DEFAULT_FOOTER_TEXT =
+  'we are a licensed, registered collaborative trained and experienced to provide you services ... architecture, engineering, building construction industry, nationwide.';
 
 export interface PeopleListPageProps {
   activeFilter: 'all' | MemberCategory;
+  footerText?: string;
 }
 
-function PeopleListPageContent({ activeFilter }: PeopleListPageProps) {
-  const [members, setMembers] = React.useState<Member[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+function PeopleListPageContent({ activeFilter, footerText: initialFooter }: PeopleListPageProps) {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [footerText, setFooterText] = useState<string>(initialFooter || DEFAULT_FOOTER_TEXT);
+  const [isLoading, setIsLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     getMembers()
       .then(setMembers)
       .finally(() => setIsLoading(false));
-  }, []);
+
+    if (!initialFooter) {
+      getOurPeopleFooterFromSupabase().then((data) => {
+        if (data?.footerText) {
+          setFooterText(data.footerText);
+        }
+      });
+    }
+  }, [initialFooter]);
 
   if (isLoading) {
     return (
@@ -37,7 +51,7 @@ function PeopleListPageContent({ activeFilter }: PeopleListPageProps) {
       {/* Bottom Subtext Row */}
       <div className="shrink-0 text-center pt-2 mt-1">
         <p className="text-micro sm:text-mini font-light opacity-75 tracking-wide italic">
-          we are a licensed, registered collaborative trained and experienced to provide you services ... architecture, engineering, building construction industry, nationwide.
+          {footerText || DEFAULT_FOOTER_TEXT}
         </p>
       </div>
     </div>

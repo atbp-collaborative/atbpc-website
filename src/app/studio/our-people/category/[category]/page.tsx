@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PeopleListPage } from '@/components/blocks/PeopleListPage';
+import { getOurPeopleFooterFromSupabase } from '@/services/supabase/settings.service';
 import { MemberCategory } from '@/types';
 
 const VALID_CATEGORIES: MemberCategory[] = ['designers', 'managers', 'builders'];
@@ -27,5 +28,7 @@ export default async function Page({ params }: { params: Promise<{ category: str
     notFound();
   }
 
-  return <PeopleListPage activeFilter={category} />;
+  const footerData = await getOurPeopleFooterFromSupabase();
+
+  return <PeopleListPage activeFilter={category} footerText={footerData?.footerText} />;
 }

@@ -20,6 +20,7 @@ export function CaseStudyHouseClient({ navCards, pageInfo }: CaseStudyHouseClien
     title: card.title,
     tagline: card.tagline,
     subtext: card.subtext,
+    footerText: card.footerText,
     tags: card.tags,
     image: card.imageUrl,
     priority: idx < 3,

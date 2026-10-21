@@ -361,6 +361,41 @@ export async function uploadProjectMediaAction(formData: FormData) {
 }
 
 /**
+ * Deletes a file from Supabase Storage bucket 'portfolio-media' using its public URL or path.
+ * Used for cleaning up orphaned uploads (e.g. when an image is uploaded in Add Hero Slide modal but cancelled).
+ */
+export async function deleteStorageFileAction(fileUrl: string) {
+  try {
+    if (!fileUrl) return { success: false, error: 'No URL provided' };
+    const supabase = getAdminClient();
+
+    let storagePath = fileUrl;
+    const bucketMarker = '/portfolio-media/';
+    if (fileUrl.includes(bucketMarker)) {
+      storagePath = fileUrl.split(bucketMarker)[1];
+    } else if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+      const parts = new URL(fileUrl).pathname.split('/');
+      const bucketIdx = parts.indexOf('portfolio-media');
+      if (bucketIdx !== -1) {
+        storagePath = parts.slice(bucketIdx + 1).join('/');
+      }
+    }
+
+    storagePath = decodeURIComponent(storagePath.split('?')[0]);
+
+    const { error } = await supabase.storage.from('portfolio-media').remove([storagePath]);
+    if (error) {
+      console.error('[deleteStorageFileAction] Error removing file from storage:', error);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.error('[deleteStorageFileAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to delete file from storage' };
+  }
+}
+
+/**
  * Fallback helper to automatically upload base64 image data URLs directly to Supabase Storage,
  * ensuring no base64 payloads ever get written into Postgres or localStorage.
  */
@@ -940,28 +975,65 @@ export async function saveNavigationCardAction(card: NavigationCardItem) {
   try {
     const supabase = getAdminClient();
 
-    const { data, error } = await supabase
+    const basePayload: any = {
+      id: card.id,
+      hub_id: card.hubId,
+      card_key: card.cardKey,
+      title: card.title,
+      tagline: card.tagline,
+      subtext: card.footerText || card.subtext || '',
+      tags: card.tags,
+      image_url: card.imageUrl,
+      target_href: card.targetHref,
+      sort_order: card.sortOrder,
+      is_draft: Boolean(card.isDraft),
+      updated_at: new Date().toISOString(),
+    };
+
+    const extendedPayload = {
+      ...basePayload,
+      page_subtitle: card.pageSubtitle || null,
+      footer_text: card.footerText || null,
+    };
+
+    let { data, error } = await supabase
       .from('navigation_cards')
-      .upsert({
-        id: card.id,
-        hub_id: card.hubId,
-        card_key: card.cardKey,
-        title: card.title,
-        tagline: card.tagline,
-        subtext: card.subtext,
-        tags: card.tags,
-        image_url: card.imageUrl,
-        target_href: card.targetHref,
-        sort_order: card.sortOrder,
-        is_draft: Boolean(card.isDraft),
-        updated_at: new Date().toISOString(),
-      })
+      .upsert(extendedPayload)
       .select()
       .single();
+
+    // If column doesn't exist yet in PostgreSQL schema, retry with base payload
+    if (error && error.code === '42703') {
+      const retry = await supabase
+        .from('navigation_cards')
+        .upsert(basePayload)
+        .select()
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       console.error('[saveNavigationCardAction] Error:', error);
       return { success: false, error: error.message };
+    }
+
+    // Synchronize page subtitle to corresponding site_pages row if applicable
+    if (card.pageSubtitle) {
+      const pageIdMap: Record<string, string> = {
+        services: 'services-hub',
+        process: 'process-hub',
+        'contact-case-study-house': 'case-study-house',
+        'contact-grow-with-us': 'grow-with-us',
+        'contact-partner-with-us': 'partner-with-us',
+      };
+      const targetPageId = pageIdMap[card.cardKey];
+      if (targetPageId) {
+        await supabase
+          .from('site_pages')
+          .update({ subtitle: card.pageSubtitle, updated_at: new Date().toISOString() })
+          .eq('id', targetPageId);
+      }
     }
 
     revalidatePath('/', 'layout');
@@ -971,6 +1043,8 @@ export async function saveNavigationCardAction(card: NavigationCardItem) {
       success: true,
       data: {
         ...card,
+        pageSubtitle: card.pageSubtitle,
+        footerText: card.footerText,
         ...(data
           ? {
               id: data.id,
@@ -979,6 +1053,8 @@ export async function saveNavigationCardAction(card: NavigationCardItem) {
               title: data.title,
               tagline: data.tagline,
               subtext: data.subtext,
+              pageSubtitle: data.page_subtitle || card.pageSubtitle,
+              footerText: data.footer_text || card.footerText,
               tags: data.tags,
               imageUrl: data.image_url,
               targetHref: data.target_href,

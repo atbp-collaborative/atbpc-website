@@ -35,6 +35,10 @@ import { EMPTY_PH_ADDRESS } from '@/components/forms/form-fields/types';
 import { generateMemberSlug } from '@/lib/people/slug-helpers';
 import { getLicensesFromSupabase } from '@/services/supabase/licenses.service';
 import {
+  getOurPeopleFooterFromSupabase,
+  saveOurPeopleFooterToSupabase,
+} from '@/services/supabase/settings.service';
+import {
   useAdminPeople,
   PeopleClassificationFilter,
   VisibilityFilter,
@@ -138,6 +142,45 @@ export function AdminPeopleClient({
 
   // Modal states
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+
+  // Dynamic Our People Footer Text
+  const DEFAULT_PEOPLE_FOOTER =
+    'we are a licensed, registered collaborative trained and experienced to provide you services ... architecture, engineering, building construction industry, nationwide.';
+  const [peopleFooterText, setPeopleFooterText] = useState<string>(DEFAULT_PEOPLE_FOOTER);
+  const initialPeopleFooterRef = useRef<string>(DEFAULT_PEOPLE_FOOTER);
+  const [isSavingFooter, setIsSavingFooter] = useState(false);
+
+  useEffect(() => {
+    getOurPeopleFooterFromSupabase().then((data) => {
+      if (data?.footerText) {
+        setPeopleFooterText(data.footerText);
+        initialPeopleFooterRef.current = data.footerText;
+      }
+    });
+  }, []);
+
+  const isFooterDirty = useMemo(() => {
+    return peopleFooterText.trim() !== initialPeopleFooterRef.current.trim();
+  }, [peopleFooterText]);
+
+  const handleResetFooter = () => {
+    setPeopleFooterText(initialPeopleFooterRef.current);
+  };
+
+  const handleSaveFooter = async () => {
+    if (!isFooterDirty) return;
+    setIsSavingFooter(true);
+    try {
+      await saveOurPeopleFooterToSupabase(peopleFooterText);
+      initialPeopleFooterRef.current = peopleFooterText;
+      toast.success('Our People page footer subtext updated successfully.');
+    } catch (err: any) {
+      console.error('Failed to save people footer:', err);
+      toast.error(err?.message || 'Failed to save footer subtext.');
+    } finally {
+      setIsSavingFooter(false);
+    }
+  };
 
   const startCreate = () => {
     const today = new Date().toISOString().split('T')[0];
@@ -1332,6 +1375,61 @@ export function AdminPeopleClient({
             </Button>
           </div>
         )}
+
+        {/* Our People Dynamic Footer Field Card */}
+        <div
+          className={`p-6 rounded-xl border space-y-4 transition-all mt-6 ${
+            isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+          }`}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3 border-black/5 dark:border-white/5">
+            <div>
+              <h3 className="text-body font-major font-bold tracking-tight lowercase">
+                our people page footer subtext
+              </h3>
+              <p className="text-mini opacity-70">
+                Dynamic footer statement displayed at the bottom of the public <code>/studio/our-people</code> page.
+              </p>
+            </div>
+            {isFooterDirty && (
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  type="ghost"
+                  onClick={handleResetFooter}
+                  disabled={isSavingFooter}
+                  className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10"
+                >
+                  <RotateCcw size={12} className="mr-1 inline" /> Reset
+                </Button>
+                <Button
+                  type="filled"
+                  onClick={handleSaveFooter}
+                  disabled={isSavingFooter}
+                  className="!py-1.5 !px-4 text-mini font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                >
+                  <Save size={13} className={`mr-1.5 inline ${isSavingFooter ? 'animate-spin' : ''}`} />
+                  {isSavingFooter ? 'Saving...' : 'Save Footer'}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+              Footer Text
+            </label>
+            <textarea
+              rows={3}
+              value={peopleFooterText}
+              onChange={(e) => setPeopleFooterText(e.target.value)}
+              placeholder="we are a licensed, registered collaborative trained and experienced to provide you services..."
+              className={inputClass}
+            />
+            <p className="text-micro opacity-50 italic">
+              Default: "we are a licensed, registered collaborative trained and experienced to provide you services ... architecture, engineering, building construction industry, nationwide."
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Confirmation Modal (Exclusively for delete confirmation) */}

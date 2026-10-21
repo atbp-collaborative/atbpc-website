@@ -102,6 +102,18 @@ export async function getPartnerConditionsFromSupabase(): Promise<PartnerConditi
   return getSiteSettingFromSupabase<PartnerConditionsData>('partner_conditions');
 }
 
+export interface OurPeopleFooterData {
+  footerText: string;
+}
+
+export async function getOurPeopleFooterFromSupabase(): Promise<OurPeopleFooterData | null> {
+  return getSiteSettingFromSupabase<OurPeopleFooterData>('our_people_footer');
+}
+
+export async function saveOurPeopleFooterToSupabase(footerText: string): Promise<OurPeopleFooterData> {
+  return saveSiteSettingToSupabase<OurPeopleFooterData>('our_people_footer', { footerText });
+}
+
 export async function saveSiteSettingToSupabase<T>(key: string, content: T): Promise<T> {
   const res = await saveSiteSettingAction(key, content);
   if (!res.success) {

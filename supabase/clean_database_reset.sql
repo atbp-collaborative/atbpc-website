@@ -279,6 +279,8 @@ CREATE TABLE IF NOT EXISTS public.navigation_cards (
     title TEXT NOT NULL,
     tagline TEXT NOT NULL,
     subtext TEXT NOT NULL,
+    page_subtitle TEXT,
+    footer_text TEXT,
     tags TEXT[] NOT NULL DEFAULT '{}',
     image_url TEXT NOT NULL,
     target_href TEXT NOT NULL,

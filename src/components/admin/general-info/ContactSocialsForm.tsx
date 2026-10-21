@@ -76,6 +76,22 @@ export function ContactSocialsForm({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="space-y-1 sm:col-span-2">
           <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+            Studio Name
+          </label>
+          <input
+            type="text"
+            value={data.studioName || ''}
+            onChange={(e) => onChange({ ...data, studioName: e.target.value })}
+            placeholder="e.g. ATBP Collaborative"
+            className={inputClass}
+          />
+          <p className="text-micro opacity-50">
+            Official trade and practice name for the studio across communications and directory listings.
+          </p>
+        </div>
+
+        <div className="space-y-1 sm:col-span-2">
+          <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
             Full Studio Physical Address
           </label>
           <textarea

@@ -119,7 +119,9 @@ export default function ContactInfoPage() {
 
             <div className="flex items-center space-x-2 text-space-sparkle">
               <MapPin size={18} className="shrink-0" />
-              <h2 className="font-sans text-body font-bold tracking-tight">The Case Study House</h2>
+              <h2 className="font-sans text-body font-bold tracking-tight">
+                {CONTACT_INFO.studioName || 'The Case Study House'}
+              </h2>
             </div>
 
             <div className="space-y-1 pl-6">

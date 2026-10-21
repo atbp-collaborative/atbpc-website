@@ -262,6 +262,8 @@ export interface NavigationCardItem {
   title: string;
   tagline: string;
   subtext: string;
+  pageSubtitle?: string;
+  footerText?: string;
   tags: string[];
   imageUrl: string;
   targetHref: string;
