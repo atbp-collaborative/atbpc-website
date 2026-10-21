@@ -5,10 +5,7 @@ import { InfoModal } from '@/components/modals/InfoModal';
 import { legalModalData } from '@/lib/modals/legal';
 import { privacyPolicyModalData } from '@/lib/modals/privacy-policy';
 import { ModalData } from '@/lib/modals/types';
-import {
-  getLegalNoticesFromSupabase,
-  getPrivacyPolicyFromSupabase,
-} from '@/services/supabase/settings.service';
+import { getSiteSettingsBatchFromSupabase } from '@/services/supabase/settings.service';
 
 export interface LegalPrivacyModalsProps {
   isDarkMode: boolean;
@@ -30,18 +27,20 @@ export const LegalPrivacyModals: React.FC<LegalPrivacyModalsProps> = ({
 
   useEffect(() => {
     let isMounted = true;
-    Promise.all([
-      getLegalNoticesFromSupabase().catch(() => null),
-      getPrivacyPolicyFromSupabase().catch(() => null),
-    ]).then(([fetchedLegal, fetchedPrivacy]) => {
-      if (!isMounted) return;
-      if (fetchedLegal && (fetchedLegal.sections?.length || fetchedLegal.intro)) {
-        setLegalData(fetchedLegal);
-      }
-      if (fetchedPrivacy && (fetchedPrivacy.sections?.length || fetchedPrivacy.intro)) {
-        setPrivacyData(fetchedPrivacy);
-      }
-    });
+    getSiteSettingsBatchFromSupabase(['legal_notices', 'privacy_policy'])
+      .then((batch) => {
+        if (!isMounted) return;
+        const fetchedLegal = batch['legal_notices'] as ModalData | undefined;
+        const fetchedPrivacy = batch['privacy_policy'] as ModalData | undefined;
+
+        if (fetchedLegal && (fetchedLegal.bodyHtml || fetchedLegal.sections?.length || fetchedLegal.intro)) {
+          setLegalData(fetchedLegal);
+        }
+        if (fetchedPrivacy && (fetchedPrivacy.bodyHtml || fetchedPrivacy.sections?.length || fetchedPrivacy.intro)) {
+          setPrivacyData(fetchedPrivacy);
+        }
+      })
+      .catch(() => {});
 
     return () => {
       isMounted = false;

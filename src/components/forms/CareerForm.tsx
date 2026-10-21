@@ -6,6 +6,8 @@ import { CheckCircle, Shield, Upload } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { InfoModal } from '@/components/modals/InfoModal';
 import { careerPrivacyModalData } from '@/lib/modals/career-privacy';
+import { getCareerPrivacyFromSupabase } from '@/services/supabase/settings.service';
+import { ModalData } from '@/lib/modals/types';
 import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-fields';
 import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CAREER_FORM_REQUIRED_FIELDS, CareerFormData, CareerFormType, STRUCTURE_DESCRIPTIONS, getRequiredDocumentFields, getDocumentFieldsForStructure } from '@/lib/forms/career.schema';
 import { submitCareerApplication } from '@/services/api.service';
@@ -34,7 +36,28 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   const [isModalCheckboxChecked, setIsModalCheckboxChecked] = useState(false);
+  const [privacyData, setPrivacyData] = useState<ModalData>(careerPrivacyModalData.contents);
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    getCareerPrivacyFromSupabase().then((data) => {
+      if (mounted && data) {
+        setPrivacyData({
+          title: data.title || careerPrivacyModalData.contents.title,
+          subtitle: data.subtitle || careerPrivacyModalData.contents.subtitle,
+          icon: Shield,
+          effectiveDate: data.effectiveDate,
+          bodyHtml: data.bodyHtml,
+          items: data.items,
+          closeLabel: data.closeLabel || 'Confirm',
+        });
+      }
+    }).catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showFacultyContactModal, setShowFacultyContactModal] = useState(false);
   const isHeightConstrained = useFormViewport(680);
@@ -455,7 +478,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
         isCloseDisabled={!isModalCheckboxChecked}
         closeLabel="Confirm"
         isDarkMode={isDarkMode}
-        data={careerPrivacyModalData.contents}
+        data={privacyData}
       >
 
         <label className="flex items-center gap-2 pt-1 text-caption cursor-pointer select-none">

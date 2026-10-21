@@ -125,13 +125,15 @@ export default function ContactInfoPage() {
             <div className="space-y-1 pl-6">
               <span className="opacity-50 block uppercase text-micro font-archivo tracking-widest font-semibold">Address</span>
               <div className="font-normal text-mini sm:text-caption leading-relaxed block opacity-85 space-y-0.5">
-                {CONTACT_INFO.addressLines && CONTACT_INFO.addressLines.length > 0 ? (
+                {CONTACT_INFO.address ? (
+                  CONTACT_INFO.address.split('\n').map((line, idx) => (
+                    <p key={idx} className="m-0 leading-snug">{line}</p>
+                  ))
+                ) : CONTACT_INFO.addressLines && CONTACT_INFO.addressLines.length > 0 ? (
                   CONTACT_INFO.addressLines.map((line, idx) => (
                     <p key={idx} className="m-0 leading-snug">{line}</p>
                   ))
-                ) : (
-                  <p className="m-0 leading-snug">{CONTACT_INFO.address}</p>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

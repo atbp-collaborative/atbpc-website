@@ -10,7 +10,9 @@ export interface ModalSection {
 export interface ModalData {
   title: string;
   subtitle: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
+  effectiveDate?: string;
+  bodyHtml?: string;
   intro?: {
     title?: string;
     text: string;

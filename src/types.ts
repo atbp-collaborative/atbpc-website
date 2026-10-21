@@ -209,11 +209,22 @@ export interface StudioWriteups {
   cultureStatement: string;
 }
 
+export interface PolicyDocument {
+  title: string;
+  subtitle: string;
+  effectiveDate?: string;
+  bodyHtml?: string;
+  badge?: string;
+  closeLabel?: string;
+}
+
 export interface CareerPrivacyData {
   title: string;
   subtitle: string;
   badge?: string;
-  items: string[];
+  effectiveDate?: string;
+  bodyHtml?: string;
+  items?: string[];
   closeLabel?: string;
 }
 
@@ -221,7 +232,9 @@ export interface PartnerConditionCategory {
   title: string;
   subtitle: string;
   badge?: string;
-  items: string[];
+  effectiveDate?: string;
+  bodyHtml?: string;
+  items?: string[];
 }
 
 export interface PartnerConditionsData {

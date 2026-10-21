@@ -112,48 +112,63 @@ export const InfoModal: React.FC<InfoModalProps> = ({
             </div>
 
             {/* Scrollable Body */}
-            <div className="p-6 sm:p-8 overflow-y-auto space-y-8 text-caption font-light leading-relaxed">
+            <div className="p-6 sm:p-8 overflow-y-auto space-y-6 text-caption font-light leading-relaxed">
               {data && (
                 <>
-                  {data.intro && (
-                    <div className="space-y-2 border-b pb-6 border-space-sparkle/10">
-                      {data.intro.title && (
-                        <h3 className="font-semibold text-caption">{data.intro.title}</h3>
-                      )}
-                      <p className="opacity-90" dangerouslySetInnerHTML={{ __html: data.intro.text }} />
+                  {(data.effectiveDate || data.intro?.title) && (
+                    <div className="space-y-1 border-b pb-4 border-space-sparkle/10">
+                      <span className="text-micro font-semibold uppercase tracking-wider block opacity-70">
+                        {data.effectiveDate || data.intro?.title}
+                      </span>
                     </div>
                   )}
 
-                  {data.sections?.map((section, idx) => {
-                    const SectionIcon = section.icon;
-                    return (
-                      <section key={idx} className="space-y-3">
-                        {section.title && (
-                          <div className="flex items-center gap-2 text-h2 font-sans font-bold tracking-tight">
-                            {SectionIcon && <SectionIcon size={16} className="text-space-sparkle shrink-0" />}
-                            <h3>{section.title}</h3>
-                          </div>
-                        )}
-                        {section.text && (
-                          <p className="opacity-90" dangerouslySetInnerHTML={{ __html: section.text }} />
-                        )}
-                        {section.list && section.list.length > 0 && (
-                          <ul className="list-disc pl-6 space-y-1.5 opacity-85">
-                            {section.list.map((item, i) => (
-                              <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
-                            ))}
-                          </ul>
-                        )}
-                      </section>
-                    );
-                  })}
+                  {/* Render rich text body if present */}
+                  {data.bodyHtml ? (
+                    <div
+                      className="policy-rich-text space-y-3.5 text-caption leading-relaxed font-light [&_h2]:text-body [&_h2]:font-bold [&_h2]:mt-5 [&_h2]:mb-2.5 [&_h3]:text-caption [&_h3]:font-bold [&_h3]:mt-4 [&_h3]:mb-2 [&_p]:mb-2.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2.5 [&_blockquote]:border-l-2 [&_blockquote]:border-space-sparkle [&_blockquote]:pl-3.5 [&_blockquote]:italic [&_blockquote]:opacity-85 [&_blockquote]:my-3 [&_a]:text-space-sparkle [&_a]:underline [&_hr]:my-4 [&_hr]:border-black/10 dark:[&_hr]:border-white/10"
+                      dangerouslySetInnerHTML={{ __html: data.bodyHtml }}
+                    />
+                  ) : (
+                    <>
+                      {data.intro?.text && (
+                        <div className="space-y-2 border-b pb-6 border-space-sparkle/10">
+                          <p className="opacity-90" dangerouslySetInnerHTML={{ __html: data.intro.text }} />
+                        </div>
+                      )}
 
-                  {data.items && data.items.length > 0 && (
-                    <div className="space-y-2 opacity-85 leading-relaxed text-mini">
-                      {data.items.map((item, idx) => (
-                        <div key={idx} dangerouslySetInnerHTML={{ __html: item }} />
-                      ))}
-                    </div>
+                      {data.sections?.map((section, idx) => {
+                        const SectionIcon = section.icon;
+                        return (
+                          <section key={idx} className="space-y-3">
+                            {section.title && (
+                              <div className="flex items-center gap-2 text-h2 font-sans font-bold tracking-tight">
+                                {SectionIcon && <SectionIcon size={16} className="text-space-sparkle shrink-0" />}
+                                <h3>{section.title}</h3>
+                              </div>
+                            )}
+                            {section.text && (
+                              <p className="opacity-90" dangerouslySetInnerHTML={{ __html: section.text }} />
+                            )}
+                            {section.list && section.list.length > 0 && (
+                              <ul className="list-disc pl-6 space-y-1.5 opacity-85">
+                                {section.list.map((item, i) => (
+                                  <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
+                                ))}
+                              </ul>
+                            )}
+                          </section>
+                        );
+                      })}
+
+                      {data.items && data.items.length > 0 && (
+                        <div className="space-y-2 opacity-85 leading-relaxed text-mini">
+                          {data.items.map((item, idx) => (
+                            <div key={idx} dangerouslySetInnerHTML={{ __html: item }} />
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               )}

@@ -4,34 +4,31 @@
  */
 
 import React from 'react';
-import {
-  getContactInfoFromSupabase,
-  getPrivacyPolicyFromSupabase,
-  getCareerPrivacyFromSupabase,
-  getPartnerConditionsFromSupabase,
-  getLegalNoticesFromSupabase,
-} from '@/services/supabase/settings.service';
+import { getSiteSettingsBatchFromSupabase } from '@/services/supabase/settings.service';
 import { AdminGeneralInfoClient } from './AdminGeneralInfoClient';
+import { ContactInfo } from '@/lib/dummy-data/contact/contact-info';
+import { ModalData } from '@/lib/modals/types';
+import { CareerPrivacyData, PartnerConditionsData } from '@/types';
 
 export const revalidate = 60;
 
 export default async function AdminGeneralInfoPage() {
-  const [contactInfo, privacyPolicy, careerPrivacy, partnerConditions, legalNotices] = await Promise.all([
-    getContactInfoFromSupabase().catch(() => null),
-    getPrivacyPolicyFromSupabase().catch(() => null),
-    getCareerPrivacyFromSupabase().catch(() => null),
-    getPartnerConditionsFromSupabase().catch(() => null),
-    getLegalNoticesFromSupabase().catch(() => null),
+  const batch = await getSiteSettingsBatchFromSupabase([
+    'contact_info',
+    'privacy_policy',
+    'career_privacy',
+    'partner_conditions',
+    'legal_notices',
   ]);
 
   return (
     <AdminGeneralInfoClient
       initialData={{
-        contactInfo,
-        privacyPolicy,
-        careerPrivacy,
-        partnerConditions,
-        legalNotices,
+        contactInfo: (batch['contact_info'] as ContactInfo) || null,
+        privacyPolicy: (batch['privacy_policy'] as ModalData) || null,
+        careerPrivacy: (batch['career_privacy'] as CareerPrivacyData) || null,
+        partnerConditions: (batch['partner_conditions'] as PartnerConditionsData) || null,
+        legalNotices: (batch['legal_notices'] as ModalData) || null,
       }}
     />
   );
