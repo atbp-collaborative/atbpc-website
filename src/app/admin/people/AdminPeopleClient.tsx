@@ -20,6 +20,8 @@ import {
   List,
   LayoutGrid,
   RotateCcw,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { PublicationToggle } from '@/components/admin/PublicationToggle';
@@ -106,7 +108,23 @@ export function AdminPeopleClient({
     saveMember,
     deleteMember,
     toggleDraft,
+    moveMember,
+    isOrderDirty,
+    isSavingOrder,
+    saveOrder,
+    resetOrder,
   } = useAdminPeople(initialMembers);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isOrderDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isOrderDirty]);
 
   const { projects: allProjects } = useAdminProjects();
   const { roles: allRoles } = useAdminRoles();
@@ -986,13 +1004,26 @@ export function AdminPeopleClient({
         title="manage people"
         breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'People' }]}
         actions={
-          <Button
-            type="filled"
-            onClick={startCreate}
-            className="hidden md:inline-flex !py-2 !px-4 text-mini font-semibold"
-          >
-            <Plus size={14} className="mr-1 inline" /> Add Member
-          </Button>
+          <div className="flex items-center gap-2.5">
+            {isOrderDirty && (
+              <Button
+                type="filled"
+                onClick={saveOrder}
+                disabled={isSavingOrder}
+                className="!py-2 !px-4 text-mini font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+              >
+                <Save size={14} className={`mr-1.5 inline ${isSavingOrder ? 'animate-spin' : ''}`} />
+                {isSavingOrder ? 'Saving...' : 'Save Changes'}
+              </Button>
+            )}
+            <Button
+              type="filled"
+              onClick={startCreate}
+              className="hidden md:inline-flex !py-2 !px-4 text-mini font-semibold"
+            >
+              <Plus size={14} className="mr-1 inline" /> Add Member
+            </Button>
+          </div>
         }
       />
 
@@ -1090,7 +1121,19 @@ export function AdminPeopleClient({
         </div>
 
         {/* Mobile Add Member Action (between search/filter and list) */}
-        <div className="md:hidden">
+        <div className="md:hidden space-y-2">
+          {isOrderDirty && (
+            <Button
+              type="filled"
+              onClick={saveOrder}
+              disabled={isSavingOrder}
+              fullWidth
+              className="!py-2.5 text-mini font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+            >
+              <Save size={14} className={`mr-1.5 inline ${isSavingOrder ? 'animate-spin' : ''}`} />
+              {isSavingOrder ? 'Saving...' : 'Save Changes'}
+            </Button>
+          )}
           <Button
             type="filled"
             onClick={startCreate}
@@ -1116,7 +1159,7 @@ export function AdminPeopleClient({
               }`}
             >
               <div className="divide-y divide-black/5 dark:divide-white/5">
-                {filteredMembers.map((member) => (
+                {filteredMembers.map((member, index) => (
                   <div
                     key={member.id}
                     className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
@@ -1186,6 +1229,28 @@ export function AdminPeopleClient({
 
                     {/* Right: Actions */}
                     <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <div className="flex items-center border border-black/15 dark:border-white/15 rounded-lg overflow-hidden bg-black/5 dark:bg-white/5 shadow-xs">
+                        <button
+                          type="button"
+                          onClick={() => moveMember(member.id, 'up')}
+                          disabled={index === 0}
+                          className="px-2 py-1.5 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center gap-1 font-mono text-micro font-semibold cursor-pointer"
+                          title={index === 0 ? 'Top position' : `Move member earlier (${index + 1} → ${index})`}
+                        >
+                          <ArrowUp size={13} />
+                        </button>
+                        <div className="w-[1px] h-4 bg-black/15 dark:bg-white/15" />
+                        <button
+                          type="button"
+                          onClick={() => moveMember(member.id, 'down')}
+                          disabled={index === filteredMembers.length - 1}
+                          className="px-2 py-1.5 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center gap-1 font-mono text-micro font-semibold cursor-pointer"
+                          title={index === filteredMembers.length - 1 ? 'Bottom position' : `Move member later (${index + 1} → ${index + 2})`}
+                        >
+                          <ArrowDown size={13} />
+                        </button>
+                      </div>
+
                       <Button
                         type="ghost"
                         onClick={() => startEdit(member)}
@@ -1200,7 +1265,7 @@ export function AdminPeopleClient({
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredMembers.map((member) => (
+              {filteredMembers.map((member, index) => (
                 <div
                   key={member.id}
                   className={`p-5 rounded-xl border flex flex-col justify-between transition-all ${
@@ -1280,12 +1345,34 @@ export function AdminPeopleClient({
                     </div>
                   </div>
 
-                  {/* Card Footer: Edit Button */}
-                  <div className="pt-3 border-t border-black/5 dark:border-white/5 flex justify-end">
+                  {/* Card Footer: Reorder buttons & Edit Button */}
+                  <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-2">
+                    <div className="flex items-center border border-black/15 dark:border-white/15 rounded-lg overflow-hidden bg-black/5 dark:bg-white/5 shadow-xs">
+                      <button
+                        type="button"
+                        onClick={() => moveMember(member.id, 'up')}
+                        disabled={index === 0}
+                        className="px-2.5 py-1.5 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center gap-1 font-mono text-micro font-semibold cursor-pointer"
+                        title={index === 0 ? 'Top position' : `Move member earlier (${index + 1} → ${index})`}
+                      >
+                        <ArrowUp size={14} />
+                      </button>
+                      <div className="w-[1px] h-4 bg-black/15 dark:bg-white/15" />
+                      <button
+                        type="button"
+                        onClick={() => moveMember(member.id, 'down')}
+                        disabled={index === filteredMembers.length - 1}
+                        className="px-2.5 py-1.5 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center gap-1 font-mono text-micro font-semibold cursor-pointer"
+                        title={index === filteredMembers.length - 1 ? 'Bottom position' : `Move member later (${index + 1} → ${index + 2})`}
+                      >
+                        <ArrowDown size={14} />
+                      </button>
+                    </div>
+
                     <Button
                       type="ghost"
                       onClick={() => startEdit(member)}
-                      className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle w-full justify-center"
+                      className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle flex-1 justify-center"
                     >
                       <Edit2 size={13} className="mr-1 inline" /> Edit Member
                     </Button>

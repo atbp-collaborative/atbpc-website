@@ -311,6 +311,35 @@ export async function updatePersonInvolvementsAction(personId: string, involveme
   }
 }
 
+export async function reorderPeopleAction(items: { id: string; displayOrder: number }[]) {
+  try {
+    const supabase = getAdminClient();
+    const updates = items.map((item) =>
+      supabase
+        .from('people')
+        .update({ display_order: item.displayOrder, updated_at: new Date().toISOString() })
+        .eq('id', item.id)
+    );
+
+    const results = await Promise.all(updates);
+    const failedResult = results.find((r) => r.error);
+    if (failedResult?.error) {
+      console.error('[reorderPeopleAction] Error:', failedResult.error);
+      return { success: false, error: failedResult.error.message };
+    }
+
+    revalidatePath('/studio/our-people');
+    revalidatePath('/studio/our-people/category/[category]', 'page');
+    revalidatePath('/admin/people');
+    revalidatePath('/', 'layout');
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[reorderPeopleAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to reorder people' };
+  }
+}
+
 // ==============================================================================
 // ==============================================================================
 // 2. PROJECTS MUTATIONS & MEDIA UPLOADS
