@@ -344,6 +344,7 @@ export async function uploadProjectMediaAction(formData: FormData) {
       .upload(storagePath, optimized.buffer, {
         contentType: optimized.contentType,
         upsert: true,
+        cacheControl: '31536000, public, immutable',
       });
 
     if (uploadError) {
@@ -387,9 +388,10 @@ async function uploadBase64ToStorage(
     const storagePath = `${cleanFolder}/${targetId}/${Date.now()}-${idx}.${optimized.ext}`;
 
     const { error } = await supabase.storage.from('portfolio-media').upload(storagePath, optimized.buffer, {
-      contentType: optimized.contentType,
-      upsert: true,
-    });
+        contentType: optimized.contentType,
+        upsert: true,
+        cacheControl: '31536000, public, immutable',
+      });
 
     if (!error) {
       const { data } = supabase.storage.from('portfolio-media').getPublicUrl(storagePath);

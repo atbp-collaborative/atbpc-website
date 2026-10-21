@@ -7,9 +7,16 @@ export interface ProjectCardProps {
   totalProjects: number;
   isDarkMode: boolean;
   onClick: () => void;
+  priority?: boolean;
 }
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({ project, totalProjects, isDarkMode, onClick }) => {
+export const ProjectCard: React.FC<ProjectCardProps> = ({
+  project,
+  totalProjects,
+  isDarkMode,
+  onClick,
+  priority = false,
+}) => {
   const isFewProjects = totalProjects <= 2;
 
   return (
@@ -23,6 +30,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, totalProjects
         src={project.images[0]}
         alt={project.title}
         fill
+        priority={priority}
         sizes="(min-width: 1024px) 410px, (min-width: 768px) 370px, 100vw"
         className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
       />

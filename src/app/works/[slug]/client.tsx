@@ -20,6 +20,8 @@ import { ExpandingButton } from '@/components/primitives/buttons/ExpandingButton
 import { Accordion } from '@/components/primitives/Accordion';
 import { BreadcrumbButton } from '@/components/primitives/buttons/BreadcrumbButton';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
+import { DEFAULT_SHIMMER_BLUR_DATA_URL } from '@/lib/images/image-placeholders';
+import { ProjectCarouselSkeleton } from '@/components/primitives/skeletons';
 import { isUnsplashUrl, unsplashLoader } from '@/lib/imageLoaders';
 import { ProjectCard } from '@/components/blocks/ProjectCard';
 
@@ -623,24 +625,47 @@ const ProjectDetail: React.FC<ProjectDetailProps> = (props) => {
   );
 };
 
-export default function WorksSlugClient({ slug }: { slug: string }) {
+interface WorksSlugClientProps {
+  slug: string;
+  initialProject?: Project | null;
+  initialMembers?: Member[];
+  initialProjects?: Project[];
+}
+
+export default function WorksSlugClient({
+  slug,
+  initialProject = null,
+  initialMembers = [],
+  initialProjects = [],
+}: WorksSlugClientProps) {
   const router = useRouter();
   const { isDarkMode } = useTheme();
-  
-  const [project, setProject] = useState<Project | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
+
+  const [project, setProject] = useState<Project | null>(initialProject);
+  const [members, setMembers] = useState<Member[]>(initialMembers);
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [isLoading, setIsLoading] = useState(!initialProject && initialProjects.length === 0);
+
   useEffect(() => {
     const decodedSlug = decodeURIComponent(slug);
+    if (project && (project.id === decodedSlug || project.slug === decodedSlug)) {
+      return;
+    }
+    if (projects.length > 0 && !project) {
+      const match = projects.find((p) => p.id === decodedSlug || p.slug === decodedSlug);
+      if (match) {
+        setProject(match);
+        return;
+      }
+    }
+
     Promise.all([getProjectById(decodedSlug), getMembers(), getProjects()]).then(([proj, mems, allProj]) => {
       setProject(proj || null);
       setMembers(mems);
       setProjects(allProj);
       setIsLoading(false);
     });
-  }, [slug]);
+  }, [slug, project, projects]);
 
 
 
@@ -665,7 +690,7 @@ export default function WorksSlugClient({ slug }: { slug: string }) {
     resetKey: projectFilter,
   });
 
-  if (isLoading) return null;
+  if (isLoading) return <ProjectCarouselSkeleton />;
 
   if (project) {
     return <ProjectDetail project={project} members={members} />;
@@ -843,8 +868,9 @@ export default function WorksSlugClient({ slug }: { slug: string }) {
                 '--max-items-tablet': Math.min(filteredProjects.length, 3.5),
               } as React.CSSProperties}
             >
-              {filteredProjects.map((project) => (
+              {filteredProjects.map((project, idx) => (
                 <ProjectCard
+                  priority={idx < 3}
                   key={project.id}
                   project={project}
                   totalProjects={filteredProjects.length}

@@ -13,6 +13,7 @@ export interface LandingCard {
   image: string;
   onSelect: () => void;
   tags?: string[];
+  priority?: boolean;
 }
 
 interface LandingPageProps {
@@ -28,7 +29,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ cards }) => {
         <div className={`flex gap-[2px] flex-1 h-full min-h-0 items-stretch group/cardsContainer ${
           layout === 'row' ? 'flex-row' : 'flex-col'
         }`}>
-          {cards.map((card) => (
+          {cards.map((card, idx) => (
             <div
               key={card.id}
               onClick={card.onSelect}
@@ -41,6 +42,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ cards }) => {
                 src={card.image}
                 alt={card.title}
                 fill
+                priority={card.priority ?? idx < 3}
                 sizes="(min-width: 768px) 34vw, 100vw"
                 className="object-cover transition-transform duration-[1000ms] ease-out group-hover/card:scale-[1.03]"
               />

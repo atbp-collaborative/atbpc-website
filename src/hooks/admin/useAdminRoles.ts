@@ -52,12 +52,19 @@ export interface ProjectRoleEntry {
   description: string;
 }
 
-export function useAdminRoles() {
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [projectRoles, setProjectRoles] = useState<ProjectRole[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export interface AdminRolesInitialData {
+  roles?: Role[];
+  projectRoles?: ProjectRole[];
+  members?: Member[];
+  projects?: Project[];
+}
+
+export function useAdminRoles(initialData?: AdminRolesInitialData) {
+  const [roles, setRoles] = useState<Role[]>(initialData?.roles || []);
+  const [projectRoles, setProjectRoles] = useState<ProjectRole[]>(initialData?.projectRoles || []);
+  const [members, setMembers] = useState<Member[]>(initialData?.members || []);
+  const [projects, setProjects] = useState<Project[]>(initialData?.projects || []);
+  const [isLoading, setIsLoading] = useState(!initialData || !initialData.roles || initialData.roles.length === 0);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -99,8 +106,10 @@ export function useAdminRoles() {
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (!initialData || !initialData.roles || initialData.roles.length === 0) {
+      refresh();
+    }
+  }, [refresh, initialData]);
 
   // Filtered Roles
   const filteredRoles = useMemo(() => {

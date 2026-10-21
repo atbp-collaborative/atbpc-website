@@ -32,13 +32,21 @@ import {
 } from '@/services/supabase/settings.service';
 import { toast } from 'sonner';
 
-export function useAdminGeneralInfo() {
-  const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null);
-  const [privacyPolicy, setPrivacyPolicy] = useState<ModalData | null>(null);
-  const [careerPrivacy, setCareerPrivacy] = useState<CareerPrivacyData | null>(null);
-  const [partnerConditions, setPartnerConditions] = useState<PartnerConditionsData | null>(null);
-  const [legalNotices, setLegalNotices] = useState<ModalData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export interface AdminGeneralInfoInitialData {
+  contactInfo?: ContactInfo | null;
+  privacyPolicy?: ModalData | null;
+  careerPrivacy?: CareerPrivacyData | null;
+  partnerConditions?: PartnerConditionsData | null;
+  legalNotices?: ModalData | null;
+}
+
+export function useAdminGeneralInfo(initialData?: AdminGeneralInfoInitialData) {
+  const [contactInfo, setContactInfo] = useState<ContactInfo | null>(initialData?.contactInfo || null);
+  const [privacyPolicy, setPrivacyPolicy] = useState<ModalData | null>(initialData?.privacyPolicy || null);
+  const [careerPrivacy, setCareerPrivacy] = useState<CareerPrivacyData | null>(initialData?.careerPrivacy || null);
+  const [partnerConditions, setPartnerConditions] = useState<PartnerConditionsData | null>(initialData?.partnerConditions || null);
+  const [legalNotices, setLegalNotices] = useState<ModalData | null>(initialData?.legalNotices || null);
+  const [isLoading, setIsLoading] = useState(!initialData || !initialData.contactInfo);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -68,8 +76,10 @@ export function useAdminGeneralInfo() {
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (!initialData || !initialData.contactInfo) {
+      refresh();
+    }
+  }, [refresh, initialData]);
 
   const saveContact = useCallback(async (data: ContactInfo) => {
     setContactInfo(data);

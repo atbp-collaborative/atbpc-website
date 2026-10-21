@@ -39,7 +39,7 @@ export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, su
       <div className={`flex-1 flex gap-[2px] h-full min-h-0 items-stretch group/subCards ${
         layout === 'row' ? 'flex-row overflow-hidden' : 'flex-col overflow-y-auto'
       }`}>
-        {cards.map((card) => (
+        {cards.map((card, idx) => (
           <div
             key={card.id}
             onClick={card.onSelect}
@@ -56,6 +56,7 @@ export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, su
               src={card.image}
               alt={card.title}
               fill
+              priority={card.priority ?? idx < 3}
               sizes="(min-width: 1024px) 40vw, (min-width: 768px) 50vw, 100vw"
               className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-105"
             />

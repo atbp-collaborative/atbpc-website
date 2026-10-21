@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
-import { getProjectById } from '@/services/dummy-data.service';
+import { getProjectById, getMembers, getProjects } from '@/services/dummy-data.service';
 import WorksSlugClient from './client';
+
+export const revalidate = 60;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -58,5 +60,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  return <WorksSlugClient slug={slug} />;
+  const decodedSlug = decodeURIComponent(slug);
+
+  const [project, members, allProjects] = await Promise.all([
+    getProjectById(decodedSlug),
+    getMembers(),
+    getProjects(),
+  ]);
+
+  return (
+    <WorksSlugClient
+      slug={slug}
+      initialProject={project || null}
+      initialMembers={members}
+      initialProjects={allProjects}
+    />
+  );
 }

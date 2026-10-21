@@ -44,26 +44,36 @@ import { toast } from 'sonner';
 
 export type CmsTab = 'pages' | 'landing-pages' | 'process' | 'services' | 'home';
 
-export function useAdminCms() {
+export interface AdminCmsInitialData {
+  pages?: SitePage[];
+  cards?: NavigationCardItem[];
+  philosophies?: ProcessPhilosophy[];
+  services?: ServiceOffering[];
+  slides?: HomeSlideItem[];
+  slogans?: HomepageSlogans;
+  stageGroups?: StageGroup[];
+}
+
+export function useAdminCms(initialData?: AdminCmsInitialData) {
   const [activeTab, setActiveTab] = useState<CmsTab>('landing-pages');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!initialData || !initialData.pages || initialData.pages.length === 0);
 
   // Tab 1: Pages & Nav
-  const [pages, setPages] = useState<SitePage[]>([]);
-  const [cards, setCards] = useState<NavigationCardItem[]>([]);
+  const [pages, setPages] = useState<SitePage[]>(initialData?.pages || []);
+  const [cards, setCards] = useState<NavigationCardItem[]>(initialData?.cards || []);
 
   // Tab 2: Process & Stages
-  const [philosophies, setPhilosophies] = useState<ProcessPhilosophy[]>([]);
+  const [philosophies, setPhilosophies] = useState<ProcessPhilosophy[]>(initialData?.philosophies || []);
   const [selectedProcessPageId, setSelectedProcessPageId] = useState<string>('designing-with-values');
-  const [stageGroups, setStageGroups] = useState<StageGroup[]>([]);
+  const [stageGroups, setStageGroups] = useState<StageGroup[]>(initialData?.stageGroups || []);
 
   // Tab 3: Services
-  const [services, setServices] = useState<ServiceOffering[]>([]);
+  const [services, setServices] = useState<ServiceOffering[]>(initialData?.services || []);
   const [selectedServiceId, setSelectedServiceId] = useState<string>('comprehensive-services');
 
   // Tab 4: Home
-  const [slides, setSlides] = useState<HomeSlideItem[]>([]);
-  const [slogans, setSlogans] = useState<HomepageSlogans>({ slogans: [], heroSubtext: [] });
+  const [slides, setSlides] = useState<HomeSlideItem[]>(initialData?.slides || []);
+  const [slogans, setSlogans] = useState<HomepageSlogans>(initialData?.slogans || { slogans: [], heroSubtext: [] });
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -95,8 +105,10 @@ export function useAdminCms() {
   }, [selectedProcessPageId]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (!initialData || !initialData.pages || initialData.pages.length === 0) {
+      loadData();
+    }
+  }, [loadData, initialData]);
 
   // Reload stage groups when selected process page changes
   const handleSelectProcessPage = useCallback(async (pageId: string) => {

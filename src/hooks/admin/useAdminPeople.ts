@@ -28,12 +28,12 @@ import { toast } from 'sonner';
 export type PeopleClassificationFilter = 'all' | MemberCategory;
 export type VisibilityFilter = 'all' | 'published' | 'draft';
 
-export function useAdminPeople() {
-  const [members, setMembers] = useState<Member[]>([]);
+export function useAdminPeople(initialMembers?: Member[]) {
+  const [members, setMembers] = useState<Member[]>(initialMembers || []);
   const [searchTerm, setSearchTerm] = useState('');
   const [classificationFilter, setClassificationFilter] = useState<PeopleClassificationFilter>('all');
   const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>('all');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!initialMembers || initialMembers.length === 0);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -60,8 +60,10 @@ export function useAdminPeople() {
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (!initialMembers || initialMembers.length === 0) {
+      refresh();
+    }
+  }, [refresh, initialMembers]);
 
   const filteredMembers = useMemo(() => {
     return members.filter((member) => {

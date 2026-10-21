@@ -1,26 +1,17 @@
-'use client';
-
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import { NavigationCardItem, SitePage } from '@/types';
 import { getNavigationCardsData, getSitePagesData } from '@/services/dummy-data.service';
-import { SubLandingPage } from '@/components/blocks/SubLandingPage';
-import { LandingCard } from '@/components/blocks/LandingPage';
 import { DraftNotice } from '@/components/global/DraftNotice';
-import { ROUTES } from '@/lib/navigation/routes';
+import { OurServicesClient } from './OurServicesClient';
 
-export default function OurServicesPage() {
-  const [navCards, setNavCards] = React.useState<NavigationCardItem[]>([]);
-  const [pageInfo, setPageInfo] = React.useState<SitePage | null>(null);
-  const router = useRouter();
+export const revalidate = 60;
 
-  React.useEffect(() => {
-    getNavigationCardsData('services').then(setNavCards);
-    getSitePagesData().then((pages) => {
-      const p = pages.find((page) => page.id === 'services-hub');
-      if (p) setPageInfo(p);
-    });
-  }, []);
+export default async function OurServicesPage() {
+  const [navCards, pages] = await Promise.all([
+    getNavigationCardsData('services'),
+    getSitePagesData(),
+  ]);
+
+  const pageInfo = pages.find((page) => page.id === 'services-hub') || null;
 
   if (pageInfo && pageInfo.isDraft) {
     return (
@@ -31,35 +22,5 @@ export default function OurServicesPage() {
     );
   }
 
-  const cards: LandingCard[] = navCards.map((card) => ({
-    id: card.id,
-    title: card.title,
-    tagline: card.tagline,
-    subtext: card.subtext,
-    image: card.imageUrl,
-    onSelect: () => {
-      if (card.targetHref) {
-        router.push(card.targetHref);
-      } else if (card.cardKey === 'comprehensive-services' || card.title.includes('comprehensive')) {
-        router.push(ROUTES.comprehensiveServices);
-      } else if (card.cardKey === 'piecework-services' || card.title.includes('piecework')) {
-        router.push(ROUTES.pieceworkServices);
-      } else {
-        router.push(ROUTES.consultationRetainerServices);
-      }
-    },
-  }));
-
-  const subtitle =
-    pageInfo?.subtitle ||
-    'Discover our flexible contract types and comprehensive architectural capabilities designed to bring clarity and integrity to your project.';
-
-  return (
-    <SubLandingPage 
-      cards={cards} 
-      title="our services" 
-      subtitle={subtitle}
-      isHeaderSticky={true}
-    />
-  );
+  return <OurServicesClient navCards={navCards} pageInfo={pageInfo} />;
 }
