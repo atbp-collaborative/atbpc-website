@@ -194,12 +194,30 @@ export interface Member {
   displayOrder?: number;
 }
 
+export type AdminRole = 'superadmin' | 'admin' | 'editor';
+
+export type DisplayMode = 'list' | 'grid';
+
+export interface AdminUiPreferences {
+  theme?: 'light' | 'dark';
+  views?: {
+    projects?: DisplayMode;
+    people?: DisplayMode;
+    roles?: string;
+    content?: string;
+  };
+}
+
 export interface AdminUser {
   id: string;
   email: string;
   name: string;
   avatarUrl?: string;
-  role: 'superadmin' | 'admin' | 'editor';
+  role: AdminRole;
+  personId?: string;
+  hasPasskey?: boolean;
+  uiPreferences?: AdminUiPreferences;
+  createdAt?: string;
 }
 
 export interface StudioWriteups {

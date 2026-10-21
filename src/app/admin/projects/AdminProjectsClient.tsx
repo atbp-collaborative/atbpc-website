@@ -22,6 +22,8 @@ import {
   CheckCircle2,
   Users,
   RotateCcw,
+  List,
+  LayoutGrid,
 } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { PublicationToggle } from '@/components/admin/PublicationToggle';
@@ -39,6 +41,8 @@ import {
 } from '@/hooks/admin/useAdminProjects';
 import { useAdminPeople } from '@/hooks/admin/useAdminPeople';
 import { useTheme } from '@/context/ThemeContext';
+import { useAdminAuth } from '@/hooks/admin/useAdminAuth';
+import { useAdminUiSettings } from '@/context/AdminUiSettingsContext';
 import { Project } from '@/types';
 import { toast } from 'sonner';
 import { MAIN_CATEGORIES, TYPOLOGY_MAP, ALL_TYPOLOGIES } from '@/lib/projects/project-constants';
@@ -106,6 +110,11 @@ export function AdminProjectsClient({
   initialRoles,
 }: AdminProjectsClientProps) {
   const { isDarkMode } = useTheme();
+  const { user } = useAdminAuth();
+  const isSuperadmin = user?.role === 'superadmin';
+  const isEditor = user?.role === 'editor';
+  const { getDisplayMode, setDisplayMode } = useAdminUiSettings();
+  const displayMode = getDisplayMode('projects');
   const {
     projects,
     filteredProjects,
@@ -884,7 +893,7 @@ export function AdminProjectsClient({
                 </div>
               )}
 
-              {viewMode === 'edit' && (
+              {viewMode === 'edit' && isSuperadmin && (
                 <div
                   className={`p-6 rounded-xl border space-y-3 ${
                     isDarkMode ? 'bg-red-500/5 border-red-500/20' : 'bg-red-50 border-red-200'
@@ -916,9 +925,11 @@ export function AdminProjectsClient({
         title="manage projects"
         breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Projects' }]}
         actions={
-          <Button type="filled" onClick={startCreate} className="!py-2 !px-4 text-mini font-semibold">
+          isEditor ? undefined : (
+            <Button type="filled" onClick={startCreate} className="!py-2 !px-4 text-mini font-semibold">
             <Plus size={14} className="mr-1 inline" /> Add Project
           </Button>
+          )
         }
       />
 
@@ -983,6 +994,38 @@ export function AdminProjectsClient({
                 ))}
               </div>
             </div>
+
+              {/* List / Grid Display Mode Toggle */}
+              <div className="flex items-center gap-1 border-l pl-3 border-black/10 dark:border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setDisplayMode('projects', 'grid')}
+                  title="Grid View"
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    displayMode === 'grid'
+                      ? 'bg-space-sparkle text-white'
+                      : isDarkMode
+                      ? 'hover:bg-white/10 text-bright-gray/70'
+                      : 'hover:bg-black/5 text-vintage-charcoal/70'
+                  }`}
+                >
+                  <LayoutGrid size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDisplayMode('projects', 'list')}
+                  title="List Table View"
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    displayMode === 'list'
+                      ? 'bg-space-sparkle text-white'
+                      : isDarkMode
+                      ? 'hover:bg-white/10 text-bright-gray/70'
+                      : 'hover:bg-black/5 text-vintage-charcoal/70'
+                  }`}
+                >
+                  <List size={16} />
+                </button>
+              </div>
           </div>
 
           {/* Bottom Row: Category & Typology Filters */}
@@ -1047,6 +1090,75 @@ export function AdminProjectsClient({
             ))}
           </div>
         ) : filteredProjects.length > 0 ? (
+          displayMode === 'list' ? (
+            <div
+              className={`rounded-xl border overflow-hidden ${
+                isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
+              }`}
+            >
+              <div className="divide-y divide-black/5 dark:divide-white/5">
+                {filteredProjects.map((project) => (
+                  <div
+                    key={project.id}
+                    className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
+                      isDarkMode ? 'hover:bg-white/5' : 'hover:bg-black/2'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      <div className="w-16 h-12 rounded-lg bg-black/10 overflow-hidden relative shrink-0">
+                        {project.images && project.images[0] ? (
+                          <Image
+                            src={project.images[0]}
+                            alt={project.title}
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center opacity-30">
+                            <Building size={18} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-caption font-semibold truncate hover:text-space-sparkle transition-colors">
+                            {project.title}
+                          </span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 opacity-60">
+                            {project.projectCode || 'P-00'}
+                          </span>
+                        </div>
+                        <p className="text-micro opacity-60 truncate">
+                          {project.category} • {project.typologyId || 'Architecture'} • {project.location || 'Philippines'} ({project.year || '2026'})
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                      <span
+                        className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-full font-semibold border ${
+                          project.isDraft
+                            ? 'bg-amber-500/15 text-amber-500 border-amber-500/30'
+                            : 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
+                        }`}
+                      >
+                        {project.isDraft ? 'Draft' : 'Published'}
+                      </span>
+
+                      <Button
+                        type="ghost"
+                        onClick={() => startEdit(project)}
+                        className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle cursor-pointer"
+                      >
+                        <Edit2 size={13} className="mr-1 inline" /> Edit
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredProjects.map((project) => {
               const team = getTeamForProject(project.id);
@@ -1146,15 +1258,19 @@ export function AdminProjectsClient({
                   </div>
                 </div>
               );
-            })}
+            })
+            }
           </div>
+          )
         ) : (
           <div className="p-12 text-center space-y-3 rounded-xl border border-dashed border-black/15 dark:border-white/15">
             <FolderKanban size={32} className="mx-auto opacity-30 text-space-sparkle" />
             <p className="text-caption opacity-60">No projects found matching current criteria.</p>
+            {!isEditor && (
             <Button type="filled" onClick={startCreate} className="!py-1.5 !px-4 text-mini">
               Add New Project
             </Button>
+          )}
           </div>
         )}
       </div>

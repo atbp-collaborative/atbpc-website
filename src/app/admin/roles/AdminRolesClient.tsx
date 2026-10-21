@@ -16,6 +16,7 @@ import { RolesViewTabs, RolesViewMode } from '@/components/admin/roles/RolesView
 import { RolesByRoleTable } from '@/components/admin/roles/RolesByRoleTable';
 import { RolesByPersonTable } from '@/components/admin/roles/RolesByPersonTable';
 import { RolesByProjectRoleTable } from '@/components/admin/roles/RolesByProjectRoleTable';
+import { useAdminAuth } from '@/hooks/admin/useAdminAuth';
 import { RoleFormModal } from '@/components/admin/roles/RoleFormModal';
 import { AssignMemberRoleModal } from '@/components/admin/roles/AssignMemberRoleModal';
 import { ProjectRoleFormModal } from '@/components/admin/roles/ProjectRoleFormModal';
@@ -30,6 +31,7 @@ interface AdminRolesClientProps {
 
 export function AdminRolesClient({ initialData }: AdminRolesClientProps) {
   const { isDarkMode } = useTheme();
+  const { user } = useAdminAuth();
 
   const {
     roles,
@@ -39,7 +41,6 @@ export function AdminRolesClient({ initialData }: AdminRolesClientProps) {
     members,
     filteredMembers,
     projects,
-    projectRoleEntries,
     isLoading,
     searchTerm,
     setSearchTerm,
@@ -125,7 +126,6 @@ export function AdminRolesClient({ initialData }: AdminRolesClientProps) {
   };
 
   const handleSaveRoleMembers = async (roleId: string, memberIds: string[]) => {
-    // For each member, update whether they hold this role
     for (const member of members) {
       const currentRoles = member.roles || [];
       const hasCurrently = currentRoles.includes(roleId);
@@ -145,44 +145,51 @@ export function AdminRolesClient({ initialData }: AdminRolesClientProps) {
   // Search input handler with intelligent auto-tab switching
   const handleSearchTermChange = (term: string) => {
     setSearchTerm(term);
-    const intelligentMode = detectIntelligentRolesViewMode(term, roles, members, projectRoles);
-    if (intelligentMode && intelligentMode !== viewMode) {
-      setViewMode(intelligentMode);
+    if (!term.trim()) return;
+
+    const detected = detectIntelligentRolesViewMode(
+      term,
+      roles,
+      members,
+      projectRoles
+    );
+    if (detected && detected !== viewMode) {
+      setViewMode(detected as RolesViewMode);
     }
   };
 
-  // Project Role Handlers
+  // Project Role Form Handlers
   const handleOpenAddProjectRole = () => {
     setEditingProjectRole(null);
     setIsProjectRoleFormOpen(true);
   };
 
-  const handleOpenEditProjectRole = (pr: ProjectRole) => {
-    setEditingProjectRole(pr);
+  const handleOpenEditProjectRole = (projectRole: ProjectRole) => {
+    setEditingProjectRole(projectRole);
     setIsProjectRoleFormOpen(true);
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen">
       <AdminHeader
-        title="manage roles"
-        breadcrumbs={[{ label: 'Admin' }, { label: 'Manage Roles' }]}
+        title="Roles & Responsibilities"
+        breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Roles' }]}
         actions={
           viewMode === 'project-roles' ? (
             <Button
               type="filled"
               onClick={handleOpenAddProjectRole}
-              className="!py-2 !px-4 text-caption !bg-space-sparkle text-white"
+              className="text-mini px-4 py-2 font-semibold"
             >
-              <Plus size={16} className="mr-1.5 inline" /> New Project Role
+              <Plus size={15} className="mr-1.5 inline" /> Add Project Role
             </Button>
           ) : (
             <Button
               type="filled"
               onClick={handleOpenCreateRole}
-              className="!py-2 !px-4 text-caption !bg-space-sparkle text-white"
+              className="text-mini px-4 py-2 font-semibold"
             >
-              <Plus size={16} className="mr-1.5 inline" /> New Role
+              <Plus size={15} className="mr-1.5 inline" /> Create Role
             </Button>
           )
         }

@@ -22,6 +22,7 @@ import {
   ServiceAccordionItem,
   HomeSlideItem,
   HomepageSlogans,
+  AdminUser,
 } from '@/types';
 import {
   isUuid,
@@ -1662,5 +1663,180 @@ export async function fetchSiteSettingAction<T = any>(key: string): Promise<T | 
   } catch (err: any) {
     console.error(`[fetchSiteSettingAction:${key}] Exception:`, err);
     return null;
+  }
+}
+
+
+// ==============================================================================
+// 12. ADMIN ACCOUNTS & UI PREFERENCES (SUPERADMIN GOVERNANCE)
+// ==============================================================================
+
+export async function fetchAdminAccountsAction(): Promise<AdminUser[]> {
+  try {
+    const supabase = getAdminClient();
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error || !data) {
+      console.error('[fetchAdminAccountsAction] Error:', error);
+      return [];
+    }
+
+    return data.map((u: any) => ({
+      id: u.id,
+      email: u.email,
+      name: u.full_name || 'Admin Member',
+      role: u.role as any,
+      avatarUrl: u.avatar_url,
+      personId: u.person_id,
+      uiPreferences: u.ui_preferences,
+      createdAt: u.created_at,
+    }));
+  } catch (err: any) {
+    console.error('[fetchAdminAccountsAction] Exception:', err);
+    return [];
+  }
+}
+
+export async function createAdminAccountAction(payload: {
+  email: string;
+  fullName: string;
+  role: 'admin' | 'editor';
+  password: string;
+  personId?: string;
+}): Promise<{ success: boolean; error?: string; user?: AdminUser }> {
+  try {
+    const { email, fullName, role, password, personId } = payload;
+    if (!email || !email.includes('@') || !password || password.length < 8) {
+      return { success: false, error: 'Valid email and password (min 8 chars) are required.' };
+    }
+
+    if (!['admin', 'editor'].includes(role)) {
+      return { success: false, error: 'Only admin and editor accounts can be created.' };
+    }
+
+    const supabase = getAdminClient();
+
+    // 1. Create auth user
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: email.trim(),
+      password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: fullName.trim(),
+        role,
+      },
+    });
+
+    if (authError || !authData.user) {
+      return { success: false, error: authError?.message || 'Failed to initialize Supabase credentials.' };
+    }
+
+    const userId = authData.user.id;
+
+    const newAccountPayload: Record<string, any> = {
+      id: userId,
+      email: email.trim(),
+      full_name: fullName.trim(),
+      role,
+      person_id: personId || null,
+    };
+
+    // 2. Insert into public.admin_users (with graceful fallback if ui_preferences is not yet migrated)
+    let { error: dbError } = await supabase.from('admin_users').insert({
+      ...newAccountPayload,
+      ui_preferences: {
+        theme: 'dark',
+        views: {
+          projects: 'grid',
+          people: 'list',
+          roles: 'roles',
+        },
+      },
+    });
+
+    if (dbError && dbError.message.includes('ui_preferences')) {
+      console.warn('[createAdminAccountAction] ui_preferences column missing, inserting core profile');
+      const fallback = await supabase.from('admin_users').insert(newAccountPayload);
+      dbError = fallback.error;
+    }
+
+    if (dbError) {
+      await supabase.auth.admin.deleteUser(userId);
+      return { success: false, error: dbError.message };
+    }
+
+    revalidatePath('/admin/roles');
+
+    return {
+      success: true,
+      user: {
+        id: userId,
+        email: email.trim(),
+        name: fullName.trim(),
+        role,
+        personId: personId || undefined,
+      },
+    };
+  } catch (err: any) {
+    console.error('[createAdminAccountAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to create team account.' };
+  }
+}
+
+export async function deleteAdminAccountAction(
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = getAdminClient();
+
+    // Prevent deletion of superadmin accounts
+    const { data: targetUser } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (targetUser?.role === 'superadmin') {
+      return { success: false, error: 'Superadmin accounts cannot be deleted directly.' };
+    }
+
+    // Delete from public.admin_users and auth.users
+    await supabase.from('admin_users').delete().eq('id', userId);
+    await supabase.auth.admin.deleteUser(userId);
+
+    revalidatePath('/admin/roles');
+    return { success: true };
+  } catch (err: any) {
+    console.error('[deleteAdminAccountAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to delete account.' };
+  }
+}
+
+export async function updateAdminUiPreferencesAction(
+  preferences: any
+): Promise<{ success: boolean }> {
+  try {
+    const { createClient } = await import('@/lib/supabase/server');
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false };
+    }
+
+    const adminClient = getAdminClient();
+    await adminClient
+      .from('admin_users')
+      .update({ ui_preferences: preferences })
+      .eq('id', user.id);
+
+    return { success: true };
+  } catch {
+    return { success: false };
   }
 }

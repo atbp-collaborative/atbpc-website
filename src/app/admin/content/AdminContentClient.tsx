@@ -16,6 +16,7 @@ import { CmsProcessTab } from '@/components/admin/cms/CmsProcessTab';
 import { CmsServicesTab } from '@/components/admin/cms/CmsServicesTab';
 import { CmsHomeTab } from '@/components/admin/cms/CmsHomeTab';
 import { useTheme } from '@/context/ThemeContext';
+import { useAdminAuth } from '@/hooks/admin/useAdminAuth';
 
 interface AdminContentClientProps {
   initialData?: AdminCmsInitialData;
@@ -23,6 +24,8 @@ interface AdminContentClientProps {
 
 export function AdminContentClient({ initialData }: AdminContentClientProps) {
   const { isDarkMode } = useTheme();
+  const { user } = useAdminAuth();
+  const isSuperadmin = user?.role === 'superadmin';
   const {
     activeTab,
     setActiveTab,
@@ -125,7 +128,7 @@ export function AdminContentClient({ initialData }: AdminContentClientProps) {
                 onSaveCard={saveCard}
                 slides={slides}
                 onSaveSlide={saveSlide}
-                onDeleteSlide={deleteSlide}
+                onDeleteSlide={isSuperadmin ? deleteSlide : () => {}}
                 onReorderSlides={reorderSlides}
               />
             )}
@@ -145,7 +148,7 @@ export function AdminContentClient({ initialData }: AdminContentClientProps) {
                 onSelectServiceId={setSelectedServiceId}
                 onSaveService={saveService}
                 onSaveServiceAccordion={saveServiceAccordion}
-                onDeleteServiceAccordion={deleteServiceAccordion}
+                onDeleteServiceAccordion={isSuperadmin ? deleteServiceAccordion : () => {}}
                 cards={cards}
                 onSaveCard={saveCard}
               />
@@ -159,9 +162,9 @@ export function AdminContentClient({ initialData }: AdminContentClientProps) {
                 stageGroups={stageGroups}
                 onSavePhilosophy={savePhilosophy}
                 onSaveStageGroup={saveStageGroup}
-                onDeleteStageGroup={deleteStageGroup}
+                onDeleteStageGroup={isSuperadmin ? deleteStageGroup : () => {}}
                 onSaveProcessStage={saveProcessStage}
-                onDeleteProcessStage={deleteProcessStage}
+                onDeleteProcessStage={isSuperadmin ? deleteProcessStage : () => {}}
                 cards={cards}
               />
             )}

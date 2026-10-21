@@ -45,6 +45,8 @@ import {
 import { useAdminProjects } from '@/hooks/admin/useAdminProjects';
 import { useAdminRoles } from '@/hooks/admin/useAdminRoles';
 import { useTheme } from '@/context/ThemeContext';
+import { useAdminAuth } from '@/hooks/admin/useAdminAuth';
+import { useAdminUiSettings } from '@/context/AdminUiSettingsContext';
 import { Member, MemberCategory, MemberAffiliation, MemberInvolvement, License } from '@/types';
 import { toast } from 'sonner';
 
@@ -95,6 +97,10 @@ export function AdminPeopleClient({
   initialLicenses = [],
 }: AdminPeopleClientProps) {
   const { isDarkMode } = useTheme();
+  const { user } = useAdminAuth();
+  const isSuperadmin = user?.role === 'superadmin';
+  const { getDisplayMode, setDisplayMode } = useAdminUiSettings();
+  const displayMode = getDisplayMode('people');
   const {
     filteredMembers,
     searchTerm,
@@ -143,7 +149,7 @@ export function AdminPeopleClient({
   );
 
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [displayMode, setDisplayMode] = useState<DisplayMode>('list');
+  // displayMode now managed by useAdminUiSettings
   const [formData, setFormData] = useState<Member>(EMPTY_MEMBER);
   const initialDataRef = useRef<Member>(EMPTY_MEMBER);
   const [licenses, setLicenses] = useState<License[]>(initialLicenses);
@@ -972,7 +978,7 @@ export function AdminPeopleClient({
                 </div>
               )}
 
-              {viewMode === 'edit' && (
+              {viewMode === 'edit' && isSuperadmin && (
                 <div
                   className={`p-6 rounded-xl border space-y-3 ${
                     isDarkMode ? 'bg-red-500/5 border-red-500/20' : 'bg-red-50 border-red-200'
@@ -1091,7 +1097,7 @@ export function AdminPeopleClient({
           <div className="flex items-center gap-1 border-t md:border-t-0 md:border-l pt-3 md:pt-0 md:pl-4 border-black/10 dark:border-white/10">
             <button
               type="button"
-              onClick={() => setDisplayMode('list')}
+              onClick={() => setDisplayMode('people', 'list')}
               title="List View"
               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                 displayMode === 'list'
@@ -1105,7 +1111,7 @@ export function AdminPeopleClient({
             </button>
             <button
               type="button"
-              onClick={() => setDisplayMode('grid')}
+              onClick={() => setDisplayMode('people', 'grid')}
               title="Grid View"
               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                 displayMode === 'grid'

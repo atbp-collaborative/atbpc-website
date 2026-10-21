@@ -4,25 +4,36 @@ export function useContentProtection(enabled: boolean = false) {
   const [isShielded, setIsShielded] = useState(false);
 
   useEffect(() => {
-    if (!enabled) {
+    // Content protection strictly applies to public pages, never administrative routes
+    const isInsideAdmin =
+      typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+
+    if (!enabled || isInsideAdmin) {
       setIsShielded(false);
       return;
     }
 
+    const isCurrentPathAdmin = () => {
+      return typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+    };
+
     // 1. Disable Right Click Context Menu
     const handleContextMenu = (e: MouseEvent) => {
+      if (isCurrentPathAdmin()) return true;
       e.preventDefault();
       return false;
     };
 
     // 2. Disable Dragging (Images, Links, Text)
     const handleDragStart = (e: DragEvent) => {
+      if (isCurrentPathAdmin()) return true;
       e.preventDefault();
       return false;
     };
 
     // 3. Disable Text Selection Start
     const handleSelectStart = (e: Event) => {
+      if (isCurrentPathAdmin()) return true;
       const target = e.target as HTMLElement;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
         return true;
@@ -33,6 +44,7 @@ export function useContentProtection(enabled: boolean = false) {
 
     // 4. Disable Copy / Cut
     const handleCopyCut = (e: ClipboardEvent) => {
+      if (isCurrentPathAdmin()) return true;
       const target = e.target as HTMLElement;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
         return true;
@@ -46,6 +58,7 @@ export function useContentProtection(enabled: boolean = false) {
 
     // 5. Intercept Hotkeys (Save, Print, DevTools, View Source, Screenshot)
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isCurrentPathAdmin()) return true;
       const isCmdOrCtrl = e.metaKey || e.ctrlKey;
       const key = e.key.toLowerCase();
 
@@ -104,6 +117,7 @@ export function useContentProtection(enabled: boolean = false) {
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
+      if (isCurrentPathAdmin()) return;
       const key = e.key.toLowerCase();
       if (e.key === 'PrintScreen' || e.key === 'PrtScn' || key === 'printscreen') {
         e.preventDefault();
@@ -127,8 +141,9 @@ export function useContentProtection(enabled: boolean = false) {
       }
     };
 
-    // 6. Netflix-style DRM Screen Blur / Blackout on Window Blur & Visibility Change
+    // 6. DRM Screen Blur on Window Blur & Visibility Change (Public Only)
     const handleBlur = () => {
+      if (isCurrentPathAdmin()) return;
       setIsShielded(true);
     };
 
@@ -137,6 +152,10 @@ export function useContentProtection(enabled: boolean = false) {
     };
 
     const handleVisibilityChange = () => {
+      if (isCurrentPathAdmin()) {
+        setIsShielded(false);
+        return;
+      }
       if (document.hidden) {
         setIsShielded(true);
       } else {

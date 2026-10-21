@@ -9,6 +9,8 @@ import React, { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminNavProvider, useAdminNav } from '@/context/AdminNavContext';
+import { AdminUiSettingsProvider } from '@/context/AdminUiSettingsContext';
+import { DevRoleSwitcher } from '@/components/admin/dev/DevRoleSwitcher';
 import { useTheme } from '@/context/ThemeContext';
 
 interface AdminLayoutClientProps {
@@ -24,15 +26,20 @@ const AdminLayoutContent: React.FC<AdminLayoutClientProps> = ({ children }) => {
     document.title = 'ATBPC Admin Dashboard';
   }, [pathname]);
 
-  // If on login page, render full-bleed centered without sidebar
-  if (pathname === '/admin/login') {
+  // If on login page or handover ceremony page, render full-bleed centered without sidebar
+  const isAuthPage =
+    pathname === '/admin/login' ||
+    pathname === '/admin/login/turn-over';
+
+  if (isAuthPage) {
     return (
       <main
-        className={`min-h-screen flex items-center justify-center p-4 transition-colors ${
+        className={`h-screen w-full overflow-hidden flex items-center justify-center p-4 transition-colors ${
           isDarkMode ? 'bg-vintage-charcoal text-bright-gray' : 'bg-bright-gray text-vintage-charcoal'
         }`}
       >
         {children}
+        <DevRoleSwitcher />
       </main>
     );
   }
@@ -51,6 +58,8 @@ const AdminLayoutContent: React.FC<AdminLayoutClientProps> = ({ children }) => {
       <div className="flex-1 flex flex-col min-w-0">
         <main className="flex-1 flex flex-col">{children}</main>
       </div>
+
+      <DevRoleSwitcher />
     </div>
   );
 };
@@ -58,7 +67,9 @@ const AdminLayoutContent: React.FC<AdminLayoutClientProps> = ({ children }) => {
 export const AdminLayoutClient: React.FC<AdminLayoutClientProps> = ({ children }) => {
   return (
     <AdminNavProvider>
-      <AdminLayoutContent>{children}</AdminLayoutContent>
+      <AdminUiSettingsProvider>
+        <AdminLayoutContent>{children}</AdminLayoutContent>
+      </AdminUiSettingsProvider>
     </AdminNavProvider>
   );
 };
