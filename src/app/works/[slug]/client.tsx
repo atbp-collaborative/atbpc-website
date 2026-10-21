@@ -876,7 +876,7 @@ export default function WorksSlugClient({
                   totalProjects={filteredProjects.length}
                   isDarkMode={isDarkMode}
                   onClick={() => {
-                    router.push(projectRoute(project.id));
+                    router.push(projectRoute(project.slug || project.id));
                   }}
                 />
               ))}

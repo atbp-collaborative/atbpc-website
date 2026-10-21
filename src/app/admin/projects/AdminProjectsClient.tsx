@@ -300,11 +300,10 @@ export function AdminProjectsClient({
   // ==========================================
   // RENDER: NON-MODAL FORM VIEW (CREATE / EDIT)
   // ==========================================
-  if (viewMode === 'create' || viewMode === 'edit') {
-    const currentTeam = getTeamForProject(formData.id);
-
-    return (
-      <div className="flex-1 flex flex-col min-h-screen">
+  return (
+    <>
+      {viewMode === 'create' || viewMode === 'edit' ? (
+        <div className="flex-1 flex flex-col min-h-screen">
         {/* Sticky Form Action Header */}
         <div
           className={`sticky top-0 z-30 px-4 sm:px-8 py-4 border-b backdrop-blur-md flex items-center justify-between gap-4 ${
@@ -413,12 +412,9 @@ export function AdminProjectsClient({
                       placeholder="project-title"
                       className={`${inputClass} font-mono text-mini`}
                     />
-                    <div className="flex items-center justify-between text-micro opacity-60">
-                      <span>Public path: /works/{formData.slug || generateProjectSlug(formData.title, formData.year)}</span>
-                      {isUuid(formData.id) && (
-                        <span className="font-mono text-[10px] opacity-75">UUID: {formData.id.slice(0, 8)}...</span>
-                      )}
-                    </div>
+                    <p className="text-micro opacity-50">
+                      Public path: /works/{formData.slug || generateProjectSlug(formData.title, formData.year)}
+                    </p>
                   </div>
 
                   <div className="space-y-1 sm:col-span-2">
@@ -914,14 +910,8 @@ export function AdminProjectsClient({
           </div>
         </form>
       </div>
-    );
-  }
-
-  // ==========================================
-  // RENDER: PROJECTS LIST VIEW
-  // ==========================================
-  return (
-    <div className="flex-1 flex flex-col min-h-screen">
+    ) : (
+      <div className="flex-1 flex flex-col min-h-screen">
       <AdminHeader
         title="manage projects"
         breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Projects' }]}
@@ -1136,14 +1126,6 @@ export function AdminProjectsClient({
 
                   {/* Actions Row (pt-[4px] creates 4px space between border-t and edit button) */}
                   <div className="p-4 pt-[4px] flex items-center justify-between gap-2 border-t border-black/5 dark:border-white/5 mt-2">
-                    <Button
-                      type="ghost"
-                      onClick={() => startEdit(project)}
-                      className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
-                    >
-                      <Edit2 size={13} className="mr-1 inline" /> Edit
-                    </Button>
-
                     <span
                       className={`px-2 py-0.5 rounded text-micro font-mono uppercase tracking-wider font-semibold ${
                         project.isDraft
@@ -1153,6 +1135,14 @@ export function AdminProjectsClient({
                     >
                       {project.isDraft ? 'Draft' : 'Published'}
                     </span>
+
+                    <Button
+                      type="ghost"
+                      onClick={() => startEdit(project)}
+                      className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle"
+                    >
+                      <Edit2 size={13} className="mr-1 inline" /> Edit
+                    </Button>
                   </div>
                 </div>
               );
@@ -1168,24 +1158,26 @@ export function AdminProjectsClient({
           </div>
         )}
       </div>
-
-      {/* Confirmation Modal (Exclusively for delete confirmation) */}
-      <ConfirmModal
-        isOpen={Boolean(projectToDelete)}
-        title="Remove Architectural Project?"
-        description={`Are you sure you want to remove "${projectToDelete?.title}"? All photos, specifications, and associated member linkages will be removed from the database.`}
-        confirmLabel="Confirm Delete"
-        cancelLabel="Keep Project"
-        isDestructive={true}
-        onCancel={() => setProjectToDelete(null)}
-        onConfirm={() => {
-          if (projectToDelete) {
-            deleteProject(projectToDelete.id);
-            setProjectToDelete(null);
-            setViewMode('list');
-          }
-        }}
-      />
     </div>
+  )}
+
+  {/* Confirmation Modal (Exclusively for delete confirmation) */}
+  <ConfirmModal
+    isOpen={Boolean(projectToDelete)}
+    title="Remove Architectural Project?"
+    description={`Are you sure you want to remove "${projectToDelete?.title}"? All photos, specifications, and associated member linkages will be removed from the database.`}
+    confirmLabel="Confirm Delete"
+    cancelLabel="Keep Project"
+    isDestructive={true}
+    onCancel={() => setProjectToDelete(null)}
+    onConfirm={() => {
+      if (projectToDelete) {
+        deleteProject(projectToDelete.id);
+        setProjectToDelete(null);
+        setViewMode('list');
+      }
+    }}
+  />
+</>
   );
 }

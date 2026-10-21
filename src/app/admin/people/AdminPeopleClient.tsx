@@ -30,14 +30,11 @@ import { DynamicListField } from '@/components/admin/DynamicListField';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { Button } from '@/components/primitives/buttons/Button';
 import { ComboboxMultiSelect } from '@/components/admin/ComboboxMultiSelect';
+import { ComboboxSelect } from '@/components/admin/ComboboxSelect';
 import { AddressField } from '@/components/forms/form-fields/AddressField';
 import { EMPTY_PH_ADDRESS } from '@/components/forms/form-fields/types';
 import { generateMemberSlug } from '@/lib/people/slug-helpers';
 import { getLicensesFromSupabase } from '@/services/supabase/licenses.service';
-import {
-  getOurPeopleFooterFromSupabase,
-  saveOurPeopleFooterToSupabase,
-} from '@/services/supabase/settings.service';
 import {
   useAdminPeople,
   PeopleClassificationFilter,
@@ -143,45 +140,6 @@ export function AdminPeopleClient({
   // Modal states
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
 
-  // Dynamic Our People Footer Text
-  const DEFAULT_PEOPLE_FOOTER =
-    'we are a licensed, registered collaborative trained and experienced to provide you services ... architecture, engineering, building construction industry, nationwide.';
-  const [peopleFooterText, setPeopleFooterText] = useState<string>(DEFAULT_PEOPLE_FOOTER);
-  const initialPeopleFooterRef = useRef<string>(DEFAULT_PEOPLE_FOOTER);
-  const [isSavingFooter, setIsSavingFooter] = useState(false);
-
-  useEffect(() => {
-    getOurPeopleFooterFromSupabase().then((data) => {
-      if (data?.footerText) {
-        setPeopleFooterText(data.footerText);
-        initialPeopleFooterRef.current = data.footerText;
-      }
-    });
-  }, []);
-
-  const isFooterDirty = useMemo(() => {
-    return peopleFooterText.trim() !== initialPeopleFooterRef.current.trim();
-  }, [peopleFooterText]);
-
-  const handleResetFooter = () => {
-    setPeopleFooterText(initialPeopleFooterRef.current);
-  };
-
-  const handleSaveFooter = async () => {
-    if (!isFooterDirty) return;
-    setIsSavingFooter(true);
-    try {
-      await saveOurPeopleFooterToSupabase(peopleFooterText);
-      initialPeopleFooterRef.current = peopleFooterText;
-      toast.success('Our People page footer subtext updated successfully.');
-    } catch (err: any) {
-      console.error('Failed to save people footer:', err);
-      toast.error(err?.message || 'Failed to save footer subtext.');
-    } finally {
-      setIsSavingFooter(false);
-    }
-  };
-
   const startCreate = () => {
     const today = new Date().toISOString().split('T')[0];
     const newMember: Member = {
@@ -285,9 +243,11 @@ export function AdminPeopleClient({
     }
 
     const cleanId =
-      formData.id.trim().toLowerCase().replace(/^-+|-+$/g, '') ||
-      generateMemberSlug(formData.firstName, formData.lastName) ||
-      'member-' + Date.now();
+      viewMode === 'edit' && initialDataRef.current?.id
+        ? initialDataRef.current.id
+        : formData.id.trim().toLowerCase().replace(/^-+|-+$/g, '') ||
+          generateMemberSlug(formData.firstName, formData.lastName) ||
+          'member-' + Date.now();
 
     const fullName = [formData.firstName.trim(), formData.middleName?.trim(), formData.lastName.trim()]
       .filter(Boolean)
@@ -318,9 +278,10 @@ export function AdminPeopleClient({
   // ==========================================
   // RENDER: NON-MODAL FORM VIEW (CREATE / EDIT)
   // ==========================================
-  if (viewMode === 'create' || viewMode === 'edit') {
-    return (
-      <div className="flex-1 flex flex-col min-h-screen">
+  return (
+    <>
+      {viewMode === 'create' || viewMode === 'edit' ? (
+        <div className="flex-1 flex flex-col min-h-screen">
         {/* Sticky Form Action Header */}
         <div
           className={`sticky top-0 z-30 px-4 sm:px-8 py-4 border-b backdrop-blur-md flex items-center justify-between gap-4 ${
@@ -398,12 +359,11 @@ export function AdminPeopleClient({
                         const m = formData.middleName || '';
                         const l = formData.lastName || '';
                         const fullName = [val.trim(), m.trim(), l.trim()].filter(Boolean).join(' ');
-                        const newSlug = generateMemberSlug(val, l);
                         setFormData((prev) => ({
                           ...prev,
                           firstName: val,
                           name: fullName,
-                          id: newSlug,
+                          id: viewMode === 'create' ? generateMemberSlug(val, l) : prev.id,
                         }));
                       }}
                       placeholder="Kim"
@@ -443,12 +403,11 @@ export function AdminPeopleClient({
                         const f = formData.firstName || '';
                         const m = formData.middleName || '';
                         const fullName = [f.trim(), m.trim(), val.trim()].filter(Boolean).join(' ');
-                        const newSlug = generateMemberSlug(f, val);
                         setFormData((prev) => ({
                           ...prev,
                           lastName: val,
                           name: fullName,
-                          id: newSlug,
+                          id: viewMode === 'create' ? generateMemberSlug(f, val) : prev.id,
                         }));
                       }}
                       placeholder="Dela Cruz"
@@ -527,49 +486,24 @@ export function AdminPeopleClient({
                     <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
                       Primary Studio Role <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      required
+                    <ComboboxSelect
+                      options={allRoles.map((r) => ({
+                        id: r.id,
+                        label: r.title,
+                        sublabel: r.code,
+                        category: r.category ? r.category.charAt(0).toUpperCase() + r.category.slice(1) : undefined,
+                      }))}
                       value={formData.primaryRoleId || ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const matched = allRoles.find((r) => r.id === val || r.title === val);
+                      onChange={(id, opt) => {
                         setFormData((prev) => ({
                           ...prev,
-                          primaryRoleId: matched ? matched.id : val,
-                          role: matched ? matched.title : val,
+                          primaryRoleId: id,
+                          role: opt ? opt.label : prev.role,
                         }));
                       }}
-                      className={inputClass}
-                    >
-                      <option value="">[ Select Role ]</option>
-                      {designerRoles.length > 0 && (
-                        <optgroup label="Designers">
-                          {designerRoles.map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.title} ({r.code || 'ROLE'})
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      {managerRoles.length > 0 && (
-                        <optgroup label="Managers">
-                          {managerRoles.map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.title} ({r.code || 'ROLE'})
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      {builderRoles.length > 0 && (
-                        <optgroup label="Builders">
-                          {builderRoles.map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.title} ({r.code || 'ROLE'})
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                    </select>
+                      placeholder="[ Select Role ]"
+                      searchPlaceholder="Search studio roles..."
+                    />
                   </div>
 
                   <div className="space-y-1 sm:col-span-2">
@@ -604,18 +538,22 @@ export function AdminPeopleClient({
                       type="text"
                       required
                       value={formData.id}
+                      disabled={viewMode === 'edit'}
+                      readOnly={viewMode === 'edit'}
                       onChange={(e) => {
+                        if (viewMode === 'edit') return;
                         const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
                         setFormData((prev) => ({ ...prev, id: val }));
                       }}
                       onBlur={() => {
+                        if (viewMode === 'edit') return;
                         setFormData((prev) => ({
                           ...prev,
                           id: (prev.id || '').replace(/^-+|-+$/g, ''),
                         }));
                       }}
                       placeholder="first-last"
-                      className={`${inputClass} font-mono text-mini`}
+                      className={`${inputClass} font-mono text-mini ${viewMode === 'edit' ? 'opacity-60 cursor-not-allowed' : ''}`}
                     />
                     <p className="text-micro opacity-50">
                       Used for public routing: /studio/our-people/{formData.id || 'first-last'}
@@ -1042,14 +980,8 @@ export function AdminPeopleClient({
           </div>
         </form>
       </div>
-    );
-  }
-
-  // ==========================================
-  // RENDER: DIRECTORY LIST VIEW
-  // ==========================================
-  return (
-    <div className="flex-1 flex flex-col min-h-screen">
+    ) : (
+      <div className="flex-1 flex flex-col min-h-screen">
       <AdminHeader
         title="manage people"
         breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'People' }]}
@@ -1375,80 +1307,27 @@ export function AdminPeopleClient({
             </Button>
           </div>
         )}
-
-        {/* Our People Dynamic Footer Field Card */}
-        <div
-          className={`p-6 rounded-xl border space-y-4 transition-all mt-6 ${
-            isDarkMode ? 'bg-vintage-charcoal/60 border-white/10' : 'bg-white border-black/10 shadow-xs'
-          }`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3 border-black/5 dark:border-white/5">
-            <div>
-              <h3 className="text-body font-major font-bold tracking-tight lowercase">
-                our people page footer subtext
-              </h3>
-              <p className="text-mini opacity-70">
-                Dynamic footer statement displayed at the bottom of the public <code>/studio/our-people</code> page.
-              </p>
-            </div>
-            {isFooterDirty && (
-              <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  type="ghost"
-                  onClick={handleResetFooter}
-                  disabled={isSavingFooter}
-                  className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10"
-                >
-                  <RotateCcw size={12} className="mr-1 inline" /> Reset
-                </Button>
-                <Button
-                  type="filled"
-                  onClick={handleSaveFooter}
-                  disabled={isSavingFooter}
-                  className="!py-1.5 !px-4 text-mini font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                >
-                  <Save size={13} className={`mr-1.5 inline ${isSavingFooter ? 'animate-spin' : ''}`} />
-                  {isSavingFooter ? 'Saving...' : 'Save Footer'}
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-              Footer Text
-            </label>
-            <textarea
-              rows={3}
-              value={peopleFooterText}
-              onChange={(e) => setPeopleFooterText(e.target.value)}
-              placeholder="we are a licensed, registered collaborative trained and experienced to provide you services..."
-              className={inputClass}
-            />
-            <p className="text-micro opacity-50 italic">
-              Default: "we are a licensed, registered collaborative trained and experienced to provide you services ... architecture, engineering, building construction industry, nationwide."
-            </p>
-          </div>
-        </div>
       </div>
-
-      {/* Confirmation Modal (Exclusively for delete confirmation) */}
-      <ConfirmModal
-        isOpen={Boolean(memberToDelete)}
-        title="Remove Team Member?"
-        description={`Are you sure you want to remove "${memberToDelete?.name}"? Their profile and portfolio involvements will be deleted from the database.`}
-        confirmLabel="Confirm Delete"
-        cancelLabel="Keep Member"
-        isDestructive={true}
-        onCancel={() => setMemberToDelete(null)}
-        onConfirm={() => {
-          if (memberToDelete) {
-            deleteMember(memberToDelete.id);
-            setMemberToDelete(null);
-            setViewMode('list');
-          }
-        }}
-      />
     </div>
+  )}
+
+  {/* Confirmation Modal (Exclusively for delete confirmation) */}
+  <ConfirmModal
+    isOpen={Boolean(memberToDelete)}
+    title="Remove Team Member?"
+    description={`Are you sure you want to remove "${memberToDelete?.name}"? Their profile and portfolio involvements will be deleted from the database.`}
+    confirmLabel="Confirm Delete"
+    cancelLabel="Keep Member"
+    isDestructive={true}
+    onCancel={() => setMemberToDelete(null)}
+    onConfirm={() => {
+      if (memberToDelete) {
+        deleteMember(memberToDelete.id);
+        setMemberToDelete(null);
+        setViewMode('list');
+      }
+    }}
+  />
+</>
   );
 }

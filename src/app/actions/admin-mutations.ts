@@ -46,6 +46,7 @@ export async function fetchAdminPeopleAction(): Promise<Member[]> {
       .from('people')
       .select(`
         *,
+        primary_role:roles(id, role_title, role_code),
         credentials:person_credentials(*),
         involvements:project_contributors(
           *,
@@ -939,6 +940,21 @@ export async function saveSitePageAction(page: SitePage) {
     if (error) {
       console.error('[saveSitePageAction] Error:', error);
       return { success: false, error: error.message };
+    }
+
+    // Synchronize publication status with service_offerings or process_philosophies if this page corresponds to one
+    const lastSeg = page.id.split('/').pop() || '';
+    if (page.id.includes('our-services') || ['comprehensive-services', 'piecework-services', 'consultation-retainer-services'].includes(lastSeg)) {
+      await supabase
+        .from('service_offerings')
+        .update({ is_draft: Boolean(page.isDraft), updated_at: new Date().toISOString() })
+        .eq('id', lastSeg);
+    }
+    if (page.id.includes('our-process') || ['designing-with-values', 'managing-with-integrity', 'building-with-culture'].includes(lastSeg)) {
+      await supabase
+        .from('process_philosophies')
+        .update({ is_draft: Boolean(page.isDraft), updated_at: new Date().toISOString() })
+        .eq('id', lastSeg);
     }
 
     // Revalidate navigation and all pages depending on site_pages

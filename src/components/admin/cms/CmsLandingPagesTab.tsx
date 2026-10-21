@@ -13,6 +13,10 @@ import { Button } from '@/components/primitives/buttons/Button';
 import { useTheme } from '@/context/ThemeContext';
 import { ImageManagerField } from '@/components/admin/ImageManagerField';
 import { CmsHomeTab } from '@/components/admin/cms/CmsHomeTab';
+import {
+  getOurPeopleFooterFromSupabase,
+  saveOurPeopleFooterToSupabase,
+} from '@/services/supabase/settings.service';
 
 interface CmsLandingPagesTabProps {
   cards: NavigationCardItem[];
@@ -90,6 +94,22 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
       footerText: initialFooter,
     };
 
+    const isPeople =
+      card.cardKey?.toLowerCase() === 'people' ||
+      card.id?.toLowerCase().includes('people') ||
+      card.title?.toLowerCase().includes('people');
+
+    if (isPeople) {
+      getOurPeopleFooterFromSupabase().then((data) => {
+        if (data?.footerText) {
+          setEditingCard((prev) => (prev ? { ...prev, footerText: data.footerText } : null));
+          if (initialCardRef.current) {
+            initialCardRef.current.footerText = data.footerText;
+          }
+        }
+      });
+    }
+
     setEditingCard(preparedCard);
     initialCardRef.current = JSON.parse(JSON.stringify(preparedCard));
   };
@@ -97,6 +117,15 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
   const isDirty = useMemo(() => {
     if (!editingCard || !initialCardRef.current) return false;
     return JSON.stringify(editingCard) !== JSON.stringify(initialCardRef.current);
+  }, [editingCard]);
+
+  const isPeopleCard = useMemo(() => {
+    if (!editingCard) return false;
+    return (
+      editingCard.cardKey?.toLowerCase() === 'people' ||
+      editingCard.id?.toLowerCase().includes('people') ||
+      editingCard.title?.toLowerCase().includes('people')
+    );
   }, [editingCard]);
 
   const filteredCards = useMemo(() => {
@@ -123,9 +152,16 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
       : 'border-vintage-charcoal/20 bg-white text-vintage-charcoal placeholder-vintage-charcoal/40 focus:border-space-sparkle'
   }`;
 
-  const handleSaveCardSubmit = (e: React.FormEvent) => {
+  const handleSaveCardSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingCard || !isDirty) return;
+    if (isPeopleCard && editingCard.footerText !== undefined) {
+      try {
+        await saveOurPeopleFooterToSupabase(editingCard.footerText);
+      } catch (err) {
+        console.error('Failed to sync our_people_footer to Supabase:', err);
+      }
+    }
     onSaveCard({ ...editingCard, isDraft: false });
     setEditingCard(null);
   };
@@ -405,6 +441,32 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
                   />
                   <p className="text-micro opacity-50">
                     The subtitle displayed on the actual page this card takes you to.
+                  </p>
+                </div>
+              )}
+
+              {/* People Card Only: Page Footer Text field */}
+              {isPeopleCard && (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
+                      Page Footer Text
+                    </label>
+                    <span className="text-[10px] opacity-50 font-mono">
+                      Synced with /studio/our-people footer
+                    </span>
+                  </div>
+                  <textarea
+                    rows={3}
+                    value={editingCard.footerText || ''}
+                    onChange={(e) =>
+                      setEditingCard({ ...editingCard, footerText: e.target.value })
+                    }
+                    placeholder="we are a licensed, registered collaborative trained and experienced to provide you services ... architecture, engineering, building construction industry, nationwide."
+                    className={inputClass}
+                  />
+                  <p className="text-micro opacity-50">
+                    Dynamic footer statement displayed at the bottom of the public /studio/our-people page.
                   </p>
                 </div>
               )}

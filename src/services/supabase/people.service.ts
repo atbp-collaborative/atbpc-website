@@ -25,6 +25,8 @@ export function mapPersonRecord(p: any): Member {
     description: inv.contribution_narrative || '',
   }));
 
+  const primaryRoleTitle = p.primary_role?.role_title || p.primary_role?.title || p.primary_role_title || p.role_title || p.role || '';
+
   return {
     id: p.id,
     name: formatFullName(p.first_name, p.middle_name, p.last_name),
@@ -34,7 +36,7 @@ export function mapPersonRecord(p: any): Member {
     pseudonym: p.pseudonym,
     pronouns: p.pronouns,
     titles: p.titles,
-    role: p.titles ? `${p.titles} ${p.last_name}` : p.last_name,
+    role: primaryRoleTitle || (p.titles ? `${p.titles} ${p.last_name}` : p.last_name),
     roles: p.other_role_ids || [],
     otherRoleIds: p.other_role_ids || [],
     primaryRoleId: p.primary_role_id || undefined,
@@ -66,6 +68,7 @@ export async function getPeopleFromSupabase(includeDrafts: boolean = false): Pro
     .from('people')
     .select(`
       *,
+      primary_role:roles(id, role_title, role_code),
       credentials:person_credentials(*),
       involvements:project_contributors(
         *,
@@ -93,6 +96,7 @@ export async function getPersonByIdFromSupabase(id: string, includeDrafts: boole
     .from('people')
     .select(`
       *,
+      primary_role:roles(id, role_title, role_code),
       credentials:person_credentials(*),
       involvements:project_contributors(
         *,

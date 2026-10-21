@@ -86,10 +86,27 @@ export function useAdminCms(initialData?: AdminCmsInitialData) {
         fetchAdminHomeSlides(),
         fetchAdminHomepageSlogans(),
       ]);
+      // Synchronize publication status between site_pages and services/philosophies
+      const pageDraftMap = new Map<string, boolean>();
+      p.forEach((page) => {
+        const seg = page.id.split('/').pop();
+        if (seg) pageDraftMap.set(seg, Boolean(page.isDraft));
+      });
+
+      const syncedServices = srv.map((s) => {
+        const fromPage = pageDraftMap.get(s.id);
+        return fromPage !== undefined ? { ...s, isDraft: fromPage } : s;
+      });
+
+      const syncedPhilosophies = phil.map((ph) => {
+        const fromPage = pageDraftMap.get(ph.id);
+        return fromPage !== undefined ? { ...ph, isDraft: fromPage } : ph;
+      });
+
       setPages(p);
       setCards(c);
-      setPhilosophies(phil);
-      setServices(srv);
+      setPhilosophies(syncedPhilosophies);
+      setServices(syncedServices);
       setSlides(sld);
       setSlogans(slg);
 
@@ -141,6 +158,17 @@ export function useAdminCms(initialData?: AdminCmsInitialData) {
         }
         return [...prev, saved];
       });
+      // Keep services & philosophies state in sync with saved page
+      const lastSeg = saved.id.split('/').pop();
+      if (lastSeg) {
+        setServices((prev) =>
+          prev.map((s) => (s.id === lastSeg ? { ...s, isDraft: Boolean(saved.isDraft) } : s))
+        );
+        setPhilosophies((prev) =>
+          prev.map((p) => (p.id === lastSeg ? { ...p, isDraft: Boolean(saved.isDraft) } : p))
+        );
+      }
+
       toast.success(`Page "${saved.title}" saved successfully`);
       return saved;
     } catch (err: any) {
@@ -185,6 +213,17 @@ export function useAdminCms(initialData?: AdminCmsInitialData) {
         }
         return [...prev, saved];
       });
+      // Keep pages state in sync with philosophy publication status
+      setPages((prevPages) =>
+        prevPages.map((p) => {
+          const pLast = p.id.split('/').pop();
+          if (pLast === saved.id || p.id === saved.id) {
+            return { ...p, isDraft: Boolean(saved.isDraft) };
+          }
+          return p;
+        })
+      );
+
       toast.success(`Philosophy for "${saved.title}" updated`);
       return saved;
     } catch (err: any) {
@@ -264,6 +303,17 @@ export function useAdminCms(initialData?: AdminCmsInitialData) {
         }
         return [...prev, saved];
       });
+      // Keep pages state in sync with service publication status
+      setPages((prevPages) =>
+        prevPages.map((p) => {
+          const pLast = p.id.split('/').pop();
+          if (pLast === saved.id || p.id === saved.id) {
+            return { ...p, isDraft: Boolean(saved.isDraft) };
+          }
+          return p;
+        })
+      );
+
       toast.success(`Service offering "${saved.title}" updated`);
       return saved;
     } catch (err: any) {

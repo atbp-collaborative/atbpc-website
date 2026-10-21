@@ -320,16 +320,7 @@ export const CmsPagesTab: React.FC<CmsPagesTabProps> = ({
                 You have <strong>{dirtyPageIds.length}</strong> uncommitted publication change(s). Click <strong>Save Changes</strong> to update live public access.
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                type="filled"
-                onClick={handleSaveChanges}
-                disabled={isSaving}
-                className="!py-1.5 !px-3 text-mini font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                <Save size={12} className="mr-1 inline" /> Save Now
-              </Button>
-            </div>
+
           </div>
         )}
 
