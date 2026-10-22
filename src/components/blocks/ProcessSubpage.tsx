@@ -87,11 +87,6 @@ export const ProcessSubpage: React.FC<ProcessSubpageProps> = ({ data, stageGroup
         <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight lowercase leading-tight">
           {data.title}
         </h1>
-        {data.tagline && (
-          <p className="text-mini sm:text-caption font-semibold tracking-wider opacity-80 uppercase text-space-sparkle">
-            {data.tagline}
-          </p>
-        )}
       </div>
 
       {data.description && (

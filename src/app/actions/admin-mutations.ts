@@ -1152,7 +1152,7 @@ export async function saveNavigationCardAction(card: NavigationCardItem) {
       .single();
 
     // If column doesn't exist yet in PostgreSQL schema, retry with base payload
-    if (error && error.code === '42703') {
+    if (error && (error.code === '42703' || error.code === 'PGRST204' || error.message?.includes('schema cache') || error.message?.includes('column'))) {
       const retry = await supabase
         .from('navigation_cards')
         .upsert(basePayload)

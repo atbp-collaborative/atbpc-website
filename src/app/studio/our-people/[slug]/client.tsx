@@ -24,6 +24,7 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
+  const [imageAspectRatio, setImageAspectRatio] = useState<number | null>(null);
 
   let breadcrumbLabel = 'People';
   if (from === 'designers') breadcrumbLabel = 'Designers';
@@ -56,24 +57,33 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
         }`}
       />
 
-      <div className="mt-10 lg:mt-0 grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-10 gap-6 lg:gap-8 xl:gap-8 2xl:gap-10 flex-none lg:flex-1 min-h-0 lg:overflow-hidden pb-4 lg:pb-1">
+      <div className="mt-10 lg:mt-0 grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-10 min-[2560px]:grid-cols-12 gap-6 lg:gap-8 xl:gap-8 2xl:gap-10 flex-none lg:flex-1 min-h-0 lg:overflow-hidden pb-4 lg:pb-1">
         
-        {/* COLUMN 1: Portrait Container (40% on XL+) */}
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col items-stretch h-auto lg:h-full min-h-0 lg:overflow-hidden">
-          <div className="relative w-full h-[60vh] sm:h-[70vh] lg:h-full lg:flex-1 min-h-0 overflow-hidden bg-black/10 rounded-none group border border-space-sparkle/20 animate-slide-up">
+        {/* COLUMN 1: Portrait Container (40% on XL+, 5 cols on 1024px and 4k) */}
+        <div className="lg:col-span-5 xl:col-span-4 min-[2560px]:col-span-5 flex flex-col items-stretch min-[2560px]:items-start h-auto lg:h-full min-h-0 lg:overflow-hidden">
+          <div 
+            className="relative w-full h-[60vh] sm:h-[70vh] lg:h-full lg:flex-1 min-[2560px]:flex-initial min-[2560px]:h-auto min-[2560px]:max-h-full min-[2560px]:w-auto min-[2560px]:self-start min-h-0 overflow-hidden bg-black/10 rounded-none group border border-space-sparkle/20 animate-slide-up"
+            style={imageAspectRatio ? { aspectRatio: `${imageAspectRatio}` } : undefined}
+          >
             <ImageWithFade
               src={member.image}
               alt={member.name}
               fill
               sizes="(min-width: 1280px) 40vw, (min-width: 768px) 42vw, 100vw"
               priority
-              className="object-cover transition-all duration-700 ease-in-out hover:scale-105"
+              className="object-cover min-[2560px]:object-contain transition-all duration-700 ease-in-out hover:scale-105"
+              onLoad={(e) => {
+                const img = e.currentTarget as HTMLImageElement;
+                if (img?.naturalWidth && img?.naturalHeight) {
+                  setImageAspectRatio(img.naturalWidth / img.naturalHeight);
+                }
+              }}
             />
           </div>
         </div>
 
-        {/* COLUMN 2: Person Name & Bio (30% on XL+, 7 cols on MD) */}
-        <div className="lg:col-span-7 xl:col-span-3 flex flex-col h-auto lg:h-full min-h-0 lg:overflow-hidden py-0.5">
+        {/* COLUMN 2: Person Name & Bio (30% on XL+, 7 cols on 1024px and 4k) */}
+        <div className="lg:col-span-7 xl:col-span-3 min-[2560px]:col-span-7 flex flex-col h-auto lg:h-full min-h-0 lg:overflow-hidden py-0.5">
           {/* Static Name & Role on Tablet+ */}
           <div className="shrink-0 space-y-0.5 mb-3 lg:mb-4">
             <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight">
@@ -124,9 +134,9 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
               </p>
             </div>
 
-            {/* Accreditations / Credentials Block (Accordion for < XL screens) */}
+            {/* Accreditations / Credentials Block (Accordion for < XL screens and 4k screens) */}
             {member.affiliations && member.affiliations.length > 0 && (
-              <Accordion key={`credentials-${member.id}`} title="Credentials" isDarkMode={isDarkMode} size="sm" className="shrink-0 xl:hidden">
+              <Accordion key={`credentials-${member.id}`} title="Credentials" isDarkMode={isDarkMode} size="sm" className="shrink-0 xl:hidden min-[2560px]:block">
                 <div className="pb-2 pt-1 text-mini space-y-2 pl-[30px] pr-1">
                   <ul className="space-y-2">
                     {member.affiliations.map((item, idx) => (
@@ -143,9 +153,9 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
               </Accordion>
             )}
 
-            {/* Dynamic Project Involvement Block (Accordion for < XL screens) */}
+            {/* Dynamic Project Involvement Block (Accordion for < XL screens and 4k screens) */}
             {member.involvement && member.involvement.length > 0 && (
-              <Accordion key={`involvement-${member.id}`} title="Project Involvement" isDarkMode={isDarkMode} size="sm" className="shrink-0 xl:hidden">
+              <Accordion key={`involvement-${member.id}`} title="Project Involvement" isDarkMode={isDarkMode} size="sm" className="shrink-0 xl:hidden min-[2560px]:block">
                 <div className="pb-2 pt-1 text-mini space-y-2 pl-[30px] pr-1">
                   <ul className="space-y-1.5">
                     {member.involvement.map((inv) => {
@@ -178,8 +188,8 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
           </div>
         </div>
 
-        {/* COLUMN 3: Credentials & Project Involvement (30% on XL+, hidden on < XL) */}
-        <div className="hidden xl:flex xl:col-span-3 flex-col h-full min-h-0 overflow-hidden space-y-4 py-0.5">
+        {/* COLUMN 3: Credentials & Project Involvement (30% on XL+, hidden on < XL and 4k) */}
+        <div className="hidden xl:flex xl:col-span-3 min-[2560px]:hidden flex-col h-full min-h-0 overflow-hidden space-y-4 py-0.5">
           <div className="flex-1 min-h-0 overflow-y-auto pr-2 no-scrollbar space-y-6">
             
             {/* Credentials Section */}

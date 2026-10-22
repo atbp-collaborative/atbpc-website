@@ -389,9 +389,9 @@ function ProjectDetailContent({
       <div className={`grid grid-cols-1 lg:grid-cols-12 gap-6 lg:flex-1 lg:min-h-0 pb-1 ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}>
         
         {/* Carousel & CTA Container */}
-        <div ref={columnRef} className={`lg:col-span-7 lg:order-2 flex flex-col justify-start lg:h-full lg:min-h-0 space-y-3 ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}>
+        <div ref={columnRef} className={`lg:col-span-7 lg:order-2 flex flex-col justify-start lg:h-full lg:min-h-0 min-[1440px]:!h-auto min-[1440px]:!self-start space-y-3 ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}>
           
-          <div className={`space-y-3 w-full relative lg:flex-1 lg:min-h-0 flex flex-col justify-start ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}>
+          <div className={`space-y-3 w-full relative lg:flex-1 min-[1440px]:!flex-none min-[1440px]:!h-auto lg:min-h-0 flex flex-col justify-start ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}>
             
               {isVideoExpanded && isDesktop && (
                 <motion.div
@@ -515,7 +515,7 @@ function ProjectDetailContent({
               <Button
                 type="filled"
                 label="Request proposal"
-                onClick={() => router.push(ROUTES.contact)}
+                href={ROUTES.requestForProposal}
                 className="font-medium py-2 text-mini flex-1"
               />
             </div>
@@ -553,7 +553,13 @@ function ProjectDetailContent({
 
             {/* Specs / Overview */}
             <div className="w-full shrink-0">
-              <Accordion title="Project Overview" isDarkMode={isDarkMode} size="sm" defaultOpen={false}>
+              <Accordion 
+                title="Project Overview" 
+                isDarkMode={isDarkMode} 
+                size="sm" 
+                defaultOpen={false}
+                autoOpenOn1440={true}
+              >
                 <div className="pb-2 pt-1 text-mini pl-[5px]">
                   {renderProjectSpecs()}
                 </div>
@@ -574,7 +580,7 @@ function ProjectDetailContent({
               <Button
                 type="filled"
                 label="Request proposal"
-                onClick={() => router.push(ROUTES.contact)}
+                href={ROUTES.requestForProposal}
                 className="font-medium py-2 text-mini flex-1"
               />
             </div>
@@ -595,7 +601,7 @@ function ProjectDetailContent({
           <Button
             type="filled"
             label="Request proposal"
-            onClick={() => router.push(ROUTES.contact)}
+            href={ROUTES.requestForProposal}
             className="font-medium py-2 text-mini flex-1"
           />
         </div>

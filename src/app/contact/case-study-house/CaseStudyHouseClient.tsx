@@ -25,12 +25,28 @@ export function CaseStudyHouseClient({ navCards, pageInfo }: CaseStudyHouseClien
     image: card.imageUrl,
     priority: idx < 3,
     onSelect: () => {
-      if (card.targetHref) {
-        router.push(card.targetHref);
-      } else if (card.cardKey === 'discovery' || card.title.toLowerCase().includes('discovery')) {
-        router.push(ROUTES.discoverySession);
-      } else if (card.cardKey === 'request-proposal' || card.title.toLowerCase().includes('proposal')) {
+      if (
+        card.cardKey === 'request-proposal' ||
+        card.title.toLowerCase().includes('proposal') ||
+        card.targetHref?.includes('proposal')
+      ) {
         router.push(ROUTES.requestForProposal);
+      } else if (
+        card.cardKey === 'locate-map' ||
+        card.title.toLowerCase().includes('hours') ||
+        card.title.toLowerCase().includes('location') ||
+        card.targetHref === '/contact/contact-info' ||
+        card.targetHref?.includes('contact-info')
+      ) {
+        router.push(ROUTES.contactInfo);
+      } else if (
+        card.cardKey === 'discovery' ||
+        card.title.toLowerCase().includes('discovery') ||
+        card.targetHref?.includes('discovery')
+      ) {
+        router.push(ROUTES.discoverySession);
+      } else if (card.targetHref) {
+        router.push(card.targetHref);
       } else {
         router.push(ROUTES.contact);
       }
