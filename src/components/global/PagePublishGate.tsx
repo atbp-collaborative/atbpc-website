@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useIsSubpageDraft } from '@/context/SitePagesContext';
-import { UnderConstructionView } from '@/components/global/UnderConstructionView';
+import { UnderMaintenanceView } from '@/components/global/UnderMaintenanceView';
 
 interface PagePublishGateProps {
   slug: string;
@@ -13,7 +13,7 @@ export const PagePublishGate: React.FC<PagePublishGateProps> = ({ slug, children
   const isDraft = useIsSubpageDraft(slug);
 
   if (isDraft) {
-    return <UnderConstructionView isEmbedded={true} />;
+    return <UnderMaintenanceView mode="page" isEmbedded={true} />;
   }
 
   return <>{children}</>;

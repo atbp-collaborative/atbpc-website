@@ -8,6 +8,7 @@ import { ServiceOffering } from '@/types';
 import { getServiceOfferingByIdData } from '@/services/dummy-data.service';
 import { ROUTES } from '@/lib/navigation/routes';
 import { useTheme } from '@/context/ThemeContext';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface StudioServicesPageProps {
   data: StudioSubpageData;
@@ -28,16 +29,19 @@ const PieceworkAccordionItem = ({
   onToggle?: () => void;
   isDarkMode?: boolean;
 }) => {
+  const is1440 = useMediaQuery('(min-width: 1440px)');
+  const isEffectiveOpen = is1440 || isOpen;
+
   return (
     <div className="py-2 first:pt-0 last:pb-0 select-none relative">
       <button
-        onClick={onToggle}
+        onClick={is1440 ? undefined : onToggle}
         style={{
           backgroundColor: isDarkMode ? '#333436' : '#EDEFEF',
         }}
-        className="flex items-start text-left focus:outline-none cursor-pointer group w-full py-2"
+        className="flex items-start text-left focus:outline-none group w-full py-2 cursor-pointer min-[1440px]:cursor-default"
       >
-        <span className="font-sans font-bold text-space-sparkle mr-2 text-body sm:text-h3 leading-tight select-none">
+        <span className="font-sans font-bold text-space-sparkle mr-2 text-body sm:text-h3 leading-tight select-none min-[1440px]:hidden">
           {isOpen ? '—' : '+'}
         </span>
         <h4 className="font-sans text-body sm:text-h3 font-bold tracking-tight select-none group-hover:opacity-85 transition-opacity leading-tight break-words">
@@ -45,15 +49,15 @@ const PieceworkAccordionItem = ({
         </h4>
       </button>
       <AnimatePresence initial={false}>
-        {isOpen && (
+        {isEffectiveOpen && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={is1440 ? false : { height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            exit={is1440 ? undefined : { height: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="overflow-hidden"
+            className="overflow-hidden min-[1440px]:!block min-[1440px]:!h-auto min-[1440px]:!opacity-100"
           >
-            <p className="pl-5 pt-1.5 pb-2 text-caption font-light leading-relaxed opacity-85 whitespace-pre-line text-left break-words">
+            <p className="pl-5 min-[1440px]:pl-0 pt-1.5 pb-2 text-caption font-light leading-relaxed opacity-85 whitespace-pre-line text-left break-words">
               {content}
             </p>
           </motion.div>
@@ -221,12 +225,12 @@ const CONSULTATION_RETAINER_COLUMNS = [
   },
 ];
 
-
 export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
   data,
   initialOffering,
 }) => {
   const { isDarkMode } = useTheme();
+  const is1440 = useMediaQuery('(min-width: 1440px)');
   const [liveOffering, setLiveOffering] = useState<ServiceOffering | null>(initialOffering || null);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [openItemId, setOpenItemId] = useState<string | null>(null);
@@ -267,7 +271,6 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
 
   // Computed page copy
   const pageTitle = liveOffering?.title || data.title;
-  const pageTagline = liveOffering?.tagline || data.tagline;
   const pageDescription = liveOffering?.description || data.description;
   const pageExtraDescription = liveOffering?.extraDescription || data.extraDescription;
   const pageSubtext = liveOffering?.subtext || data.subtext;
@@ -312,17 +315,12 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
   }, [accordions]);
 
   return (
-    <div className="w-full h-full px-4 sm:px-8 md:px-12 py-3 flex flex-col overflow-hidden select-none min-h-0 flex-1">
-      {/* Top Left Header Section: Title, Subtext */}
+    <div className="w-full max-w-7xl mx-auto h-full px-4 sm:px-8 md:px-12 py-3 flex flex-col overflow-hidden select-none min-h-0 flex-1">
+      {/* Top Left Header Section: Title, Description (Tagline removed) */}
       <div className="shrink-0 text-left pt-3 pb-2 lg:pb-4 space-y-1">
         <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight lowercase leading-tight">
           {pageTitle}
         </h1>
-        {pageTagline && (
-          <p className="text-mini sm:text-caption font-semibold tracking-wider opacity-80 uppercase text-space-sparkle">
-            {pageTagline}
-          </p>
-        )}
         {pageDescription && (
           <div className="hidden lg:block text-caption font-light leading-relaxed opacity-85 max-w-3xl pt-0.5 space-y-2">
             <p>{pageDescription}</p>
@@ -368,11 +366,11 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
               <div key={colIdx} className="flex flex-col h-full min-h-0 justify-start relative">
                 {/* Sticky Heading */}
                 <h3 
-                  className="shrink-0 font-sans text-body sm:text-h3 font-bold tracking-tight leading-tight select-none pb-3 sticky top-0 z-10 break-words cursor-pointer flex items-start group"
+                  className="shrink-0 font-sans text-body sm:text-h3 font-bold tracking-tight leading-tight select-none pb-3 sticky top-0 z-10 break-words cursor-pointer min-[1440px]:cursor-default flex items-start group"
                   style={{ backgroundColor: isDarkMode ? '#333436' : '#EDEFEF' }}
-                  onClick={() => toggleCol(colIdx)}
+                  onClick={() => !is1440 && toggleCol(colIdx)}
                 >
-                  <span className="font-sans font-bold text-space-sparkle mr-2 text-body sm:text-h3 leading-tight select-none">
+                  <span className="font-sans font-bold text-space-sparkle mr-2 text-body sm:text-h3 leading-tight select-none min-[1440px]:hidden">
                     {openCols[colIdx] ? '—' : '+'}
                   </span>
                   <span className="group-hover:opacity-85 transition-opacity">{col.title}</span>
@@ -380,15 +378,15 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
                 
                 {/* Scrollable, Snapping Paragraphs Container */}
                 <AnimatePresence initial={false}>
-                  {openCols[colIdx] && (
+                  {(is1440 || openCols[colIdx]) && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
+                      initial={is1440 ? false : { height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
+                      exit={is1440 ? undefined : { height: 0, opacity: 0 }}
                       transition={{ duration: 0.25, ease: 'easeInOut' }}
-                      className="flex-1 min-h-0 flex flex-col overflow-hidden"
+                      className="flex-1 min-h-0 flex flex-col overflow-hidden min-[1440px]:!block min-[1440px]:!h-auto min-[1440px]:!opacity-100"
                     >
-                      <div className="flex-1 overflow-y-auto snap-y snap-mandatory no-scrollbar py-2 space-y-4">
+                      <div className="flex-1 min-[1440px]:flex-none overflow-y-auto snap-y snap-mandatory no-scrollbar py-2 space-y-4">
                         {col.paragraphs.map((p, pIdx) => (
                           <div key={pIdx} className="snap-start snap-always py-1 shrink-0">
                             <p className="text-caption font-light opacity-95 leading-relaxed text-justify break-words">
@@ -398,9 +396,9 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
                         ))}
                       </div>
                       
-                      {/* Fixed CTA Link below scrollable area */}
+                      {/* Fixed CTA Link below scrollable area, clings under writeup on 1440px+ */}
                       <div 
-                        className="shrink-0 pt-3 pb-1 mt-auto"
+                        className="shrink-0 pt-3 pb-1 mt-auto min-[1440px]:mt-2 min-[1440px]:pt-1"
                         style={{ backgroundColor: isDarkMode ? '#333436' : '#EDEFEF' }}
                       >
                         <Link
@@ -461,4 +459,3 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
     </div>
   );
 };
-

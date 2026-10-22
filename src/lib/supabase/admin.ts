@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+let cachedAdminClient: SupabaseClient | null = null;
 
 /**
  * Server-only administrative Supabase client utilizing SUPABASE_SERVICE_ROLE_KEY.
@@ -13,7 +15,11 @@ import { createClient } from '@supabase/supabase-js';
  * NOTE: This client must ONLY be used on the server (e.g. Next.js Server Actions,
  * API route handlers, or server components). NEVER expose this to client components.
  */
-export function getAdminClient() {
+export function getAdminClient(): SupabaseClient {
+  if (cachedAdminClient) {
+    return cachedAdminClient;
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -23,10 +29,12 @@ export function getAdminClient() {
     );
   }
 
-  return createClient(supabaseUrl, serviceRoleKey, {
+  cachedAdminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
     },
   });
+
+  return cachedAdminClient;
 }

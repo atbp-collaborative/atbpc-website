@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import { ROUTES } from '@/lib/navigation/routes';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThemeToggle } from '@/components/global/ThemeToggle';
-import { ProtectionToggle } from '@/components/global/ProtectionToggle';
 
 const TAGLINE_PHRASES = [
   { verb: 'designing', noun: 'values', href: ROUTES.designingWithValues },
@@ -23,8 +22,6 @@ const TAGLINE_LOCK_ROUTES: Record<string, number> = {
 interface FooterProps {
   isDarkMode: boolean;
   onToggleTheme?: () => void;
-  isProtectionEnabled?: boolean;
-  onToggleProtection?: () => void;
   onOpenLegal?: () => void;
   onOpenPrivacy?: () => void;
 }
@@ -32,8 +29,6 @@ interface FooterProps {
 export const Footer: React.FC<FooterProps> = ({
   isDarkMode,
   onToggleTheme,
-  isProtectionEnabled = false,
-  onToggleProtection,
   onOpenLegal,
   onOpenPrivacy,
 }) => {
@@ -123,45 +118,45 @@ export const Footer: React.FC<FooterProps> = ({
         <div className="flex items-center justify-center md:justify-end gap-2 sm:gap-2.5 text-micro font-sans tracking-wider opacity-90 whitespace-nowrap">
           <span className="uppercase tracking-widest opacity-70 text-micro">© 2026 ATBP Collaborative</span>
           
-          <div className="hidden md:flex items-center gap-2 sm:gap-2.5">
-            <span className="opacity-40">•</span>
-            <button
-              onClick={onOpenLegal}
-              className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-micro"
-            >
-              Legal
-            </button>
-            <span className="opacity-40">•</span>
-            <button
-              onClick={onOpenPrivacy}
-              className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-micro"
-            >
-              Privacy Policy
-            </button>
+          {/* Legal & Privacy Policy: Retained on larger views (lg and up) */}
+          {(onOpenLegal || onOpenPrivacy) && (
+            <div className="hidden lg:inline-flex items-center gap-2 sm:gap-2.5">
+              {onOpenLegal && (
+                <>
+                  <span className="opacity-40">•</span>
+                  <button
+                    onClick={onOpenLegal}
+                    className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-micro"
+                  >
+                    Legal
+                  </button>
+                </>
+              )}
+              {onOpenPrivacy && (
+                <>
+                  <span className="opacity-40">•</span>
+                  <button
+                    onClick={onOpenPrivacy}
+                    className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-micro"
+                  >
+                    Privacy Policy
+                  </button>
+                </>
+              )}
+            </div>
+          )}
 
-            {onToggleProtection && (
-              <>
-                <span className="opacity-40">•</span>
-                <ProtectionToggle
-                  isProtectionEnabled={isProtectionEnabled}
-                  onToggle={onToggleProtection}
-                  isDarkMode={isDarkMode}
-                  className="p-1"
-                />
-              </>
-            )}
-
-            {onToggleTheme && (
-              <>
-                <span className="opacity-40">•</span>
-                <ThemeToggle
-                  isDarkMode={isDarkMode}
-                  onToggle={onToggleTheme}
-                  className="p-1"
-                />
-              </>
-            )}
-          </div>
+          {/* Theme switcher: Retained on tablet view and larger (md and up) */}
+          {onToggleTheme && (
+            <div className="hidden md:inline-flex items-center gap-2 sm:gap-2.5">
+              <span className="opacity-40">•</span>
+              <ThemeToggle
+                isDarkMode={isDarkMode}
+                onToggle={onToggleTheme}
+                className="p-1"
+              />
+            </div>
+          )}
         </div>
       </div>
     </footer>

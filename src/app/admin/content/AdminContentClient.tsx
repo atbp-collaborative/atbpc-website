@@ -53,6 +53,7 @@ export function AdminContentClient({ initialData }: AdminContentClientProps) {
     saveService,
     saveServiceAccordion,
     deleteServiceAccordion,
+    reorderServiceAccordions,
     // Tab 4
     slides,
     saveSlide,
@@ -149,6 +150,7 @@ export function AdminContentClient({ initialData }: AdminContentClientProps) {
                 onSaveService={saveService}
                 onSaveServiceAccordion={saveServiceAccordion}
                 onDeleteServiceAccordion={isSuperadmin ? deleteServiceAccordion : () => {}}
+                onReorderServiceAccordions={reorderServiceAccordions}
                 cards={cards}
                 onSaveCard={saveCard}
               />

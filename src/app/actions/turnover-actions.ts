@@ -104,8 +104,8 @@ export async function verifyTurnoverCodeAction(providedCode: string): Promise<Tu
       };
     }
 
-    const expectedCode = process.env.ADMIN_TURNOVER_CODE || '12181993';
-    if (!providedCode || providedCode.trim() !== expectedCode.trim()) {
+    const expectedCode = process.env.ADMIN_TURNOVER_CODE;
+    if (!expectedCode || !providedCode || providedCode.trim() !== expectedCode.trim()) {
       return {
         success: false,
         message: 'Invalid turnover code. Please check your turnover credentials.',

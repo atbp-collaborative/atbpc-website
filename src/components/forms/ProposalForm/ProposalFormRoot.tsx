@@ -73,7 +73,7 @@ export const ProposalFormRoot: React.FC = () => {
   const stepsArray = Array.from({ length: totalSteps }, (_, i) => i + 1);
 
   return (
-    <div className="flex flex-col h-full w-full mx-auto pt-0 pb-0">
+    <div className="flex flex-col h-full w-full max-w-7xl mx-auto pt-0 pb-0">
       {/* Progress */}
       <div className="mb-6 flex space-x-2">
         {stepsArray.map(step => (

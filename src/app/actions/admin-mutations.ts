@@ -31,6 +31,7 @@ import {
   normalizeCategoryId,
   normalizeTypologyId,
   normalizeContractTypeId,
+  sortProjectsCanonically,
 } from '@/lib/projects/project-helpers';
 import { getFallbackSitePages } from '@/services/supabase/cms.service';
 import { optimizeImageBuffer } from '@/lib/images/server-image-optimizer';
@@ -82,7 +83,7 @@ export async function fetchAdminProjectsAction(): Promise<Project[]> {
       return [];
     }
 
-    return projects.map(mapProjectRecord);
+    return sortProjectsCanonically(projects.map(mapProjectRecord));
   } catch (err) {
     console.error('[fetchAdminProjectsAction] Exception:', err);
     return [];
@@ -658,6 +659,36 @@ export async function saveProjectAction(project: Project) {
   }
 }
 
+export async function reorderProjectsAction(items: { id: string; sortOrder: number }[]) {
+  try {
+    const supabase = getAdminClient();
+    const updates = items.map((item) =>
+      supabase
+        .from('projects')
+        .update({ sort_order: item.sortOrder, updated_at: new Date().toISOString() })
+        .eq('id', item.id)
+    );
+
+    const results = await Promise.all(updates);
+    const failedResult = results.find((r) => r.error);
+    if (failedResult?.error) {
+      console.error('[reorderProjectsAction] Error:', failedResult.error);
+      return { success: false, error: failedResult.error.message };
+    }
+
+    revalidatePath('/works');
+    revalidatePath('/works/[slug]', 'page');
+    revalidatePath('/admin/projects');
+    revalidatePath('/', 'layout');
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[reorderProjectsAction] Exception:', err);
+    return { success: false, error: err?.message || 'Failed to reorder projects' };
+  }
+}
+
+
 export async function getProjectContributorsAction(projectId: string) {
   try {
     const supabase = getAdminClient();
@@ -1121,7 +1152,7 @@ export async function saveNavigationCardAction(card: NavigationCardItem) {
       .single();
 
     // If column doesn't exist yet in PostgreSQL schema, retry with base payload
-    if (error && error.code === '42703') {
+    if (error && (error.code === '42703' || error.code === 'PGRST204' || error.message?.includes('schema cache') || error.message?.includes('column'))) {
       const retry = await supabase
         .from('navigation_cards')
         .upsert(basePayload)

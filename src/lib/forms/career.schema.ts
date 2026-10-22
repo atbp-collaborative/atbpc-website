@@ -59,7 +59,7 @@ const LEFT_COLUMN_TOP: FieldConfig[] = [
   {
     type: "select",
     name: "structure",
-    label: "Structure",
+    label: "Role",
     badge: "!",
     options: STRUCTURES,
     placeholder: "[ Select Role ]",
@@ -226,7 +226,7 @@ const APPRENTICESHIP_LEFT_COLUMN_TOP: FieldConfig[] = [
   {
     type: "select",
     name: "structure",
-    label: "Structure",
+    label: "Role",
     badge: "!",
     options: APPRENTICESHIP_STRUCTURES,
     placeholder: "[ Select Role ]",
@@ -307,7 +307,7 @@ const STUDIO_REGULARS_LEFT_COLUMN_TOP: FieldConfig[] = [
   {
     type: "select",
     name: "structure",
-    label: "Structure",
+    label: "Role",
     badge: "!",
     options: [],
     placeholder: "[ Select Role ]",
@@ -330,6 +330,7 @@ export const CAREER_FORM_FIELDS: Record<CareerFormType, CareerFormFieldSet> = {
 export const CAREER_FORM_INITIAL_DATA = {
   department: "",
   structure: "",
+  jobDescription: "",
   resumeFile: null as File | null,
   portfolioLink: "",
   coverVideoLink: "",
@@ -396,6 +397,7 @@ export const CAREER_FORM_REQUIRED_FIELDS: (keyof CareerFormData)[] = [
 export const careerSchema = z.object({
   department: z.string().min(1, "Department is required"),
   structure: z.string().min(1, "Structure is required"),
+  jobDescription: z.string().optional(),
   resumeFile: z.any().optional().nullable(),
   portfolioLink: z.string().min(1, "Portfolio Link is required"),
   coverVideoLink: z.string().min(1, "Cover Video Link is required"),
@@ -477,12 +479,18 @@ export const careerSchema = z.object({
 export function getRequiredDocumentFields(structure: string): string[] {
   if (!structure) return [];
   if (
-    structure === "Curriculum-based Internship (CHED Memorandum Order No. 104, Series of 2017)" ||
-    structure === "Vocational Internship (National Certificate Holder)"
+    structure.includes("APP-ALE") ||
+    structure.includes("Diversified Architectural Experience")
+  ) {
+    return ["resumeFile", "clearanceFile", "diplomaFile"];
+  } else if (
+    structure.includes("INT-") ||
+    structure.includes("APP-ENG") ||
+    structure.includes("Curriculum-based Internship") ||
+    structure.includes("Vocational Internship") ||
+    structure.toLowerCase().includes("intern")
   ) {
     return ["resumeFile", "ojtRequirementsFile", "moaFile", "contractFile", "enrolmentFormFile", "schoolIdFile"];
-  } else if (structure === "Diversified Architectural Experience (3,840 logbook hours)") {
-    return ["resumeFile", "clearanceFile", "diplomaFile"];
   } else {
     // Regular
     return ["resumeFile", "validIdFile", "tinIdFile"];
@@ -492,8 +500,20 @@ export function getRequiredDocumentFields(structure: string): string[] {
 export function getDocumentFieldsForStructure(structure: string): { name: string; label: string; required: boolean }[] {
   if (!structure) return [];
   if (
-    structure === "Curriculum-based Internship (CHED Memorandum Order No. 104, Series of 2017)" ||
-    structure === "Vocational Internship (National Certificate Holder)"
+    structure.includes("APP-ALE") ||
+    structure.includes("Diversified Architectural Experience")
+  ) {
+    return [
+      { name: "resumeFile", label: "Resumé", required: true },
+      { name: "clearanceFile", label: "Clearance", required: true },
+      { name: "diplomaFile", label: "Diploma", required: true },
+    ];
+  } else if (
+    structure.includes("INT-") ||
+    structure.includes("APP-ENG") ||
+    structure.includes("Curriculum-based Internship") ||
+    structure.includes("Vocational Internship") ||
+    structure.toLowerCase().includes("intern")
   ) {
     return [
       { name: "resumeFile", label: "Resumé", required: true },
@@ -502,12 +522,6 @@ export function getDocumentFieldsForStructure(structure: string): { name: string
       { name: "contractFile", label: "Contract", required: true },
       { name: "enrolmentFormFile", label: "Enrolment Form", required: true },
       { name: "schoolIdFile", label: "School ID", required: true },
-    ];
-  } else if (structure === "Diversified Architectural Experience (3,840 logbook hours)") {
-    return [
-      { name: "resumeFile", label: "Resumé", required: true },
-      { name: "clearanceFile", label: "Clearance", required: true },
-      { name: "diplomaFile", label: "Diploma", required: true },
     ];
   } else {
     // Regular

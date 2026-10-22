@@ -5,9 +5,10 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Project, ProjectCategoryItem, ProjectTypologyItem, ContractTypeItem, ProjectContributor, ProjectRole } from '@/types';
 import { getProjects as getProjectsFromDataService } from '@/services/dummy-data.service';
+import { normalizeCategoryId, normalizeTypologyId, sortProjectsCanonically } from '@/lib/projects/project-helpers';
 import {
   getProjects as getProjectsStorage,
   getProjectCategories,
@@ -16,6 +17,7 @@ import {
   getTeamMembersForProject,
   ProjectTeamMemberEntry,
   INITIAL_PROJECT_ROLES_DATA,
+  reorderProjects as reorderProjectsStorage,
 } from '@/services/mock/adminMockStorage';
 import { getProjectRolesFromSupabase } from '@/services/supabase/project-roles.service';
 import {
@@ -23,6 +25,7 @@ import {
   deleteProjectAction,
   toggleProjectDraftAction,
   fetchAdminProjectsAction,
+  reorderProjectsAction,
 } from '@/app/actions/admin-mutations';
 import { toast } from 'sonner';
 
@@ -39,6 +42,12 @@ export function useAdminProjects(initialProjects?: Project[], initialRoles?: Pro
   const [typologyFilter, setTypologyFilter] = useState<string>('all');
   const [projectRoles, setProjectRoles] = useState<ProjectRole[]>(initialRoles || INITIAL_PROJECT_ROLES_DATA);
   const [isLoading, setIsLoading] = useState(!initialProjects || initialProjects.length === 0);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const initialOrderRef = useRef<string[]>(
+    initialProjects && initialProjects.length > 0
+      ? sortProjectsCanonically(initialProjects).map((p) => p.id)
+      : []
+  );
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -215,6 +224,102 @@ export function useAdminProjects(initialProjects?: Project[], initialRoles?: Pro
     []
   );
 
+
+  const isOrderDirty = useMemo(() => {
+    if (!initialOrderRef.current || initialOrderRef.current.length === 0) return false;
+    if (projects.length !== initialOrderRef.current.length) return false;
+    return projects.some((p, idx) => p.id !== initialOrderRef.current[idx]);
+  }, [projects]);
+
+  const moveProject = useCallback(
+    (id: string, direction: 'up' | 'down') => {
+      const currentIndex = filteredProjects.findIndex((p) => p.id === id);
+      if (currentIndex === -1) return;
+
+      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      if (targetIndex < 0 || targetIndex >= filteredProjects.length) return;
+
+      const currentProject = filteredProjects[currentIndex];
+      const targetProject = filteredProjects[targetIndex];
+
+      const curCat = normalizeCategoryId(currentProject.mainCategory || currentProject.categoryId || currentProject.category);
+      const tarCat = normalizeCategoryId(targetProject.mainCategory || targetProject.categoryId || targetProject.category);
+      const curTyp = normalizeTypologyId(currentProject.typologyId || currentProject.subcategory || currentProject.category);
+      const tarTyp = normalizeTypologyId(targetProject.typologyId || targetProject.subcategory || targetProject.category);
+
+      // Category and Typology orders are strictly fixed: swap only within the same typology
+      if (curCat !== tarCat || curTyp !== tarTyp) {
+        return;
+      }
+
+      const reorderedFiltered = [...filteredProjects];
+      reorderedFiltered[currentIndex] = targetProject;
+      reorderedFiltered[targetIndex] = currentProject;
+
+      // Assign sequential sortOrder to the items in this typology
+      const typologyProjects = reorderedFiltered.filter((p) => {
+        const pCat = normalizeCategoryId(p.mainCategory || p.categoryId || p.category);
+        const pTyp = normalizeTypologyId(p.typologyId || p.subcategory || p.category);
+        return pCat === curCat && pTyp === curTyp;
+      });
+
+      const orderMap = new Map<string, number>();
+      typologyProjects.forEach((p, idx) => {
+        orderMap.set(p.id, (idx + 1) * 10);
+      });
+
+      setProjects((prev) => {
+        const updated = prev.map((p) => {
+          const newOrder = orderMap.get(p.id);
+          return newOrder !== undefined ? { ...p, sortOrder: newOrder } : p;
+        });
+        return sortProjectsCanonically(updated);
+      });
+    },
+    [filteredProjects]
+  );
+
+  const saveOrder = useCallback(async () => {
+    setIsSavingOrder(true);
+    try {
+      const sorted = sortProjectsCanonically([...projects]);
+      const payload = sorted.map((p, idx) => ({
+        id: p.id,
+        sortOrder: (idx + 1) * 10,
+      }));
+      const res = await reorderProjectsAction(payload);
+      if (!res.success) {
+        reorderProjectsStorage(payload);
+      }
+      initialOrderRef.current = sorted.map((p) => p.id);
+      setProjects(sorted.map((p, idx) => ({ ...p, sortOrder: (idx + 1) * 10 })));
+      toast.success('Project order saved successfully');
+    } catch (err: any) {
+      console.error('Failed to save project order:', err);
+      toast.error('Failed to save project order');
+    } finally {
+      setIsSavingOrder(false);
+    }
+  }, [projects]);
+
+  const resetOrder = useCallback(() => {
+    if (!initialOrderRef.current || initialOrderRef.current.length === 0) return;
+    const initialMap = new Map<string, number>(
+      initialOrderRef.current.map((id: string, idx: number) => [id, (idx + 1) * 10])
+    );
+    setProjects((prev) => {
+      const restored = [...prev].map((p) => {
+        const restoredOrder = initialMap.get(p.id);
+        return {
+          ...p,
+          sortOrder: restoredOrder ?? p.sortOrder,
+        };
+      });
+      return sortProjectsCanonically(restored);
+    });
+    toast.info('Project order reset');
+  }, []);
+
   const disassociateMember = useCallback((memberId: string, projectId: string) => {
     setProjects((prev) =>
       prev.map((p) => {
@@ -254,5 +359,10 @@ export function useAdminProjects(initialProjects?: Project[], initialRoles?: Pro
     getTeamForProject,
     associateMember,
     disassociateMember,
+    moveProject,
+    isOrderDirty,
+    isSavingOrder,
+    saveOrder,
+    resetOrder,
   };
 }

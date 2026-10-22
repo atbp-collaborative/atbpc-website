@@ -1,6 +1,11 @@
 import { supabasePublic } from '@/lib/supabase/public';
 import { Project } from '@/types';
-import { isUuid, generateProjectSlug, getTypologyName } from '@/lib/projects/project-helpers';
+import {
+  isUuid,
+  generateProjectSlug,
+  getTypologyName,
+  sortProjectsCanonically,
+} from '@/lib/projects/project-helpers';
 
 /**
  * Transforms a raw Supabase project row into a strongly typed Project entity.
@@ -61,6 +66,7 @@ export function mapProjectRecord(p: any): Project {
       materials: p.materials || ['Concrete', 'Wood', 'Steel', 'Glass'],
     },
     contributors,
+    sortOrder: p.sort_order ?? 0,
   };
 }
 
@@ -98,7 +104,7 @@ export async function getProjectsFromSupabase(includeDrafts: boolean = false): P
     throw error || new Error('No projects found');
   }
 
-  return projects.map(mapProjectRecord);
+  return sortProjectsCanonically(projects.map(mapProjectRecord));
 }
 
 export async function getProjectByIdFromSupabase(identifier: string): Promise<Project | null> {

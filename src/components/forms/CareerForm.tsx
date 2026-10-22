@@ -17,6 +17,12 @@ import { MultiEntryButton } from '@/components/primitives/buttons/MultiEntryButt
 import { EmergencyContactModal } from '@/components/modals/EmergencyContactModal';
 import { DocumentsModal } from '@/components/modals/DocumentsModal';
 import { FacultyContactModal } from '@/components/modals/FacultyContactModal';
+import { Role, RoleTrack } from '@/types';
+import {
+  getPublicRolesFromSupabase,
+  DEPARTMENT_FRONTEND_LABELS,
+  DEPARTMENT_KEYS,
+} from '@/services/supabase/roles.service';
 
 export interface CareerFormProps {
   initialStructure?: string;
@@ -62,51 +68,81 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
   const [showFacultyContactModal, setShowFacultyContactModal] = useState(false);
   const isHeightConstrained = useFormViewport(680);
 
+  // Studio roles fetched from Supabase (with instant memory cache)
+  const [roles, setRoles] = useState<Role[]>([]);
+
+  React.useEffect(() => {
+    let mounted = true;
+    getPublicRolesFromSupabase()
+      .then((data) => {
+        if (mounted && data) {
+          setRoles(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to load public roles from Supabase:', err);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Department options sourced from Supabase categories with frontend-only display formatting
+  const departmentOptions = React.useMemo(() => {
+    const presentCategories = new Set(roles.map((r) => r.category));
+    const activeCategories = DEPARTMENT_KEYS.filter(
+      (cat) => presentCategories.size === 0 || presentCategories.has(cat)
+    );
+    return activeCategories.map((cat) => ({
+      value: cat,
+      label: DEPARTMENT_FRONTEND_LABELS[cat] || cat,
+    }));
+  }, [roles]);
+
   const leftColumnTop = React.useMemo(() => {
     return fields.leftColumnTop.map((field) => {
+      if (field.name === 'department' && field.type === 'select') {
+        return {
+          ...field,
+          options: departmentOptions,
+          placeholder: '[ Select Department ]',
+        };
+      }
+
       if (field.name === 'structure' && field.type === 'select') {
         const dept = formData.department;
-        let options = field.options;
-        
-        if (formType === 'studioRegulars') {
-          if (dept === "Admin Team (Finance, Marketing, Coordination)") {
-            options = [
-              "[HROA-02: Administrative Assistant]",
-              "[HROA-03: Administrative Officer]",
-              "[HROA-04: Associate Administrator]"
-            ];
-          } else if (dept === "Production Team (Design & Technical)") {
-            options = [
-              "[HRDT-03: Junior Architect]",
-              "[HRDT-05: Junior Designer]",
-              "[HRDT-06: Junior Engineer]",
-              "[HRDT-07: Senior Architect]",
-              "[HRDT-08: Senior Designer]",
-              "[HRDT-09: Senior Engineer]",
-              "[HRDT-10: Project Manager]"
-            ];
-          } else if (dept === "Construction Team (Supervision, Manpower)") {
-            options = [
-              "[HRGM-01: Helper]",
-              "[HRGM-02: General Specialist]",
-              "[HRGM-03: Skilled Specialist]",
-              "[HRGM-04: Skilled Operator]",
-              "[HRGM-05: Site Foreman]",
-              "[HRGM-06: Construction Manager]"
-            ];
-          }
-        }
+        const targetTrack: RoleTrack =
+          formType === 'apprenticeship' ? 'internship' : 'professionals';
+
+        // Filter roles from Supabase based on:
+        // 1. Department (category)
+        // 2. Career Track (internship for apprenticeship-programs, professionals for regular-programs)
+        const filteredRoles = roles.filter((r) => {
+          const matchCategory =
+            r.category === dept ||
+            dept.toLowerCase().startsWith(r.category.slice(0, 4));
+          const matchTrack =
+            r.track === targetTrack ||
+            (targetTrack === 'internship' && r.trackId !== 'PROF');
+          return matchCategory && matchTrack;
+        });
+
+        const options = filteredRoles.map((r) => ({
+          value: r.code ? `[${r.code}: ${r.title}]` : r.title,
+          label: r.code ? `[${r.code}: ${r.title}]` : r.title,
+        }));
 
         return {
           ...field,
+          label: 'Role',
           options,
-          placeholder: dept ? (formType === 'studioRegulars' ? "[ Select Role ]" : field.placeholder) : "Please select a department first",
+          placeholder: dept ? '[ Select Role ]' : 'Please select a department first',
           disabled: !dept,
         };
       }
       return field;
     });
-  }, [fields.leftColumnTop, formType, formData.department]);
+  }, [fields.leftColumnTop, formType, formData.department, departmentOptions, roles]);
 
   const handleSaveEmergencyContact = (
     name: string,
@@ -134,11 +170,11 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
   const handleChange = (name: string, value: any) => {
     setFormData((prev) => {
       const nextData = { ...prev, [name]: value };
-      if (formType === 'studioRegulars' && name === 'department') {
+
+      if (name === 'department') {
         nextData.structure = '';
-      }
-      if (name === 'structure') {
-        // Clear all document file fields when structure changes
+        nextData.jobDescription = '';
+        // Clear all document file fields when department changes
         nextData.resumeFile = null;
         nextData.ojtRequirementsFile = null;
         nextData.moaFile = null;
@@ -151,6 +187,34 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
         nextData.validIdFile = null;
         nextData.tinIdFile = null;
       }
+
+      if (name === 'structure') {
+        // Clear all document file fields when role changes
+        nextData.resumeFile = null;
+        nextData.ojtRequirementsFile = null;
+        nextData.moaFile = null;
+        nextData.contractFile = null;
+        nextData.enrolmentFormFile = null;
+        nextData.schoolIdFile = null;
+        nextData.clearanceFile = null;
+        nextData.diplomaFile = null;
+        nextData.prcIdFile = null;
+        nextData.validIdFile = null;
+        nextData.tinIdFile = null;
+
+        // Auto-populate jobDescription from Supabase role description
+        const matchedRole = roles.find(
+          (r) =>
+            `[${r.code}: ${r.title}]` === value ||
+            r.title === value ||
+            r.id === value
+        );
+        if (matchedRole?.description) {
+          nextData.jobDescription = matchedRole.description;
+        } else if (STRUCTURE_DESCRIPTIONS[value]) {
+          nextData.jobDescription = STRUCTURE_DESCRIPTIONS[value];
+        }
+      }
       return nextData;
     });
   };
@@ -158,33 +222,9 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
   const isDocumentsComplete = () => {
     const structure = formData.structure;
     if (!structure) return false;
-    
-    if (
-      structure === "Curriculum-based Internship (CHED Memorandum Order No. 104, Series of 2017)" ||
-      structure === "Vocational Internship (National Certificate Holder)"
-    ) {
-      return Boolean(
-        formData.resumeFile &&
-        formData.ojtRequirementsFile &&
-        formData.moaFile &&
-        formData.contractFile &&
-        formData.enrolmentFormFile &&
-        formData.schoolIdFile
-      );
-    } else if (structure === "Diversified Architectural Experience (3,840 logbook hours)") {
-      return Boolean(
-        formData.resumeFile &&
-        formData.clearanceFile &&
-        formData.diplomaFile
-      );
-    } else {
-      // Regular
-      return Boolean(
-        formData.resumeFile &&
-        formData.validIdFile &&
-        formData.tinIdFile
-      );
-    }
+    const requiredList = getRequiredDocumentFields(structure);
+    if (requiredList.length === 0) return false;
+    return requiredList.every((fieldName) => Boolean((formData as any)[fieldName]));
   };
 
   const isFormValid =
@@ -240,7 +280,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
 
   return (
     <div
-      className="w-full flex-1 min-h-0 max-h-[calc(100vh-80px)] mx-auto overflow-hidden flex flex-col py-3 select-none"
+      className="w-full max-w-7xl flex-1 min-h-0 max-h-[calc(100vh-80px)] mx-auto overflow-hidden flex flex-col py-3 select-none"
     >
       {/* Title Header */}
       <div className="mb-3 lg:mb-2 shrink-0 flex flex-col md:flex-row md:justify-between md:items-start gap-4 px-4 sm:px-8">
@@ -291,7 +331,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
               />
 
               {/* Bottom Row: Resume (replaced by Documents), Portfolio, Cover Video */}
-              <div className={`grid grid-cols-1 ${formData.structure === "Curriculum-based Internship (CHED Memorandum Order No. 104, Series of 2017)" ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3 pt-1`}>
+              <div className={`grid grid-cols-1 ${formData.structure.includes('INT-CHED') || formData.structure.includes('Curriculum-based') ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3 pt-1`}>
                 {fields.uploadRow.map((field) => {
                   if (field.name === 'resumeFile') {
                     const requiredList = getRequiredDocumentFields(formData.structure);
@@ -307,7 +347,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
                       });
                     }
 
-                    const isCurriculumBased = formData.structure === "Curriculum-based Internship (CHED Memorandum Order No. 104, Series of 2017)";
+                    const isCurriculumBased = formData.structure.includes('INT-CHED') || formData.structure.includes('Curriculum-based');
                     const facultyFilled =
                       formData.facultyContacts.dean.name &&
                       formData.facultyContacts.chairperson.name &&

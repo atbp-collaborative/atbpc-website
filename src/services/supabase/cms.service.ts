@@ -281,7 +281,7 @@ export async function getNavigationCards(
       return getFallbackNavigationCards(hubId);
     }
 
-    return data.map((row: any): NavigationCardItem => ({
+    const mapped: NavigationCardItem[] = data.map((row: any): NavigationCardItem => ({
       id: row.id,
       hubId: row.hub_id,
       cardKey: row.card_key,
@@ -292,10 +292,24 @@ export async function getNavigationCards(
       footerText: row.footer_text || undefined,
       tags: row.tags || [],
       imageUrl: row.image_url,
-      targetHref: row.target_href,
+      targetHref:
+        row.target_href === '/contact/case-study-house/request-for-proposal'
+          ? '/contact/case-study-house/request-a-proposal'
+          : row.target_href === '/contact/contact-info'
+          ? '/contact/case-study-house/contact-info'
+          : row.target_href,
       sortOrder: row.sort_order,
       isDraft: row.is_draft,
     }));
+
+    if (!hubId) {
+      const hasContactCards = mapped.some((c) => c.hubId.toLowerCase() === 'contact');
+      if (!hasContactCards) {
+        mapped.push(...getFallbackNavigationCards('contact'));
+      }
+    }
+
+    return mapped;
   } catch (err) {
     console.warn('Falling back to local navigation cards:', err);
     return getFallbackNavigationCards(hubId);

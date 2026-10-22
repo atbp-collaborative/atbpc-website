@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { AdminUiPreferences, DisplayMode } from '@/types';
 import { updateAdminUiPreferencesAction } from '@/app/actions/admin-mutations';
 
@@ -49,16 +49,7 @@ export const AdminUiSettingsProvider: React.FC<{
     return DEFAULT_PREFERENCES;
   });
 
-  // Sync to localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
-      } catch (err) {
-        console.warn('Failed to save admin preferences to localStorage:', err);
-      }
-    }
-  }, [preferences]);
+  const isInitialMount = useRef(true);
 
   // Persist to server in background if user is authenticated
   const syncToServer = useCallback(async (updated: AdminUiPreferences) => {
@@ -69,6 +60,24 @@ export const AdminUiSettingsProvider: React.FC<{
     }
   }, []);
 
+  // Sync to localStorage and persist to server safely in a passive effect (prevents setState in render)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+      } catch (err) {
+        console.warn('Failed to save admin preferences to localStorage:', err);
+      }
+    }
+
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    syncToServer(preferences);
+  }, [preferences, syncToServer]);
+
   const getDisplayMode = useCallback(
     (page: 'projects' | 'people'): DisplayMode => {
       return preferences.views?.[page] || (page === 'projects' ? 'grid' : 'list');
@@ -78,19 +87,15 @@ export const AdminUiSettingsProvider: React.FC<{
 
   const setDisplayMode = useCallback(
     (page: 'projects' | 'people', mode: DisplayMode) => {
-      setPreferences((prev) => {
-        const updated: AdminUiPreferences = {
-          ...prev,
-          views: {
-            ...prev.views,
-            [page]: mode,
-          },
-        };
-        syncToServer(updated);
-        return updated;
-      });
+      setPreferences((prev) => ({
+        ...prev,
+        views: {
+          ...prev.views,
+          [page]: mode,
+        },
+      }));
     },
-    [syncToServer]
+    []
   );
 
   const getActiveTab = useCallback(
@@ -102,19 +107,15 @@ export const AdminUiSettingsProvider: React.FC<{
 
   const setActiveTab = useCallback(
     (page: 'roles' | 'content', tab: string) => {
-      setPreferences((prev) => {
-        const updated: AdminUiPreferences = {
-          ...prev,
-          views: {
-            ...prev.views,
-            [page]: tab,
-          },
-        };
-        syncToServer(updated);
-        return updated;
-      });
+      setPreferences((prev) => ({
+        ...prev,
+        views: {
+          ...prev.views,
+          [page]: tab,
+        },
+      }));
     },
-    [syncToServer]
+    []
   );
 
   return (

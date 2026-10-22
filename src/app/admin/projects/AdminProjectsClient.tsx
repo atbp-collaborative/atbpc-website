@@ -14,6 +14,8 @@ import {
   Edit2,
   Trash2,
   ArrowLeft,
+  ArrowUp,
+  ArrowDown,
   Save,
   Building,
   Calendar,
@@ -100,6 +102,46 @@ const PROJECT_STATUSES: ('completed' | 'ongoing' | 'schematics')[] = [
 
 const PROJECT_FILTER_CATEGORIES = ['all', 'Shelter', 'Livelihood', 'Community'] as const;
 
+interface ProjectReorderButtonsProps {
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+}
+
+function ProjectReorderButtons({
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
+}: ProjectReorderButtonsProps) {
+  return (
+    <div className="flex flex-col items-center justify-center border border-black/15 dark:border-white/15 rounded-md overflow-hidden bg-black/5 dark:bg-white/5 shadow-xs shrink-0">
+      <button
+        type="button"
+        onClick={onMoveUp}
+        disabled={!canMoveUp}
+        className="w-6 h-3.5 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center justify-center cursor-pointer"
+        title={!canMoveUp ? 'Top position in typology' : 'Move project earlier'}
+        aria-label="Move project earlier"
+      >
+        <ArrowUp size={11} />
+      </button>
+      <div className="w-full h-[1px] bg-black/15 dark:bg-white/15" />
+      <button
+        type="button"
+        onClick={onMoveDown}
+        disabled={!canMoveDown}
+        className="w-6 h-3.5 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center justify-center cursor-pointer"
+        title={!canMoveDown ? 'Bottom position in typology' : 'Move project later'}
+        aria-label="Move project later"
+      >
+        <ArrowDown size={11} />
+      </button>
+    </div>
+  );
+}
+
 interface AdminProjectsClientProps {
   initialProjects?: Project[];
   initialRoles?: any[];
@@ -140,6 +182,11 @@ export function AdminProjectsClient({
     getTeamForProject,
     associateMember,
     disassociateMember,
+    moveProject,
+    isOrderDirty,
+    isSavingOrder,
+    saveOrder,
+    resetOrder,
   } = useAdminProjects(initialProjects, initialRoles);
 
   const availableTypologies =
@@ -148,6 +195,20 @@ export function AdminProjectsClient({
       : ALL_TYPOLOGIES;
 
   const { members: allMembers } = useAdminPeople();
+  const isReorderActive = categoryFilter !== 'all' && typologyFilter !== 'all';
+
+
+  // Warn before unload if order changes are unsaved
+  React.useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isOrderDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isOrderDirty]);
 
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [formData, setFormData] = useState<Project>(EMPTY_PROJECT);
@@ -925,11 +986,34 @@ export function AdminProjectsClient({
         title="manage projects"
         breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Projects' }]}
         actions={
-          isEditor ? undefined : (
-            <Button type="filled" onClick={startCreate} className="!py-2 !px-4 text-mini font-semibold">
-            <Plus size={14} className="mr-1 inline" /> Add Project
-          </Button>
-          )
+          <div className="flex items-center gap-2.5">
+            {isOrderDirty && (
+              <>
+                <Button
+                  type="ghost"
+                  onClick={resetOrder}
+                  disabled={isSavingOrder}
+                  className="!py-2 !px-3 text-mini font-semibold border border-black/15 dark:border-white/15"
+                >
+                  <RotateCcw size={13} className="mr-1 inline" /> Reset
+                </Button>
+                <Button
+                  type="filled"
+                  onClick={saveOrder}
+                  disabled={isSavingOrder}
+                  className="!py-2 !px-4 text-mini font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                >
+                  <Save size={14} className={`mr-1.5 inline ${isSavingOrder ? 'animate-spin' : ''}`} />
+                  {isSavingOrder ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </>
+            )}
+            {!isEditor && (
+              <Button type="filled" onClick={startCreate} className="!py-2 !px-4 text-mini font-semibold">
+                <Plus size={14} className="mr-1 inline" /> Add Project
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -1097,70 +1181,86 @@ export function AdminProjectsClient({
               }`}
             >
               <div className="divide-y divide-black/5 dark:divide-white/5">
-                {filteredProjects.map((project) => (
-                  <div
-                    key={project.id}
-                    className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
-                      isDarkMode ? 'hover:bg-white/5' : 'hover:bg-black/2'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4 min-w-0 flex-1">
-                      <div className="w-16 h-12 rounded-lg bg-black/10 overflow-hidden relative shrink-0">
-                        {project.images && project.images[0] ? (
-                          <Image
-                            src={project.images[0]}
-                            alt={project.title}
-                            fill
-                            className="object-cover"
-                            sizes="64px"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center opacity-30">
-                            <Building size={18} />
-                          </div>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-caption font-semibold truncate hover:text-space-sparkle transition-colors">
-                            {project.title}
-                          </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 opacity-60">
-                            {project.projectCode || 'P-00'}
-                          </span>
+                {filteredProjects.map((project, index) => {
+                  const canMoveUp = isReorderActive && index > 0;
+                  const canMoveDown = isReorderActive && index < filteredProjects.length - 1;
+
+                  return (
+                    <div
+                      key={project.id}
+                      className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
+                        isDarkMode ? 'hover:bg-white/5' : 'hover:bg-black/2'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4 min-w-0 flex-1">
+                        <div className="w-16 h-12 rounded-lg bg-black/10 overflow-hidden relative shrink-0">
+                          {project.images && project.images[0] ? (
+                            <Image
+                              src={project.images[0]}
+                              alt={project.title}
+                              fill
+                              className="object-cover"
+                              sizes="64px"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center opacity-30">
+                              <Building size={18} />
+                            </div>
+                          )}
                         </div>
-                        <p className="text-micro opacity-60 truncate">
-                          {project.category} • {project.typologyId || 'Architecture'} • {project.location || 'Philippines'} ({project.year || '2026'})
-                        </p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-caption font-semibold truncate hover:text-space-sparkle transition-colors">
+                              {project.title}
+                            </span>
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 opacity-60">
+                              {project.projectCode || 'P-00'}
+                            </span>
+                          </div>
+                          <p className="text-micro opacity-60 truncate">
+                            {project.category} • {project.typologyId || 'Architecture'} • {project.location || 'Philippines'} ({project.year || '2026'})
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                        {isReorderActive && (
+                          <ProjectReorderButtons
+                            onMoveUp={() => moveProject(project.id, 'up')}
+                            onMoveDown={() => moveProject(project.id, 'down')}
+                            canMoveUp={canMoveUp}
+                            canMoveDown={canMoveDown}
+                          />
+                        )}
+
+                        <span
+                          className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-full font-semibold border ${
+                            project.isDraft
+                              ? 'bg-amber-500/15 text-amber-500 border-amber-500/30'
+                              : 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
+                          }`}
+                        >
+                          {project.isDraft ? 'Draft' : 'Published'}
+                        </span>
+
+                        <Button
+                          type="ghost"
+                          onClick={() => startEdit(project)}
+                          className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle cursor-pointer"
+                        >
+                          <Edit2 size={13} className="mr-1 inline" /> Edit
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
-                      <span
-                        className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-full font-semibold border ${
-                          project.isDraft
-                            ? 'bg-amber-500/15 text-amber-500 border-amber-500/30'
-                            : 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
-                        }`}
-                      >
-                        {project.isDraft ? 'Draft' : 'Published'}
-                      </span>
-
-                      <Button
-                        type="ghost"
-                        onClick={() => startEdit(project)}
-                        className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10 hover:border-space-sparkle cursor-pointer"
-                      >
-                        <Edit2 size={13} className="mr-1 inline" /> Edit
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredProjects.map((project) => {
+            {filteredProjects.map((project, index) => {
+              const canMoveUp = isReorderActive && index > 0;
+              const canMoveDown = isReorderActive && index < filteredProjects.length - 1;
               const team = getTeamForProject(project.id);
               return (
                 <div
@@ -1236,17 +1336,28 @@ export function AdminProjectsClient({
                     </div>
                   </div>
 
-                  {/* Actions Row (pt-[4px] creates 4px space between border-t and edit button) */}
-                  <div className="p-4 pt-[4px] flex items-center justify-between gap-2 border-t border-black/5 dark:border-white/5 mt-2">
-                    <span
-                      className={`px-2 py-0.5 rounded text-micro font-mono uppercase tracking-wider font-semibold ${
-                        project.isDraft
-                          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                          : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                      }`}
-                    >
-                      {project.isDraft ? 'Draft' : 'Published'}
-                    </span>
+                  {/* Actions Row */}
+                  <div className="px-4 py-3 flex items-center justify-between gap-2 border-t border-black/5 dark:border-white/5 mt-auto">
+                    <div className="flex items-center gap-2">
+                      {isReorderActive && (
+                        <ProjectReorderButtons
+                          onMoveUp={() => moveProject(project.id, 'up')}
+                          onMoveDown={() => moveProject(project.id, 'down')}
+                          canMoveUp={canMoveUp}
+                          canMoveDown={canMoveDown}
+                        />
+                      )}
+
+                      <span
+                        className={`px-2 py-0.5 rounded text-micro font-mono uppercase tracking-wider font-semibold ${
+                          project.isDraft
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                            : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                        }`}
+                      >
+                        {project.isDraft ? 'Draft' : 'Published'}
+                      </span>
+                    </div>
 
                     <Button
                       type="ghost"

@@ -375,6 +375,28 @@ export function useAdminCms(initialData?: AdminCmsInitialData) {
     }
   }, []);
 
+  const handleReorderServiceAccordions = useCallback(async (items: ServiceAccordionItem[]) => {
+    try {
+      const savedItems = await Promise.all(items.map((item) => saveAdminServiceAccordion(item)));
+      setServices((prev) =>
+        prev.map((s) => {
+          if (items.length > 0 && s.id === items[0].serviceId) {
+            return {
+              ...s,
+              accordions: [...savedItems].sort((a, b) => a.sortOrder - b.sortOrder),
+            };
+          }
+          return s;
+        })
+      );
+      toast.success('Accordion order saved successfully.');
+    } catch (err: any) {
+      console.error('Failed to reorder service accordions:', err);
+      toast.error(err?.message || 'Failed to save accordion order.');
+      throw err;
+    }
+  }, []);
+
   // Home Slide mutations
   const handleSaveSlide = useCallback(async (slide: HomeSlideItem) => {
     const saved = await saveAdminHomeSlide(slide);
@@ -445,6 +467,7 @@ export function useAdminCms(initialData?: AdminCmsInitialData) {
     saveService: handleSaveService,
     saveServiceAccordion: handleSaveServiceAccordion,
     deleteServiceAccordion: handleDeleteServiceAccordion,
+    reorderServiceAccordions: handleReorderServiceAccordions,
     // Tab 4
     slides,
     slogans,

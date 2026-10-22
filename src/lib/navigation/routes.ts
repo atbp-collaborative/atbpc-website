@@ -28,6 +28,8 @@ export const ROUTES = {
   designingWithValues: '/studio/our-process/designing-with-values',
   managingWithIntegrity: '/studio/our-process/managing-with-integrity',
   buildingWithCulture: '/studio/our-process/building-with-culture',
+  launchingSoon: '/launching-soon',
+  underMaintenance: '/under-maintenance',
 } as const;
 
 export function projectRoute(slug: string): string {
@@ -41,4 +43,3 @@ export function memberRoute(slug: string): string {
 export function memberCategoryRoute(category: MemberCategory): string {
   return `${ROUTES.ourPeople}/category/${category}`;
 }
-

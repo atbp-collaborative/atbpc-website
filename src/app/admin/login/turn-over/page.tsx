@@ -226,13 +226,13 @@ export default function TurnoverCeremonyPage() {
           <AtbpLogo isDarkMode={isDarkMode} className="h-8 w-auto mx-auto mb-2" />
 
           <h2 className="text-h2 font-major font-bold tracking-tight lowercase">
-            {step === 'code' && 'website turn-over ceremony'}
+            {step === 'code' && 'superadmin turn-over'}
             {step === 'nomination' && 'superadmin enrollment'}
             {step === 'verification_pending' && 'verify your email'}
           </h2>
 
           <p className="text-caption font-light opacity-75">
-            {step === 'code' && 'The website is waiting for your arrival, Architect!'}
+            {step === 'code' && 'Enter Turnover Code below'}
             {step === 'nomination' &&
               'Nominate your primary email and password. Your account will automatically receive highest-tier Superadmin authority.'}
             {step === 'verification_pending' &&
@@ -404,7 +404,7 @@ export default function TurnoverCeremonyPage() {
       </div>
 
       <p className="text-center text-micro opacity-40 mt-4 font-mono">
-        ATBP Collaborative • Architecture &amp; Construction Governance
+        ATBP Collaborative
       </p>
     </div>
   );
