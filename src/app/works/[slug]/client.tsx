@@ -13,6 +13,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { ROUTES, projectRoute, memberRoute } from '@/lib/navigation/routes';
 import { WORKS_CATEGORIES } from '@/lib/dummy-data/works/works';
 import { filterCategories, categoryNavItems, getFilterIcon } from '@/components/primitives/ProjectTypologiesIcons';
+import { sortProjectsCanonically } from '@/lib/projects/project-helpers';
 import { useCarouselScroll } from '@/hooks/useCarouselScroll';
 
 import { Button } from '@/components/primitives/buttons/Button';
@@ -678,13 +679,16 @@ export default function WorksSlugClient({
     }
   };
 
-  const filteredProjects = projectFilter === 'All'
-    ? projects
-    : projects.filter(p =>
-        p.category === projectFilter ||
-        p.mainCategory === projectFilter ||
-        p.subcategory === projectFilter
-      );
+  const filteredProjects = useMemo(() => {
+    const list = projectFilter === 'All'
+      ? projects
+      : projects.filter(p =>
+          p.category === projectFilter ||
+          p.mainCategory === projectFilter ||
+          p.subcategory === projectFilter
+        );
+    return sortProjectsCanonically(list);
+  }, [projects, projectFilter]);
 
   const { carouselRef, canScrollPrev, canScrollNext, dragHandlers, handleScroll } = useCarouselScroll<HTMLDivElement>({
     resetKey: projectFilter,

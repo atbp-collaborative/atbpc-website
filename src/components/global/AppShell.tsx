@@ -42,7 +42,7 @@ function AppShellInner({
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
-  // Sync content protection from cookie
+  // Sync content protection from cookie (configured only via Super Admin panel)
   useEffect(() => {
     if (typeof document !== 'undefined') {
       const match = document.cookie.match(/site_content_protection=(true|false)/);
@@ -110,8 +110,6 @@ function AppShellInner({
           isMobileMenuOpen={isMobileMenuOpen} 
           setIsMobileMenuOpen={setIsMobileMenuOpen}
           sitePages={sitePages}
-          isProtectionEnabled={isProtectionEnabled}
-          onToggleProtection={() => setIsProtectionEnabled((prev) => !prev)}
           onOpenLegal={() => setIsLegalModalOpen(true)}
           onOpenPrivacy={() => setIsPrivacyModalOpen(true)}
         />
@@ -123,8 +121,6 @@ function AppShellInner({
         <Footer
           isDarkMode={isDarkMode}
           onToggleTheme={toggleTheme}
-          isProtectionEnabled={isProtectionEnabled}
-          onToggleProtection={() => setIsProtectionEnabled((prev) => !prev)}
           onOpenLegal={() => setIsLegalModalOpen(true)}
           onOpenPrivacy={() => setIsPrivacyModalOpen(true)}
         />

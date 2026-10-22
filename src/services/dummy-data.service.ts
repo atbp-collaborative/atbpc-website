@@ -18,6 +18,7 @@ import {
   getHomepageSlogans,
 } from './supabase/cms.service';
 import { fetchAdminSitePagesAction } from '@/app/actions/admin-mutations';
+import { sortProjectsCanonically } from '@/lib/projects/project-helpers';
 import {
   SitePage,
   NavigationCardItem,
@@ -215,12 +216,12 @@ export async function getProjects(includeDrafts: boolean = false): Promise<Proje
   if (shouldQuerySupabase()) {
     try {
       const projects = await getProjectsFromSupabase(includeDrafts);
-      if (projects && projects.length > 0) return projects;
+      if (projects && projects.length > 0) return sortProjectsCanonically(projects);
     } catch (err) {
       console.warn('[DataService] Supabase getProjects failed, falling back to mock data:', err);
     }
   }
-  return PROJECTS_DATA;
+  return sortProjectsCanonically(PROJECTS_DATA);
 }
 
 export async function getProjectById(id: string): Promise<Project | undefined> {

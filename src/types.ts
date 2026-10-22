@@ -52,6 +52,7 @@ export interface Project {
     materials?: string[];
   };
   contributors?: ProjectContributor[];
+  sortOrder?: number;
 }
 
 

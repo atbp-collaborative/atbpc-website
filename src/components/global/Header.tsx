@@ -8,8 +8,6 @@ import { useTheme } from '@/context/ThemeContext';
 import { ROUTES } from '@/lib/navigation/routes';
 import {
   WORKS_NAV_STRUCTURE,
-  STUDIO_NAV_STRUCTURE,
-  CONTACT_NAV_STRUCTURE,
   getFilteredStudioNav,
   getFilteredContactNav,
 } from '@/lib/navigation/nav-data';
@@ -17,6 +15,7 @@ import { SitePage } from '@/types';
 import { AtbpLogo } from '@/components/global/AtbpLogo';
 import { NavItem } from '@/components/global/NavItem';
 import { ExpandingButton } from '@/components/primitives/buttons/ExpandingButton';
+import { ThemeToggle } from '@/components/global/ThemeToggle';
 import { WORKS_CATEGORIES } from '@/lib/dummy-data/works/works';
 import { filterCategories } from '@/components/primitives/ProjectTypologiesIcons';
 
@@ -33,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({
   setIsMobileMenuOpen,
   sitePages,
 }) => {
-  const { isDarkMode } = useTheme();
+  const { isDarkMode, toggleTheme } = useTheme();
   const pathname = usePathname();
   const { isWorksActive, isStudioActive, isContactActive, currentCategoryFilter } = useActiveNav();
   const studioNav = React.useMemo(() => getFilteredStudioNav(sitePages), [sitePages]);
@@ -166,9 +165,21 @@ export const Header: React.FC<HeaderProps> = ({
             </>
           )}
 
+          {/* Theme switcher on mobile view (< md), placed beside mobile drawer button */}
+          <div className="md:hidden flex items-center">
+            <ThemeToggle
+              isDarkMode={isDarkMode}
+              onToggle={toggleTheme}
+              className={`p-1 ${
+                isHeaderTransparent ? '!text-white !border-white/30 hover:!border-white' : ''
+              }`}
+            />
+          </div>
+
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle mobile navigation menu"
             className={`lg:hidden p-2 cursor-pointer ${isHeaderTransparent ? 'text-white' : 'text-inherit'}`}
           >
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}

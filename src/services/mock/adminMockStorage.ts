@@ -20,6 +20,7 @@ import {
 } from '@/types';
 import { MEMBERS_DATA } from '@/lib/dummy-data/works/members';
 import { PROJECTS_DATA } from '@/lib/dummy-data/works/projects';
+import { sortProjectsCanonically } from '@/lib/projects/project-helpers';
 import { INITIAL_ROLES_DATA } from '@/lib/dummy-data/roles/roles-data';
 import { CONTACT_INFO, ContactInfo } from '@/lib/dummy-data/contact/contact-info';
 import { privacyPolicyModalData } from '@/lib/modals/privacy-policy';
@@ -225,7 +226,7 @@ export function toggleMemberDraft(id: string): Member | undefined {
 
 export function getProjects(): Project[] {
   initializeAdminStorage();
-  return getStored<Project[]>(STORAGE_KEYS.PROJECTS, PROJECTS_DATA);
+  return sortProjectsCanonically(getStored<Project[]>(STORAGE_KEYS.PROJECTS, PROJECTS_DATA));
 }
 
 export function getProjectById(identifier: string): Project | undefined {
@@ -274,6 +275,19 @@ export function saveProject(project: Project): Project {
   }
 
   return project;
+}
+
+
+export function reorderProjects(items: { id: string; sortOrder: number }[]): Project[] {
+  const projects = getProjects();
+  const orderMap = new Map(items.map((i) => [i.id, i.sortOrder]));
+  const updated = projects.map((p) => {
+    const nextOrder = orderMap.get(p.id);
+    return nextOrder !== undefined ? { ...p, sortOrder: nextOrder } : p;
+  });
+  const sorted = sortProjectsCanonically(updated);
+  setStored(STORAGE_KEYS.PROJECTS, sorted);
+  return sorted;
 }
 
 export function deleteProject(id: string): void {

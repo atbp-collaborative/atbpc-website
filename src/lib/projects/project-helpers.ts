@@ -138,3 +138,106 @@ export function normalizeContractTypeId(contractTypeOrId?: string | null): strin
   const key = contractTypeOrId.toLowerCase().trim();
   return CONTRACT_TYPE_MAP[key] || 'comprehensive-design';
 }
+
+/**
+ * Canonical Category Ordering Rank:
+ * Shelter -> 0, Livelihood -> 1, Community -> 2
+ */
+export const CATEGORY_ORDER_RANK: Record<string, number> = {
+  Shelter: 0,
+  shelter: 0,
+  residential: 0,
+  Livelihood: 1,
+  livelihood: 1,
+  commercial: 1,
+  Community: 2,
+  community: 2,
+  institutional: 2,
+};
+
+/**
+ * Canonical Typology Ordering Rank within each category:
+ * Shelter: Tiny Living (0), Multi-Generational (1), Vacation Homes (2)
+ * Livelihood: Food & Beverage (0), Retail & Lifestyle (1), Workspaces (2)
+ * Community: Shared Spaces (0), Shared Places (1), Sacred Structures (2)
+ */
+export const TYPOLOGY_ORDER_RANK: Record<string, number> = {
+  // Shelter typologies
+  'tiny-living': 0,
+  'tiny living': 0,
+  'multi-generational': 1,
+  'multi-generational project': 1,
+  'multi generational': 1,
+  'vacation-homes': 2,
+  'vacation homes': 2,
+
+  // Livelihood typologies
+  'food-and-beverage': 0,
+  'food & beverage': 0,
+  'food and beverage': 0,
+  'retail-and-lifestyle': 1,
+  'retail & lifestyle': 1,
+  'retail and lifestyle': 1,
+  'workspaces': 2,
+  'workspace': 2,
+
+  // Community typologies
+  'shared-spaces': 0,
+  'shared spaces': 0,
+  'shared-places': 1,
+  'shared places': 1,
+  'sacred-structures': 2,
+  'sacred structures': 2,
+};
+
+export function getProjectCategoryRank(category?: string | null): number {
+  if (!category) return 99;
+  const normalized = normalizeCategoryId(category);
+  return CATEGORY_ORDER_RANK[normalized] ?? 99;
+}
+
+export function getProjectTypologyRank(typology?: string | null): number {
+  if (!typology) return 99;
+  const slug = normalizeTypologyId(typology);
+  return TYPOLOGY_ORDER_RANK[slug] ?? 99;
+}
+
+/**
+ * Canonically sorts projects:
+ * 1. Category: Shelter -> Livelihood -> Community
+ * 2. Typology:
+ *    Shelter: Tiny Living -> Multi-Generational -> Vacation Homes
+ *    Livelihood: Food & Beverage -> Retail & Lifestyle -> Workspaces
+ *    Community: Shared Spaces -> Shared Places -> Sacred Structures
+ * 3. Project sortOrder (position in order, ascending)
+ */
+export function sortProjectsCanonically<T extends {
+  mainCategory?: string;
+  category?: string;
+  categoryId?: string;
+  typologyId?: string;
+  subcategory?: string;
+  sortOrder?: number;
+}>(projects: T[]): T[] {
+  return [...projects].sort((a, b) => {
+    const catA = a.mainCategory || a.categoryId || a.category;
+    const catB = b.mainCategory || b.categoryId || b.category;
+    const catRankA = getProjectCategoryRank(catA);
+    const catRankB = getProjectCategoryRank(catB);
+    if (catRankA !== catRankB) {
+      return catRankA - catRankB;
+    }
+
+    const typA = a.typologyId || a.subcategory || a.category;
+    const typB = b.typologyId || b.subcategory || b.category;
+    const typRankA = getProjectTypologyRank(typA);
+    const typRankB = getProjectTypologyRank(typB);
+    if (typRankA !== typRankB) {
+      return typRankA - typRankB;
+    }
+
+    const sortOrderA = a.sortOrder ?? 9999;
+    const sortOrderB = b.sortOrder ?? 9999;
+    return sortOrderA - sortOrderB;
+  });
+}

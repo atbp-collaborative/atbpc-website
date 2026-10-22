@@ -19,15 +19,11 @@ import {
   getFilteredContactNav,
 } from '@/lib/navigation/nav-data';
 import { SitePage } from '@/types';
-import { ThemeToggle } from '@/components/global/ThemeToggle';
-import { ProtectionToggle } from '@/components/global/ProtectionToggle';
 
 interface MobileDrawerProps {
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
   sitePages?: SitePage[];
-  isProtectionEnabled?: boolean;
-  onToggleProtection?: () => void;
   onOpenLegal?: () => void;
   onOpenPrivacy?: () => void;
 }
@@ -85,12 +81,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   isMobileMenuOpen,
   setIsMobileMenuOpen,
   sitePages,
-  isProtectionEnabled = false,
-  onToggleProtection,
   onOpenLegal,
   onOpenPrivacy,
 }) => {
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode } = useTheme();
   const pathname = usePathname();
   const { isWorksActive, isStudioActive, isContactActive, currentCategoryFilter: projectFilter } = useActiveNav();
 
@@ -184,7 +178,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                     isActive={isWorksActive}
                     isExpanded={expandedSection === 'works'}
                     isDarkMode={isDarkMode}
-                    uppercase={false}
+                    uppercase={true}
                     onNavigate={closeDrawer}
                     onToggle={() => setExpandedSection(prev => prev === 'works' ? null : 'works')}
                   />
@@ -388,45 +382,28 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 onClick={closeDrawer}
               />
 
-              <div className="text-caption text-center font-sans opacity-40 pt-4 mt-3 border-t border-space-sparkle/10 w-full">
-                © 2026 ATBP Collaborative
-              </div>
-
-              {/* Mobile links and toggles (Legal, Privacy, Protection, Theme) - Hidden on tablet (md) */}
-              <div className="flex md:hidden flex-col items-center justify-center space-y-2 pt-2 w-full">
-                <div className="flex items-center justify-center gap-2.5 text-[10px] font-sans tracking-wider opacity-90 whitespace-nowrap">
-                  <button
-                    onClick={onOpenLegal}
-                    className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
-                  >
-                    Legal
-                  </button>
-                  <span className="opacity-40">•</span>
-                  <button
-                    onClick={onOpenPrivacy}
-                    className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
-                  >
-                    Privacy Policy
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-center gap-4 pt-1">
-                  {onToggleProtection && (
-                    <ProtectionToggle
-                      isProtectionEnabled={isProtectionEnabled}
-                      onToggle={onToggleProtection}
-                      isDarkMode={isDarkMode}
-                      className="p-1.5"
-                    />
+              {/* Legal & Privacy Policy links (Mobile & Tablet views) */}
+              {(onOpenLegal || onOpenPrivacy) && (
+                <div className="flex items-center justify-center gap-2.5 text-[10px] font-sans tracking-wider opacity-90 whitespace-nowrap pt-3 border-t border-space-sparkle/10 w-full">
+                  {onOpenLegal && (
+                    <button
+                      onClick={onOpenLegal}
+                      className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
+                    >
+                      Legal
+                    </button>
                   )}
-
-                  <ThemeToggle
-                    isDarkMode={isDarkMode}
-                    onToggle={toggleTheme}
-                    className="p-1.5"
-                  />
+                  {onOpenLegal && onOpenPrivacy && <span className="opacity-40">•</span>}
+                  {onOpenPrivacy && (
+                    <button
+                      onClick={onOpenPrivacy}
+                      className="underline underline-offset-4 hover:opacity-100 transition-opacity cursor-pointer opacity-70 uppercase tracking-widest text-[10px]"
+                    >
+                      Privacy Policy
+                    </button>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
             </div>
           </motion.div>
