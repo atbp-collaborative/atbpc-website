@@ -102,6 +102,46 @@ const PROJECT_STATUSES: ('completed' | 'ongoing' | 'schematics')[] = [
 
 const PROJECT_FILTER_CATEGORIES = ['all', 'Shelter', 'Livelihood', 'Community'] as const;
 
+interface ProjectReorderButtonsProps {
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+}
+
+function ProjectReorderButtons({
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
+}: ProjectReorderButtonsProps) {
+  return (
+    <div className="flex flex-col items-center justify-center border border-black/15 dark:border-white/15 rounded-md overflow-hidden bg-black/5 dark:bg-white/5 shadow-xs shrink-0">
+      <button
+        type="button"
+        onClick={onMoveUp}
+        disabled={!canMoveUp}
+        className="w-6 h-3.5 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center justify-center cursor-pointer"
+        title={!canMoveUp ? 'Top position in typology' : 'Move project earlier'}
+        aria-label="Move project earlier"
+      >
+        <ArrowUp size={11} />
+      </button>
+      <div className="w-full h-[1px] bg-black/15 dark:bg-white/15" />
+      <button
+        type="button"
+        onClick={onMoveDown}
+        disabled={!canMoveDown}
+        className="w-6 h-3.5 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center justify-center cursor-pointer"
+        title={!canMoveDown ? 'Bottom position in typology' : 'Move project later'}
+        aria-label="Move project later"
+      >
+        <ArrowDown size={11} />
+      </button>
+    </div>
+  );
+}
+
 interface AdminProjectsClientProps {
   initialProjects?: Project[];
   initialRoles?: any[];
@@ -155,6 +195,8 @@ export function AdminProjectsClient({
       : ALL_TYPOLOGIES;
 
   const { members: allMembers } = useAdminPeople();
+  const isReorderActive = categoryFilter !== 'all' && typologyFilter !== 'all';
+
 
   // Warn before unload if order changes are unsaved
   React.useEffect(() => {
@@ -1140,20 +1182,8 @@ export function AdminProjectsClient({
             >
               <div className="divide-y divide-black/5 dark:divide-white/5">
                 {filteredProjects.map((project, index) => {
-                  const prevProj = filteredProjects[index - 1];
-                  const nextProj = filteredProjects[index + 1];
-
-                  const curCat = normalizeCategoryId(project.mainCategory || project.categoryId || project.category);
-                  const curTyp = normalizeTypologyId(project.typologyId || project.subcategory || project.category);
-
-                  const prevCat = prevProj ? normalizeCategoryId(prevProj.mainCategory || prevProj.categoryId || prevProj.category) : null;
-                  const prevTyp = prevProj ? normalizeTypologyId(prevProj.typologyId || prevProj.subcategory || prevProj.category) : null;
-
-                  const nextCat = nextProj ? normalizeCategoryId(nextProj.mainCategory || nextProj.categoryId || nextProj.category) : null;
-                  const nextTyp = nextProj ? normalizeTypologyId(nextProj.typologyId || nextProj.subcategory || nextProj.category) : null;
-
-                  const canMoveUp = Boolean(prevProj && curCat === prevCat && curTyp === prevTyp);
-                  const canMoveDown = Boolean(nextProj && curCat === nextCat && curTyp === nextTyp);
+                  const canMoveUp = isReorderActive && index > 0;
+                  const canMoveDown = isReorderActive && index < filteredProjects.length - 1;
 
                   return (
                     <div
@@ -1194,28 +1224,14 @@ export function AdminProjectsClient({
                       </div>
 
                       <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
-                        {/* Position reorder buttons */}
-                        <div className="flex items-center border border-black/15 dark:border-white/15 rounded-lg overflow-hidden bg-black/5 dark:bg-white/5 shadow-xs">
-                          <button
-                            type="button"
-                            onClick={() => moveProject(project.id, 'up')}
-                            disabled={!canMoveUp}
-                            className="px-2 py-1.5 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center gap-1 font-mono text-micro font-semibold cursor-pointer"
-                            title={!canMoveUp ? 'Top position in typology' : 'Move project earlier'}
-                          >
-                            <ArrowUp size={13} />
-                          </button>
-                          <div className="w-[1px] h-4 bg-black/15 dark:bg-white/15" />
-                          <button
-                            type="button"
-                            onClick={() => moveProject(project.id, 'down')}
-                            disabled={!canMoveDown}
-                            className="px-2 py-1.5 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center gap-1 font-mono text-micro font-semibold cursor-pointer"
-                            title={!canMoveDown ? 'Bottom position in typology' : 'Move project later'}
-                          >
-                            <ArrowDown size={13} />
-                          </button>
-                        </div>
+                        {isReorderActive && (
+                          <ProjectReorderButtons
+                            onMoveUp={() => moveProject(project.id, 'up')}
+                            onMoveDown={() => moveProject(project.id, 'down')}
+                            canMoveUp={canMoveUp}
+                            canMoveDown={canMoveDown}
+                          />
+                        )}
 
                         <span
                           className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-full font-semibold border ${
@@ -1243,20 +1259,8 @@ export function AdminProjectsClient({
           ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredProjects.map((project, index) => {
-              const prevProj = filteredProjects[index - 1];
-              const nextProj = filteredProjects[index + 1];
-
-              const curCat = normalizeCategoryId(project.mainCategory || project.categoryId || project.category);
-              const curTyp = normalizeTypologyId(project.typologyId || project.subcategory || project.category);
-
-              const prevCat = prevProj ? normalizeCategoryId(prevProj.mainCategory || prevProj.categoryId || prevProj.category) : null;
-              const prevTyp = prevProj ? normalizeTypologyId(prevProj.typologyId || prevProj.subcategory || prevProj.category) : null;
-
-              const nextCat = nextProj ? normalizeCategoryId(nextProj.mainCategory || nextProj.categoryId || nextProj.category) : null;
-              const nextTyp = nextProj ? normalizeTypologyId(nextProj.typologyId || nextProj.subcategory || nextProj.category) : null;
-
-              const canMoveUp = Boolean(prevProj && curCat === prevCat && curTyp === prevTyp);
-              const canMoveDown = Boolean(nextProj && curCat === nextCat && curTyp === nextTyp);
+              const canMoveUp = isReorderActive && index > 0;
+              const canMoveDown = isReorderActive && index < filteredProjects.length - 1;
               const team = getTeamForProject(project.id);
               return (
                 <div
@@ -1332,31 +1336,17 @@ export function AdminProjectsClient({
                     </div>
                   </div>
 
-                  {/* Actions Row (pt-[4px] creates 4px space between border-t and edit button) */}
-                  <div className="p-4 pt-[4px] flex items-center justify-between gap-2 border-t border-black/5 dark:border-white/5 mt-2">
+                  {/* Actions Row */}
+                  <div className="px-4 py-3 flex items-center justify-between gap-2 border-t border-black/5 dark:border-white/5 mt-auto">
                     <div className="flex items-center gap-2">
-                      {/* Position reorder buttons */}
-                      <div className="flex items-center border border-black/15 dark:border-white/15 rounded-lg overflow-hidden bg-black/5 dark:bg-white/5 shadow-xs">
-                        <button
-                          type="button"
-                          onClick={() => moveProject(project.id, 'up')}
-                          disabled={!canMoveUp}
-                          className="px-2 py-1 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center gap-1 font-mono text-micro font-semibold cursor-pointer"
-                          title={!canMoveUp ? 'Top position in typology' : 'Move project earlier'}
-                        >
-                          <ArrowUp size={12} />
-                        </button>
-                        <div className="w-[1px] h-3.5 bg-black/15 dark:bg-white/15" />
-                        <button
-                          type="button"
-                          onClick={() => moveProject(project.id, 'down')}
-                          disabled={!canMoveDown}
-                          className="px-2 py-1 hover:bg-space-sparkle hover:text-white text-vintage-charcoal dark:text-bright-gray disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition-all flex items-center gap-1 font-mono text-micro font-semibold cursor-pointer"
-                          title={!canMoveDown ? 'Bottom position in typology' : 'Move project later'}
-                        >
-                          <ArrowDown size={12} />
-                        </button>
-                      </div>
+                      {isReorderActive && (
+                        <ProjectReorderButtons
+                          onMoveUp={() => moveProject(project.id, 'up')}
+                          onMoveDown={() => moveProject(project.id, 'down')}
+                          canMoveUp={canMoveUp}
+                          canMoveDown={canMoveDown}
+                        />
+                      )}
 
                       <span
                         className={`px-2 py-0.5 rounded text-micro font-mono uppercase tracking-wider font-semibold ${

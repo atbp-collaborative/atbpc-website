@@ -1,4 +1,10 @@
 import type { NextConfig } from 'next';
+import dns from 'dns';
+
+// Ensure Node.js prioritizes IPv4 over IPv6 to avoid 30s timeouts and ENOTFOUND errors on Windows
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
