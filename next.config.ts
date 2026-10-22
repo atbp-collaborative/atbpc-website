@@ -23,6 +23,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/under-construction',
+        destination: '/launching-soon',
+        permanent: true,
+      },
+    ];
+  },
   webpack: (config, { dev }) => {
     if (dev) {
       config.cache = false;

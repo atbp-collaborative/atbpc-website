@@ -15,7 +15,12 @@ import { SitePage } from '@/types';
 
 // Paths that keep the ordinary scrollable min-h-screen layout instead of the
 // locked full-viewport h-screen treatment used by the marketing/landing pages.
-const SCROLLABLE_PATHS = ['/our-services', '/under-construction'];
+const SCROLLABLE_PATHS = [
+  '/our-services',
+  '/launching-soon',
+  '/under-maintenance',
+  '/under-construction',
+];
 
 function AppShellInner({
   children,
@@ -58,10 +63,24 @@ function AppShellInner({
     }
   }, [pathname]);
 
-  const isFullScreenLanding = !SCROLLABLE_PATHS.includes(pathname) && !isUnderConstruction && !isAdmin;
-  const isOurPeople = pathname.startsWith('/studio/our-people') || pathname.startsWith('/our-people');
-  const hideHeader = pathname === '/under-construction' || isUnderConstruction || isAdmin;
-  const hideFooter = pathname === '/' || pathname === '/under-construction' || isUnderConstruction || isAdmin;
+  const isStatusPath =
+    pathname === '/launching-soon' ||
+    pathname === '/under-maintenance' ||
+    pathname === '/under-construction';
+
+  const isFullScreenLanding =
+    !SCROLLABLE_PATHS.includes(pathname) &&
+    !isStatusPath &&
+    !isUnderConstruction &&
+    !isAdmin;
+
+  const isOurPeople =
+    pathname.startsWith('/studio/our-people') ||
+    pathname.startsWith('/our-people');
+
+  const hideHeader = isStatusPath || isUnderConstruction || isAdmin;
+  const hideFooter =
+    pathname === '/' || isStatusPath || isUnderConstruction || isAdmin;
 
   return (
     <div

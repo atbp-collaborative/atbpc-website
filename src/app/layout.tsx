@@ -60,13 +60,16 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const headersList = await headers();
-  const isUnderConstruction = headersList.get('x-under-construction') === 'true';
+  const isStatusGateActive =
+    headersList.get('x-under-construction') === 'true' ||
+    headersList.get('x-launching-soon') === 'true' ||
+    headersList.get('x-under-maintenance') === 'true';
   const sitePages = await getSitePagesData();
 
   return (
     <html lang="en">
       <body>
-        <AppShell isUnderConstruction={isUnderConstruction} sitePages={sitePages}>{children}</AppShell>
+        <AppShell isUnderConstruction={isStatusGateActive} sitePages={sitePages}>{children}</AppShell>
       </body>
     </html>
   );

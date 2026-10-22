@@ -63,7 +63,7 @@ export const MaintenanceModeTab: React.FC = () => {
       setIsEnabled(pendingState);
       setUpdatedAt(new Date().toISOString());
       if (pendingState) {
-        toast.warning('Maintenance mode activated. Public pages now route to Under Construction.');
+        toast.warning('Maintenance mode activated. Public pages now route to Under Maintenance.');
       } else {
         toast.success('Maintenance mode disabled. Public website is live.');
       }
@@ -83,7 +83,7 @@ export const MaintenanceModeTab: React.FC = () => {
           public website maintenance mode
         </h2>
         <p className="text-caption font-light opacity-70">
-          Place the entire public website under construction while retaining administrative dashboard access.
+          Place the entire public website under maintenance while retaining administrative dashboard access.
         </p>
       </div>
 
@@ -116,7 +116,7 @@ export const MaintenanceModeTab: React.FC = () => {
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-h3 font-bold">
-                    {isEnabled ? 'Under Construction Active' : 'Website is Live & Public'}
+                    {isEnabled ? 'Under Maintenance Active' : 'Website is Live & Public'}
                   </span>
                   <span
                     className={`inline-block w-2.5 h-2.5 rounded-full ${
@@ -129,7 +129,7 @@ export const MaintenanceModeTab: React.FC = () => {
 
             <p className="text-caption font-light opacity-80 max-w-xl leading-relaxed">
               {isEnabled
-                ? 'All external visitors are currently rewritten to the Under Construction screen. Authenticated administrators can continue using the dashboard normally.'
+                ? 'All external visitors are currently rewritten to the Under Maintenance screen. Authenticated administrators can continue using the dashboard normally.'
                 : 'All public routes (Works portfolio, Our People, Services, and CMS content) are actively accessible to all visitors.'}
             </p>
 
@@ -193,7 +193,7 @@ export const MaintenanceModeTab: React.FC = () => {
         title={pendingState ? 'Activate Maintenance Mode?' : 'Deactivate Maintenance Mode?'}
         description={
           pendingState
-            ? 'Are you sure you want to activate Maintenance Mode? All public visitors will immediately be shown the Under Construction screen. Only logged-in administrators will be able to access the console.'
+            ? 'Are you sure you want to activate Maintenance Mode? All public visitors will immediately be shown the Under Maintenance screen. Only logged-in administrators will be able to access the console.'
             : 'Are you sure you want to deactivate Maintenance Mode? The full public website (portfolio, team, and services) will immediately be restored and accessible to all visitors.'
         }
         confirmLabel={pendingState ? 'Yes, Enable Maintenance' : 'Yes, Restore Public Website'}
