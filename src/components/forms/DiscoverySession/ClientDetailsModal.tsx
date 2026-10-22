@@ -39,7 +39,7 @@ export const ClientDetailsModal: React.FC<Props> = ({ isOpen, onClose, isDarkMod
         <div className="mt-4">
           <h3 className="font-sans text-caption font-bold mb-2 opacity-80">Client Address</h3>
           <FormFieldRenderer
-            config={{ type: 'address', name: 'clientAddress', label: 'Client Address', badge: '!', variant: 'city-region-only' } as any}
+            config={{ type: 'address', name: 'clientAddress', label: '', variant: 'city-region-only' } as any}
             value={formData.clientAddress}
             onChange={handleChange}
             isDarkMode={isDarkMode}

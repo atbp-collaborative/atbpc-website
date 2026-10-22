@@ -7,6 +7,7 @@ import { Button } from '@/components/primitives/buttons/Button';
 import { TextField } from '@/components/forms/form-fields';
 import { AddressField } from '@/components/forms/form-fields/AddressField';
 import { PhAddress, EMPTY_PH_ADDRESS } from '@/components/forms/form-fields/types';
+import { isAddressComplete } from '@/lib/forms/career.schema';
 
 interface EmergencyContactModalProps {
   isOpen: boolean;
@@ -26,7 +27,8 @@ interface EmergencyContactModalProps {
   initialLandline: string;
   initialEmail: string;
   initialSameAsApplicant: boolean;
-  initialAddress: PhAddress;
+  initialAddress?: PhAddress;
+  applicantAddress?: PhAddress;
   isDarkMode: boolean;
 }
 
@@ -41,6 +43,7 @@ export const EmergencyContactModal: React.FC<EmergencyContactModalProps> = ({
   initialEmail,
   initialSameAsApplicant,
   initialAddress,
+  applicantAddress,
   isDarkMode,
 }) => {
   const [name, setName] = useState('');
@@ -77,12 +80,23 @@ export const EmergencyContactModal: React.FC<EmergencyContactModalProps> = ({
     };
   }, [isOpen, onClose]);
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isEmailValid = emailRegex.test(email.trim());
+  const isApplicantAddressValid = isAddressComplete(applicantAddress);
+  const isAddressValid = sameAsApplicant ? isApplicantAddressValid : isAddressComplete(address);
+
+  const isSaveDisabled = 
+    !name.trim() || 
+    !relationship.trim() || 
+    !number.trim() || 
+    !isEmailValid || 
+    !isAddressValid;
+
   const handleSave = () => {
-    onSave(name, relationship, number, landline, email, sameAsApplicant, address);
+    const finalAddress = sameAsApplicant ? (applicantAddress || EMPTY_PH_ADDRESS) : address;
+    onSave(name, relationship, number, landline, email, sameAsApplicant, finalAddress);
     onClose();
   };
-
-  const isSaveDisabled = name === '' || relationship === '' || number === '';
 
   return (
     <AnimatePresence>
@@ -127,6 +141,7 @@ export const EmergencyContactModal: React.FC<EmergencyContactModalProps> = ({
                 onChange={(_, val) => setName(val)}
                 isDarkMode={isDarkMode}
                 theme="neutral"
+                required
               />
               <TextField
                 name="emergency-relationship"
@@ -136,6 +151,7 @@ export const EmergencyContactModal: React.FC<EmergencyContactModalProps> = ({
                 onChange={(_, val) => setRelationship(val)}
                 isDarkMode={isDarkMode}
                 theme="neutral"
+                required
               />
               <TextField
                 name="emergency-number"
@@ -145,6 +161,7 @@ export const EmergencyContactModal: React.FC<EmergencyContactModalProps> = ({
                 onChange={(_, val) => setNumber(val)}
                 isDarkMode={isDarkMode}
                 theme="neutral"
+                required
               />
               <TextField
                 name="emergency-landline"
@@ -163,6 +180,7 @@ export const EmergencyContactModal: React.FC<EmergencyContactModalProps> = ({
                 onChange={(_, val) => setEmail(val)}
                 isDarkMode={isDarkMode}
                 theme="neutral"
+                required
               />
               
               <div className="space-y-4 pt-2">
@@ -175,6 +193,12 @@ export const EmergencyContactModal: React.FC<EmergencyContactModalProps> = ({
                   />
                   Same as applicant's address
                 </label>
+
+                {sameAsApplicant && !isApplicantAddressValid && (
+                  <p className="text-micro text-amber-500 font-medium">
+                    Please complete all address fields on the main form first, or uncheck this option to enter an address below.
+                  </p>
+                )}
 
                 {!sameAsApplicant && (
                   <AddressField

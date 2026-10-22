@@ -62,7 +62,7 @@ const LEFT_COLUMN_TOP: FieldConfig[] = [
     label: "Role",
     badge: "!",
     options: STRUCTURES,
-    placeholder: "[ Select Role ]",
+    placeholder: "[ Select a Department First ]",
   },
 ];
 
@@ -229,7 +229,7 @@ const APPRENTICESHIP_LEFT_COLUMN_TOP: FieldConfig[] = [
     label: "Role",
     badge: "!",
     options: APPRENTICESHIP_STRUCTURES,
-    placeholder: "[ Select Role ]",
+    placeholder: "[ Select a Department First ]",
   },
 ];
 
@@ -394,6 +394,33 @@ export const CAREER_FORM_REQUIRED_FIELDS: (keyof CareerFormData)[] = [
   "coverVideoLink",
 ];
 
+export function isAddressComplete(address?: PhAddress | null): boolean {
+  if (!address) return false;
+  if (!address.country?.trim()) return false;
+  if (!address.regionCode?.trim() && !address.regionName?.trim()) return false;
+  if (!address.provinceCode?.trim() && !address.provinceName?.trim()) return false;
+  if (!address.cityCode?.trim() && !address.cityName?.trim()) return false;
+  if (!address.barangayCode?.trim() && !address.barangayName?.trim()) return false;
+  if (!address.addressLine?.trim()) return false;
+  return true;
+}
+
+export function isEmergencyContactComplete(
+  contact?: CareerFormData['emergencyContactPerson'],
+  applicantAddress?: PhAddress
+): boolean {
+  if (!contact) return false;
+  if (!contact.name?.trim()) return false;
+  if (!contact.relationship?.trim()) return false;
+  if (!contact.number?.trim()) return false;
+  if (!contact.email?.trim()) return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(contact.email.trim())) return false;
+
+  const effectiveAddress = contact.sameAsApplicant ? applicantAddress : contact.address;
+  return isAddressComplete(effectiveAddress);
+}
+
 export const careerSchema = z.object({
   department: z.string().min(1, "Department is required"),
   structure: z.string().min(1, "Structure is required"),
@@ -408,29 +435,38 @@ export const careerSchema = z.object({
   pronoun: z.string().min(1, "Pronoun is required"),
   titles: z.string().optional(),
   applicantAddress: z.object({
-    regionCode: z.string().min(1, "Region is required"),
-    cityCode: z.string().min(1, "City is required"),
-    barangayCode: z.string().min(1, "Barangay is required"),
-    streetAddress: z.string().optional(),
+    country: z.string().min(1, "Country is required"),
+    regionCode: z.string().optional(),
+    regionName: z.string().optional(),
+    provinceCode: z.string().optional(),
+    provinceName: z.string().optional(),
+    cityCode: z.string().optional(),
+    cityName: z.string().optional(),
+    barangayCode: z.string().optional(),
+    barangayName: z.string().optional(),
+    addressLine: z.string().min(1, "Phase/Blk/Lot/Unit/Subdivision is required"),
+  }).refine((data) => {
+    const hasRegion = Boolean(data.regionCode?.trim() || data.regionName?.trim());
+    const hasProvince = Boolean(data.provinceCode?.trim() || data.provinceName?.trim());
+    const hasCity = Boolean(data.cityCode?.trim() || data.cityName?.trim());
+    const hasBarangay = Boolean(data.barangayCode?.trim() || data.barangayName?.trim());
+    return hasRegion && hasProvince && hasCity && hasBarangay;
+  }, {
+    message: "All address fields (Region, Province, City, Barangay) are required",
   }),
   contactNumber: z.string().min(1, "Contact Number is required"),
   email: z.string().email("Invalid email address"),
   facebook: z.string().optional(),
   instagram: z.string().optional(),
   emergencyContactPerson: z.object({
-    name: z.string().optional(),
-    relationship: z.string().optional(),
-    number: z.string().optional(),
+    name: z.string().min(1, "Emergency Contact Name is required"),
+    relationship: z.string().min(1, "Relationship is required"),
+    number: z.string().min(1, "Phone Number is required"),
     landline: z.string().optional(),
-    email: z.string().optional(),
+    email: z.string().email("Invalid Emergency Contact Email"),
     sameAsApplicant: z.boolean().optional(),
-    address: z.object({
-      regionCode: z.string().optional(),
-      cityCode: z.string().optional(),
-      barangayCode: z.string().optional(),
-      streetAddress: z.string().optional(),
-    }).optional(),
-  }).optional(),
+    address: z.any().optional(),
+  }),
   // New Document fields
   ojtRequirementsFile: z.any().optional().nullable(),
   moaFile: z.any().optional().nullable(),

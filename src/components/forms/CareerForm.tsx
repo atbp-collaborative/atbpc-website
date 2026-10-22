@@ -9,7 +9,7 @@ import { careerPrivacyModalData } from '@/lib/modals/career-privacy';
 import { getCareerPrivacyFromSupabase } from '@/services/supabase/settings.service';
 import { ModalData } from '@/lib/modals/types';
 import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-fields';
-import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CAREER_FORM_REQUIRED_FIELDS, CareerFormData, CareerFormType, STRUCTURE_DESCRIPTIONS, getRequiredDocumentFields, getDocumentFieldsForStructure } from '@/lib/forms/career.schema';
+import { CAREER_FORM_FIELDS, CAREER_FORM_INITIAL_DATA, CAREER_FORM_REQUIRED_FIELDS, CareerFormData, CareerFormType, STRUCTURE_DESCRIPTIONS, getRequiredDocumentFields, getDocumentFieldsForStructure, isAddressComplete, isEmergencyContactComplete } from '@/lib/forms/career.schema';
 import { submitCareerApplication } from '@/services/api.service';
 import { Button } from '@/components/primitives/buttons/Button';
 import { useFormViewport } from '@/hooks/useFormViewport';
@@ -136,7 +136,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
           ...field,
           label: 'Role',
           options,
-          placeholder: dept ? '[ Select Role ]' : 'Please select a department first',
+          placeholder: dept ? '[ Select Role ]' : '[ Select a Department First ]',
           disabled: !dept,
         };
       }
@@ -227,9 +227,24 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
     return requiredList.every((fieldName) => Boolean((formData as any)[fieldName]));
   };
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isEmailValid = Boolean(formData.email?.trim()) && emailRegex.test(formData.email.trim());
+  const isEmergencyValid = isEmergencyContactComplete(formData.emergencyContactPerson, formData.applicantAddress);
+  const isApplicantAddressValid = isAddressComplete(formData.applicantAddress);
+
   const isFormValid =
-    CAREER_FORM_REQUIRED_FIELDS.every((field) => Boolean(formData[field])) &&
-    Boolean(formData.applicantAddress.regionCode && formData.applicantAddress.cityCode && formData.applicantAddress.barangayCode) &&
+    Boolean(formData.department) &&
+    Boolean(formData.structure) &&
+    Boolean(formData.firstName?.trim()) &&
+    Boolean(formData.pseudonym?.trim()) &&
+    Boolean(formData.lastName?.trim()) &&
+    Boolean(formData.pronoun?.trim()) &&
+    Boolean(formData.contactNumber?.trim()) &&
+    isEmailValid &&
+    Boolean(formData.portfolioLink?.trim()) &&
+    Boolean(formData.coverVideoLink?.trim()) &&
+    isApplicantAddressValid &&
+    isEmergencyValid &&
     isDocumentsComplete();
   const canSubmit = isFormValid && privacyAcknowledged;
 
@@ -450,13 +465,15 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
                   <div key={idx} className={row.length > 1 ? 'grid grid-cols-1 sm:grid-cols-4 gap-3' : ''}>
                     {row.map((field) => {
                       if (field.name === 'emergencyContact') {
-                        const count = (formData.emergencyContactPerson?.name && formData.emergencyContactPerson?.relationship && formData.emergencyContactPerson?.number) ? 1 : 0;
+                        const isEmergencyValid = isEmergencyContactComplete(formData.emergencyContactPerson, formData.applicantAddress);
+                        const hasEmergencyData = Boolean(formData.emergencyContactPerson?.name || formData.emergencyContactPerson?.number);
                         return (
                           <div key={field.name} className={field.wrapperClassName}>
                             <MultiEntryButton
                               fieldLabel="Emergency Contact"
-                              label="Add Contact"
-                              count={count}
+                              label={hasEmergencyData ? "Edit Contact" : "Add Contact"}
+                              count={isEmergencyValid ? 1 : 0}
+                              showCheck={isEmergencyValid}
                               onClick={() => setShowEmergencyModal(true)}
                               isDarkMode={isDarkMode}
                             />
@@ -543,6 +560,7 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
         initialEmail={formData.emergencyContactPerson?.email || ''}
         initialSameAsApplicant={formData.emergencyContactPerson?.sameAsApplicant ?? true}
         initialAddress={formData.emergencyContactPerson?.address}
+        applicantAddress={formData.applicantAddress}
         isDarkMode={isDarkMode}
       />
 

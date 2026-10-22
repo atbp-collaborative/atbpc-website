@@ -6,6 +6,7 @@ import { getFieldThemeStyles } from './fieldStyles';
 type SelectFieldProps = Omit<SelectFieldConfig, 'type' | 'label'> & FieldRenderProps<string> & {
   label?: React.ReactNode;
   disabled?: boolean;
+  required?: boolean;
   /** Tighter vertical padding (py-1.5 instead of py-2) to match a denser surrounding layout. */
   dense?: boolean;
 };
@@ -20,6 +21,7 @@ export const SelectField: React.FC<SelectFieldProps> = ({
   isDarkMode,
   theme = 'neutral',
   disabled = false,
+  required = false,
   dense = false,
 }) => {
   const styles = getFieldThemeStyles(theme, isDarkMode);
@@ -31,7 +33,12 @@ export const SelectField: React.FC<SelectFieldProps> = ({
 
   return (
     <div className="space-y-1">
-      {label && <label className={styles.label}>{label}</label>}
+      {label && (
+        <label className={styles.label}>
+          {label}
+          {required && ' *'}
+        </label>
+      )}
       <div className="relative">
         <select
           name={name}

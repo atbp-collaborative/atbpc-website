@@ -5,14 +5,17 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, Map } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { FormFieldRenderer, getFieldThemeStyles } from '@/components/forms/form-fields';
-import { Button } from '@/components/primitives/buttons/Button';
 import { MultiEntryButton } from '@/components/primitives/buttons/MultiEntryButton';
 import { useFormViewport } from '@/hooks/useFormViewport';
 import { 
   DiscoverySessionFormData, 
   INITIAL_DISCOVERY_DATA, 
-  discoverySchema 
+  isClientDetailsValid,
+  isProjectDetailsValid,
+  isVenueDetailsValid,
+  isDiscoveryFormComplete
 } from '@/lib/forms/discovery.schema';
+import { EMPTY_PH_ADDRESS } from '@/components/forms/form-fields/types';
 import { submitDiscoverySession } from '@/services/api.service';
 
 import { ClientDetailsModal } from './DiscoverySession/ClientDetailsModal';
@@ -34,12 +37,25 @@ export const DiscoverySessionForm: React.FC = () => {
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isVenueModalOpen, setIsVenueModalOpen] = useState(false);
 
-  // Load from local storage on mount
+  // Load from local storage on mount with safe merging of legacy structures
   useEffect(() => {
     const saved = localStorage.getItem('discovery-session-form');
     if (saved) {
       try {
-        setFormData(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setFormData({
+          ...INITIAL_DISCOVERY_DATA,
+          ...parsed,
+          address: {
+            ...EMPTY_PH_ADDRESS,
+            ...(parsed.address || {})
+          },
+          clientAddress: {
+            ...EMPTY_PH_ADDRESS,
+            ...(parsed.clientAddress || {})
+          },
+          location: typeof parsed.location === 'string' ? parsed.location : (parsed.location?.address || ''),
+        });
       } catch (e) {
         console.error('Failed to parse saved form data', e);
       }
@@ -92,10 +108,11 @@ export const DiscoverySessionForm: React.FC = () => {
   const fieldStyles = getFieldThemeStyles('neutral', isDarkMode);
   const inputBorderClass = fieldStyles.borderColor;
 
-  // Safe parse to check if form is ready for calendar embed
-  const validationResult = discoverySchema.safeParse(formData);
-  const isProjectDetailsReady = !!formData.projectCategory && !!formData.projectType;
-  const isFormReady = validationResult.success && isProjectDetailsReady;
+  // Real-time section validation & dirty change tracking
+  const clientValid = isClientDetailsValid(formData);
+  const projectValid = isProjectDetailsValid(formData);
+  const venueValid = isVenueDetailsValid(formData);
+  const isFormReady = isDiscoveryFormComplete(formData);
 
   if (!isLoaded) return null; // Avoid hydration mismatch
 
@@ -166,8 +183,9 @@ export const DiscoverySessionForm: React.FC = () => {
               <div className="space-y-3 pt-2">
                 <MultiEntryButton 
                   fieldLabel="Client Details"
-                  label={formData.firstName && formData.email ? "Edit Client Details" : "Add Client Details"} 
-                  count={formData.firstName && formData.email ? 1 : 0} 
+                  label={formData.firstName || formData.email ? "Edit Client Details" : "Add Client Details"} 
+                  count={clientValid ? 1 : 0} 
+                  showCheck={clientValid}
                   onClick={() => setIsClientModalOpen(true)} 
                   isDarkMode={isDarkMode} 
                 />
@@ -175,7 +193,8 @@ export const DiscoverySessionForm: React.FC = () => {
                 <MultiEntryButton 
                   fieldLabel="Project Details"
                   label={formData.projectCategory ? "Edit Project Details" : "Add Project Details"} 
-                  count={formData.projectCategory ? 1 : 0} 
+                  count={projectValid ? 1 : 0} 
+                  showCheck={projectValid}
                   onClick={() => setIsProjectModalOpen(true)} 
                   isDarkMode={isDarkMode} 
                 />
@@ -184,8 +203,9 @@ export const DiscoverySessionForm: React.FC = () => {
                   <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                     <MultiEntryButton 
                       fieldLabel="Venue Details"
-                      label={formData.venue ? "Edit Venue Details" : "Add Venue Details"} 
-                      count={formData.venue ? 1 : 0} 
+                      label={formData.venue || (typeof formData.location === 'string' && formData.location) ? "Edit Venue Details" : "Add Venue Details"} 
+                      count={venueValid ? 1 : 0} 
+                      showCheck={venueValid}
                       onClick={() => setIsVenueModalOpen(true)} 
                       isDarkMode={isDarkMode} 
                     />
