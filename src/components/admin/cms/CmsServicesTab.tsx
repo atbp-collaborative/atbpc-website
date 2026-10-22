@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Briefcase,
   Edit2,
@@ -17,12 +17,14 @@ import {
   CheckCircle2,
   ArrowUp,
   ArrowDown,
+  RotateCcw,
 } from 'lucide-react';
 import { ServiceOffering, ServiceAccordionItem, NavigationCardItem } from '@/types';
 import { PublicationToggle } from '@/components/admin/PublicationToggle';
 import { Button } from '@/components/primitives/buttons/Button';
 import { useTheme } from '@/context/ThemeContext';
 import { getFallbackServiceAccordions } from '@/services/supabase/cms.service';
+import { toast } from 'sonner';
 
 interface CmsServicesTabProps {
   services: ServiceOffering[];
@@ -31,6 +33,7 @@ interface CmsServicesTabProps {
   onSaveService: (service: ServiceOffering) => void;
   onSaveServiceAccordion?: (item: ServiceAccordionItem) => void;
   onDeleteServiceAccordion?: (itemId: string, serviceId: string) => void;
+  onReorderServiceAccordions?: (items: ServiceAccordionItem[]) => Promise<void> | void;
   cards?: NavigationCardItem[];
   onSaveCard?: (card: NavigationCardItem) => void;
 }
@@ -42,6 +45,7 @@ export const CmsServicesTab: React.FC<CmsServicesTabProps> = ({
   onSaveService,
   onSaveServiceAccordion,
   onDeleteServiceAccordion,
+  onReorderServiceAccordions,
   cards = [],
   onSaveCard,
 }) => {
@@ -96,6 +100,48 @@ export const CmsServicesTab: React.FC<CmsServicesTabProps> = ({
     return 3; // 3 columns for comprehensive and piecework
   }, [currentService?.id]);
 
+  // Local state for tracking accordion order & reordering
+  const [localAccordions, setLocalAccordions] = useState<ServiceAccordionItem[]>(currentAccordions);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const prevServiceIdRef = useRef<string>(selectedServiceId);
+
+  // Compute if order of accordions is dirty compared to currentAccordions
+  const isOrderDirty = useMemo(() => {
+    if (localAccordions.length !== currentAccordions.length) return false;
+    for (let i = 0; i < localAccordions.length; i++) {
+      const local = localAccordions[i];
+      const orig = currentAccordions.find((a) => a.id === local.id);
+      if (!orig) return false;
+      if (local.sortOrder !== orig.sortOrder || local.columnIndex !== orig.columnIndex) {
+        return true;
+      }
+    }
+    for (let col = 0; col < numColumns; col++) {
+      const localIds = localAccordions
+        .filter((a) => a.columnIndex === col)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((a) => a.id)
+        .join(',');
+      const origIds = currentAccordions
+        .filter((a) => a.columnIndex === col)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((a) => a.id)
+        .join(',');
+      if (localIds !== origIds) return true;
+    }
+    return false;
+  }, [localAccordions, currentAccordions, numColumns]);
+
+  // Sync localAccordions when currentAccordions changes and not dirty, or when service tab switches
+  useEffect(() => {
+    if (prevServiceIdRef.current !== selectedServiceId) {
+      prevServiceIdRef.current = selectedServiceId;
+      setLocalAccordions(currentAccordions);
+    } else if (!isOrderDirty) {
+      setLocalAccordions(currentAccordions);
+    }
+  }, [selectedServiceId, currentAccordions, isOrderDirty]);
+
   const handleStartCreateAccordion = (columnIndex = 0) => {
     if (!currentService) return;
     const newItem: ServiceAccordionItem = {
@@ -106,7 +152,7 @@ export const CmsServicesTab: React.FC<CmsServicesTabProps> = ({
       content: '',
       linkText: '',
       linkHref: '',
-      sortOrder: (currentAccordions.filter((a) => a.columnIndex === columnIndex).length + 1) * 10,
+      sortOrder: (localAccordions.filter((a) => a.columnIndex === columnIndex).length + 1) * 10,
       isDraft: false,
     };
     setEditingAccordion(newItem);
@@ -147,20 +193,30 @@ export const CmsServicesTab: React.FC<CmsServicesTabProps> = ({
     if (onSaveServiceAccordion) {
       onSaveServiceAccordion(editingAccordion);
     }
+    setLocalAccordions((prev) => {
+      const idx = prev.findIndex((a) => a.id === editingAccordion.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = editingAccordion;
+        return copy;
+      }
+      return [...prev, editingAccordion];
+    });
     setEditingAccordion(null);
   };
 
-  const handleDeleteAccordionClick = (item: ServiceAccordionItem) => {
-    if (!window.confirm(`Are you sure you want to delete "${item.title}"?`)) return;
+  const handleDeleteAccordion = (item: ServiceAccordionItem) => {
+    if (!window.confirm(`Are you sure you want to delete "${item.title || 'this accordion'}"?`)) return;
     if (onDeleteServiceAccordion) {
       onDeleteServiceAccordion(item.id, item.serviceId);
     }
+    setLocalAccordions((prev) => prev.filter((a) => a.id !== item.id));
+    setEditingAccordion(null);
   };
 
-  // Reorder accordions within column (Move Up / Move Down)
+  // Reorder accordions within column locally (Move Up / Move Down)
   const handleMoveAccordion = (item: ServiceAccordionItem, direction: 'up' | 'down') => {
-    if (!onSaveServiceAccordion) return;
-    const colItems = currentAccordions
+    const colItems = localAccordions
       .filter((a) => a.columnIndex === item.columnIndex)
       .sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -170,16 +226,47 @@ export const CmsServicesTab: React.FC<CmsServicesTabProps> = ({
     const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
     if (targetIndex < 0 || targetIndex >= colItems.length) return;
 
-    const targetItem = colItems[targetIndex];
+    const reorderedColItems = [...colItems];
+    const [movedItem] = reorderedColItems.splice(currentIndex, 1);
+    reorderedColItems.splice(targetIndex, 0, movedItem);
 
-    const originalItemSort = item.sortOrder;
-    const originalTargetSort = targetItem.sortOrder;
+    // Assign normalized sortOrder (10, 20, 30...)
+    const updatedWithOrder = reorderedColItems.map((acc, idx) => ({
+      ...acc,
+      sortOrder: (idx + 1) * 10,
+    }));
 
-    const newTargetSort = originalItemSort === originalTargetSort ? (targetIndex + 1) * 10 : originalItemSort;
-    const newItemSort = originalItemSort === originalTargetSort ? (currentIndex + 1) * 10 : originalTargetSort;
+    const updatedMap = new Map(updatedWithOrder.map((a) => [a.id, a]));
+    setLocalAccordions((prev) => prev.map((a) => updatedMap.get(a.id) || a));
+  };
 
-    onSaveServiceAccordion({ ...item, sortOrder: newItemSort });
-    onSaveServiceAccordion({ ...targetItem, sortOrder: newTargetSort });
+  // Save order handler
+  const handleSaveOrder = async () => {
+    if (!isOrderDirty) return;
+    setIsSavingOrder(true);
+    try {
+      if (onReorderServiceAccordions) {
+        await onReorderServiceAccordions(localAccordions);
+      } else if (onSaveServiceAccordion) {
+        const dirtyItems = localAccordions.filter((local) => {
+          const orig = currentAccordions.find((a) => a.id === local.id);
+          return !orig || orig.sortOrder !== local.sortOrder || orig.columnIndex !== local.columnIndex;
+        });
+        for (const itm of dirtyItems) {
+          await onSaveServiceAccordion(itm);
+        }
+        toast.success('Accordion order saved successfully.');
+      }
+    } catch (err: any) {
+      console.error('Failed to save accordion order:', err);
+      toast.error(err?.message || 'Failed to save accordion order.');
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
+
+  const handleResetOrder = () => {
+    setLocalAccordions(currentAccordions);
   };
 
   const inputClass = `w-full text-caption px-3.5 py-2 rounded-lg border outline-none transition-all ${
@@ -314,10 +401,47 @@ export const CmsServicesTab: React.FC<CmsServicesTabProps> = ({
             </Button>
           </div>
 
+          {/* Dirty Reorder Alert Bar */}
+          {isOrderDirty && (
+            <div
+              className={`p-3.5 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all ${
+                isDarkMode
+                  ? 'bg-amber-950/30 border-amber-500/30 text-amber-200'
+                  : 'bg-amber-50 border-amber-300 text-amber-900 shadow-xs'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                <p className="text-caption font-medium">
+                  You have unsaved changes to the accordion sequence. Click <strong>Save Order</strong> to persist changes.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  type="ghost"
+                  onClick={handleResetOrder}
+                  disabled={isSavingOrder}
+                  className="!py-1.5 !px-3 text-mini border border-amber-500/30 hover:border-amber-500"
+                >
+                  <RotateCcw size={12} className="mr-1 inline" /> Reset
+                </Button>
+                <Button
+                  type="filled"
+                  onClick={handleSaveOrder}
+                  disabled={isSavingOrder}
+                  className="!py-1.5 !px-3 text-mini font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  <Save size={12} className={`mr-1 inline ${isSavingOrder ? 'animate-spin' : ''}`} />
+                  {isSavingOrder ? 'Saving...' : 'Save Order'}
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Multi-Column Grid */}
           <div className={`grid grid-cols-1 ${numColumns === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-6`}>
             {Array.from({ length: numColumns }).map((_, colIdx) => {
-              const colItems = currentAccordions
+              const colItems = localAccordions
                 .filter((a) => a.columnIndex === colIdx)
                 .sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -388,14 +512,6 @@ export const CmsServicesTab: React.FC<CmsServicesTabProps> = ({
                                   title="Edit Accordion"
                                 >
                                   <Edit2 size={13} />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteAccordionClick(item)}
-                                  className="p-1 opacity-70 hover:opacity-100 text-red-500 cursor-pointer"
-                                  title="Delete Accordion"
-                                >
-                                  <Trash2 size={13} />
                                 </button>
                               </div>
                             </div>
@@ -626,29 +742,18 @@ export const CmsServicesTab: React.FC<CmsServicesTabProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-micro font-semibold uppercase tracking-wider block opacity-80">
-                    Display Order
-                  </label>
-                  <input
-                    type="number"
-                    value={editingAccordion.sortOrder}
-                    onChange={(e) =>
-                      setEditingAccordion({ ...editingAccordion, sortOrder: parseInt(e.target.value, 10) || 0 })
-                    }
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-
               <div className="flex items-center justify-between pt-4 border-t border-black/10 dark:border-white/10">
-                <PublicationToggle
-                  isDraft={Boolean(editingAccordion.isDraft)}
-                  onToggle={() =>
-                    setEditingAccordion({ ...editingAccordion, isDraft: !editingAccordion.isDraft })
-                  }
-                />
+                {!editingAccordion.id.startsWith('acc-') && onDeleteServiceAccordion ? (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteAccordion(editingAccordion)}
+                    className="text-red-500 hover:text-red-600 dark:hover:text-red-400 text-mini flex items-center gap-1.5 cursor-pointer font-medium"
+                  >
+                    <Trash2 size={14} /> Delete Accordion
+                  </button>
+                ) : (
+                  <div />
+                )}
 
                 <div className="flex items-center gap-2">
                   <Button type="ghost" onClick={() => setEditingAccordion(null)} label="Cancel" />

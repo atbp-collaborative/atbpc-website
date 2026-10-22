@@ -97,7 +97,7 @@ export function SuperPanelClient() {
     },
     {
       key: 'maintenance',
-      label: 'Maintenance Mode',
+      label: 'Maintenance & Launch',
       icon: HardHat,
     },
     {

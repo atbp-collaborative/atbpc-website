@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
+// In-memory module cache for edge worker to avoid querying Supabase on every single request
+let cachedSettings: {
+  siteLaunched?: boolean;
+  maintenance?: boolean;
+  expiresAt: number;
+} | null = null;
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isGatePassActive = process.env.NEXT_PUBLIC_GATE_PASS === 'true';
@@ -10,11 +17,31 @@ export async function middleware(request: NextRequest) {
     request.headers.get('x-forwarded-host') || 
     request.headers.get('host') || 
     request.nextUrl.hostname;
-  const hostname = rawHost.split(':')[0].toLowerCase();
+
+  // Development simulation hooks for easy local testing (?simulate_host=... & ?simulate_launch=...)
+  const simulateHost = 
+    process.env.NODE_ENV !== 'production' 
+      ? request.nextUrl.searchParams.get('simulate_host') 
+      : null;
+  const simulateLaunch = 
+    process.env.NODE_ENV !== 'production' 
+      ? request.nextUrl.searchParams.get('simulate_launch') 
+      : null;
+  const simulateMaintenance = 
+    process.env.NODE_ENV !== 'production' 
+      ? request.nextUrl.searchParams.get('simulate_maintenance') 
+      : null;
+
+  const hostname = (simulateHost || rawHost).split(':')[0].toLowerCase();
 
   const isProductionDomain = 
     hostname === 'atbpcollaborative.com' || 
-    hostname === 'www.atbpcollaborative.com';
+    hostname === 'www.atbpcollaborative.com' ||
+    (process.env.NODE_ENV !== 'production' && hostname === 'atbpcollaborative.local');
+
+  const isVercelStagingDomain =
+    hostname === 'atbpc-website.vercel.app' ||
+    (process.env.NODE_ENV !== 'production' && hostname === 'atbpc-website.vercel.local');
 
   const isMaintenanceExempt =
     pathname.startsWith('/admin') ||
@@ -29,16 +56,92 @@ export async function middleware(request: NextRequest) {
     pathname === '/launching-soon' ||
     pathname === '/under-maintenance';
 
-  // 1. Determine if Site-Wide Maintenance Mode is active (Highest Priority)
+  // Determine Launch Mode and Maintenance Mode
+  const launchCookie = request.cookies.get('site_launched')?.value;
   const maintenanceCookie = request.cookies.get('site_maintenance')?.value;
+  const launchEnv = process.env.NEXT_PUBLIC_SITE_LAUNCHED?.toLowerCase();
   const maintenanceEnv = process.env.MAINTENANCE_MODE?.toLowerCase();
-  const simulateMaintenance = request.nextUrl.searchParams.get('simulate_maintenance');
 
-  const isMaintenanceActive =
-    maintenanceCookie === 'true' ||
-    maintenanceEnv === 'true' ||
-    simulateMaintenance === 'true';
+  let isSiteLaunched: boolean;
+  let isMaintenanceActive: boolean;
 
+  if (simulateLaunch !== null) {
+    isSiteLaunched = simulateLaunch === 'true';
+  } else if (launchCookie !== undefined) {
+    isSiteLaunched = launchCookie === 'true';
+  } else if (cachedSettings && Date.now() < cachedSettings.expiresAt && cachedSettings.siteLaunched !== undefined) {
+    isSiteLaunched = cachedSettings.siteLaunched;
+  } else {
+    isSiteLaunched = launchEnv === 'true';
+  }
+
+  if (simulateMaintenance !== null) {
+    isMaintenanceActive = simulateMaintenance === 'true';
+  } else if (maintenanceCookie !== undefined) {
+    isMaintenanceActive = maintenanceCookie === 'true';
+  } else if (cachedSettings && Date.now() < cachedSettings.expiresAt && cachedSettings.maintenance !== undefined) {
+    isMaintenanceActive = cachedSettings.maintenance;
+  } else {
+    isMaintenanceActive = maintenanceEnv === 'true';
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (
+    supabaseUrl &&
+    supabaseKey &&
+    (!cachedSettings || Date.now() >= cachedSettings.expiresAt) &&
+    simulateLaunch === null &&
+    simulateMaintenance === null
+  ) {
+    try {
+      const supabase = createServerClient(supabaseUrl, supabaseKey, {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll() {},
+        },
+      });
+
+      const { data } = await supabase
+        .from('site_settings')
+        .select('key, content')
+        .in('key', ['launch_mode', 'maintenance_mode']);
+
+      if (data) {
+        let dbLaunched: boolean | undefined = undefined;
+        let dbMaintenance: boolean | undefined = undefined;
+
+        for (const row of data) {
+          if (row.key === 'launch_mode') {
+            dbLaunched = Boolean((row.content as any)?.enabled);
+          }
+          if (row.key === 'maintenance_mode') {
+            dbMaintenance = Boolean((row.content as any)?.enabled);
+          }
+        }
+
+        cachedSettings = {
+          siteLaunched: dbLaunched ?? (launchEnv === 'true'),
+          maintenance: dbMaintenance ?? (maintenanceEnv === 'true'),
+          expiresAt: Date.now() + 15000, // 15 seconds TTL
+        };
+
+        if (launchCookie === undefined && dbLaunched !== undefined) {
+          isSiteLaunched = dbLaunched;
+        }
+        if (maintenanceCookie === undefined && dbMaintenance !== undefined) {
+          isMaintenanceActive = dbMaintenance;
+        }
+      }
+    } catch {
+      // Keep existing fallbacks if DB fetch fails
+    }
+  }
+
+  // 1. Determine if Site-Wide Maintenance Mode is active (Highest Priority)
   if (isMaintenanceActive && !isMaintenanceExempt) {
     const url = request.nextUrl.clone();
     url.pathname = '/under-maintenance';
@@ -54,14 +157,20 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // 2. Pre-Launch Gate (Launching Soon)
+  // 2. Vercel Domain Rerouting Guard (When site is launched)
+  // When launch mode is active, all routes on atbpc-website.vercel.app are rerouted to https://www.atbpcollaborative.com
+  if (isSiteLaunched && isVercelStagingDomain) {
+    const targetUrl = new URL(request.nextUrl.pathname + request.nextUrl.search, 'https://www.atbpcollaborative.com');
+    return NextResponse.redirect(targetUrl, 307);
+  }
+
+  // 3. Pre-Launch Gate (Launching Soon)
   // On the official production domain (atbpcollaborative.com), rewrite visitors to /launching-soon
-  // unless bypassed via ?preview=true, a preview_access cookie, or if NEXT_PUBLIC_SITE_LAUNCHED === 'true'.
-  // On localhost and atbpc-website.vercel.app (staging/preview), this gate is skipped to allow full team review.
+  // unless bypassed via ?preview=true, a preview_access cookie, or if isSiteLaunched is true.
+  // On localhost and atbpc-website.vercel.app (staging/preview when not launched), this gate is skipped to allow full team review.
   const previewQuery = request.nextUrl.searchParams.get('preview');
   const hasPreviewCookie = request.cookies.get('preview_access')?.value === 'true';
   const shouldBypassPreLaunch = previewQuery === 'true' || hasPreviewCookie;
-  const isSiteLaunched = process.env.NEXT_PUBLIC_SITE_LAUNCHED === 'true';
 
   const shouldShowLaunchingSoon = isProductionDomain && !isSiteLaunched && !shouldBypassPreLaunch;
 
@@ -79,7 +188,7 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // 3. Status URLs Reroute Guard
+  // 4. Status URLs Reroute Guard
   // When live (not under maintenance and not launching soon) and gate pass is false,
   // manual navigation to status URLs must be rerouted to the homepage (/).
   if (!isGatePassActive && !isMaintenanceActive && !shouldShowLaunchingSoon) {
@@ -94,7 +203,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 4. Prepare Base Response
+  // 5. Prepare Base Response
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -111,21 +220,16 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // 5. Admin Authentication & Gate Pass Evaluation
-  // If Gate Pass is active, skip all admin auth checks for friction-free dev/testing
+  // 6. Admin Authentication & Gate Pass Evaluation
   if (isGatePassActive) {
     return response;
   }
 
   // If request is within /admin/*
   if (pathname.startsWith('/admin')) {
-    // Exempt /admin/login and /admin/login/turn-over
     const isExempt =
       pathname === '/admin/login' ||
       pathname === '/admin/login/turn-over';
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
       return response;

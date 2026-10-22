@@ -24,6 +24,11 @@ export interface MaintenanceSettings {
   updatedAt?: string;
 }
 
+export interface LaunchSettings {
+  enabled: boolean;
+  updatedAt?: string;
+}
+
 export interface ContentProtectionSettings {
   enabled: boolean;
   updatedAt?: string;
@@ -328,8 +333,70 @@ export async function resendAccountVerificationAction(
 // ==============================================================================
 
 /**
- * Retrieves the current maintenance mode state.
+ * Retrieves the current launch mode state.
  */
+export async function getLaunchModeAction(): Promise<LaunchSettings> {
+  try {
+    const supabase = getAdminClient();
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('content, updated_at')
+      .eq('key', 'launch_mode')
+      .single();
+
+    if (error || !data) {
+      const envLaunched = process.env.NEXT_PUBLIC_SITE_LAUNCHED === 'true';
+      return { enabled: envLaunched };
+    }
+
+    const content = data.content as any;
+    return {
+      enabled: Boolean(content?.enabled),
+      updatedAt: data.updated_at || content?.updated_at,
+    };
+  } catch {
+    const envLaunched = process.env.NEXT_PUBLIC_SITE_LAUNCHED === 'true';
+    return { enabled: envLaunched };
+  }
+}
+
+/**
+ * Sets launch mode state in site_settings and sets cookie for middleware.
+ */
+export async function setLaunchModeAction(
+  enabled: boolean
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = getAdminClient();
+    const now = new Date().toISOString();
+
+    const { error } = await supabase.from('site_settings').upsert({
+      key: 'launch_mode',
+      content: { enabled, updated_at: now },
+      updated_at: now,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    // Set cookie for instant Edge Middleware lookup
+    const cookieStore = await cookies();
+    cookieStore.set('site_launched', enabled ? 'true' : 'false', {
+      path: '/',
+      httpOnly: false,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 365, // 1 year
+    });
+
+    revalidatePath('/', 'layout');
+    revalidatePath('/admin/super-panel');
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to update launch mode.' };
+  }
+}
+
 export async function getMaintenanceModeAction(): Promise<MaintenanceSettings> {
   try {
     const supabase = getAdminClient();
