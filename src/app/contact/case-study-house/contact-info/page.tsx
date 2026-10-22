@@ -98,7 +98,7 @@ export default function ContactInfoPage() {
   return (
     <PagePublishGate slug="contact/case-study-house/contact-info">
       <div 
-        className="w-full h-full overflow-y-auto lg:overflow-hidden flex flex-col lg:flex-row items-stretch select-none relative"
+        className="w-full max-w-7xl mx-auto h-full overflow-y-auto lg:overflow-hidden flex flex-col lg:flex-row items-stretch select-none relative"
       >
       <div className="w-full lg:w-1/2 min-h-[40vh] lg:min-h-0 lg:h-full relative shrink-0">
         <OfficeMap isDarkMode={isDarkMode} />

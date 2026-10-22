@@ -312,7 +312,7 @@ export const StudioServicesPage: React.FC<StudioServicesPageProps> = ({
   }, [accordions]);
 
   return (
-    <div className="w-full h-full px-4 sm:px-8 md:px-12 py-3 flex flex-col overflow-hidden select-none min-h-0 flex-1">
+    <div className="w-full max-w-7xl mx-auto h-full px-4 sm:px-8 md:px-12 py-3 flex flex-col overflow-hidden select-none min-h-0 flex-1">
       {/* Top Left Header Section: Title, Subtext */}
       <div className="shrink-0 text-left pt-3 pb-2 lg:pb-4 space-y-1">
         <h1 className="font-sans text-h2 sm:text-h1 font-bold tracking-tight lowercase leading-tight">

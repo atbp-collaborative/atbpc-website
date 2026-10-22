@@ -100,7 +100,7 @@ export const DiscoverySessionForm: React.FC = () => {
   if (!isLoaded) return null; // Avoid hydration mismatch
 
   return (
-    <div className="w-full flex-1 min-h-0 max-h-[calc(100vh-80px)] mx-auto overflow-hidden flex flex-col py-3 select-none">
+    <div className="w-full max-w-7xl flex-1 min-h-0 max-h-[calc(100vh-80px)] mx-auto overflow-hidden flex flex-col py-3 select-none">
       {/* Title Header */}
       <div className="mb-3 lg:mb-2 shrink-0 flex flex-col md:flex-row md:justify-between md:items-start gap-4 px-4 sm:px-8">
         <div>

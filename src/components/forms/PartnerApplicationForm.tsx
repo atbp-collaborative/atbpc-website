@@ -156,7 +156,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
 
   return (
     <div
-      className="w-full h-full max-h-[calc(100vh-80px)] mx-auto overflow-hidden flex flex-col py-3 select-none"
+      className="w-full max-w-7xl h-full max-h-[calc(100vh-80px)] mx-auto overflow-hidden flex flex-col py-3 select-none"
     >
       <div className="mb-3 shrink-0 flex flex-col md:flex-row md:justify-between md:items-start gap-4 px-4 sm:px-8">
         <div>

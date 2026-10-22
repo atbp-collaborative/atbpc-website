@@ -78,7 +78,7 @@ export const ProcessSubpage: React.FC<ProcessSubpageProps> = ({ data, stageGroup
 
   return (
     <div
-      className="w-full h-full px-4 sm:px-8 md:px-12 py-3 flex flex-col justify-between overflow-hidden select-none min-h-0 flex-1 relative"
+      className="w-full max-w-7xl mx-auto h-full px-4 sm:px-8 md:px-12 py-3 flex flex-col justify-between overflow-hidden select-none min-h-0 flex-1 relative"
     >
       {/* Top Left Header Section: Fixed at top */}
       <div 

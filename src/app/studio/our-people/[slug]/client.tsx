@@ -46,7 +46,7 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
   return (
     <div 
       id={`member-detail-${member.id}`}
-      className="w-full px-4 sm:px-8 py-2 select-none flex flex-col flex-1 min-h-0 h-full overflow-y-auto lg:overflow-hidden justify-start space-y-4 lg:space-y-2"
+      className="w-full max-w-7xl mx-auto px-4 sm:px-8 py-2 select-none flex flex-col flex-1 min-h-0 h-full overflow-y-auto lg:overflow-hidden justify-start space-y-4 lg:space-y-2"
     >
       <BreadcrumbButton
         label={`Back to ${breadcrumbLabel}`}

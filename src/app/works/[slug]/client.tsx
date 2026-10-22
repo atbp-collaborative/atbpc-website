@@ -145,12 +145,10 @@ function ProjectDetailContent({
   });
 
   const [isDesktop, setIsDesktop] = useState(true);
-  const [isXL, setIsXL] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
       setIsDesktop(window.innerWidth >= 768);
-      setIsXL(window.innerWidth >= 1280);
       if (columnRef.current) {
         const rect = columnRef.current.getBoundingClientRect();
         // Keep track of viewport-relative coordinates
@@ -374,7 +372,7 @@ function ProjectDetailContent({
   return (
     <div 
       id={`project-detail-${project.id}`}
-      className={`w-full px-4 sm:px-8 py-2 select-none flex flex-col lg:flex-1 lg:min-h-0 h-auto lg:h-full justify-start overflow-y-auto ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}
+      className={`w-full max-w-7xl mx-auto px-4 sm:px-8 py-2 select-none flex flex-col lg:flex-1 lg:min-h-0 h-auto lg:h-full justify-start overflow-y-auto ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}
     >
       <BreadcrumbButton
         label={backLabel}
@@ -388,10 +386,10 @@ function ProjectDetailContent({
         }}
       />
 
-      <div className={`grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-4 gap-6 lg:flex-1 lg:min-h-0 pb-1 ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}>
+      <div className={`grid grid-cols-1 lg:grid-cols-12 gap-6 lg:flex-1 lg:min-h-0 pb-1 ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}>
         
         {/* Carousel & CTA Container */}
-        <div ref={columnRef} className={`lg:col-span-7 lg:order-2 xl:col-span-2 xl:order-3 flex flex-col justify-start lg:h-full lg:min-h-0 space-y-3 ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}>
+        <div ref={columnRef} className={`lg:col-span-7 lg:order-2 flex flex-col justify-start lg:h-full lg:min-h-0 space-y-3 ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}>
           
           <div className={`space-y-3 w-full relative lg:flex-1 lg:min-h-0 flex flex-col justify-start ${isVideoExpanded && isDesktop ? '!overflow-visible z-50' : 'lg:overflow-hidden'}`}>
             
@@ -526,12 +524,11 @@ function ProjectDetailContent({
 
         {/* High-End Architectural Writeup & Specs */}
         <div 
-          className={`lg:col-span-5 lg:order-1 xl:col-span-2 xl:order-1 flex flex-col justify-start lg:h-full lg:min-h-0 py-0.5 ${
+          className={`lg:col-span-5 lg:order-1 flex flex-col justify-start lg:h-full lg:min-h-0 py-0.5 ${
             isVideoExpanded && isDesktop 
               ? '!overflow-visible z-50' 
               : 'lg:overflow-y-auto no-scrollbar lg:relative'
           }`}
-          style={isXL && coords.columnWidth > 0 ? { height: coords.columnWidth * (9 / 16) } : undefined}
         >
           {/* Sticky Header */}
           <div className={`lg:sticky lg:top-0 lg:z-10 pb-3 flex flex-col shrink-0 ${isDarkMode ? 'bg-vintage-charcoal' : 'bg-bright-gray'}`}>
@@ -546,32 +543,21 @@ function ProjectDetailContent({
           </div>
 
           {/* Main Content Area (Writeup & Specs) */}
-          <div className="flex flex-col xl:flex-row gap-6 w-full lg:min-h-0 overflow-visible mt-2 mb-4">
+          <div className="flex flex-col gap-6 w-full lg:min-h-0 overflow-visible mt-2 mb-4">
             {/* Writeup */}
-            <div className="w-full xl:w-[60%] shrink-0">
+            <div className="w-full shrink-0">
               <p className="text-caption sm:text-body leading-relaxed font-light opacity-90 whitespace-pre-line text-justify">
                 {project.fullWriteup}
               </p>
             </div>
 
             {/* Specs / Overview */}
-            <div className="w-full xl:w-[40%] shrink-0">
-              {/* Project Overview (Standard for >= xl) */}
-              <div className="hidden xl:block">
-                <h3 className="font-sans text-body font-semibold tracking-tight mb-2 opacity-80 uppercase">Project Overview</h3>
+            <div className="w-full shrink-0">
+              <Accordion title="Project Overview" isDarkMode={isDarkMode} size="sm" defaultOpen={false}>
                 <div className="pb-2 pt-1 text-mini pl-[5px]">
                   {renderProjectSpecs()}
                 </div>
-              </div>
-
-              {/* Project Overview (Accordion for < xl) */}
-              <div className="block xl:hidden">
-                <Accordion title="Project Overview" isDarkMode={isDarkMode} size="sm" defaultOpen={false}>
-                  <div className="pb-2 pt-1 text-mini pl-[5px]">
-                    {renderProjectSpecs()}
-                  </div>
-                </Accordion>
-              </div>
+              </Accordion>
             </div>
           </div>
 
@@ -716,7 +702,7 @@ export default function WorksSlugClient({
 
   return (
     <div 
-      className="w-full px-4 sm:px-8 select-none flex flex-col flex-1 min-h-0 h-full py-2 sm:py-3 overflow-hidden justify-between space-y-3"
+      className="w-full max-w-7xl mx-auto px-4 sm:px-8 select-none flex flex-col flex-1 min-h-0 h-full py-2 sm:py-3 overflow-hidden justify-between space-y-3"
     >
       <div className="flex-1 flex flex-col min-h-0 h-full justify-between space-y-3 sm:space-y-4 w-full overflow-hidden">
         {/* Top Area: Page Title & Subtext in ONE LINE (Aligned Left) + Homepage Carousel Dots */}
