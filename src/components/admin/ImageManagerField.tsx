@@ -21,6 +21,8 @@ interface ImageManagerFieldProps {
   label?: string;
   helperText?: string;
   folder?: string;
+  emptyFallbackSrc?: string;
+  onUploaded?: (urls: string[]) => void;
 }
 
 export const ImageManagerField: React.FC<ImageManagerFieldProps> = ({
@@ -30,11 +32,14 @@ export const ImageManagerField: React.FC<ImageManagerFieldProps> = ({
   label = 'Images',
   helperText = 'Upload images from your device.',
   folder = 'projects',
+  emptyFallbackSrc,
+  onUploaded,
 }) => {
   const { isDarkMode } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [failedPreviewUrl, setFailedPreviewUrl] = useState<string | null>(null);
 
   const processFiles = async (files: FileList | File[]) => {
     const validImageFiles = Array.from(files).filter((file) => file.type.startsWith('image/'));
@@ -61,7 +66,13 @@ export const ImageManagerField: React.FC<ImageManagerFieldProps> = ({
         throw new Error(res.error || 'Failed to upload image to Supabase Storage');
       });
 
-      const uploadedUrls = await Promise.all(uploadPromises);
+      const outcomes = await Promise.allSettled(uploadPromises);
+      const uploadedUrls = outcomes
+        .filter((outcome): outcome is PromiseFulfilledResult<string> => outcome.status === 'fulfilled')
+        .map((outcome) => outcome.value);
+      onUploaded?.(uploadedUrls);
+      const failed = outcomes.find((outcome): outcome is PromiseRejectedResult => outcome.status === 'rejected');
+      if (failed) throw failed.reason;
 
       if (single) {
         onChange([uploadedUrls[0]]);
@@ -121,6 +132,9 @@ export const ImageManagerField: React.FC<ImageManagerFieldProps> = ({
   };
 
   const coverImage = images[0];
+  const previewImage = coverImage === failedPreviewUrl && emptyFallbackSrc
+    ? emptyFallbackSrc
+    : coverImage;
   const subsequentImages = images.slice(1);
 
   return (
@@ -172,9 +186,21 @@ export const ImageManagerField: React.FC<ImageManagerFieldProps> = ({
               : 'border-black/15 bg-black/5 hover:border-space-sparkle/60 hover:bg-black/10'
           }`}
         >
-          <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center bg-space-sparkle/15 text-space-sparkle">
-            <Upload size={22} />
-          </div>
+          {emptyFallbackSrc ? (
+            <div className={`relative mx-auto overflow-hidden ${single ? 'w-24 h-24 rounded-full' : 'w-full max-w-[280px] aspect-video rounded-lg'}`}>
+              <Image
+                src={emptyFallbackSrc}
+                alt={single ? 'Fallback profile avatar' : 'Project image placeholder'}
+                fill
+                sizes={single ? '96px' : '280px'}
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center bg-space-sparkle/15 text-space-sparkle">
+              <Upload size={22} />
+            </div>
+          )}
           <div className="space-y-1">
             <p className="text-caption font-medium">
               Click to upload or drag & drop image {single ? 'file' : 'files'}
@@ -199,12 +225,17 @@ export const ImageManagerField: React.FC<ImageManagerFieldProps> = ({
               }`}
             >
               <Image
-                src={coverImage}
-                alt="Cover Image Preview"
+                src={previewImage}
+                alt={single ? 'Profile portrait preview' : 'Cover image preview'}
                 fill
                 unoptimized
                 sizes="(max-width: 1024px) 100vw, 800px"
                 className="object-cover"
+                onError={() => {
+                  if (emptyFallbackSrc && previewImage !== emptyFallbackSrc) {
+                    setFailedPreviewUrl(coverImage);
+                  }
+                }}
               />
             </div>
 

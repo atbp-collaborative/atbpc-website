@@ -25,6 +25,7 @@ import { DEFAULT_SHIMMER_BLUR_DATA_URL } from '@/lib/images/image-placeholders';
 import { ProjectCarouselSkeleton } from '@/components/primitives/skeletons';
 import { isUnsplashUrl, unsplashLoader } from '@/lib/imageLoaders';
 import { ProjectCard } from '@/components/blocks/ProjectCard';
+import { PROJECT_PLACEHOLDER_IMAGE } from '@/lib/projects/project-constants';
 
 // motion needs a ref-forwarding component to animate; next/image forwards
 // its ref to the underlying <img>, so this keeps the existing slide-transform
@@ -126,7 +127,8 @@ function ProjectDetailContent({
 
   const mediaItems = useMemo(() => {
     const items: Array<{ type: 'image' | 'video'; url: string; duration?: string }> = [];
-    project.images.forEach((img) => {
+    const images = project.images?.length ? project.images : [PROJECT_PLACEHOLDER_IMAGE];
+    images.forEach((img) => {
       items.push({ type: 'image', url: img });
     });
     if (project.video) {
@@ -855,28 +857,34 @@ export default function WorksSlugClient({
           </div>
 
           <div className="relative w-full flex-1 min-h-0 flex flex-col items-center group/carousel">
-            <div
-              ref={carouselRef}
-              {...dragHandlers}
-              className="w-full h-full overflow-y-auto md:overflow-y-hidden md:overflow-x-auto no-scrollbar overscroll-x-contain flex flex-col md:flex-row gap-[2px] items-stretch py-1 cursor-grab active:cursor-grabbing"
-              style={{
-                '--max-items-desktop': Math.min(filteredProjects.length, 4.5),
-                '--max-items-tablet': Math.min(filteredProjects.length, 3.5),
-              } as React.CSSProperties}
-            >
-              {filteredProjects.map((project, idx) => (
-                <ProjectCard
-                  priority={idx < 3}
-                  key={project.id}
-                  project={project}
-                  totalProjects={filteredProjects.length}
-                  isDarkMode={isDarkMode}
-                  onClick={() => {
-                    router.push(projectRoute(project.slug || project.id));
-                  }}
-                />
-              ))}
-            </div>
+            {filteredProjects.length === 0 ? (
+              <div className="w-full text-center py-12 opacity-60 text-caption sm:text-body font-light">
+                No projects found in this category.
+              </div>
+            ) : (
+              <div
+                ref={carouselRef}
+                {...dragHandlers}
+                className="w-full h-full overflow-y-auto md:overflow-y-hidden md:overflow-x-auto no-scrollbar overscroll-x-contain flex flex-col md:flex-row gap-[2px] items-stretch py-1 cursor-grab active:cursor-grabbing"
+                style={{
+                  '--max-items-desktop': Math.min(filteredProjects.length, 4.5),
+                  '--max-items-tablet': Math.min(filteredProjects.length, 3.5),
+                } as React.CSSProperties}
+              >
+                {filteredProjects.map((project, idx) => (
+                  <ProjectCard
+                    priority={idx < 3}
+                    key={project.id}
+                    project={project}
+                    totalProjects={filteredProjects.length}
+                    isDarkMode={isDarkMode}
+                    onClick={() => {
+                      router.push(projectRoute(project.slug || project.id));
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
 

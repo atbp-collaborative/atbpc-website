@@ -40,6 +40,11 @@ import {
   saveHomepageSlogansAction,
   fetchAdminSitePagesAction,
 } from '@/app/actions/admin-mutations';
+import { toast } from 'sonner';
+
+function reportCleanupWarning(warning?: string) {
+  if (warning) toast.warning(`Content saved, but image cleanup failed: ${warning}`);
+}
 
 // ==========================================
 // 1. SITE PAGES CRUD (SEO-Locked Slugs)
@@ -61,6 +66,7 @@ export async function saveAdminSitePage(page: SitePage): Promise<SitePage> {
     console.error('Failed to save site page to Supabase:', res.error);
     throw new Error(res.error || 'Failed to save site page');
   }
+  reportCleanupWarning(res.cleanupWarning);
   return res.data || page;
 }
 
@@ -84,6 +90,7 @@ export async function saveAdminNavigationCard(card: NavigationCardItem): Promise
     console.error('Failed to save navigation card to Supabase:', res.error);
     throw new Error(res.error || 'Failed to save navigation card');
   }
+  reportCleanupWarning(res.cleanupWarning);
   return res.data || card;
 }
 
@@ -107,6 +114,7 @@ export async function saveAdminProcessPhilosophy(item: ProcessPhilosophy): Promi
     console.error('Failed to save process philosophy to Supabase:', res.error);
     throw new Error(res.error || 'Failed to save process philosophy');
   }
+  reportCleanupWarning(res.cleanupWarning);
   return res.data || item;
 }
 
@@ -174,6 +182,7 @@ export async function saveAdminServiceOffering(offering: ServiceOffering): Promi
     console.error('Failed to save service offering to Supabase:', res.error);
     throw new Error(res.error || 'Failed to save service offering');
   }
+  reportCleanupWarning(res.cleanupWarning);
   return res.data || offering;
 }
 
@@ -214,6 +223,7 @@ export async function saveAdminHomeSlide(slide: HomeSlideItem): Promise<HomeSlid
     console.error('Failed to save home slide to Supabase:', res.error);
     throw new Error(res.error || 'Failed to save home slide');
   }
+  reportCleanupWarning(res.cleanupWarning);
   return res.data || slide;
 }
 
@@ -223,6 +233,7 @@ export async function deleteAdminHomeSlide(slideId: string): Promise<void> {
     console.error('Failed to delete home slide from Supabase:', res.error);
     throw new Error(res.error || 'Failed to delete home slide');
   }
+  if (res.cleanupWarning) toast.warning(`Slide deleted, but image cleanup failed: ${res.cleanupWarning}`);
 }
 
 export async function reorderAdminHomeSlides(slides: HomeSlideItem[]): Promise<void> {

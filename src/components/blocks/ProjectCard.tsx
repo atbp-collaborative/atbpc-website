@@ -1,6 +1,7 @@
 import React from 'react';
 import { Project } from '@/types';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
+import { PROJECT_PLACEHOLDER_IMAGE } from '@/lib/projects/project-constants';
 
 export interface ProjectCardProps {
   project: Project;
@@ -27,7 +28,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       }`}
     >
       <ImageWithFade
-        src={project.images[0]}
+        src={project.images?.[0] || PROJECT_PLACEHOLDER_IMAGE}
         alt={project.title}
         fill
         priority={priority}

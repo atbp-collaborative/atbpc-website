@@ -12,15 +12,17 @@ import { NavigationCardItem, HomeSlideItem } from '@/types';
 import { Button } from '@/components/primitives/buttons/Button';
 import { useTheme } from '@/context/ThemeContext';
 import { ImageManagerField } from '@/components/admin/ImageManagerField';
+import { usePendingMediaUploads } from '@/hooks/admin/usePendingMediaUploads';
 import { CmsHomeTab } from '@/components/admin/cms/CmsHomeTab';
 import {
   getOurPeopleFooterFromSupabase,
   saveOurPeopleFooterToSupabase,
 } from '@/services/supabase/settings.service';
+import { toast } from 'sonner';
 
 interface CmsLandingPagesTabProps {
   cards: NavigationCardItem[];
-  onSaveCard: (card: NavigationCardItem) => void;
+  onSaveCard: (card: NavigationCardItem) => Promise<NavigationCardItem>;
   slides?: HomeSlideItem[];
   onSaveSlide?: (slide: HomeSlideItem) => Promise<HomeSlideItem> | void;
   onDeleteSlide?: (slideId: string) => Promise<void> | void;
@@ -80,6 +82,12 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
   // Card editing modal state
   const [editingCard, setEditingCard] = useState<NavigationCardItem | null>(null);
   const initialCardRef = useRef<NavigationCardItem | null>(null);
+  const pendingImages = usePendingMediaUploads();
+
+  const closeCard = () => {
+    void pendingImages.cleanup();
+    setEditingCard(null);
+  };
 
   const handleStartEditCard = (card: NavigationCardItem) => {
     const isLanding = ['studio', 'contact'].includes(card.hubId.toLowerCase());
@@ -162,8 +170,13 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
         console.error('Failed to sync our_people_footer to Supabase:', err);
       }
     }
-    onSaveCard({ ...editingCard, isDraft: false });
-    setEditingCard(null);
+    try {
+      const saved = await onSaveCard({ ...editingCard, isDraft: false });
+      await pendingImages.cleanup(saved.imageUrl ? [saved.imageUrl] : []);
+      setEditingCard(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not save card');
+    }
   };
 
   return (
@@ -386,7 +399,7 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
               </div>
               <button
                 type="button"
-                onClick={() => setEditingCard(null)}
+                onClick={closeCard}
                 className="p-1 opacity-60 hover:opacity-100 cursor-pointer"
               >
                 <X size={18} />
@@ -504,12 +517,13 @@ export const CmsLandingPagesTab: React.FC<CmsLandingPagesTabProps> = ({
                   label="Card Background Image"
                   helperText="Visual cover preview photograph for this card."
                   images={editingCard.imageUrl ? [editingCard.imageUrl] : []}
+                  onUploaded={pendingImages.track}
                   onChange={(imgs) => setEditingCard({ ...editingCard, imageUrl: imgs[0] || '' })}
                 />
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/10 dark:border-white/10">
-                <Button type="ghost" onClick={() => setEditingCard(null)} label="Cancel" />
+                <Button type="ghost" onClick={closeCard} label="Cancel" />
                 <Button type="filled" htmlType="submit" disabled={!isDirty}>
                   <Save size={14} className="mr-1.5 inline" /> Save Card
                 </Button>

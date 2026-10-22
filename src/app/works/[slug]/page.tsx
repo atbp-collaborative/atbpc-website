@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getProjectById, getMembers, getProjects } from '@/services/dummy-data.service';
 import WorksSlugClient from './client';
+import { PROJECT_PLACEHOLDER_IMAGE } from '@/lib/projects/project-constants';
 
 export const revalidate = 60;
 
@@ -12,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     if (project) {
       const title = `${project.title} | ATBP Collaborative`;
       const description = project.description || project.fullWriteup?.slice(0, 160) || 'Architectural project by ATBP Collaborative.';
-      const coverImage = project.images && project.images.length > 0 ? project.images[0] : '/charcoal-logo.png';
+      const coverImage = project.images?.[0] || PROJECT_PLACEHOLDER_IMAGE;
 
       return {
         title,

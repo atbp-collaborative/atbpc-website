@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 interface CmsHomeTabProps {
   slides: HomeSlideItem[];
   slogans?: HomepageSlogans;
-  onSaveSlide: (slide: HomeSlideItem) => void;
+  onSaveSlide: (slide: HomeSlideItem) => Promise<HomeSlideItem> | void;
   onDeleteSlide: (slideId: string) => void;
   onReorderSlides: (slides: HomeSlideItem[]) => Promise<void> | void;
   onSaveSlogans?: (slogans: HomepageSlogans) => void;
@@ -138,24 +138,19 @@ export const CmsHomeTab: React.FC<CmsHomeTabProps> = ({
 
   // When modal is cancelled/closed without saving:
   // Purge any newly uploaded images from Supabase Storage
-  const handleCloseModal = () => {
+  const handleCloseModal = async () => {
     const tempUrls = [...uploadedTempUrlsRef.current];
     uploadedTempUrlsRef.current = [];
 
     if (tempUrls.length > 0) {
-      // Fire-and-forget storage cleanups for orphaned uploads
-      tempUrls.forEach((url) => {
-        deleteStorageFileAction(url).catch((err) =>
-          console.warn('[CmsHomeTab] Failed to cleanup orphaned upload:', url, err)
-        );
-      });
+      await Promise.all(tempUrls.map((url) => deleteStorageFileAction(url)));
     }
 
     setEditingSlide(null);
     initialSlideRef.current = null;
   };
 
-  const handleSaveSlideSubmit = (e: React.FormEvent) => {
+  const handleSaveSlideSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingSlide) return;
 
@@ -167,12 +162,17 @@ export const CmsHomeTab: React.FC<CmsHomeTabProps> = ({
 
     if (!isSlideDirty) return;
 
-    // Successful save: keep uploaded image, do not purge
-    uploadedTempUrlsRef.current = [];
-    onSaveSlide(editingSlide);
-
-    setEditingSlide(null);
-    initialSlideRef.current = null;
+    try {
+      const saved = await onSaveSlide(editingSlide);
+      const selected = saved?.imageUrl || editingSlide.imageUrl;
+      const unused = uploadedTempUrlsRef.current.filter((url) => url !== selected);
+      await Promise.all(unused.map((url) => deleteStorageFileAction(url)));
+      uploadedTempUrlsRef.current = [];
+      setEditingSlide(null);
+      initialSlideRef.current = null;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not save slide');
+    }
   };
 
   const handleMoveSlide = (index: number, direction: 'up' | 'down') => {
@@ -358,6 +358,11 @@ export const CmsHomeTab: React.FC<CmsHomeTabProps> = ({
                 <ImageManagerField
                   single={true}
                   folder="cms"
+                  onUploaded={(urls) => {
+                    urls.forEach((url) => {
+                      if (!uploadedTempUrlsRef.current.includes(url)) uploadedTempUrlsRef.current.push(url);
+                    });
+                  }}
                   label="Hero Photograph"
                   helperText="Required full-screen high-resolution architectural photo for the hero carousel."
                   images={editingSlide.imageUrl ? [editingSlide.imageUrl] : []}
@@ -393,10 +398,14 @@ export const CmsHomeTab: React.FC<CmsHomeTabProps> = ({
                 {slides.some((s) => s.id === editingSlide.id) ? (
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       if (confirm(`Are you sure you want to delete slide "${editingSlide.title || 'Untitled'}"?`)) {
-                        onDeleteSlide(editingSlide.id);
-                        handleCloseModal();
+                        try {
+                          await onDeleteSlide(editingSlide.id);
+                          await handleCloseModal();
+                        } catch (error) {
+                          toast.error(error instanceof Error ? error.message : 'Could not delete slide');
+                        }
                       }
                     }}
                     className="text-red-500 hover:text-red-600 dark:hover:text-red-400 text-mini flex items-center gap-1.5 cursor-pointer font-medium"

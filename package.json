@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start --port=3000",
     "typecheck": "tsc --noEmit",
-    "seed:storage": "node --experimental-strip-types --env-file=.env.local scripts/seed-storage-media.ts"
+    "seed:storage": "node --experimental-strip-types --env-file=.env.local scripts/seed-storage-media.ts",
+    "audit:orphaned-media": "node --experimental-strip-types --env-file=.env.local scripts/audit-orphaned-media.ts"
   },
   "dependencies": {
     "@aivangogh/ph-address": "^2026.2.1",

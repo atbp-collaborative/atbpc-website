@@ -17,7 +17,6 @@ import {
   ArrowUp,
   ArrowDown,
   Save,
-  Building,
   Calendar,
   MapPin,
   Clock,
@@ -47,7 +46,8 @@ import { useAdminAuth } from '@/hooks/admin/useAdminAuth';
 import { useAdminUiSettings } from '@/context/AdminUiSettingsContext';
 import { Project } from '@/types';
 import { toast } from 'sonner';
-import { MAIN_CATEGORIES, TYPOLOGY_MAP, ALL_TYPOLOGIES } from '@/lib/projects/project-constants';
+import { usePendingMediaUploads } from '@/hooks/admin/usePendingMediaUploads';
+import { MAIN_CATEGORIES, TYPOLOGY_MAP, ALL_TYPOLOGIES, PROJECT_PLACEHOLDER_IMAGE } from '@/lib/projects/project-constants';
 import {
   isUuid,
   generateProjectSlug,
@@ -155,6 +155,7 @@ export function AdminProjectsClient({
   const { user } = useAdminAuth();
   const isSuperadmin = user?.role === 'superadmin';
   const isEditor = user?.role === 'editor';
+  const pendingImages = usePendingMediaUploads();
   const { getDisplayMode, setDisplayMode } = useAdminUiSettings();
   const displayMode = getDisplayMode('projects');
   const {
@@ -290,10 +291,12 @@ export function AdminProjectsClient({
   }, [formData]);
 
   const handleResetDefaults = () => {
+    void pendingImages.cleanup();
     setFormData({ ...initialDataRef.current });
   };
 
   const handleBackToList = () => {
+    void pendingImages.cleanup();
     setViewMode('list');
   };
 
@@ -324,12 +327,6 @@ export function AdminProjectsClient({
       return;
     }
 
-    // Remark 25: "do not accept if no primary photo uploaded"
-    if (!formData.images || formData.images.length === 0) {
-      toast.error('Please upload at least one primary project photo before saving.');
-      return;
-    }
-
     // Maintain UUID for primary key (generate if empty or temp)
     const effectiveId = isUuid(formData.id) ? formData.id : crypto.randomUUID();
 
@@ -356,8 +353,10 @@ export function AdminProjectsClient({
       contributors: formData.contributors || [],
     };
 
-    await saveProject(projectToSave);
-    initialDataRef.current = projectToSave;
+    const saved = await saveProject(projectToSave);
+    if (!saved) return;
+    await pendingImages.cleanup(saved.images || []);
+    initialDataRef.current = saved;
     setViewMode('list');
   };
 
@@ -880,9 +879,11 @@ export function AdminProjectsClient({
                 <ImageManagerField
                   single={false}
                   label="Project Photography"
-                  helperText="Primary image will serve as portfolio cover. Reorder using arrows."
+                  helperText="The first image is the portfolio cover. A house placeholder appears when no photos are uploaded."
                   images={formData.images || []}
+                  emptyFallbackSrc={PROJECT_PLACEHOLDER_IMAGE}
                   folder="projects"
+                  onUploaded={pendingImages.track}
                   onChange={(imgs) =>
                     setFormData((prev) => ({ ...prev, images: imgs }))
                   }
@@ -1194,19 +1195,13 @@ export function AdminProjectsClient({
                     >
                       <div className="flex items-center gap-4 min-w-0 flex-1">
                         <div className="w-16 h-12 rounded-lg bg-black/10 overflow-hidden relative shrink-0">
-                          {project.images && project.images[0] ? (
-                            <Image
-                              src={project.images[0]}
-                              alt={project.title}
-                              fill
-                              className="object-cover"
-                              sizes="64px"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center opacity-30">
-                              <Building size={18} />
-                            </div>
-                          )}
+                          <Image
+                            src={project.images?.[0] || PROJECT_PLACEHOLDER_IMAGE}
+                            alt={project.title}
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                          />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -1274,19 +1269,13 @@ export function AdminProjectsClient({
                   <div>
                     {/* Cover Thumbnail */}
                     <div className="relative aspect-video w-full bg-black/10 overflow-hidden">
-                      {project.images && project.images[0] ? (
-                        <Image
-                          src={project.images[0]}
-                          alt={project.title}
-                          fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                          className="object-cover group-hover:scale-102 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center opacity-40">
-                          <Building size={28} />
-                        </div>
-                      )}
+                      <Image
+                        src={project.images?.[0] || PROJECT_PLACEHOLDER_IMAGE}
+                        alt={project.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-102 transition-transform duration-500"
+                      />
 
                       {/* Top Overlay Badges */}
                       <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">

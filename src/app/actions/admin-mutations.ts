@@ -38,6 +38,44 @@ import { optimizeImageBuffer } from '@/lib/images/server-image-optimizer';
 import { mapPersonRecord } from '@/services/supabase/people.service';
 import { FALLBACK_AVATAR_PORTRAIT } from '@/lib/constants/avatars';
 import { mapProjectRecord, PROJECT_SELECT_QUERY } from '@/services/supabase/projects.service';
+import { cleanupUnreferencedMedia } from '@/lib/images/storage-cleanup';
+import { createClient as createSessionClient } from '@/lib/supabase/server';
+
+async function requireAdminSession(requiredRole?: 'superadmin'): Promise<void> {
+  // Gate Pass uses a browser-only simulated admin and does not create Supabase auth cookies.
+  // Match that established development flow without enabling a service-role bypass in production.
+  if (process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_GATE_PASS === 'true') {
+    return;
+  }
+
+  const client = await createSessionClient();
+  const { data: { user }, error } = await client.auth.getUser();
+  if (error || !user) throw new Error('An administrator session is required');
+  const { data: profile, error: profileError } = await getAdminClient()
+    .from('admin_users').select('id, role').eq('id', user.id).maybeSingle();
+  if (profileError || !profile) throw new Error('Administrator access is required');
+  if (requiredRole && profile.role !== requiredRole) throw new Error('Superadmin access is required');
+}
+
+async function cleanupRemovedImages(urls: string[]): Promise<string | undefined> {
+  try {
+    await cleanupUnreferencedMedia(getAdminClient(), urls);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Storage cleanup failed';
+    console.error('[cleanupRemovedImages]', error);
+    return message;
+  }
+}
+
+async function readPreviousImage(table: string, column: string, id: string): Promise<string | null> {
+  const { data, error } = await getAdminClient().from(table).select(column).eq('id', id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as Record<string, string | null> | null)?.[column] || null;
+}
+
+async function cleanupReplacedImage(previous: string | null, current: string | null | undefined) {
+  return previous && previous !== current ? cleanupRemovedImages([previous]) : undefined;
+}
 
 // ==============================================================================
 // 1. PEOPLE MUTATIONS & QUERIES
@@ -93,6 +131,7 @@ export async function fetchAdminProjectsAction(): Promise<Project[]> {
 
 export async function savePersonAction(member: Member) {
   try {
+    await requireAdminSession();
     const supabase = getAdminClient();
 
     const firstName = (member.firstName || member.name.split(' ')[0] || 'Team').trim();
@@ -105,6 +144,10 @@ export async function savePersonAction(member: Member) {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
+
+    const { data: previousPerson, error: previousPersonError } = await supabase
+      .from('people').select('profile_photo_url').eq('id', id).maybeSingle();
+    if (previousPersonError) return { success: false, error: previousPersonError.message };
 
     const defaultAvatar = FALLBACK_AVATAR_PORTRAIT;
 
@@ -158,6 +201,10 @@ export async function savePersonAction(member: Member) {
       return { success: false, error: personError.message };
     }
 
+    const cleanupWarning = previousPerson?.profile_photo_url !== profilePhotoUrl
+      ? await cleanupRemovedImages([previousPerson?.profile_photo_url].filter(Boolean))
+      : undefined;
+
     // Sync Credentials / Affiliations if provided
     if (member.affiliations && Array.isArray(member.affiliations)) {
       await supabase.from('person_credentials').delete().eq('person_id', id);
@@ -200,6 +247,7 @@ export async function savePersonAction(member: Member) {
 
     return {
       success: true,
+      cleanupWarning,
       data: {
         ...member,
         id,
@@ -219,18 +267,26 @@ export async function savePersonAction(member: Member) {
 
 export async function deletePersonAction(id: string) {
   try {
+    await requireAdminSession('superadmin');
     const supabase = getAdminClient();
 
     // Guard: Prevent deleting the Principal Architect & Founder
-    const { data: targetPerson } = await supabase
+    const { data: targetPerson, error: targetError } = await supabase
       .from('people')
-      .select('role')
+      .select('id, profile_photo_url, primary_role:roles(role_title)')
       .eq('id', id)
-      .single();
+      .maybeSingle();
+    if (targetError) return { success: false, error: targetError.message };
+    if (!targetPerson) return { success: false, error: 'Person was not found' };
+
+    const primaryRole = Array.isArray(targetPerson.primary_role)
+      ? targetPerson.primary_role[0]?.role_title
+      : (targetPerson.primary_role as { role_title?: string } | null)?.role_title;
 
     if (
-      targetPerson?.role?.toLowerCase().includes('principal architect') ||
-      targetPerson?.role?.toLowerCase().includes('founder')
+      id === 'marchie-borja' ||
+      primaryRole?.toLowerCase().includes('principal architect') ||
+      primaryRole?.toLowerCase().includes('founder')
     ) {
       return {
         success: false,
@@ -238,18 +294,20 @@ export async function deletePersonAction(id: string) {
       };
     }
 
-    const { error } = await supabase.from('people').delete().eq('id', id);
+    const { data: deleted, error } = await supabase.from('people').delete().eq('id', id).select('id');
 
     if (error) {
       console.error('[deletePersonAction] Error:', error);
       return { success: false, error: error.message };
     }
+    if (!deleted?.length) return { success: false, error: 'Person was not found' };
+    const cleanupWarning = await cleanupRemovedImages([targetPerson?.profile_photo_url].filter(Boolean));
 
     revalidatePath('/studio/our-people');
     revalidatePath('/admin/people');
     revalidatePath('/', 'layout');
 
-    return { success: true };
+    return { success: true, cleanupWarning };
   } catch (err: any) {
     console.error('[deletePersonAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to delete person' };
@@ -373,6 +431,7 @@ export async function reorderPeopleAction(items: { id: string; displayOrder: num
  */
 export async function uploadProjectMediaAction(formData: FormData) {
   try {
+    await requireAdminSession();
     const file = formData.get('file') as File | null;
     if (!file) {
       return { success: false, error: 'No file provided for upload' };
@@ -418,28 +477,9 @@ export async function uploadProjectMediaAction(formData: FormData) {
  */
 export async function deleteStorageFileAction(fileUrl: string) {
   try {
+    await requireAdminSession();
     if (!fileUrl) return { success: false, error: 'No URL provided' };
-    const supabase = getAdminClient();
-
-    let storagePath = fileUrl;
-    const bucketMarker = '/portfolio-media/';
-    if (fileUrl.includes(bucketMarker)) {
-      storagePath = fileUrl.split(bucketMarker)[1];
-    } else if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
-      const parts = new URL(fileUrl).pathname.split('/');
-      const bucketIdx = parts.indexOf('portfolio-media');
-      if (bucketIdx !== -1) {
-        storagePath = parts.slice(bucketIdx + 1).join('/');
-      }
-    }
-
-    storagePath = decodeURIComponent(storagePath.split('?')[0]);
-
-    const { error } = await supabase.storage.from('portfolio-media').remove([storagePath]);
-    if (error) {
-      console.error('[deleteStorageFileAction] Error removing file from storage:', error);
-      return { success: false, error: error.message };
-    }
+    await cleanupUnreferencedMedia(getAdminClient(), [fileUrl]);
     return { success: true };
   } catch (err: any) {
     console.error('[deleteStorageFileAction] Exception:', err);
@@ -493,12 +533,16 @@ async function uploadBase64ToStorage(
 
 export async function saveProjectAction(project: Project) {
   try {
+    await requireAdminSession();
     const supabase = getAdminClient();
 
     // 1. Maintain UUID Primary Key
     const isExistingUuid = isUuid(project.id);
     const isTempId = !project.id || project.id.startsWith('project-');
     const id = isExistingUuid ? project.id : isTempId ? crypto.randomUUID() : project.id;
+    const { data: previousMedia, error: previousMediaError } = await supabase
+      .from('project_media').select('id, url').eq('project_id', id);
+    if (previousMediaError) return { success: false, error: previousMediaError.message };
 
     // 2. Generate or preserve a clean, human-readable slug (guaranteed never a UUID)
     const slug = generateProjectSlug(project.slug || project.title, project.year);
@@ -574,15 +618,12 @@ export async function saveProjectAction(project: Project) {
 
     // 5. Sanitize and Sync media gallery (auto-uploading any base64 images to Supabase Storage)
     let processedImages: string[] = [];
+    let replacementMedia: Array<Record<string, unknown>> | null = null;
     if (project.images && Array.isArray(project.images)) {
       processedImages = await Promise.all(
         project.images.map((url, idx) => uploadBase64ToStorage(url, id, idx))
       );
-
-      await supabase.from('project_media').delete().eq('project_id', id);
-
-      if (processedImages.length > 0) {
-        const mediaToInsert = processedImages.map((url, idx) => ({
+      replacementMedia = processedImages.map((url, idx) => ({
           project_id: id,
           media_type: 'image',
           url,
@@ -590,13 +631,8 @@ export async function saveProjectAction(project: Project) {
           is_cover: idx === 0,
           sort_order: idx + 1,
         }));
-        await supabase.from('project_media').insert(mediaToInsert);
-      }
     } else if (project.media && Array.isArray(project.media)) {
-      await supabase.from('project_media').delete().eq('project_id', id);
-
-      if (project.media.length > 0) {
-        const sanitizedMedia = await Promise.all(
+        replacementMedia = await Promise.all(
           project.media.map(async (m, idx) => {
             const rawUrl = m.mediaUrl || (m as any).url || '';
             const cleanUrl = await uploadBase64ToStorage(rawUrl, id, idx);
@@ -610,10 +646,28 @@ export async function saveProjectAction(project: Project) {
             };
           })
         );
-        await supabase.from('project_media').insert(sanitizedMedia);
-        processedImages = sanitizedMedia.map((m) => m.url);
+        processedImages = replacementMedia.map((m) => m.url as string);
+    }
+
+    if (replacementMedia) {
+      let insertedIds: string[] = [];
+      if (replacementMedia.length) {
+        const { data: inserted, error } = await supabase.from('project_media').insert(replacementMedia).select('id');
+        if (error) return { success: false, error: error.message };
+        insertedIds = (inserted || []).map((row) => row.id);
+      }
+      const oldIds = (previousMedia || []).map((row) => row.id);
+      if (oldIds.length) {
+        const { error } = await supabase.from('project_media').delete().in('id', oldIds);
+        if (error) {
+          if (insertedIds.length) await supabase.from('project_media').delete().in('id', insertedIds);
+          return { success: false, error: error.message };
+        }
       }
     }
+    const cleanupWarning = replacementMedia
+      ? await cleanupRemovedImages((previousMedia || []).map((m) => m.url).filter((url) => !processedImages.includes(url)))
+      : undefined;
 
     // 6. Sync Project Contributors into Supabase project_contributors table
     if (project.contributors && Array.isArray(project.contributors)) {
@@ -643,6 +697,7 @@ export async function saveProjectAction(project: Project) {
 
     return {
       success: true,
+      cleanupWarning,
       data: {
         ...project,
         id,
@@ -731,24 +786,29 @@ export async function getProjectContributorsAction(projectId: string) {
 
 export async function deleteProjectAction(id: string) {
   try {
+    await requireAdminSession('superadmin');
     const supabase = getAdminClient();
-    let { error } = await supabase.from('projects').delete().eq('id', id);
-
-    if (error && !isUuid(id)) {
-      const retry = await supabase.from('projects').delete().eq('slug', id);
-      error = retry.error;
-    }
+    const column = isUuid(id) ? 'id' : 'slug';
+    const { data: project, error: lookupError } = await supabase
+      .from('projects').select('id').eq(column, id).maybeSingle();
+    if (lookupError) return { success: false, error: lookupError.message };
+    if (!project) return { success: false, error: 'Project was not found' };
+    const { data: media, error: mediaError } = await supabase
+      .from('project_media').select('url').eq('project_id', project.id);
+    if (mediaError) return { success: false, error: mediaError.message };
+    const { error } = await supabase.from('projects').delete().eq('id', project.id);
 
     if (error) {
       console.error('[deleteProjectAction] Error:', error);
       return { success: false, error: error.message };
     }
+    const cleanupWarning = await cleanupRemovedImages((media || []).map((m) => m.url));
 
     revalidatePath('/works');
     revalidatePath('/admin/projects');
     revalidatePath('/', 'layout');
 
-    return { success: true };
+    return { success: true, cleanupWarning };
   } catch (err: any) {
     console.error('[deleteProjectAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to delete project' };
@@ -1054,7 +1114,9 @@ export async function fetchAdminSitePagesAction(): Promise<SitePage[]> {
 
 export async function saveSitePageAction(page: SitePage) {
   try {
+    await requireAdminSession();
     const supabase = getAdminClient();
+    const previousImage = await readPreviousImage('site_pages', 'hero_image_url', page.id);
 
     const { data, error } = await supabase
       .from('site_pages')
@@ -1075,6 +1137,7 @@ export async function saveSitePageAction(page: SitePage) {
       console.error('[saveSitePageAction] Error:', error);
       return { success: false, error: error.message };
     }
+    const cleanupWarning = await cleanupReplacedImage(previousImage, page.heroImageUrl);
 
     // Synchronize publication status with service_offerings or process_philosophies if this page corresponds to one
     const lastSeg = page.id.split('/').pop() || '';
@@ -1100,6 +1163,7 @@ export async function saveSitePageAction(page: SitePage) {
 
     return {
       success: true,
+      cleanupWarning,
       data: {
         ...page,
         ...(data
@@ -1123,10 +1187,15 @@ export async function saveSitePageAction(page: SitePage) {
 
 export async function saveNavigationCardAction(card: NavigationCardItem) {
   try {
+    await requireAdminSession();
     const supabase = getAdminClient();
+    const { data: previousCard, error: previousCardError } = await supabase
+      .from('navigation_cards').select('id, image_url').eq('card_key', card.cardKey).maybeSingle();
+    if (previousCardError) return { success: false, error: previousCardError.message };
+    const previousImage = previousCard?.image_url || null;
 
     const basePayload: any = {
-      id: card.id,
+      id: previousCard?.id || (isUuid(card.id) ? card.id : crypto.randomUUID()),
       hub_id: card.hubId,
       card_key: card.cardKey,
       title: card.title,
@@ -1167,6 +1236,7 @@ export async function saveNavigationCardAction(card: NavigationCardItem) {
       console.error('[saveNavigationCardAction] Error:', error);
       return { success: false, error: error.message };
     }
+    const cleanupWarning = await cleanupReplacedImage(previousImage, card.imageUrl);
 
     // Synchronize page subtitle to corresponding site_pages row if applicable
     if (card.pageSubtitle) {
@@ -1191,6 +1261,7 @@ export async function saveNavigationCardAction(card: NavigationCardItem) {
 
     return {
       success: true,
+      cleanupWarning,
       data: {
         ...card,
         pageSubtitle: card.pageSubtitle,
@@ -1222,7 +1293,9 @@ export async function saveNavigationCardAction(card: NavigationCardItem) {
 
 export async function saveProcessPhilosophyAction(item: ProcessPhilosophy) {
   try {
+    await requireAdminSession();
     const supabase = getAdminClient();
+    const previousImage = await readPreviousImage('process_philosophies', 'image_url', item.id);
 
     const { error } = await supabase
       .from('process_philosophies')
@@ -1255,7 +1328,8 @@ export async function saveProcessPhilosophyAction(item: ProcessPhilosophy) {
     revalidatePath('/studio/our-process/building-with-culture');
     revalidatePath('/', 'layout');
 
-    return { success: true, data: item };
+    const cleanupWarning = await cleanupReplacedImage(previousImage, item.imageUrl);
+    return { success: true, cleanupWarning, data: item };
   } catch (err: any) {
     console.error('[saveProcessPhilosophyAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to save process philosophy' };
@@ -1449,7 +1523,9 @@ export async function deleteProcessStageAction(stageId: string, processPageId: s
 
 export async function saveServiceOfferingAction(offering: ServiceOffering) {
   try {
+    await requireAdminSession();
     const supabase = getAdminClient();
+    const previousImage = await readPreviousImage('service_offerings', 'image_url', offering.id);
 
     const { error } = await supabase
       .from('service_offerings')
@@ -1485,7 +1561,8 @@ export async function saveServiceOfferingAction(offering: ServiceOffering) {
     revalidatePath('/studio/our-services/consultation-retainer-services');
     revalidatePath('/', 'layout');
 
-    return { success: true, data: offering };
+    const cleanupWarning = await cleanupReplacedImage(previousImage, offering.imageUrl);
+    return { success: true, cleanupWarning, data: offering };
   } catch (err: any) {
     console.error('[saveServiceOfferingAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to save service offering' };
@@ -1590,8 +1667,10 @@ export async function deleteServiceAccordionAction(itemId: string, serviceId: st
 
 export async function saveHomeSlideAction(slide: HomeSlideItem) {
   try {
+    await requireAdminSession();
     const supabase = getAdminClient();
     const hasValidUuid = isUuid(slide.id);
+    const previousImage = hasValidUuid ? await readPreviousImage('home_slides', 'image_url', slide.id) : null;
 
     const payload: any = {
       title: slide.title,
@@ -1630,10 +1709,12 @@ export async function saveHomeSlideAction(slide: HomeSlideItem) {
       resultData = data;
     }
 
+    const cleanupWarning = await cleanupReplacedImage(previousImage, slide.imageUrl);
     revalidatePath('/');
 
     return {
       success: true,
+      cleanupWarning,
       data: resultData
         ? {
             id: resultData.id,
@@ -1652,7 +1733,9 @@ export async function saveHomeSlideAction(slide: HomeSlideItem) {
 
 export async function deleteHomeSlideAction(slideId: string) {
   try {
+    await requireAdminSession('superadmin');
     const supabase = getAdminClient();
+    const previousImage = await readPreviousImage('home_slides', 'image_url', slideId);
     const { error } = await supabase.from('home_slides').delete().eq('id', slideId);
 
     if (error) {
@@ -1660,9 +1743,10 @@ export async function deleteHomeSlideAction(slideId: string) {
       return { success: false, error: error.message };
     }
 
+    const cleanupWarning = await cleanupRemovedImages(previousImage ? [previousImage] : []);
     revalidatePath('/');
 
-    return { success: true };
+    return { success: true, cleanupWarning };
   } catch (err: any) {
     console.error('[deleteHomeSlideAction] Exception:', err);
     return { success: false, error: err?.message || 'Failed to delete home slide' };

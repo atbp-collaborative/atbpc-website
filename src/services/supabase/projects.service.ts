@@ -54,7 +54,7 @@ export function mapProjectRecord(p: any): Project {
     clientType: p.client_type,
     description: p.description,
     fullWriteup: p.full_writeup,
-    images: images.length > 0 ? images : ['/images/hero_modern_villa_1783495183350.jpg'],
+    images,
     video: videoUrl,
     status: p.status,
     isDraft: p.is_draft,
