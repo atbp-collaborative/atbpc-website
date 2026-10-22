@@ -19,6 +19,7 @@ import {
 } from './supabase/cms.service';
 import { fetchAdminSitePagesAction } from '@/app/actions/admin-mutations';
 import { sortProjectsCanonically } from '@/lib/projects/project-helpers';
+import { isDummyFallbackAllowed } from '@/lib/config/fallback-config';
 import {
   SitePage,
   NavigationCardItem,
@@ -63,6 +64,22 @@ export async function getContactInfo(): Promise<ContactInfo> {
       console.warn('[DataService] Supabase getContactInfo failed, falling back to mock data:', err);
     }
   }
+  if (!isDummyFallbackAllowed()) {
+    return {
+      studioName: '',
+      address: '',
+      addressLines: [],
+      landline: '',
+      mobile: '',
+      email: '',
+      socials: {
+        facebook: { label: '', url: '' },
+        threads: { label: '', url: '' },
+        instagram: { label: '', url: '' },
+        youtube: { label: '', url: '' },
+      },
+    };
+  }
   try {
     const mock = getMockContactInfo();
     if (mock) return mock;
@@ -91,6 +108,9 @@ export async function getServices(): Promise<Service[]> {
   } catch (err) {
     console.warn('[DataService] Failed to load services navigation cards:', err);
   }
+  if (!isDummyFallbackAllowed()) {
+    return [];
+  }
   return SERVICES_DATA;
 }
 
@@ -106,9 +126,18 @@ export async function getHomeCarouselImages(): Promise<HomeCarouselImage[]> {
       if (slides && slides.length > 0) {
         return slides.map((s) => ({ url: s.imageUrl, title: s.title }));
       }
+      if (!isDummyFallbackAllowed()) {
+        return [];
+      }
     } catch (err) {
       console.warn('[DataService] Supabase getHomeCarouselImages failed, falling back to mock data:', err);
+      if (!isDummyFallbackAllowed()) {
+        return [];
+      }
     }
+  }
+  if (!isDummyFallbackAllowed()) {
+    return [];
   }
   return HOME_CAROUSEL_DATA;
 }
@@ -185,10 +214,13 @@ export async function getMembers(includeDrafts: boolean = false): Promise<Member
     try {
       const people = await getPeopleFromSupabase(includeDrafts);
       if (people && people.length > 0) return people;
+      if (!isDummyFallbackAllowed()) return [];
     } catch (err) {
       console.warn('[DataService] Supabase getMembers failed, falling back to mock data:', err);
+      if (!isDummyFallbackAllowed()) return [];
     }
   }
+  if (!isDummyFallbackAllowed()) return [];
   if (!includeDrafts) {
     return MEMBERS_DATA.filter((m) => !m.isDraft && m.isCurrentlyHired !== false);
   }
@@ -200,10 +232,13 @@ export async function getMemberById(id: string, includeDrafts: boolean = false):
     try {
       const person = await getPersonByIdFromSupabase(id, includeDrafts);
       if (person) return person;
+      if (!isDummyFallbackAllowed()) return undefined;
     } catch (err) {
       console.warn(`[DataService] Supabase getMemberById(${id}) failed, falling back to mock data:`, err);
+      if (!isDummyFallbackAllowed()) return undefined;
     }
   }
+  if (!isDummyFallbackAllowed()) return undefined;
   const found = MEMBERS_DATA.find((member) => member.id === id);
   if (!found) return undefined;
   if (!includeDrafts && (found.isDraft || found.isCurrentlyHired === false)) {
@@ -217,10 +252,13 @@ export async function getProjects(includeDrafts: boolean = false): Promise<Proje
     try {
       const projects = await getProjectsFromSupabase(includeDrafts);
       if (projects && projects.length > 0) return sortProjectsCanonically(projects);
+      if (!isDummyFallbackAllowed()) return [];
     } catch (err) {
       console.warn('[DataService] Supabase getProjects failed, falling back to mock data:', err);
+      if (!isDummyFallbackAllowed()) return [];
     }
   }
+  if (!isDummyFallbackAllowed()) return [];
   return sortProjectsCanonically(PROJECTS_DATA);
 }
 
@@ -229,9 +267,12 @@ export async function getProjectById(id: string): Promise<Project | undefined> {
     try {
       const project = await getProjectByIdFromSupabase(id);
       if (project) return project;
+      if (!isDummyFallbackAllowed()) return undefined;
     } catch (err) {
       console.warn(`[DataService] Supabase getProjectById(${id}) failed, falling back to mock data:`, err);
+      if (!isDummyFallbackAllowed()) return undefined;
     }
   }
+  if (!isDummyFallbackAllowed()) return undefined;
   return PROJECTS_DATA.find((project) => project.id === id || (project.slug && project.slug === id));
 }

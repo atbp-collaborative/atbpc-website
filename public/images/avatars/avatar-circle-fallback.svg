@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
+  <defs>
+    <linearGradient id="circle-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2E3033" />
+      <stop offset="50%" stop-color="#222326" />
+      <stop offset="100%" stop-color="#191A1B" />
+    </linearGradient>
+    <linearGradient id="circle-silhouette" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#55585D" />
+      <stop offset="70%" stop-color="#3D3F43" />
+      <stop offset="100%" stop-color="#2C2D30" />
+    </linearGradient>
+    <linearGradient id="circle-ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#634746" stop-opacity="0.4" />
+      <stop offset="50%" stop-color="#466263" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#634746" stop-opacity="0.4" />
+    </linearGradient>
+    <radialGradient id="circle-ambient" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#55575C" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#191A1B" stop-opacity="0" />
+    </radialGradient>
+    <clipPath id="circle-bounds">
+      <circle cx="128" cy="128" r="128" />
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#circle-bounds)">
+    <!-- Circular Background -->
+    <rect width="256" height="256" fill="url(#circle-bg)" />
+    <rect width="256" height="256" fill="url(#circle-ambient)" />
+
+    <!-- Subtle Architectural Axis Lines -->
+    <g stroke="#ffffff" stroke-opacity="0.06" stroke-width="1">
+      <line x1="128" y1="0" x2="128" y2="256" stroke-dasharray="3 6" />
+      <line x1="0" y1="128" x2="256" y2="128" stroke-dasharray="3 6" />
+    </g>
+
+    <!-- Subtle Circular Inner Ring -->
+    <circle cx="128" cy="128" r="114" fill="none" stroke="url(#circle-ring)" stroke-width="1.5" stroke-dasharray="4 8" stroke-opacity="0.7" />
+
+    <!-- Silhouette Head & Shoulders -->
+    <g fill="url(#circle-silhouette)">
+      <!-- Head -->
+      <circle cx="128" cy="94" r="44" />
+      
+      <!-- Neck -->
+      <path d="M 116 130 L 116 148 C 116 153 108 158 96 162 L 160 162 C 148 158 140 153 140 148 L 140 130 Z" fill="#3B3C40" />
+
+      <!-- Shoulders -->
+      <path d="M 96 162 C 68 172 40 196 28 230 C 24 242 20 256 18 270 L 238 270 C 236 256 232 242 228 230 C 216 196 188 172 160 162 Z" />
+    </g>
+
+    <!-- Subtle Head Highlight -->
+    <ellipse cx="128" cy="80" rx="18" ry="12" fill="#ffffff" fill-opacity="0.06" />
+
+    <!-- Collar Arc Accent -->
+    <path d="M 98 178 C 118 190 138 190 158 178" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5" />
+  </g>
+</svg>

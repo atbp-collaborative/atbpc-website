@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { PersonCircleAvatar } from '@/components/primitives/PersonCircleAvatar';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, UserCheck, Briefcase, Save } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
@@ -94,21 +95,11 @@ export const PersonInvolvementsModal: React.FC<PersonInvolvementsModalProps> = (
           {/* Header */}
           <div className="flex items-start justify-between pb-4 border-b border-black/10 dark:border-white/10 shrink-0">
             <div className="flex items-center gap-3.5">
-              <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
-                {member.image ? (
-                  <Image
-                    src={member.image}
-                    alt={member.name}
-                    fill
-                    sizes="48px"
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-space-sparkle/20 flex items-center justify-center">
-                    <UserCheck size={20} className="text-space-sparkle" />
-                  </div>
-                )}
-              </div>
+              <PersonCircleAvatar
+                src={member.image}
+                name={member.name}
+                size="md"
+              />
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <h3 className="text-body font-bold leading-tight">{member.name}</h3>

@@ -1007,9 +1007,12 @@ INSERT INTO storage.buckets (id, name, public) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Public bucket: portfolio-media
+-- Public can read files directly via public URL (public = TRUE), but only authenticated users can enumerate/list files
 DROP POLICY IF EXISTS "Public can read portfolio media" ON storage.objects;
-CREATE POLICY "Public can read portfolio media"
+DROP POLICY IF EXISTS "Authenticated users can select portfolio media" ON storage.objects;
+CREATE POLICY "Authenticated users can select portfolio media"
     ON storage.objects FOR SELECT
+    TO authenticated
     USING (bucket_id = 'portfolio-media');
 
 DROP POLICY IF EXISTS "Admins and Editors can upload portfolio media" ON storage.objects;

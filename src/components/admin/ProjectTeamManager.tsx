@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
+import { PersonCircleAvatar } from '@/components/primitives/PersonCircleAvatar';
 import { Member, Role, ProjectContributor, ProjectRole } from '@/types';
 import { ProjectTeamMemberEntry, INITIAL_PROJECT_ROLES_DATA } from '@/services/mock/adminMockStorage';
 import { getProjectRolesFromSupabase } from '@/services/supabase/project-roles.service';
@@ -106,22 +107,11 @@ export const ProjectTeamManager: React.FC<ProjectTeamManagerProps> = ({
               }`}
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
-                  {t.memberImage ? (
-                    <Image
-                      src={t.memberImage}
-                      alt={t.memberName || 'Member'}
-                      fill
-                      unoptimized
-                      sizes="40px"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-space-sparkle/20 text-space-sparkle">
-                      <UserCheck size={18} />
-                    </div>
-                  )}
-                </div>
+                <PersonCircleAvatar
+                  src={t.memberImage}
+                  name={t.memberName || 'Member'}
+                  size="base"
+                />
 
                 <div className="space-y-0.5 min-w-0 flex-1">
                   <div className="flex items-center gap-2">

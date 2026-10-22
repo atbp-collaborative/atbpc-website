@@ -36,6 +36,7 @@ import {
 import { getFallbackSitePages } from '@/services/supabase/cms.service';
 import { optimizeImageBuffer } from '@/lib/images/server-image-optimizer';
 import { mapPersonRecord } from '@/services/supabase/people.service';
+import { FALLBACK_AVATAR_PORTRAIT } from '@/lib/constants/avatars';
 import { mapProjectRecord, PROJECT_SELECT_QUERY } from '@/services/supabase/projects.service';
 
 // ==============================================================================
@@ -105,8 +106,8 @@ export async function savePersonAction(member: Member) {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
 
-    const defaultAvatar =
-      'https://kobptyhaxwpgujipwvbk.supabase.co/storage/v1/object/public/portfolio-media/avatars/avatar_placeholder.jpg';
+    const defaultAvatar = FALLBACK_AVATAR_PORTRAIT;
+
 
     const shortBio = member.bio || member.fullBio || 'Member of ATBP Collaborative.';
     const fullBio = member.fullBio || member.bio || 'Member of ATBP Collaborative.';

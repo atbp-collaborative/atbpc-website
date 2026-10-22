@@ -30,6 +30,7 @@ import { ClassificationSelector } from '@/components/admin/ClassificationSelecto
 import { MemberInvolvementManager } from '@/components/admin/MemberInvolvementManager';
 import { ImageManagerField } from '@/components/admin/ImageManagerField';
 import { DynamicListField } from '@/components/admin/DynamicListField';
+import { PersonCircleAvatar } from '@/components/primitives/PersonCircleAvatar';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { Button } from '@/components/primitives/buttons/Button';
 import { ComboboxMultiSelect } from '@/components/admin/ComboboxMultiSelect';
@@ -1213,21 +1214,11 @@ export function AdminPeopleClient({
                   >
                     {/* Left: Avatar + Details */}
                     <div className="flex items-center gap-4 min-w-0 flex-1">
-                      <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
-                        {member.image ? (
-                          <Image
-                            src={member.image}
-                            alt={member.name}
-                            fill
-                            sizes="48px"
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-space-sparkle/20 text-space-sparkle">
-                            <UserCheck size={20} />
-                          </div>
-                        )}
-                      </div>
+                      <PersonCircleAvatar
+                        src={member.image}
+                        name={member.name}
+                        size="md"
+                      />
 
                       <div className="space-y-1 min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1331,21 +1322,11 @@ export function AdminPeopleClient({
                   <div>
                     {/* Top bar: Avatar & Status Badge */}
                     <div className="flex items-start justify-between gap-3 mb-4">
-                      <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
-                        {member.image ? (
-                          <Image
-                            src={member.image}
-                            alt={member.name}
-                            fill
-                            sizes="64px"
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-space-sparkle/20 text-space-sparkle">
-                            <UserCheck size={24} />
-                          </div>
-                        )}
-                      </div>
+                      <PersonCircleAvatar
+                        src={member.image}
+                        name={member.name}
+                        size="lg"
+                      />
 
                       <div className="flex items-center gap-1.5 flex-wrap justify-end">
                         <span

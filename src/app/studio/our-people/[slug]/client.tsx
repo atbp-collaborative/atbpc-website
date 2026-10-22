@@ -10,7 +10,7 @@ import { ROUTES, projectRoute } from '@/lib/navigation/routes';
 import { hasNavigatedWithinApp } from '@/lib/navigation/nav-history';
 import { Accordion } from '@/components/primitives/Accordion';
 import { BreadcrumbButton } from '@/components/primitives/buttons/BreadcrumbButton';
-import { ImageWithFade } from '@/components/primitives/ImageWithFade';
+import { PersonPortrait } from '@/components/primitives/PersonPortrait';
 import { PersonDetailSkeleton } from '@/components/primitives/skeletons';
 import { getMemberById, getProjects } from '@/services/dummy-data.service';
 
@@ -65,7 +65,7 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
             className="relative w-full h-[60vh] sm:h-[70vh] lg:h-full lg:flex-1 min-[2560px]:flex-initial min-[2560px]:h-auto min-[2560px]:max-h-full min-[2560px]:w-auto min-[2560px]:self-start min-h-0 overflow-hidden bg-black/10 rounded-none group border border-space-sparkle/20 animate-slide-up"
             style={imageAspectRatio ? { aspectRatio: `${imageAspectRatio}` } : undefined}
           >
-            <ImageWithFade
+            <PersonPortrait
               src={member.image}
               alt={member.name}
               fill

@@ -6,6 +6,7 @@
 import { supabasePublic } from '@/lib/supabase/public';
 import { Role, RoleCategory } from '@/types';
 import { INITIAL_ROLES_DATA } from '@/lib/dummy-data/roles/roles-data';
+import { isDummyFallbackAllowed } from '@/lib/config/fallback-config';
 
 // Front-end display labels for departments (with "Logistics" removed from Managers as requested)
 export const DEPARTMENT_FRONTEND_LABELS: Record<RoleCategory, string> = {
@@ -42,6 +43,10 @@ export async function getPublicRolesFromSupabase(): Promise<Role[]> {
         .order('sort_order', { ascending: true });
 
       if (error || !data || data.length === 0) {
+        if (!isDummyFallbackAllowed()) {
+          cachedRoles = [];
+          return [];
+        }
         cachedRoles = INITIAL_ROLES_DATA;
         return INITIAL_ROLES_DATA;
       }
@@ -61,6 +66,10 @@ export async function getPublicRolesFromSupabase(): Promise<Role[]> {
       return mapped;
     } catch (err) {
       console.warn('[getPublicRolesFromSupabase] Falling back to default roles data:', err);
+      if (!isDummyFallbackAllowed()) {
+        cachedRoles = [];
+        return [];
+      }
       cachedRoles = INITIAL_ROLES_DATA;
       return INITIAL_ROLES_DATA;
     } finally {

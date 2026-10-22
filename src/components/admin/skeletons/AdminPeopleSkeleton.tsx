@@ -33,7 +33,7 @@ export function AdminPeopleSkeleton() {
             >
               {/* Left: Avatar + Details */}
               <div className="flex items-center gap-4 min-w-0">
-                <Skeleton className="w-12 h-12 rounded-lg shrink-0" />
+                <Skeleton className="w-12 h-12 rounded-full shrink-0" />
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex items-center gap-2">
                     <Skeleton className="w-36 h-5" />
