@@ -137,10 +137,12 @@ const RIGHT_COLUMN_ROWS: FieldConfig[][] = [
   ],
   [
     {
-      type: "text",
+      type: "select",
       name: "pronoun",
       label: "Pronoun",
       badge: "!",
+      placeholder: "[ Select Pronouns ]",
+      options: ["He/Him", "She/Her", "They/Them", "Prefer not to say"],
       wrapperClassName: "sm:col-span-1",
     },
     {

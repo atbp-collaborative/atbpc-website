@@ -270,15 +270,16 @@ export const CareerForm: React.FC<CareerFormProps> = ({ initialStructure = '', f
   const ActionButtons = ({ isTop }: { isTop?: boolean }) => (
     <div className={`grid grid-cols-2 gap-4 w-full ${isTop ? 'md:w-[75%] md:ml-auto' : ''}`}>
       <div className="relative min-w-0">
-        {!privacyAcknowledged && (
-          <div className="absolute inset-0 rounded-xl animate-glow-pulse" />
-        )}
         <button
           type="button"
           onClick={() => setShowPrivacyModal(true)}
-          className={`relative z-10 w-full h-full py-2 px-4 rounded-xl border font-medium transition-all hover:opacity-80 cursor-pointer ${inputBorderClass} ${isTop ? 'text-[1.75vw] lg:text-caption whitespace-nowrap truncate' : 'text-caption'}`}
+          className={`relative z-10 w-full h-full py-2 px-4 rounded-xl border font-medium transition-all hover:opacity-80 cursor-pointer ${
+            !privacyAcknowledged ? 'border-space-sparkle' : inputBorderClass
+          } ${isTop ? 'text-[1.75vw] lg:text-caption whitespace-nowrap truncate' : 'text-caption'}`}
         >
-          Privacy Statement
+          <span className={!privacyAcknowledged ? 'animate-text-glow-pulse text-space-sparkle font-semibold' : ''}>
+            Privacy Statement
+          </span>
         </button>
       </div>
       <Button type="revolving"

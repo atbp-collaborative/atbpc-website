@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Trash2, Phone } from 'lucide-react';
 import { Button } from '@/components/primitives/buttons/Button';
 import { MultiEntryButton } from '@/components/primitives/buttons/MultiEntryButton';
-import { PartnerContact } from '@/lib/forms/partner.schema';
+import { PartnerContact, isPartnerContactValid } from '@/lib/forms/partner.schema';
 import { TextField } from '@/components/forms/form-fields';
 
 interface MultiContactModalProps {
@@ -64,7 +64,7 @@ export const MultiContactModal: React.FC<MultiContactModalProps> = ({
     onClose();
   };
 
-  const isSaveDisabled = contacts.some(c => !c.number || !c.description);
+  const isSaveDisabled = contacts.length === 0 || contacts.some(c => !isPartnerContactValid(c));
 
   return (
     <AnimatePresence>

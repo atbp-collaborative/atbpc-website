@@ -14,7 +14,17 @@ import { MultiEmailModal } from '@/components/modals/MultiEmailModal';
 import { MultiContactModal } from '@/components/modals/MultiContactModal';
 import { MultiRegistrationModal } from '@/components/modals/MultiRegistrationModal';
 import { SocialMediaModal } from '@/components/modals/SocialMediaModal';
-import { getPartnerFormFields, PARTNER_FORM_INITIAL_DATA, PartnerFormData, PartnerFormVariant } from '@/lib/forms/partner.schema';
+import {
+  getPartnerFormFields,
+  PARTNER_FORM_INITIAL_DATA,
+  PartnerFormData,
+  PartnerFormVariant,
+  isPartnerAddressValid,
+  isPartnerEmailValid,
+  isPartnerContactValid,
+  isPartnerDocumentsValid,
+  isPartnerSocialValid,
+} from '@/lib/forms/partner.schema';
 import { useFormViewport } from '@/hooks/useFormViewport';
 
 export interface PartnerApplicationFormProps {
@@ -90,19 +100,34 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Validation calculations
+  const validAddressesCount = formData.addresses.filter(isPartnerAddressValid).length;
+  const areAddressesValid = formData.addresses.length > 0 && formData.addresses.every(isPartnerAddressValid);
+
+  const validEmailsCount = formData.emails.filter(isPartnerEmailValid).length;
+  const areEmailsValid = formData.emails.length > 0 && formData.emails.every(isPartnerEmailValid);
+
+  const validContactsCount = formData.contacts.filter(isPartnerContactValid).length;
+  const areContactsValid = formData.contacts.length > 0 && formData.contacts.every(isPartnerContactValid);
+
+  const isDocumentsAccomplished = isPartnerDocumentsValid(formData, variant);
+  const isSocialAccomplished = isPartnerSocialValid(formData);
+
   const isFormValid = Boolean(
-    formData.companyName &&
-    (!categories || formData.category) &&
-    (!specialties || formData.specialty) &&
-    formData.contacts.length > 0 &&
-    formData.contacts[0].number &&
-    formData.addresses.length > 0 && 
-    formData.addresses[0].regionCode &&
-    formData.addresses[0].cityCode &&
-    formData.addresses[0].barangayCode &&
-    formData.addresses[0].type &&
-    formData.emails.length > 0 &&
-    formData.emails[0].email
+    formData.companyName?.trim() &&
+    formData.firstName?.trim() &&
+    formData.pseudonym?.trim() &&
+    formData.lastName?.trim() &&
+    formData.pronoun?.trim() &&
+    formData.message?.trim() &&
+    areAddressesValid &&
+    areEmailsValid &&
+    areContactsValid &&
+    isDocumentsAccomplished &&
+    isSocialAccomplished &&
+    (variant !== 'supplier' || (formData.category?.trim() && formData.catalog)) &&
+    (variant !== 'builder' || (formData.specialty?.trim() && formData.licenseLink?.trim())) &&
+    (variant !== 'consultant' || formData.specialty?.trim())
   );
 
   const canSubmit = isFormValid && conditionsAcknowledged;
@@ -130,15 +155,16 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
   const ActionButtons = ({ isTop }: { isTop?: boolean }) => (
     <div className={`grid grid-cols-2 gap-4 w-full ${isTop ? 'md:w-[75%] md:ml-auto' : ''}`}>
       <div className="relative min-w-0">
-        {!conditionsAcknowledged && (
-          <div className="absolute inset-0 rounded-xl animate-glow-pulse" />
-        )}
         <button
           type="button"
           onClick={() => setShowConditionsModal(true)}
-          className={`relative z-10 w-full h-full py-2 px-4 rounded-xl border font-medium transition-all hover:opacity-80 cursor-pointer ${inputBorderClass} ${isTop ? 'text-[1.75vw] lg:text-caption whitespace-nowrap truncate' : 'text-caption'}`}
+          className={`relative z-10 w-full h-full py-2 px-4 rounded-xl border font-medium transition-all hover:opacity-80 cursor-pointer ${
+            !conditionsAcknowledged ? 'border-space-sparkle' : inputBorderClass
+          } ${isTop ? 'text-[1.75vw] lg:text-caption whitespace-nowrap truncate' : 'text-caption'}`}
         >
-          General Conditions
+          <span className={!conditionsAcknowledged ? 'animate-text-glow-pulse text-space-sparkle font-semibold' : ''}>
+            General Conditions
+          </span>
         </button>
       </div>
       <div className="relative min-w-0">
@@ -153,6 +179,8 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
       </div>
     </div>
   );
+
+  const documentsButtonLabel = variant === 'supplier' ? 'Registrations' : 'Add Documents';
 
   return (
     <div
@@ -243,14 +271,16 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                     <MultiEntryButton 
                       fieldLabel="Address"
                       label="Add Address/es" 
-                      count={formData.addresses[0]?.type ? formData.addresses.length : 0} 
+                      count={validAddressesCount}
+                      showCheck={areAddressesValid}
                       onClick={() => setShowAddressModal(true)} 
                       isDarkMode={isDarkMode} 
                     />
                     <MultiEntryButton 
                       fieldLabel="Email"
                       label="Add Email/s" 
-                      count={formData.emails[0]?.email ? formData.emails.length : 0} 
+                      count={validEmailsCount}
+                      showCheck={areEmailsValid}
                       onClick={() => setShowEmailModal(true)} 
                       isDarkMode={isDarkMode} 
                     />
@@ -263,7 +293,8 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                           <MultiEntryButton 
                             fieldLabel="Contact Numbers"
                             label="Add Contact Number/s" 
-                            count={formData.contacts[0]?.number ? formData.contacts.length : 0} 
+                            count={validContactsCount}
+                            showCheck={areContactsValid}
                             onClick={() => setShowContactModal(true)} 
                             isDarkMode={isDarkMode} 
                           />
@@ -271,15 +302,9 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                         <div className="flex flex-col justify-end">
                           <MultiEntryButton
                             fieldLabel="Documents"
-                            label="Registrations"
-                            count={
-                              (formData.secRegistration ? 1 : 0) +
-                              (formData.birRegistration ? 1 : 0) +
-                              (formData.dtiRegistration ? 1 : 0) +
-                              (formData.philgepsRegistration ? 1 : 0) +
-                              (variant === 'consultant' && formData.prcLicense ? 1 : 0) +
-                              (variant === 'consultant' && formData.ptrLicense ? 1 : 0)
-                            }
+                            label={documentsButtonLabel}
+                            count={0}
+                            showCheck={isDocumentsAccomplished}
                             onClick={() => setShowRegistrationsModal(true)}
                             isDarkMode={isDarkMode}
                           />
@@ -297,7 +322,8 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                             <MultiEntryButton 
                               fieldLabel="Social Media"
                               label="Add Links" 
-                              count={(formData.facebook ? 1 : 0) + (formData.instagram ? 1 : 0) + (formData.websiteLink ? 1 : 0)} 
+                              count={0}
+                              showCheck={isSocialAccomplished}
                               onClick={() => setShowSocialMediaModal(true)} 
                               isDarkMode={isDarkMode} 
                             />
@@ -307,7 +333,8 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                             <MultiEntryButton 
                               fieldLabel="Social Media"
                               label="Add Links" 
-                              count={(formData.facebook ? 1 : 0) + (formData.instagram ? 1 : 0) + (formData.websiteLink ? 1 : 0)} 
+                              count={0}
+                              showCheck={isSocialAccomplished}
                               onClick={() => setShowSocialMediaModal(true)} 
                               isDarkMode={isDarkMode} 
                             />
@@ -322,7 +349,8 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                           <MultiEntryButton 
                             fieldLabel="Contact Numbers"
                             label="Add Contact Number/s" 
-                            count={formData.contacts[0]?.number ? formData.contacts.length : 0} 
+                            count={validContactsCount}
+                            showCheck={areContactsValid}
                             onClick={() => setShowContactModal(true)} 
                             isDarkMode={isDarkMode} 
                           />
@@ -330,8 +358,9 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                         <div className="flex flex-col justify-end">
                           <MultiEntryButton
                             fieldLabel="Documents"
-                            label="Registrations"
-                            count={(formData.secRegistration ? 1 : 0) + (formData.birRegistration ? 1 : 0) + (formData.dtiRegistration ? 1 : 0) + (formData.philgepsRegistration ? 1 : 0)}
+                            label={documentsButtonLabel}
+                            count={0}
+                            showCheck={isDocumentsAccomplished}
                             onClick={() => setShowRegistrationsModal(true)}
                             isDarkMode={isDarkMode}
                           />
@@ -347,7 +376,8 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
                         <MultiEntryButton 
                           fieldLabel="Social Media"
                           label="Add Links" 
-                          count={(formData.facebook ? 1 : 0) + (formData.instagram ? 1 : 0) + (formData.websiteLink ? 1 : 0)} 
+                          count={0}
+                          showCheck={isSocialAccomplished}
                           onClick={() => setShowSocialMediaModal(true)} 
                           isDarkMode={isDarkMode} 
                         />

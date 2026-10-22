@@ -220,6 +220,20 @@ button, a, [role="button"], .cursor-pointer {
   animation: glow-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+@keyframes text-glow-pulse {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 8px var(--color-space-sparkle), 0 0 16px var(--color-space-sparkle);
+  }
+  50% {
+    opacity: 0.65;
+    text-shadow: 0 0 2px var(--color-space-sparkle);
+  }
+}
+.animate-text-glow-pulse {
+  animation: text-glow-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 /* Slogan responsive adjustments */
 @media (max-width: 374px) {
   .home-slogan .slogan-segment {
