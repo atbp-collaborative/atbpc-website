@@ -90,17 +90,17 @@ export const ProcessSubpage: React.FC<ProcessSubpageProps> = ({ data, stageGroup
       </div>
 
       {data.description && (
-        <p className="hidden lg:block text-caption font-light leading-relaxed opacity-85 max-w-3xl pt-0.5 shrink-0 mb-6 lg:mb-0">
+        <p className="hidden min-[1025px]:block text-caption font-light leading-relaxed opacity-85 max-w-3xl pt-0.5 shrink-0 mb-6 min-[1025px]:mb-0">
           {data.description}
         </p>
       )}
 
       {/* Center Section: Scrollable on mobile/tablet, hidden overflow on desktop */}
-      <div className="flex-1 flex flex-col justify-start items-center w-full min-h-0 py-1 overflow-y-auto lg:overflow-hidden no-scrollbar">
-        <div className="hidden lg:flex w-full h-full">
+      <div className="flex-1 flex flex-col justify-start items-center w-full min-h-0 py-1 overflow-y-auto min-[1025px]:overflow-hidden no-scrollbar">
+        <div className="hidden min-[1025px]:flex w-full h-full">
           <div className="my-auto w-full"><ProcessStage nodes={nodes} categoryGroups={CATEGORY_GROUPS} /></div>
         </div>
-        <div className="flex lg:hidden flex-col w-full pb-8 space-y-6">
+        <div className="flex min-[1025px]:hidden flex-col w-full pb-8 space-y-6">
           {data.description && (
             <p className="text-caption font-light leading-relaxed opacity-85 max-w-3xl">
               {data.description}
@@ -111,7 +111,7 @@ export const ProcessSubpage: React.FC<ProcessSubpageProps> = ({ data, stageGroup
       </div>
 
       {/* Bottom Subtext Row */}
-      <div className="shrink-0 text-center border-t border-space-sparkle/10 pt-2 mt-4 lg:mt-1 pb-4 lg:pb-0 transition-colors duration-300">
+      <div className="shrink-0 text-center border-t border-space-sparkle/10 pt-2 mt-4 min-[1025px]:mt-1 pb-4 min-[1025px]:pb-0 transition-colors duration-300">
         <p className="text-micro sm:text-mini font-light opacity-75 leading-tight max-w-2xl mx-auto tracking-wide italic">
           {data.subtext}
         </p>

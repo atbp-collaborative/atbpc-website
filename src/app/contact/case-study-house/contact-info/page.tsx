@@ -109,7 +109,7 @@ export default function ContactInfoPage() {
       } flex flex-col shrink-0 lg:h-full lg:overflow-y-auto`}>
         
         {/* Writeups Container */}
-        <div className="flex flex-col justify-start items-center space-y-4 sm:space-y-6 min-h-0 w-full">
+        <div className="flex flex-col justify-start items-center space-y-4 sm:space-y-6 min-h-0 w-full lg:h-full">
           
           {/* Address Section */}
           <div className="space-y-2 w-full">
@@ -261,20 +261,20 @@ export default function ContactInfoPage() {
           </div>
 
           {/* CTA Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full lg:w-[75%] shrink-0 self-start !mt-12 sm:!mt-16 md:!mt-16 lg:!mt-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full lg:w-[75%] shrink-0 self-start mt-12 sm:mt-16 md:mt-16 lg:!mt-auto">
             <Button
               type="filled"
               label="Schedule a Discovery Session"
               href={ROUTES.discoverySession}
               fullWidth={true}
-              className="font-medium py-2.5 text-micro sm:text-mini tracking-wider !bg-[#466263] hover:!bg-[#3b5152] !text-[#EDEFEF] shadow-sm"
+              className="font-medium py-2.5 text-micro sm:text-mini tracking-wider !bg-[#466263] hover:!bg-[#3b5152] !text-[#EDEFEF] shadow-sm !whitespace-normal text-center"
             />
             <Button
               type="filled"
               label="Request a Proposal"
               href={ROUTES.requestForProposal}
               fullWidth={true}
-              className="font-medium py-2.5 text-micro sm:text-mini tracking-wider !bg-[#466263] hover:!bg-[#3b5152] !text-[#EDEFEF] shadow-sm"
+              className="font-medium py-2.5 text-micro sm:text-mini tracking-wider !bg-[#466263] hover:!bg-[#3b5152] !text-[#EDEFEF] shadow-sm !whitespace-normal text-center"
             />
           </div>
 
