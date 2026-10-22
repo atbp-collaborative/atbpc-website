@@ -1,4 +1,5 @@
 export interface ContactInfo {
+  studioName?: string;
   address: string;
   addressLines?: string[];
   landline: string;
@@ -13,6 +14,7 @@ export interface ContactInfo {
 }
 
 export const CONTACT_INFO: ContactInfo = {
+  studioName: "ATBP Collaborative",
   address: "P4, B2, L1, N402 Lovebird Lane corner Eagle Drive, Countryside Village, Barangay Sun Valley, City of Parañaque, National Capital Region, Philippines, Southeast Asia.",
   addressLines: [
     "P4, B2, L1, N402 Lovebird Lane corner Eagle Drive, Countryside Village,",

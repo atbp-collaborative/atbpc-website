@@ -44,26 +44,36 @@ import { toast } from 'sonner';
 
 export type CmsTab = 'pages' | 'landing-pages' | 'process' | 'services' | 'home';
 
-export function useAdminCms() {
+export interface AdminCmsInitialData {
+  pages?: SitePage[];
+  cards?: NavigationCardItem[];
+  philosophies?: ProcessPhilosophy[];
+  services?: ServiceOffering[];
+  slides?: HomeSlideItem[];
+  slogans?: HomepageSlogans;
+  stageGroups?: StageGroup[];
+}
+
+export function useAdminCms(initialData?: AdminCmsInitialData) {
   const [activeTab, setActiveTab] = useState<CmsTab>('landing-pages');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!initialData || !initialData.pages || initialData.pages.length === 0);
 
   // Tab 1: Pages & Nav
-  const [pages, setPages] = useState<SitePage[]>([]);
-  const [cards, setCards] = useState<NavigationCardItem[]>([]);
+  const [pages, setPages] = useState<SitePage[]>(initialData?.pages || []);
+  const [cards, setCards] = useState<NavigationCardItem[]>(initialData?.cards || []);
 
   // Tab 2: Process & Stages
-  const [philosophies, setPhilosophies] = useState<ProcessPhilosophy[]>([]);
+  const [philosophies, setPhilosophies] = useState<ProcessPhilosophy[]>(initialData?.philosophies || []);
   const [selectedProcessPageId, setSelectedProcessPageId] = useState<string>('designing-with-values');
-  const [stageGroups, setStageGroups] = useState<StageGroup[]>([]);
+  const [stageGroups, setStageGroups] = useState<StageGroup[]>(initialData?.stageGroups || []);
 
   // Tab 3: Services
-  const [services, setServices] = useState<ServiceOffering[]>([]);
+  const [services, setServices] = useState<ServiceOffering[]>(initialData?.services || []);
   const [selectedServiceId, setSelectedServiceId] = useState<string>('comprehensive-services');
 
   // Tab 4: Home
-  const [slides, setSlides] = useState<HomeSlideItem[]>([]);
-  const [slogans, setSlogans] = useState<HomepageSlogans>({ slogans: [], heroSubtext: [] });
+  const [slides, setSlides] = useState<HomeSlideItem[]>(initialData?.slides || []);
+  const [slogans, setSlogans] = useState<HomepageSlogans>(initialData?.slogans || { slogans: [], heroSubtext: [] });
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -76,10 +86,27 @@ export function useAdminCms() {
         fetchAdminHomeSlides(),
         fetchAdminHomepageSlogans(),
       ]);
+      // Synchronize publication status between site_pages and services/philosophies
+      const pageDraftMap = new Map<string, boolean>();
+      p.forEach((page) => {
+        const seg = page.id.split('/').pop();
+        if (seg) pageDraftMap.set(seg, Boolean(page.isDraft));
+      });
+
+      const syncedServices = srv.map((s) => {
+        const fromPage = pageDraftMap.get(s.id);
+        return fromPage !== undefined ? { ...s, isDraft: fromPage } : s;
+      });
+
+      const syncedPhilosophies = phil.map((ph) => {
+        const fromPage = pageDraftMap.get(ph.id);
+        return fromPage !== undefined ? { ...ph, isDraft: fromPage } : ph;
+      });
+
       setPages(p);
       setCards(c);
-      setPhilosophies(phil);
-      setServices(srv);
+      setPhilosophies(syncedPhilosophies);
+      setServices(syncedServices);
       setSlides(sld);
       setSlogans(slg);
 
@@ -95,8 +122,10 @@ export function useAdminCms() {
   }, [selectedProcessPageId]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (!initialData || !initialData.pages || initialData.pages.length === 0) {
+      loadData();
+    }
+  }, [loadData, initialData]);
 
   // Reload stage groups when selected process page changes
   const handleSelectProcessPage = useCallback(async (pageId: string) => {
@@ -129,6 +158,17 @@ export function useAdminCms() {
         }
         return [...prev, saved];
       });
+      // Keep services & philosophies state in sync with saved page
+      const lastSeg = saved.id.split('/').pop();
+      if (lastSeg) {
+        setServices((prev) =>
+          prev.map((s) => (s.id === lastSeg ? { ...s, isDraft: Boolean(saved.isDraft) } : s))
+        );
+        setPhilosophies((prev) =>
+          prev.map((p) => (p.id === lastSeg ? { ...p, isDraft: Boolean(saved.isDraft) } : p))
+        );
+      }
+
       toast.success(`Page "${saved.title}" saved successfully`);
       return saved;
     } catch (err: any) {
@@ -173,6 +213,17 @@ export function useAdminCms() {
         }
         return [...prev, saved];
       });
+      // Keep pages state in sync with philosophy publication status
+      setPages((prevPages) =>
+        prevPages.map((p) => {
+          const pLast = p.id.split('/').pop();
+          if (pLast === saved.id || p.id === saved.id) {
+            return { ...p, isDraft: Boolean(saved.isDraft) };
+          }
+          return p;
+        })
+      );
+
       toast.success(`Philosophy for "${saved.title}" updated`);
       return saved;
     } catch (err: any) {
@@ -252,6 +303,17 @@ export function useAdminCms() {
         }
         return [...prev, saved];
       });
+      // Keep pages state in sync with service publication status
+      setPages((prevPages) =>
+        prevPages.map((p) => {
+          const pLast = p.id.split('/').pop();
+          if (pLast === saved.id || p.id === saved.id) {
+            return { ...p, isDraft: Boolean(saved.isDraft) };
+          }
+          return p;
+        })
+      );
+
       toast.success(`Service offering "${saved.title}" updated`);
       return saved;
     } catch (err: any) {

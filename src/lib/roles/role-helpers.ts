@@ -245,3 +245,25 @@ export function detectIntelligentRolesViewMode(
   if (projectRoleScore === maxScore) return 'project-roles';
   return 'roles';
 }
+
+/**
+ * Determines whether a role is selectable in dropdown/select fields
+ * based on the actor's administrative tier or public status.
+ *
+ * - public: Only roles with role_visibility === 'public'
+ * - editor: Roles with role_visibility === 'editor' or 'public'
+ * - admin: Roles with role_visibility !== 'superadmin' ('admin', 'editor', 'public')
+ * - superadmin: All roles
+ */
+export function isRoleSelectable(
+  roleVisibility: 'superadmin' | 'admin' | 'editor' | 'public' | undefined,
+  userTier: 'superadmin' | 'admin' | 'editor' | 'public'
+): boolean {
+  const vis = roleVisibility || 'public';
+  if (userTier === 'superadmin') return true;
+  if (userTier === 'admin') return vis !== 'superadmin';
+  if (userTier === 'editor') return vis === 'editor' || vis === 'public';
+  if (userTier === 'public') return vis === 'public';
+  return false;
+}
+

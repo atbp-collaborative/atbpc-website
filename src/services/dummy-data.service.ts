@@ -7,6 +7,7 @@ import { PROJECTS_DATA } from '@/lib/dummy-data/works/projects';
 import { getPeopleFromSupabase, getPersonByIdFromSupabase } from './supabase/people.service';
 import { getProjectsFromSupabase, getProjectByIdFromSupabase } from './supabase/projects.service';
 import { getContactInfoFromSupabase } from './supabase/settings.service';
+import { getContactInfo as getMockContactInfo } from './mock/adminMockStorage';
 import {
   getHomeSlides,
   getSitePages,
@@ -60,6 +61,12 @@ export async function getContactInfo(): Promise<ContactInfo> {
     } catch (err) {
       console.warn('[DataService] Supabase getContactInfo failed, falling back to mock data:', err);
     }
+  }
+  try {
+    const mock = getMockContactInfo();
+    if (mock) return mock;
+  } catch (err) {
+    console.warn('[DataService] Failed to read mock contact info:', err);
   }
   return CONTACT_INFO;
 }

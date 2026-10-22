@@ -32,7 +32,7 @@ export const RolesViewTabs: React.FC<RolesViewTabsProps> = ({
     key: RolesViewMode;
     label: string;
     icon: React.ElementType;
-    count: number;
+    count?: number;
     description: string;
   }[] = [
     {
@@ -82,15 +82,17 @@ export const RolesViewTabs: React.FC<RolesViewTabsProps> = ({
                 className={isActive ? 'text-space-sparkle' : 'opacity-70'}
               />
               <span>{tab.label}</span>
-              <span
-                className={`text-micro px-1.5 py-0.5 rounded-full font-mono ${
-                  isActive
-                    ? 'bg-space-sparkle/20 text-space-sparkle'
-                    : 'bg-black/10 dark:bg-white/10 opacity-70'
-                }`}
-              >
-                {tab.count}
-              </span>
+              {tab.count !== undefined && (
+                <span
+                  className={`text-micro px-1.5 py-0.5 rounded-full font-mono ${
+                    isActive
+                      ? 'bg-space-sparkle/20 text-space-sparkle'
+                      : 'bg-black/10 dark:bg-white/10 opacity-70'
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              )}
             </button>
           );
         })}

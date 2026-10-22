@@ -36,7 +36,6 @@ export const ProjectTeamManager: React.FC<ProjectTeamManagerProps> = ({
   const { isDarkMode } = useTheme();
   const [selectedMemberId, setSelectedMemberId] = useState<string>('');
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
-  const [customRole, setCustomRole] = useState<string>('');
   const [description, setDescription] = useState<string>('');
 
   const [loadedProjectRoles, setLoadedProjectRoles] = useState<ProjectRole[]>(
@@ -63,26 +62,18 @@ export const ProjectTeamManager: React.FC<ProjectTeamManagerProps> = ({
   const handleAdd = () => {
     if (!selectedMemberId || !selectedRoleId || !description.trim()) return;
 
-    let roleTitle = 'Contributor';
-    if (selectedRoleId === '__custom__') {
-      if (!customRole.trim()) return;
-      roleTitle = customRole.trim();
-    } else if (selectedRoleId) {
-      const foundRole = loadedProjectRoles.find((r) => r.id === selectedRoleId || r.name === selectedRoleId);
-      roleTitle = foundRole ? foundRole.name : selectedRoleId;
-    }
+    const foundRole = loadedProjectRoles.find((r) => r.id === selectedRoleId || r.name === selectedRoleId);
+    const roleTitle = foundRole ? foundRole.name : selectedRoleId;
 
     onAssociate(selectedMemberId, roleTitle, description.trim());
     setSelectedMemberId('');
     setSelectedRoleId('');
-    setCustomRole('');
     setDescription('');
   };
 
   const isAddDisabled =
     !selectedMemberId ||
     !selectedRoleId ||
-    (selectedRoleId === '__custom__' && !customRole.trim()) ||
     !description.trim();
 
   const inputBaseClass = `w-full text-caption px-3 py-2 rounded-lg border outline-none ${
@@ -212,26 +203,9 @@ export const ProjectTeamManager: React.FC<ProjectTeamManagerProps> = ({
                   {pr.name} ({pr.code})
                 </option>
               ))}
-              <option value="__custom__">✍️ Other / Custom Role...</option>
             </select>
           </div>
         </div>
-
-        {selectedRoleId === '__custom__' && (
-          <div>
-            <label className="text-micro uppercase tracking-wider block opacity-70 mb-1">
-              Custom Role Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Lead Interior Designer, Site Engineer"
-              value={customRole}
-              onChange={(e) => setCustomRole(e.target.value)}
-              className={inputBaseClass}
-              autoFocus
-            />
-          </div>
-        )}
 
         <div>
           <label className="text-micro uppercase tracking-wider block opacity-70 mb-1">

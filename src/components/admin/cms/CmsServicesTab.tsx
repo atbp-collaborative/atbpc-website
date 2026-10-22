@@ -252,8 +252,13 @@ export const CmsServicesTab: React.FC<CmsServicesTabProps> = ({
             <div className="flex items-center gap-3">
               <PublicationToggle
                 isDraft={Boolean(currentService.isDraft)}
-                disabled={true}
-                onToggle={() => {}}
+                disabled={false}
+                onToggle={() => {
+                  onSaveService({
+                    ...currentService,
+                    isDraft: !currentService.isDraft,
+                  });
+                }}
               />
               <Button
                 type="filled"

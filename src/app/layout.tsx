@@ -9,7 +9,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://atbpcollaborative.c
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'ATBP Collaborative | Architecture & Construction Administration',
+    default: 'ATBP Collaborative',
     template: '%s | ATBP Collaborative',
   },
   description:
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     locale: 'en_PH',
     url: siteUrl,
     siteName: 'ATBP Collaborative',
-    title: 'ATBP Collaborative | Architecture & Construction Administration',
+    title: 'ATBP Collaborative',
     description:
       'Premium design-build architectural portfolio with high-finesse photography showcase and client qualifying lead funnel.',
     images: [
@@ -45,13 +45,13 @@ export const metadata: Metadata = {
         url: '/charcoal-logo.png',
         width: 1200,
         height: 630,
-        alt: 'ATBP Collaborative Architecture & Construction Administration',
+        alt: 'ATBP Collaborative',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ATBP Collaborative | Architecture & Construction Administration',
+    title: 'ATBP Collaborative',
     description:
       'Premium design-build architectural portfolio with high-finesse photography showcase and client qualifying lead funnel.',
     images: ['/charcoal-logo.png'],

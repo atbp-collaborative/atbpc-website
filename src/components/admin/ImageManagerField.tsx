@@ -134,15 +134,7 @@ export const ImageManagerField: React.FC<ImageManagerFieldProps> = ({
           {helperText && <p className="text-micro opacity-60 mt-0.5">{helperText}</p>}
         </div>
 
-        {images.length > 0 && !single && (
-          <Button
-            type="ghost"
-            onClick={triggerUpload}
-            className="!py-1.5 !px-3 text-mini border border-black/10 dark:border-white/10"
-          >
-            <Upload size={13} className="mr-1 inline" /> Add More
-          </Button>
-        )}
+
       </div>
 
       {/* Hidden file input */}
@@ -324,6 +316,19 @@ export const ImageManagerField: React.FC<ImageManagerFieldProps> = ({
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Add More Button at bottom of photography list */}
+          {!single && (
+            <div className="pt-2">
+              <Button
+                type="ghost"
+                onClick={triggerUpload}
+                className="w-full !py-2.5 text-mini border border-dashed border-black/20 dark:border-white/20 hover:border-space-sparkle flex items-center justify-center gap-1.5"
+              >
+                <Upload size={14} className="mr-1 inline" /> Add More
+              </Button>
             </div>
           )}
         </div>

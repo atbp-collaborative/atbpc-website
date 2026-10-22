@@ -10,12 +10,15 @@ interface SubLandingPageProps {
   cards: LandingCard[];
   title?: string;
   subtitle?: string;
+  footerText?: string;
   isHeaderSticky?: boolean;
 }
 
-export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, subtitle, isHeaderSticky }) => {
+export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, subtitle, footerText, isHeaderSticky }) => {
   const { isDarkMode } = useTheme();
   const layout = useCardLayout();
+
+  const effectiveFooterText = footerText || cards.find((c) => c.footerText)?.footerText;
 
   return (
     <div className={`w-full h-full select-none flex flex-col flex-1 min-h-0 overflow-hidden px-4 sm:px-8 pb-4 ${isHeaderSticky ? 'pt-4 sm:pt-6' : 'pt-16 sm:pt-20'}`}>
@@ -39,7 +42,7 @@ export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, su
       <div className={`flex-1 flex gap-[2px] h-full min-h-0 items-stretch group/subCards ${
         layout === 'row' ? 'flex-row overflow-hidden' : 'flex-col overflow-y-auto'
       }`}>
-        {cards.map((card) => (
+        {cards.map((card, idx) => (
           <div
             key={card.id}
             onClick={card.onSelect}
@@ -56,6 +59,7 @@ export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, su
               src={card.image}
               alt={card.title}
               fill
+              priority={card.priority ?? idx < 3}
               sizes="(min-width: 1024px) 40vw, (min-width: 768px) 50vw, 100vw"
               className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-105"
             />
@@ -68,12 +72,21 @@ export const SubLandingPage: React.FC<SubLandingPageProps> = ({ cards, title, su
               </h2>
 
               <p className="text-caption font-light italic opacity-90 lowercase leading-relaxed text-white">
-                {card.subtext || card.tagline}
+                {card.tagline || card.subtext}
               </p>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Bottom Subtext Row (Positioned directly above site footer) */}
+      {effectiveFooterText && (
+        <div className="shrink-0 text-center pt-2 mt-1">
+          <p className="text-micro sm:text-mini font-light opacity-75 tracking-wide italic lowercase">
+            {effectiveFooterText}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

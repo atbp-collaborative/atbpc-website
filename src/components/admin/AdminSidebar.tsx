@@ -14,9 +14,9 @@ import {
   FolderKanban,
   FileText,
   Layers,
-  LogOut,
   X,
   ShieldCheck,
+  ShieldAlert,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '@/context/ThemeContext';
@@ -24,6 +24,7 @@ import { useAdminAuth } from '@/hooks/admin/useAdminAuth';
 import { useAdminNav } from '@/context/AdminNavContext';
 import { AtbpLogo } from '@/components/global/AtbpLogo';
 import { ThemeToggle } from '@/components/global/ThemeToggle';
+import { AdminRole } from '@/types';
 
 interface AdminSidebarProps {
   isOpen?: boolean;
@@ -66,6 +67,12 @@ const NAV_ITEMS = [
     icon: FileText,
     subtitle: 'legal, privacy, contacts',
   },
+  {
+    name: 'Super Admin Panel',
+    href: '/admin/super-panel',
+    icon: ShieldAlert,
+    subtitle: 'accounts, maintenance & security',
+  },
 ];
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({
@@ -74,11 +81,27 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 }) => {
   const pathname = usePathname();
   const { isDarkMode, toggleTheme } = useTheme();
-  const { user, logout } = useAdminAuth();
+  const { user } = useAdminAuth();
   const adminNav = useAdminNav();
 
   const activeIsOpen = isOpen ?? adminNav.isMobileDrawerOpen;
   const activeOnClose = onClose ?? adminNav.closeMobileDrawer;
+
+  const userRole: AdminRole = user?.role || 'superadmin';
+
+  // Role-based navigation filtering:
+  // - editor: Dashboard and Manage Projects only
+  // - superadmin: Full navigation including Super Admin Panel
+  // - admin: Full navigation excluding Super Admin Panel
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    if (userRole === 'editor') {
+      return item.href === '/admin/dashboard' || item.href === '/admin/projects';
+    }
+    if (item.href === '/admin/super-panel') {
+      return userRole === 'superadmin';
+    }
+    return true;
+  });
 
   const sidebarContent = (
     <div className="flex flex-col h-full justify-between">
@@ -109,7 +132,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
         {/* Navigation list */}
         <nav className="space-y-1">
-          {NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const isActive =
               pathname === item.href ||
@@ -152,8 +175,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </nav>
       </div>
 
-      {/* Bottom section: user profile, sign out */}
-      <div className="space-y-4 pt-4 border-t border-black/10 dark:border-white/10">
+      {/* Bottom section: user profile */}
+      <div className="pt-4 border-t border-black/10 dark:border-white/10">
         {/* User Card */}
         <div
           className={`p-3 rounded-lg border flex items-center justify-between gap-2 ${
@@ -176,16 +199,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Sign Out Action */}
-        <button
-          type="button"
-          onClick={logout}
-          className="w-full flex items-center justify-center gap-2 py-2 px-3 text-mini rounded-md text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
-        >
-          <LogOut size={14} />
-          <span>Sign Out</span>
-        </button>
       </div>
     </div>
   );

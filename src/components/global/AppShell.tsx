@@ -30,9 +30,22 @@ function AppShellInner({
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProtectionEnabled, setIsProtectionEnabled] = useState(false);
-  const { isShielded } = useContentProtection(isProtectionEnabled);
+
+  const isAdmin = pathname.startsWith('/admin');
+  const { isShielded } = useContentProtection(!isAdmin && isProtectionEnabled);
+
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+
+  // Sync content protection from cookie
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const match = document.cookie.match(/site_content_protection=(true|false)/);
+      if (match) {
+        setIsProtectionEnabled(match[1] === 'true');
+      }
+    }
+  }, [pathname]);
 
   // Marks that an in-app client-side route change has happened, so
   // MemberDetail's back button can tell a real in-app history from a
@@ -45,7 +58,6 @@ function AppShellInner({
     }
   }, [pathname]);
 
-  const isAdmin = pathname.startsWith('/admin');
   const isFullScreenLanding = !SCROLLABLE_PATHS.includes(pathname) && !isUnderConstruction && !isAdmin;
   const isOurPeople = pathname.startsWith('/studio/our-people') || pathname.startsWith('/our-people');
   const hideHeader = pathname === '/under-construction' || isUnderConstruction || isAdmin;
@@ -99,7 +111,7 @@ function AppShellInner({
         />
       )}
 
-      {isShielded && (
+      {isShielded && !isAdmin && (
         <div className="fixed inset-0 backdrop-blur-3xl z-999999 pointer-events-none transition-all duration-300" />
       )}
 

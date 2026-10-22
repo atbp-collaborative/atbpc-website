@@ -29,7 +29,6 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 const BUCKET_NAME = 'portfolio-media';
-const OLD_SUPABASE_HOST = 'https://kobptyhaxwpgujipwvbk.supabase.co';
 
 const BASE_DIR = path.resolve(process.cwd(), 'supabase', 'seed-images');
 const CATEGORIES_DIR = path.join(BASE_DIR, 'categories');
@@ -84,6 +83,7 @@ async function uploadFileToStorage(storagePath: string, localFilePath: string): 
   const { error } = await supabase.storage.from(BUCKET_NAME).upload(storagePath, buffer, {
     contentType,
     upsert: true,
+    cacheControl: '31536000, public, immutable',
   });
 
   if (error) {
@@ -238,27 +238,38 @@ async function main() {
     column: string,
     idColumn: string = 'id'
   ) {
-    const { data: rows } = await supabase
+    const { data: rows, error: fetchErr } = await supabase
       .from(table)
       .select(`${idColumn}, ${column}`)
-      .like(column, `${OLD_SUPABASE_HOST}%`);
+      .like(column, 'https://%.supabase.co%');
+
+    if (fetchErr) {
+      console.error(`  [ERROR] Could not fetch ${table} (${column}): ${fetchErr.message}`);
+      return;
+    }
 
     if (rows && rows.length > 0) {
       let count = 0;
       for (const row of rows) {
         const oldVal = (row as any)[column];
         if (oldVal && typeof oldVal === 'string') {
-          const newVal = oldVal.replace(OLD_SUPABASE_HOST, supabaseUrl!);
-          await supabase
-            .from(table)
-            .update({ [column]: newVal, updated_at: new Date().toISOString() })
-            .eq(idColumn, (row as any)[idColumn]);
-          count++;
+          const newVal = oldVal.replace(/^https:\/\/[a-zA-Z0-9-]+\.supabase\.co/, supabaseUrl!);
+          if (newVal !== oldVal) {
+            await supabase
+              .from(table)
+              .update({ [column]: newVal, updated_at: new Date().toISOString() })
+              .eq(idColumn, (row as any)[idColumn]);
+            count++;
+          }
         }
       }
-      console.log(`  [LINKED] ${table} (${column}): updated ${count} records.`);
+      if (count > 0) {
+        console.log(`  [LINKED] ${table} (${column}): updated ${count} records to active host.`);
+      } else {
+        console.log(`  [SKIPPED] ${table} (${column}): already pointing to current host (${supabaseUrl}).`);
+      }
     } else {
-      console.log(`  [SKIPPED] ${table} (${column}): already pointing to current host or empty.`);
+      console.log(`  [SKIPPED] ${table} (${column}): no matching records or empty.`);
     }
   }
 

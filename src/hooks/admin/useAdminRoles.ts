@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Role, RoleCategory, RoleTrack, Member, MemberCategory, Project, ProjectRole, MemberInvolvement } from '@/types';
+import { Role, RoleCategory, RoleTrack, RoleVisibility, Member, MemberCategory, Project, ProjectRole, MemberInvolvement } from '@/types';
 import {
   getRoles,
   saveRole as saveRoleStorage,
@@ -33,6 +33,8 @@ import {
   updatePersonRolesAction,
   updatePersonInvolvementsAction,
   fetchAdminPeopleAction,
+  fetchAdminRolesAction,
+  updateRoleVisibilityAction,
 } from '@/app/actions/admin-mutations';
 import { memberHasRole } from '@/lib/roles/role-helpers';
 import { toast } from 'sonner';
@@ -52,12 +54,19 @@ export interface ProjectRoleEntry {
   description: string;
 }
 
-export function useAdminRoles() {
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [projectRoles, setProjectRoles] = useState<ProjectRole[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export interface AdminRolesInitialData {
+  roles?: Role[];
+  projectRoles?: ProjectRole[];
+  members?: Member[];
+  projects?: Project[];
+}
+
+export function useAdminRoles(initialData?: AdminRolesInitialData) {
+  const [roles, setRoles] = useState<Role[]>(initialData?.roles || []);
+  const [projectRoles, setProjectRoles] = useState<ProjectRole[]>(initialData?.projectRoles || []);
+  const [members, setMembers] = useState<Member[]>(initialData?.members || []);
+  const [projects, setProjects] = useState<Project[]>(initialData?.projects || []);
+  const [isLoading, setIsLoading] = useState(!initialData || !initialData.roles || initialData.roles.length === 0);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,7 +85,7 @@ export function useAdminRoles() {
     setProjects(p);
     setProjectRoles(prLocal);
 
-    // Asynchronously fetch latest project roles and members from Supabase
+    // Asynchronously fetch latest project roles, members, and roles from Supabase
     Promise.all([
       getProjectRolesFromSupabase(true).catch((err) => {
         console.warn('Failed to load project roles from Supabase:', err);
@@ -86,12 +95,19 @@ export function useAdminRoles() {
         console.warn('Failed to load admin people from Supabase:', err);
         return null;
       }),
-    ]).then(([dbProjectRoles, dbMembers]) => {
+      fetchAdminRolesAction().catch((err) => {
+        console.warn('Failed to load roles from Supabase:', err);
+        return null;
+      }),
+    ]).then(([dbProjectRoles, dbMembers, dbRoles]) => {
       if (dbProjectRoles && dbProjectRoles.length > 0) {
         setProjectRoles(dbProjectRoles);
       }
       if (dbMembers && dbMembers.length > 0) {
         setMembers(dbMembers);
+      }
+      if (dbRoles && dbRoles.length > 0) {
+        setRoles(dbRoles);
       }
     }).finally(() => {
       setIsLoading(false);
@@ -99,8 +115,10 @@ export function useAdminRoles() {
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (!initialData || !initialData.roles || initialData.roles.length === 0) {
+      refresh();
+    }
+  }, [refresh, initialData]);
 
   // Filtered Roles
   const filteredRoles = useMemo(() => {
@@ -325,6 +343,18 @@ export function useAdminRoles() {
     toast.success(`Role "${target?.title || id}" removed from database`);
   }, [roles]);
 
+  const updateRoleVisibility = useCallback(async (id: string, visibility: RoleVisibility) => {
+    setRoles((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, role_visibility: visibility } : r))
+    );
+    const res = await updateRoleVisibilityAction(id, visibility);
+    if (!res.success) {
+      toast.error(res.error || 'Failed to update role visibility');
+      return;
+    }
+    toast.success(`Role visibility updated to "${visibility}"`);
+  }, []);
+
   const toggleDraft = useCallback((id: string) => {
     const updated = toggleRoleDraftStorage(id);
     if (updated) {
@@ -440,6 +470,7 @@ export function useAdminRoles() {
     saveProjectRole,
     deleteProjectRole,
     toggleDraft,
+    updateRoleVisibility,
     assignRoleToMember,
     unassignRoleFromMember,
     setMemberRoles,

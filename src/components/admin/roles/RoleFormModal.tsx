@@ -29,8 +29,7 @@ const EMPTY_ROLE: Role = {
   track: 'professionals',
   trackId: 'PROF',
   description: '',
-  isActive: true,
-  isDraft: false,
+  role_visibility: 'public',
 };
 
 const CAREER_TRACK_OPTIONS = [
@@ -58,7 +57,7 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
         ...EMPTY_ROLE,
         ...role,
         trackId: role.trackId || (role.track === 'professionals' ? 'PROF' : 'INTERN_CHED_240'),
-        isActive: role.isActive !== undefined ? role.isActive : !role.isDraft,
+        role_visibility: role.role_visibility || 'public',
       });
     } else {
       setFormData({
@@ -262,29 +261,27 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
                 </div>
               </div>
 
-              {/* Active Status Toggle */}
-              <div className="flex items-center justify-between p-3 rounded-lg border border-black/10 dark:border-white/10">
-                <div>
-                  <span className="text-caption font-semibold block">Role Status</span>
-                  <span className="text-micro opacity-60">Control role availability across studio assignments</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      isActive: prev.isActive !== undefined ? !prev.isActive : false,
-                      isDraft: prev.isActive !== undefined ? prev.isActive : true,
-                    }))
+              {/* Role Visibility */}
+              <div className="space-y-1">
+                <label className="text-caption font-semibold flex items-center justify-between">
+                  <span>Role Visibility</span>
+                  <span className="text-micro opacity-60">Control dashboard / public exposure</span>
+                </label>
+                <select
+                  value={formData.role_visibility || 'public'}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      role_visibility: e.target.value as any,
+                    })
                   }
-                  className={`px-3 py-1.5 rounded-lg text-mini font-semibold uppercase tracking-wider transition-colors border cursor-pointer ${
-                    formData.isActive !== false
-                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                      : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                  }`}
+                  className={inputBaseClass}
                 >
-                  {formData.isActive !== false ? '● Active' : '○ Inactive'}
-                </button>
+                  <option value="public">Public (Visible across public career pages and studio)</option>
+                  <option value="editor">Editor (Internal role visible to Editors, Admins & Superadmin)</option>
+                  <option value="admin">Admin (Operational role visible to Admins & Superadmin)</option>
+                  <option value="superadmin">Superadmin (Confidential strictly to Superadmin console)</option>
+                </select>
               </div>
 
               {/* Description */}

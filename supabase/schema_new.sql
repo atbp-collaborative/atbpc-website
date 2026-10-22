@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS public.roles (
     track_id VARCHAR(50) REFERENCES public.tracks(id) ON DELETE RESTRICT,
     department TEXT NOT NULL,                                        -- e.g. 'Production Team (Design & Technical)'
     role_description TEXT,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    role_visibility TEXT NOT NULL DEFAULT 'public' CHECK (role_visibility IN ('superadmin', 'admin', 'editor', 'public')),
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

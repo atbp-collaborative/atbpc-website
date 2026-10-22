@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, Shield, X } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { InfoModal } from '@/components/modals/InfoModal';
+import { getPartnerConditionsFromSupabase } from '@/services/supabase/settings.service';
+import { ModalData } from '@/lib/modals/types';
 import { FormFieldRenderer } from '@/components/forms/form-fields';
 import { MultiEntryButton } from '@/components/primitives/buttons/MultiEntryButton';
 import { MultiAddressModal } from '@/components/modals/MultiAddressModal';
@@ -49,6 +51,33 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
   const [showConditionsModal, setShowConditionsModal] = useState(false);
   const [conditionsAcknowledged, setConditionsAcknowledged] = useState(false);
   const [isModalCheckboxChecked, setIsModalCheckboxChecked] = useState(false);
+
+  const [modalData, setModalData] = useState<ModalData>({
+    title: conditionsTitle,
+    subtitle: 'ATBP Collaborative',
+    icon: Shield as any,
+    items: conditionsContent,
+  });
+
+  React.useEffect(() => {
+    let mounted = true;
+    getPartnerConditionsFromSupabase().then((data) => {
+      if (mounted && data && data[variant]) {
+        const cat = data[variant];
+        setModalData({
+          title: cat.title || conditionsTitle,
+          subtitle: cat.subtitle || 'ATBP Collaborative',
+          icon: Shield as any,
+          effectiveDate: cat.effectiveDate,
+          bodyHtml: cat.bodyHtml,
+          items: cat.items || conditionsContent,
+        });
+      }
+    }).catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, [variant, conditionsTitle, conditionsContent]);
   
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -366,12 +395,7 @@ export const PartnerApplicationForm: React.FC<PartnerApplicationFormProps> = ({
         isCloseDisabled={!isModalCheckboxChecked}
         closeLabel="Confirm"
         isDarkMode={isDarkMode}
-        data={{
-          title: conditionsTitle,
-          subtitle: 'ATBP Collaborative',
-          icon: Shield as any,
-          items: conditionsContent
-        }}
+        data={modalData}
       >
         <label className="flex items-center gap-2 mt-4 pt-4 border-t border-space-sparkle/20 text-caption cursor-pointer select-none">
           <input

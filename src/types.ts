@@ -140,6 +140,7 @@ export interface ContractTypeItem {
 export type MemberCategory = 'designers' | 'managers' | 'builders';
 export type RoleCategory = MemberCategory;
 export type RoleTrack = 'internship' | 'professionals';
+export type RoleVisibility = 'superadmin' | 'admin' | 'editor' | 'public';
 
 export interface Role {
   id: string;
@@ -152,6 +153,7 @@ export interface Role {
   description?: string;
   isActive?: boolean;
   isDraft?: boolean;
+  role_visibility?: RoleVisibility;
 }
 
 export interface MemberAffiliation {
@@ -194,12 +196,30 @@ export interface Member {
   displayOrder?: number;
 }
 
+export type AdminRole = 'superadmin' | 'admin' | 'editor';
+
+export type DisplayMode = 'list' | 'grid';
+
+export interface AdminUiPreferences {
+  theme?: 'light' | 'dark';
+  views?: {
+    projects?: DisplayMode;
+    people?: DisplayMode;
+    roles?: string;
+    content?: string;
+  };
+}
+
 export interface AdminUser {
   id: string;
   email: string;
   name: string;
   avatarUrl?: string;
-  role: 'superadmin' | 'admin' | 'editor';
+  role: AdminRole;
+  personId?: string;
+  hasPasskey?: boolean;
+  uiPreferences?: AdminUiPreferences;
+  createdAt?: string;
 }
 
 export interface StudioWriteups {
@@ -209,11 +229,22 @@ export interface StudioWriteups {
   cultureStatement: string;
 }
 
+export interface PolicyDocument {
+  title: string;
+  subtitle: string;
+  effectiveDate?: string;
+  bodyHtml?: string;
+  badge?: string;
+  closeLabel?: string;
+}
+
 export interface CareerPrivacyData {
   title: string;
   subtitle: string;
   badge?: string;
-  items: string[];
+  effectiveDate?: string;
+  bodyHtml?: string;
+  items?: string[];
   closeLabel?: string;
 }
 
@@ -221,7 +252,9 @@ export interface PartnerConditionCategory {
   title: string;
   subtitle: string;
   badge?: string;
-  items: string[];
+  effectiveDate?: string;
+  bodyHtml?: string;
+  items?: string[];
 }
 
 export interface PartnerConditionsData {
@@ -249,6 +282,8 @@ export interface NavigationCardItem {
   title: string;
   tagline: string;
   subtext: string;
+  pageSubtitle?: string;
+  footerText?: string;
   tags: string[];
   imageUrl: string;
   targetHref: string;

@@ -9,32 +9,49 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-// Dark mode: 6 PM - 6 AM; Light mode: 6 AM - 6 PM
+// Dark mode: 6 PM - 6 AM (evening/night); Light mode: 6 AM - 6 PM (morning/daytime)
 function getAutoThemeIsDark(): boolean {
   const currentHour = new Date().getHours();
   return currentHour >= 18 || currentHour < 6;
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // Deterministic SSR-safe default (server has no notion of the visitor's
-  // local time/timezone); corrected to the real value immediately on mount
-  // below, same as the auto-refresh interval that follows it.
+  // Deterministic SSR-safe default (server has no notion of the visitor's local time/timezone)
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
   useEffect(() => {
     document.documentElement.className = isDarkMode ? 'dark' : '';
   }, [isDarkMode]);
 
-  // Check local time every minute to switch theme dynamically; also fires
-  // once immediately on mount to correct the SSR-safe default above.
+  // Initial visit local-time detection: runs strictly once on mount.
+  // If the user previously switched themes during this visit session, restore that preference.
+  // Otherwise, automatically set theme relative to user's local time (light for morning, dark for evening).
   useEffect(() => {
-    const checkTheme = () => setIsDarkMode(getAutoThemeIsDark());
-    checkTheme();
-    const interval = setInterval(checkTheme, 60000);
-    return () => clearInterval(interval);
+    try {
+      const storedTheme = sessionStorage.getItem('atbpc_theme');
+      if (storedTheme === 'dark' || storedTheme === 'light') {
+        setIsDarkMode(storedTheme === 'dark');
+        return;
+      }
+    } catch {
+      // sessionStorage unavailable or restricted
+    }
+
+    // First time check of the visitor's local time
+    setIsDarkMode(getAutoThemeIsDark());
   }, []);
 
-  const toggleTheme = () => setIsDarkMode((prev) => !prev);
+  const toggleTheme = () => {
+    setIsDarkMode((prev) => {
+      const next = !prev;
+      try {
+        sessionStorage.setItem('atbpc_theme', next ? 'dark' : 'light');
+      } catch {
+        // sessionStorage unavailable or restricted
+      }
+      return next;
+    });
+  };
 
   return (
     <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>

@@ -30,15 +30,15 @@ export type ProjectStatusFilter = 'all' | 'completed' | 'ongoing' | 'schematics'
 export type VisibilityFilter = 'all' | 'published' | 'draft';
 export type ProjectCategoryFilter = 'all' | 'Shelter' | 'Livelihood' | 'Community';
 
-export function useAdminProjects() {
-  const [projects, setProjects] = useState<Project[]>([]);
+export function useAdminProjects(initialProjects?: Project[], initialRoles?: ProjectRole[]) {
+  const [projects, setProjects] = useState<Project[]>(initialProjects || []);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatusFilter>('all');
   const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [typologyFilter, setTypologyFilter] = useState<string>('all');
-  const [projectRoles, setProjectRoles] = useState<ProjectRole[]>(INITIAL_PROJECT_ROLES_DATA);
-  const [isLoading, setIsLoading] = useState(true);
+  const [projectRoles, setProjectRoles] = useState<ProjectRole[]>(initialRoles || INITIAL_PROJECT_ROLES_DATA);
+  const [isLoading, setIsLoading] = useState(!initialProjects || initialProjects.length === 0);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -56,10 +56,13 @@ export function useAdminProjects() {
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (!initialProjects || initialProjects.length === 0) {
+      refresh();
+    }
+  }, [refresh, initialProjects]);
 
   useEffect(() => {
+    if (initialRoles && initialRoles.length > 0) return;
     async function loadRoles() {
       try {
         const roles = await getProjectRolesFromSupabase();

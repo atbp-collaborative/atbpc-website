@@ -11,6 +11,7 @@ import { hasNavigatedWithinApp } from '@/lib/navigation/nav-history';
 import { Accordion } from '@/components/primitives/Accordion';
 import { BreadcrumbButton } from '@/components/primitives/buttons/BreadcrumbButton';
 import { ImageWithFade } from '@/components/primitives/ImageWithFade';
+import { PersonDetailSkeleton } from '@/components/primitives/skeletons';
 import { getMemberById, getProjects } from '@/services/dummy-data.service';
 
 interface MemberDetailProps {
@@ -273,24 +274,38 @@ function MemberDetailContent({ member, projects }: MemberDetailProps) {
   );
 }
 
-export function PeopleSlugClient({ slug }: { slug: string }) {
-  const [member, setMember] = useState<Member | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface PeopleSlugClientProps {
+  slug: string;
+  initialMember?: Member | null;
+  initialProjects?: Project[];
+}
+
+export function PeopleSlugClient({
+  slug,
+  initialMember = null,
+  initialProjects = [],
+}: PeopleSlugClientProps) {
+  const [member, setMember] = useState<Member | null>(initialMember);
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [isLoading, setIsLoading] = useState(!initialMember);
 
   useEffect(() => {
     const decodedSlug = decodeURIComponent(slug);
+    if (member && (member.id === decodedSlug || member.name.toLowerCase() === decodedSlug.toLowerCase())) {
+      return;
+    }
     Promise.all([getMemberById(decodedSlug), getProjects()]).then(([mem, projs]) => {
       setMember(mem || null);
       setProjects(projs);
       setIsLoading(false);
     });
-  }, [slug]);
+  }, [slug, member]);
 
-  if (isLoading || !member) return null;
+  if (isLoading) return <PersonDetailSkeleton />;
+  if (!member) return null;
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PersonDetailSkeleton />}>
       <MemberDetailContent member={member} projects={projects} />
     </Suspense>
   );

@@ -1,33 +1,13 @@
-'use client';
-
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import { LandingPage, LandingCard } from '@/components/blocks/LandingPage';
-import { DraftNotice } from '@/components/global/DraftNotice';
-import { ROUTES } from '@/lib/navigation/routes';
-import { WORKS_CATEGORIES } from '@/lib/dummy-data/works/works';
 import { getSitePagesData } from '@/services/dummy-data.service';
-import { SitePage } from '@/types';
+import { DraftNotice } from '@/components/global/DraftNotice';
+import { WorksClient } from './WorksClient';
 
-import { ProjectCardSkeleton } from '@/components/primitives/skeletons/ProjectCardSkeleton';
+export const revalidate = 60;
 
-export default function WorksPage() {
-  const [pageInfo, setPageInfo] = React.useState<SitePage | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const router = useRouter();
-
-  React.useEffect(() => {
-    getSitePagesData()
-      .then((pages) => {
-        const p = pages.find((page) => page.id === 'works');
-        if (p) setPageInfo(p);
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  if (isLoading) {
-    return <ProjectCardSkeleton />;
-  }
+export default async function WorksPage() {
+  const pages = await getSitePagesData();
+  const pageInfo = pages.find((page) => page.id === 'works');
 
   if (pageInfo && pageInfo.isDraft) {
     return (
@@ -38,13 +18,5 @@ export default function WorksPage() {
     );
   }
 
-  const worksCards: LandingCard[] = WORKS_CATEGORIES.map(category => ({
-    id: category.id,
-    title: category.title,
-    tagline: category.tagline,
-    image: category.image,
-    onSelect: () => router.push(`${ROUTES.works}/${category.id}`),
-  }));
-
-  return <LandingPage cards={worksCards} />;
+  return <WorksClient />;
 }

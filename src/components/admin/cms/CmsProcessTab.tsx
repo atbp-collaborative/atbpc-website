@@ -213,8 +213,13 @@ export const CmsProcessTab: React.FC<CmsProcessTabProps> = ({
             <div className="flex items-center gap-3 shrink-0">
               <PublicationToggle
                 isDraft={Boolean(currentPhilosophy.isDraft)}
-                disabled={true}
-                onToggle={() => {}}
+                disabled={false}
+                onToggle={() => {
+                  onSavePhilosophy({
+                    ...currentPhilosophy,
+                    isDraft: !currentPhilosophy.isDraft,
+                  });
+                }}
               />
               <Button
                 type="filled"

@@ -23,33 +23,44 @@ import {
   resetAdminStorageToDefaults,
 } from '@/services/mock/adminMockStorage';
 import {
-  getContactInfoFromSupabase,
-  getPrivacyPolicyFromSupabase,
-  getCareerPrivacyFromSupabase,
-  getPartnerConditionsFromSupabase,
-  getLegalNoticesFromSupabase,
+  getSiteSettingsBatchFromSupabase,
   saveSiteSettingToSupabase,
 } from '@/services/supabase/settings.service';
 import { toast } from 'sonner';
 
-export function useAdminGeneralInfo() {
-  const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null);
-  const [privacyPolicy, setPrivacyPolicy] = useState<ModalData | null>(null);
-  const [careerPrivacy, setCareerPrivacy] = useState<CareerPrivacyData | null>(null);
-  const [partnerConditions, setPartnerConditions] = useState<PartnerConditionsData | null>(null);
-  const [legalNotices, setLegalNotices] = useState<ModalData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export interface AdminGeneralInfoInitialData {
+  contactInfo?: ContactInfo | null;
+  privacyPolicy?: ModalData | null;
+  careerPrivacy?: CareerPrivacyData | null;
+  partnerConditions?: PartnerConditionsData | null;
+  legalNotices?: ModalData | null;
+}
+
+export function useAdminGeneralInfo(initialData?: AdminGeneralInfoInitialData) {
+  const [contactInfo, setContactInfo] = useState<ContactInfo | null>(initialData?.contactInfo || null);
+  const [privacyPolicy, setPrivacyPolicy] = useState<ModalData | null>(initialData?.privacyPolicy || null);
+  const [careerPrivacy, setCareerPrivacy] = useState<CareerPrivacyData | null>(initialData?.careerPrivacy || null);
+  const [partnerConditions, setPartnerConditions] = useState<PartnerConditionsData | null>(initialData?.partnerConditions || null);
+  const [legalNotices, setLegalNotices] = useState<ModalData | null>(initialData?.legalNotices || null);
+  const [isLoading, setIsLoading] = useState(!initialData || !initialData.contactInfo);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [sbContact, sbPrivacy, sbCareer, sbPartner, sbLegal] = await Promise.all([
-        getContactInfoFromSupabase().catch(() => null),
-        getPrivacyPolicyFromSupabase().catch(() => null),
-        getCareerPrivacyFromSupabase().catch(() => null),
-        getPartnerConditionsFromSupabase().catch(() => null),
-        getLegalNoticesFromSupabase().catch(() => null),
+      // High-performance single batch query to Supabase
+      const batch = await getSiteSettingsBatchFromSupabase([
+        'contact_info',
+        'privacy_policy',
+        'career_privacy',
+        'partner_conditions',
+        'legal_notices',
       ]);
+
+      const sbContact = batch['contact_info'] as ContactInfo | undefined;
+      const sbPrivacy = batch['privacy_policy'] as ModalData | undefined;
+      const sbCareer = batch['career_privacy'] as CareerPrivacyData | undefined;
+      const sbPartner = batch['partner_conditions'] as PartnerConditionsData | undefined;
+      const sbLegal = batch['legal_notices'] as ModalData | undefined;
 
       setContactInfo(sbContact || getContactInfo());
       setPrivacyPolicy(sbPrivacy || getPrivacyPolicy());
@@ -68,14 +79,24 @@ export function useAdminGeneralInfo() {
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (!initialData || !initialData.contactInfo) {
+      refresh();
+    }
+  }, [refresh, initialData]);
 
   const saveContact = useCallback(async (data: ContactInfo) => {
-    setContactInfo(data);
-    saveContactInfoStorage(data);
+    // Automatically synchronize addressLines to match address string
+    const synchronizedData: ContactInfo = {
+      ...data,
+      addressLines: data.address
+        ? data.address.split('\n').map((l) => l.trim()).filter(Boolean)
+        : [],
+    };
+
+    setContactInfo(synchronizedData);
+    saveContactInfoStorage(synchronizedData);
     try {
-      await saveSiteSettingToSupabase('contact_info', data);
+      await saveSiteSettingToSupabase('contact_info', synchronizedData);
       toast.success('Contact info updated successfully');
     } catch (err: any) {
       console.warn('Supabase save contact failed, fallback to local:', err);
@@ -112,10 +133,10 @@ export function useAdminGeneralInfo() {
     savePartnerConditionsStorage(data);
     try {
       await saveSiteSettingToSupabase('partner_conditions', data);
-      toast.success('Partner-With-Us general conditions updated successfully');
+      toast.success('Partner General Conditions updated successfully');
     } catch (err: any) {
       console.warn('Supabase save partner conditions failed, fallback to local:', err);
-      toast.success('Partner-With-Us general conditions updated (saved locally)');
+      toast.success('Partner General Conditions updated (saved locally)');
     }
   }, []);
 
