@@ -52,6 +52,8 @@ export const SocialMediaModal: React.FC<SocialMediaModalProps> = ({
     onClose();
   };
 
+  const isSaveDisabled = !(facebook.trim() || instagram.trim() || websiteLink.trim());
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -78,7 +80,7 @@ export const SocialMediaModal: React.FC<SocialMediaModalProps> = ({
               <div className="flex items-center gap-3">
                 <div>
                   <h2 className="text-h2 font-sans font-bold tracking-tight lowercase">Social Media</h2>
-                  <p className="text-mini opacity-60 font-sans uppercase tracking-wider">Connect Your Social Pages</p>
+                  <p className="text-mini opacity-60 font-sans uppercase tracking-wider">Provide at least one profile or link</p>
                 </div>
               </div>
               <button onClick={onClose} className={`p-2 transition-colors cursor-pointer ${isDarkMode ? 'hover:bg-white/10 text-bright-gray/80 hover:text-white' : 'hover:bg-vintage-charcoal/10 text-vintage-charcoal/80 hover:text-vintage-charcoal'}`}>
@@ -120,6 +122,7 @@ export const SocialMediaModal: React.FC<SocialMediaModalProps> = ({
               <Button
                 label="Save Links"
                 onClick={handleSave}
+                disabled={isSaveDisabled}
                 type={isDarkMode ? 'outline' : 'filled'}
                 className="!py-2 !px-6"
               />

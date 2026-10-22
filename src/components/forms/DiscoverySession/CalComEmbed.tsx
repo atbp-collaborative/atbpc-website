@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import Cal, { getCalApi } from "@calcom/embed-react";
 import { DiscoverySessionFormData } from '@/lib/forms/discovery.schema';
 import { useTheme } from '@/context/ThemeContext';
@@ -20,42 +20,51 @@ export const CalComEmbed: React.FC<Props> = ({ formData, onBookingSuccess }) => 
   }, [onBookingSuccess]);
 
   useEffect(() => {
-    let cleanup: (() => void) | undefined;
+    let isCancelled = false;
+    let cleanupFn: (() => void) | undefined;
 
     (async function () {
-      const cal = await getCalApi();
-      cal("ui", { 
-        theme: isDarkMode ? "dark" : "light",
-        cssVarsPerTheme: {
-          light: { "cal-bg": "#EDEFEF" },
-          dark: { "cal-bg": "#333436" }
-        },
-        styles: { branding: { brandColor: isDarkMode ? "#466263" : "#634746" } }, 
-        hideEventTypeDetails: true, 
-        layout: "month_view" 
-      });
-      
-      const callback = (e: any) => {
-        if (onBookingSuccessRef.current) {
-          onBookingSuccessRef.current(e.detail);
-        }
-      };
-      
-      cal("on", {
-        action: "bookingSuccessful",
-        callback,
-      });
-
-      cleanup = () => {
-        cal("off", {
+      try {
+        const cal = await getCalApi();
+        if (isCancelled) return;
+        cal("ui", { 
+          theme: isDarkMode ? "dark" : "light",
+          cssVarsPerTheme: {
+            light: { "cal-bg": "#EDEFEF" },
+            dark: { "cal-bg": "#333436" }
+          },
+          styles: { branding: { brandColor: isDarkMode ? "#466263" : "#634746" } }, 
+          hideEventTypeDetails: true, 
+          layout: "month_view" 
+        });
+        
+        const callback = (e: any) => {
+          if (onBookingSuccessRef.current) {
+            onBookingSuccessRef.current(e.detail);
+          }
+        };
+        
+        cal("on", {
           action: "bookingSuccessful",
           callback,
         });
-      };
+
+        cleanupFn = () => {
+          try {
+            cal("off", {
+              action: "bookingSuccessful",
+              callback,
+            });
+          } catch (_) {}
+        };
+      } catch (err) {
+        console.warn('Cal.com embed init notice:', err);
+      }
     })();
 
     return () => {
-      if (cleanup) cleanup();
+      isCancelled = true;
+      if (cleanupFn) cleanupFn();
     };
   }, [isDarkMode]);
 

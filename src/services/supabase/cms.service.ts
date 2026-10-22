@@ -1,4 +1,5 @@
 import { supabasePublic } from '@/lib/supabase/public';
+import { isDummyFallbackAllowed } from '@/lib/config/fallback-config';
 import {
   SitePage,
   NavigationCardItem,
@@ -47,6 +48,10 @@ export async function getSitePages(includeDrafts = true): Promise<SitePage[]> {
       updatedAt: row.updated_at,
     })) : [];
 
+    if (!isDummyFallbackAllowed()) {
+      return !includeDrafts ? dbPages.filter((p) => !p.isDraft) : dbPages;
+    }
+
     const fallbackPages = getFallbackSitePages();
     const pageMap = new Map<string, SitePage>();
 
@@ -83,6 +88,7 @@ export async function getSitePages(includeDrafts = true): Promise<SitePage[]> {
     return result;
   } catch (err) {
     console.warn('Falling back to local site pages:', err);
+    if (!isDummyFallbackAllowed()) return [];
     return getFallbackSitePages();
   }
 }
@@ -278,6 +284,7 @@ export async function getNavigationCards(
 
     const { data, error } = await query;
     if (error || !data || data.length === 0) {
+      if (!isDummyFallbackAllowed()) return [];
       return getFallbackNavigationCards(hubId);
     }
 
@@ -302,7 +309,7 @@ export async function getNavigationCards(
       isDraft: row.is_draft,
     }));
 
-    if (!hubId) {
+    if (!hubId && isDummyFallbackAllowed()) {
       const hasContactCards = mapped.some((c) => c.hubId.toLowerCase() === 'contact');
       if (!hasContactCards) {
         mapped.push(...getFallbackNavigationCards('contact'));
@@ -312,6 +319,7 @@ export async function getNavigationCards(
     return mapped;
   } catch (err) {
     console.warn('Falling back to local navigation cards:', err);
+    if (!isDummyFallbackAllowed()) return [];
     return getFallbackNavigationCards(hubId);
   }
 }
@@ -506,6 +514,7 @@ export async function getServiceOfferings(includeDrafts = false): Promise<Servic
 
     const { data: offeringsData, error: offeringsError } = await query;
     if (offeringsError || !offeringsData || offeringsData.length === 0) {
+      if (!isDummyFallbackAllowed()) return [];
       return getFallbackServiceOfferings();
     }
 
@@ -543,7 +552,7 @@ export async function getServiceOfferings(includeDrafts = false): Promise<Servic
     }
 
     return offeringsData.map((row: any): ServiceOffering => {
-      const sAccordions = accordionsByService.get(row.id) || getFallbackServiceAccordions(row.id);
+      const sAccordions = accordionsByService.get(row.id) || (isDummyFallbackAllowed() ? getFallbackServiceAccordions(row.id) : []);
       return {
         id: row.id,
         title: row.title,
@@ -562,6 +571,7 @@ export async function getServiceOfferings(includeDrafts = false): Promise<Servic
     });
   } catch (err) {
     console.warn('Falling back to local service offerings:', err);
+    if (!isDummyFallbackAllowed()) return [];
     return getFallbackServiceOfferings();
   }
 }
@@ -766,6 +776,7 @@ export async function getProcessPhilosophies(includeDrafts = false): Promise<Pro
 
     const { data, error } = await query;
     if (error || !data || data.length === 0) {
+      if (!isDummyFallbackAllowed()) return [];
       return getFallbackProcessPhilosophies();
     }
 
@@ -784,6 +795,7 @@ export async function getProcessPhilosophies(includeDrafts = false): Promise<Pro
     }));
   } catch (err) {
     console.warn('Falling back to local process philosophies:', err);
+    if (!isDummyFallbackAllowed()) return [];
     return getFallbackProcessPhilosophies();
   }
 }
@@ -843,6 +855,7 @@ export async function getStageGroupsWithStages(
       !groupsRes.data ||
       groupsRes.data.length === 0
     ) {
+      if (!isDummyFallbackAllowed()) return [];
       return getFallbackStageGroups();
     }
 
@@ -871,6 +884,7 @@ export async function getStageGroupsWithStages(
     }));
   } catch (err) {
     console.warn(`Falling back to local stages for ${processPageId}:`, err);
+    if (!isDummyFallbackAllowed()) return [];
     return getFallbackStageGroups();
   }
 }
@@ -916,6 +930,7 @@ export async function getHomeSlides(includeDrafts = false): Promise<HomeSlideIte
 
     const { data, error } = await query;
     if (error || !data || data.length === 0) {
+      if (!isDummyFallbackAllowed()) return [];
       return getFallbackHomeSlides();
     }
 
@@ -928,6 +943,7 @@ export async function getHomeSlides(includeDrafts = false): Promise<HomeSlideIte
     }));
   } catch (err) {
     console.warn('Falling back to local home slides:', err);
+    if (!isDummyFallbackAllowed()) return [];
     return getFallbackHomeSlides();
   }
 }
@@ -955,10 +971,12 @@ export async function getHomepageSlogans(): Promise<HomepageSlogans> {
       .single();
 
     if (error || !data || !data.content) {
+      if (!isDummyFallbackAllowed()) return { slogans: [], heroSubtext: [] };
       return getFallbackHomepageSlogans();
     }
     return data.content as HomepageSlogans;
   } catch (err) {
+    if (!isDummyFallbackAllowed()) return { slogans: [], heroSubtext: [] };
     return getFallbackHomepageSlogans();
   }
 }

@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
+import { PersonCircleAvatar } from '@/components/primitives/PersonCircleAvatar';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, UserCheck, Shield, Check, Search, UserPlus } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
@@ -294,21 +295,11 @@ export const AssignMemberRoleModal: React.FC<AssignMemberRoleModalProps> = ({
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
-                          {member.image ? (
-                            <Image
-                              src={member.image}
-                              alt={member.name}
-                              fill
-                              sizes="32px"
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-space-sparkle/20 flex items-center justify-center">
-                              <UserCheck size={14} className="text-space-sparkle" />
-                            </div>
-                          )}
-                        </div>
+                        <PersonCircleAvatar
+                          src={member.image}
+                          name={member.name}
+                          size="sm"
+                        />
                         <div className="min-w-0 space-y-0.5">
                           <div className="font-semibold text-caption leading-snug truncate">
                             {member.name}

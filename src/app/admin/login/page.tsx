@@ -18,6 +18,7 @@ import { AtbpLogo } from '@/components/global/AtbpLogo';
 import { Button } from '@/components/primitives/buttons/Button';
 import { useAdminAuth } from '@/hooks/admin/useAdminAuth';
 import { TwoFactorSetupModal } from '@/components/admin/TwoFactorSetupModal';
+import { TwoFactorChallengeModal } from '@/components/admin/TwoFactorChallengeModal';
 import { toast } from 'sonner';
 
 export default function AdminLoginPage() {
@@ -29,6 +30,10 @@ export default function AdminLoginPage() {
     isLoading,
     is2FASetupOpen,
     setIs2FASetupOpen,
+    is2FAChallengeOpen,
+    totpFactorId,
+    complete2FAChallenge,
+    cancel2FAChallenge,
   } = useAdminAuth();
 
   const isGatePass = process.env.NEXT_PUBLIC_GATE_PASS === 'true';
@@ -182,6 +187,14 @@ export default function AdminLoginPage() {
           ATBP Collaborative
         </p>
       </div>
+
+      {/* 2FA Login Challenge Modal */}
+      <TwoFactorChallengeModal
+        isOpen={is2FAChallengeOpen}
+        factorId={totpFactorId}
+        onSuccess={complete2FAChallenge}
+        onCancel={cancel2FAChallenge}
+      />
 
       {/* Mandatory 2FA TOTP Enrollment Modal */}
       <TwoFactorSetupModal

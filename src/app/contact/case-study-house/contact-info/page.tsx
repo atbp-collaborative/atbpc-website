@@ -93,7 +93,7 @@ export default function ContactInfoPage() {
     );
   }
 
-  const viberCleanNumber = encodeURIComponent(CONTACT_INFO.mobile.replace(/\s+/g, ''));
+  const viberCleanNumber = encodeURIComponent((CONTACT_INFO.mobile || '').replace(/\s+/g, ''));
 
   return (
     <PagePublishGate slug="contact/case-study-house/contact-info">
@@ -109,7 +109,7 @@ export default function ContactInfoPage() {
       } flex flex-col shrink-0 lg:h-full lg:overflow-y-auto`}>
         
         {/* Writeups Container */}
-        <div className="flex flex-col justify-start items-center space-y-4 sm:space-y-6 min-h-0 w-full">
+        <div className="flex flex-col justify-start items-center space-y-4 sm:space-y-6 min-h-0 w-full lg:h-full">
           
           {/* Address Section */}
           <div className="space-y-2 w-full">
@@ -151,7 +151,7 @@ export default function ContactInfoPage() {
                 </div>
                 <div className="space-y-0.5 min-w-0">
                   <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Landline</span>
-                  <span className="font-medium truncate block">{CONTACT_INFO.landline}</span>
+                  <span className="font-medium truncate block">{CONTACT_INFO.landline || '—'}</span>
                 </div>
               </div>
 
@@ -161,13 +161,17 @@ export default function ContactInfoPage() {
                 </div>
                 <div className="space-y-0.5 min-w-0">
                   <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Mobile & Viber Contact</span>
-                  <a 
-                    href={`viber://chat?number=${viberCleanNumber}`}
-                    className="font-medium hover:text-space-sparkle transition-colors underline truncate block"
-                    title="Open in Viber"
-                  >
-                    {CONTACT_INFO.mobile}
-                  </a>
+                  {CONTACT_INFO.mobile ? (
+                    <a 
+                      href={`viber://chat?number=${viberCleanNumber}`}
+                      className="font-medium hover:text-space-sparkle transition-colors underline truncate block"
+                      title="Open in Viber"
+                    >
+                      {CONTACT_INFO.mobile}
+                    </a>
+                  ) : (
+                    <span className="font-medium truncate block">—</span>
+                  )}
                 </div>
               </div>
 
@@ -177,68 +181,78 @@ export default function ContactInfoPage() {
                 </div>
                 <div className="space-y-0.5 min-w-0">
                   <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Official Inquiries</span>
-                  <a 
-                    href={`mailto:${CONTACT_INFO.email}`} 
-                    className="font-medium hover:text-space-sparkle transition-colors underline truncate block"
-                    title="Send email"
-                  >
-                    {CONTACT_INFO.email}
-                  </a>
+                  {CONTACT_INFO.email ? (
+                    <a 
+                      href={`mailto:${CONTACT_INFO.email}`} 
+                      className="font-medium hover:text-space-sparkle transition-colors underline truncate block"
+                      title="Send email"
+                    >
+                      {CONTACT_INFO.email}
+                    </a>
+                  ) : (
+                    <span className="font-medium truncate block">—</span>
+                  )}
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-full shrink-0 ${isDarkMode ? 'bg-space-sparkle/10' : 'bg-space-sparkle/5'}`}>
-                  <Facebook size={14} className="text-space-sparkle" />
+              {CONTACT_INFO.socials?.facebook?.url && (
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-full shrink-0 ${isDarkMode ? 'bg-space-sparkle/10' : 'bg-space-sparkle/5'}`}>
+                    <Facebook size={14} className="text-space-sparkle" />
+                  </div>
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Facebook</span>
+                    <a 
+                      href={CONTACT_INFO.socials.facebook.url} 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium hover:text-space-sparkle transition-colors underline truncate block"
+                    >
+                      {CONTACT_INFO.socials.facebook.label || 'Facebook'}
+                    </a>
+                  </div>
                 </div>
-                <div className="space-y-0.5 min-w-0">
-                  <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Facebook</span>
-                  <a 
-                    href={CONTACT_INFO.socials.facebook.url} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium hover:text-space-sparkle transition-colors underline truncate block"
-                  >
-                    {CONTACT_INFO.socials.facebook.label}
-                  </a>
-                </div>
-              </div>
+              )}
 
-              <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-full shrink-0 ${isDarkMode ? 'bg-space-sparkle/10' : 'bg-space-sparkle/5'}`}>
-                  <AtSign size={14} className="text-space-sparkle" />
+              {CONTACT_INFO.socials?.threads?.url && (
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-full shrink-0 ${isDarkMode ? 'bg-space-sparkle/10' : 'bg-space-sparkle/5'}`}>
+                    <AtSign size={14} className="text-space-sparkle" />
+                  </div>
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Threads</span>
+                    <a 
+                      href={CONTACT_INFO.socials.threads.url} 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium hover:text-space-sparkle transition-colors underline block"
+                    >
+                      {CONTACT_INFO.socials.threads.label || 'Threads'}
+                    </a>
+                  </div>
                 </div>
-                <div className="space-y-0.5 min-w-0">
-                  <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Threads</span>
-                  <a 
-                    href={CONTACT_INFO.socials.threads.url} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium hover:text-space-sparkle transition-colors underline block"
-                  >
-                    {CONTACT_INFO.socials.threads.label}
-                  </a>
-                </div>
-              </div>
+              )}
 
-              <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-full shrink-0 ${isDarkMode ? 'bg-space-sparkle/10' : 'bg-space-sparkle/5'}`}>
-                  <Instagram size={14} className="text-space-sparkle" />
+              {CONTACT_INFO.socials?.instagram?.url && (
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-full shrink-0 ${isDarkMode ? 'bg-space-sparkle/10' : 'bg-space-sparkle/5'}`}>
+                    <Instagram size={14} className="text-space-sparkle" />
+                  </div>
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Instagram</span>
+                    <a 
+                      href={CONTACT_INFO.socials.instagram.url} 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium hover:text-space-sparkle transition-colors underline block"
+                    >
+                      {CONTACT_INFO.socials.instagram.label || 'Instagram'}
+                    </a>
+                  </div>
                 </div>
-                <div className="space-y-0.5 min-w-0">
-                  <span className="opacity-50 block uppercase text-micro font-archivo tracking-wider font-semibold">Instagram</span>
-                  <a 
-                    href={CONTACT_INFO.socials.instagram.url} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium hover:text-space-sparkle transition-colors underline block"
-                  >
-                    {CONTACT_INFO.socials.instagram.label}
-                  </a>
-                </div>
-              </div>
+              )}
 
-              {CONTACT_INFO.socials.youtube && (
+              {CONTACT_INFO.socials?.youtube?.url && (
                 <div className="flex items-center space-x-3">
                   <div className={`p-2 rounded-full shrink-0 ${isDarkMode ? 'bg-space-sparkle/10' : 'bg-space-sparkle/5'}`}>
                     <Youtube size={14} className="text-space-sparkle" />
@@ -251,7 +265,7 @@ export default function ContactInfoPage() {
                       rel="noopener noreferrer"
                       className="font-medium hover:text-space-sparkle transition-colors underline block"
                     >
-                      {CONTACT_INFO.socials.youtube.label}
+                      {CONTACT_INFO.socials.youtube.label || 'YouTube'}
                     </a>
                   </div>
                 </div>
@@ -261,20 +275,20 @@ export default function ContactInfoPage() {
           </div>
 
           {/* CTA Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full lg:w-[75%] shrink-0 self-start !mt-12 sm:!mt-16 md:!mt-16 lg:!mt-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full lg:w-[75%] shrink-0 self-start mt-12 sm:mt-16 md:mt-16 lg:!mt-auto">
             <Button
               type="filled"
               label="Schedule a Discovery Session"
               href={ROUTES.discoverySession}
               fullWidth={true}
-              className="font-medium py-2.5 text-micro sm:text-mini tracking-wider !bg-[#466263] hover:!bg-[#3b5152] !text-[#EDEFEF] shadow-sm"
+              className="font-medium py-2.5 text-micro sm:text-mini tracking-wider !bg-[#466263] hover:!bg-[#3b5152] !text-[#EDEFEF] shadow-sm !whitespace-normal text-center"
             />
             <Button
               type="filled"
               label="Request a Proposal"
               href={ROUTES.requestForProposal}
               fullWidth={true}
-              className="font-medium py-2.5 text-micro sm:text-mini tracking-wider !bg-[#466263] hover:!bg-[#3b5152] !text-[#EDEFEF] shadow-sm"
+              className="font-medium py-2.5 text-micro sm:text-mini tracking-wider !bg-[#466263] hover:!bg-[#3b5152] !text-[#EDEFEF] shadow-sm !whitespace-normal text-center"
             />
           </div>
 

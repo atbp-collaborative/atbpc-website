@@ -30,6 +30,7 @@ import { ClassificationSelector } from '@/components/admin/ClassificationSelecto
 import { MemberInvolvementManager } from '@/components/admin/MemberInvolvementManager';
 import { ImageManagerField } from '@/components/admin/ImageManagerField';
 import { DynamicListField } from '@/components/admin/DynamicListField';
+import { PersonCircleAvatar } from '@/components/primitives/PersonCircleAvatar';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { Button } from '@/components/primitives/buttons/Button';
 import { ComboboxMultiSelect } from '@/components/admin/ComboboxMultiSelect';
@@ -37,6 +38,7 @@ import { ComboboxSelect } from '@/components/admin/ComboboxSelect';
 import { AddressField } from '@/components/forms/form-fields/AddressField';
 import { EMPTY_PH_ADDRESS } from '@/components/forms/form-fields/types';
 import { generateMemberSlug } from '@/lib/people/slug-helpers';
+import { FALLBACK_AVATAR_PORTRAIT } from '@/lib/constants/avatars';
 import { isRoleSelectable } from '@/lib/roles/role-helpers';
 import { getLicensesFromSupabase } from '@/services/supabase/licenses.service';
 import {
@@ -51,6 +53,7 @@ import { useAdminAuth } from '@/hooks/admin/useAdminAuth';
 import { useAdminUiSettings } from '@/context/AdminUiSettingsContext';
 import { Member, MemberCategory, MemberAffiliation, MemberInvolvement, License } from '@/types';
 import { toast } from 'sonner';
+import { usePendingMediaUploads } from '@/hooks/admin/usePendingMediaUploads';
 
 type ViewMode = 'list' | 'create' | 'edit';
 type DisplayMode = 'list' | 'grid';
@@ -72,7 +75,7 @@ const EMPTY_MEMBER: Member = {
   license: '',
   professionalLicenseTitle: '',
   licenseNumber: '',
-  image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop',
+  image: '',
   bio: '',
   fullBio: '',
   personalEmail: '',
@@ -164,6 +167,7 @@ export function AdminPeopleClient({
   // displayMode now managed by useAdminUiSettings
   const [formData, setFormData] = useState<Member>(EMPTY_MEMBER);
   const initialDataRef = useRef<Member>(EMPTY_MEMBER);
+  const pendingImages = usePendingMediaUploads();
   const [licenses, setLicenses] = useState<License[]>(initialLicenses);
 
   const userTier = (user?.role as 'superadmin' | 'admin' | 'editor') || 'editor';
@@ -265,14 +269,16 @@ export function AdminPeopleClient({
   }, [formData]);
 
   const handleResetDefaults = () => {
+    void pendingImages.cleanup();
     setFormData({ ...initialDataRef.current });
   };
 
   const handleBackToList = () => {
+    void pendingImages.cleanup();
     setViewMode('list');
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.firstName?.trim() || !formData.lastName?.trim()) {
@@ -318,8 +324,10 @@ export function AdminPeopleClient({
       isDraft: !isCurrentlyHired ? true : Boolean(formData.isDraft),
     };
 
-    saveMember(memberToSave);
-    initialDataRef.current = memberToSave;
+    const saved = await saveMember(memberToSave);
+    if (!saved) return;
+    await pendingImages.cleanup(saved.image ? [saved.image] : []);
+    initialDataRef.current = saved;
     setViewMode('list');
   };
 
@@ -328,6 +336,7 @@ export function AdminPeopleClient({
       ? 'border-bright-gray/20 bg-vintage-charcoal/50 text-white placeholder-bright-gray/40 focus:border-space-sparkle'
       : 'border-vintage-charcoal/20 bg-white text-vintage-charcoal placeholder-vintage-charcoal/40 focus:border-space-sparkle'
   }`;
+  const portraitUrl = formData.image?.trim();
 
   // ==========================================
   // RENDER: NON-MODAL FORM VIEW (CREATE / EDIT)
@@ -929,8 +938,10 @@ export function AdminPeopleClient({
                   single={true}
                   label="Profile Portrait"
                   helperText="Upload a high-resolution portrait photograph."
-                  images={formData.image ? [formData.image] : []}
+                  images={portraitUrl && portraitUrl !== FALLBACK_AVATAR_PORTRAIT ? [portraitUrl] : []}
+                  emptyFallbackSrc={FALLBACK_AVATAR_PORTRAIT}
                   folder="people"
+                  onUploaded={pendingImages.track}
                   onChange={(imgs) =>
                     setFormData((prev) => ({ ...prev, image: imgs[0] || '' }))
                   }
@@ -1213,21 +1224,11 @@ export function AdminPeopleClient({
                   >
                     {/* Left: Avatar + Details */}
                     <div className="flex items-center gap-4 min-w-0 flex-1">
-                      <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
-                        {member.image ? (
-                          <Image
-                            src={member.image}
-                            alt={member.name}
-                            fill
-                            sizes="48px"
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-space-sparkle/20 text-space-sparkle">
-                            <UserCheck size={20} />
-                          </div>
-                        )}
-                      </div>
+                      <PersonCircleAvatar
+                        src={member.image}
+                        name={member.name}
+                        size="md"
+                      />
 
                       <div className="space-y-1 min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1331,21 +1332,11 @@ export function AdminPeopleClient({
                   <div>
                     {/* Top bar: Avatar & Status Badge */}
                     <div className="flex items-start justify-between gap-3 mb-4">
-                      <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
-                        {member.image ? (
-                          <Image
-                            src={member.image}
-                            alt={member.name}
-                            fill
-                            sizes="64px"
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-space-sparkle/20 text-space-sparkle">
-                            <UserCheck size={24} />
-                          </div>
-                        )}
-                      </div>
+                      <PersonCircleAvatar
+                        src={member.image}
+                        name={member.name}
+                        size="lg"
+                      />
 
                       <div className="flex items-center gap-1.5 flex-wrap justify-end">
                         <span

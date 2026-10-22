@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+export const PROJECT_PLACEHOLDER_IMAGE = '/images/project-house-placeholder.svg';
+
 export const MAIN_CATEGORIES = [
   'Shelter',
   'Livelihood',

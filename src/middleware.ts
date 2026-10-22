@@ -256,16 +256,28 @@ export async function middleware(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    // If unauthenticated and trying to access protected /admin/* routes
-    if (!user && !isExempt) {
+    let isMfaPending = false;
+    if (user) {
+      try {
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal && aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
+          isMfaPending = true;
+        }
+      } catch {
+        // Fallback: do not block if AAL check cannot be evaluated
+      }
+    }
+
+    // If unauthenticated or 2FA challenge is pending, and trying to access protected /admin/* routes
+    if ((!user || isMfaPending) && !isExempt) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = '/admin/login';
       loginUrl.searchParams.set('next', pathname);
       return NextResponse.redirect(loginUrl);
     }
 
-    // If authenticated and visiting /admin/login, redirect to /admin/dashboard
-    if (user && pathname === '/admin/login') {
+    // If fully authenticated (and 2FA is not pending) and visiting /admin/login, redirect to /admin/dashboard
+    if (user && !isMfaPending && pathname === '/admin/login') {
       const dashUrl = request.nextUrl.clone();
       dashUrl.pathname = '/admin/dashboard';
       return NextResponse.redirect(dashUrl);

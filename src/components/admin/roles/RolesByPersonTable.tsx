@@ -7,6 +7,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { PersonCircleAvatar } from '@/components/primitives/PersonCircleAvatar';
 import Link from 'next/link';
 import { UserCheck, Shield, ExternalLink, Settings, AlertCircle, FolderKanban } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
@@ -110,21 +111,11 @@ export const RolesByPersonTable: React.FC<RolesByPersonTableProps> = ({
                   {/* Person details */}
                   <td className="py-3.5 px-4 align-top">
                     <div className="flex items-center gap-3">
-                      <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
-                        {member.image ? (
-                          <Image
-                            src={member.image}
-                            alt={member.name}
-                            fill
-                            sizes="40px"
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-space-sparkle/20 flex items-center justify-center">
-                            <UserCheck size={18} className="text-space-sparkle" />
-                          </div>
-                        )}
-                      </div>
+                      <PersonCircleAvatar
+                        src={member.image}
+                        name={member.name}
+                        size="base"
+                      />
                       <div className="space-y-0.5 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-body-sm leading-snug truncate">

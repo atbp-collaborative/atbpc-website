@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getMemberById, getProjects } from '@/services/dummy-data.service';
+import { FALLBACK_AVATAR_PORTRAIT } from '@/lib/constants/avatars';
 import { PeopleSlugClient } from './client';
 
 export const revalidate = 60;
@@ -17,7 +18,7 @@ export async function generateMetadata({
     const title = `${member.name} - ${member.role} | ATBP Collaborative`;
     const description =
       member.bio || member.fullBio?.slice(0, 160) || `${member.name} at ATBP Collaborative.`;
-    const avatar = member.image || '/charcoal-logo.png';
+    const avatar = member.image || FALLBACK_AVATAR_PORTRAIT;
 
     return {
       title,

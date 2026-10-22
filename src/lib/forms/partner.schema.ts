@@ -3,6 +3,8 @@ import { z } from 'zod';
 
 export type PartnerFormVariant = 'supplier' | 'builder' | 'consultant';
 
+export const PRONOUN_OPTIONS = ['He/Him', 'She/Her', 'They/Them', 'Prefer not to say'];
+
 export interface PartnerFormFieldSet {
   leftColumnTop: FieldConfig[];
   leftColumnBottomGrid?: FieldConfig[]; // 2 cols for supplier, 3 cols for others
@@ -21,14 +23,22 @@ const COMMON_RIGHT_TOP_ROWS: FieldConfig[][] = [
     { type: 'text', name: 'lastName', label: 'Last Name', badge: '!', wrapperClassName: 'sm:col-span-2' },
   ],
   [
-    { type: 'text', name: 'pronoun', label: 'Pronoun', badge: '!', wrapperClassName: 'sm:col-span-2' },
+    {
+      type: 'select',
+      name: 'pronoun',
+      label: 'Pronoun',
+      badge: '!',
+      placeholder: '[ Select Pronouns ]',
+      options: PRONOUN_OPTIONS,
+      wrapperClassName: 'sm:col-span-2',
+    },
     {
       type: 'select',
       name: 'titles',
       label: 'Titles',
       placeholder: '[ Select Title ]',
       options: ['Arch.', 'Engr.', 'IDr.', 'Atty.', 'Dr.'],
-      wrapperClassName: 'sm:col-span-2'
+      wrapperClassName: 'sm:col-span-2',
     },
   ],
 ];
@@ -50,7 +60,7 @@ export const getPartnerFormFields = (
   options: PartnerFormOptions = {}
 ): PartnerFormFieldSet => {
   const leftColumnTop: FieldConfig[] = [
-    { type: 'text', name: 'companyName', label: 'Company Name / Registered Name', badge: '!' }
+    { type: 'text', name: 'companyName', label: 'Company Name / Registered Name', badge: '!' },
   ];
 
   if (variant === 'supplier') {
@@ -58,25 +68,25 @@ export const getPartnerFormFields = (
       leftColumnTop.push({
         type: 'select',
         name: 'category',
-        label: 'Brief Description',
+        label: 'Product Category',
         badge: '!',
-        placeholder: '[ Select Category ]',
-        options: options.categories
+        placeholder: '[ Select Product Category ]',
+        options: options.categories,
       });
     }
 
     leftColumnTop.push({
       type: 'textarea',
       name: 'message',
-      label: '',
+      label: 'Message of Intent',
       badge: '!',
       placeholder: 'Please limit your message to a 200-word count. Be brief about your intent (kindly make the composition friendly but professional)',
-      grow: true
+      grow: true,
     });
 
     return {
       leftColumnTop,
-      rightColumnRowsTop: COMMON_RIGHT_TOP_ROWS
+      rightColumnRowsTop: COMMON_RIGHT_TOP_ROWS,
     };
   }
 
@@ -90,24 +100,22 @@ export const getPartnerFormFields = (
       placeholder: '[ Select Specialty ]',
       options: options.specialties,
       // @ts-ignore
-      dense: true
+      dense: true,
     });
   }
-
-
 
   leftColumnTop.push({
     type: 'textarea',
     name: 'message',
-    label: '',
+    label: 'Message of Intent',
     badge: '!',
     placeholder: 'Please limit your message to a 200-word count. Be brief about your intent (kindly make the composition friendly but professional)',
-    grow: true
+    grow: true,
   });
 
   return {
     leftColumnTop,
-    rightColumnRowsTop: COMMON_RIGHT_TOP_ROWS
+    rightColumnRowsTop: COMMON_RIGHT_TOP_ROWS,
   };
 };
 
@@ -132,9 +140,6 @@ export const PARTNER_FORM_INITIAL_DATA = {
   category: '',
   message: '',
   specialty: '',
-  profileLink: '',
-  coverVideoLink: '',
-  mapLink: '',
   licenseLink: '',
   firstName: '',
   pseudonym: '',
@@ -162,12 +167,9 @@ export type PartnerFormData = typeof PARTNER_FORM_INITIAL_DATA;
 
 export const partnerSchema = z.object({
   companyName: z.string().min(1, "Company Name is required"),
-  category: z.string().optional(), // conditionally required
-  message: z.string().min(1, "Message is required"),
-  specialty: z.string().optional(), // conditionally required
-  profileLink: z.string().min(1, "Profile Link is required"),
-  coverVideoLink: z.string().optional(),
-  mapLink: z.string().min(1, "Map Link is required"),
+  category: z.string().optional(),
+  message: z.string().min(1, "Message of Intent is required"),
+  specialty: z.string().optional(),
   licenseLink: z.string().optional(),
   firstName: z.string().min(1, "First Name is required"),
   pseudonym: z.string().min(1, "Pseudonym is required"),
@@ -181,12 +183,72 @@ export const partnerSchema = z.object({
   facebook: z.string().optional(),
   instagram: z.string().optional(),
   websiteLink: z.string().optional(),
-  catalog: z.any().optional(), // conditionally required for suppliers
-  document: z.any().optional(), // conditionally required
-  secRegistration: z.any().refine((file) => file !== null, "SEC Registration is required"),
-  birRegistration: z.any().refine((file) => file !== null, "BIR Registration is required"),
-  dtiRegistration: z.any().refine((file) => file !== null, "DTI Registration is required"),
+  catalog: z.any().optional(),
+  document: z.any().optional(),
+  secRegistration: z.any().optional(),
+  birRegistration: z.any().optional(),
+  dtiRegistration: z.any().optional(),
   philgepsRegistration: z.any().optional(),
   prcLicense: z.any().optional(),
   ptrLicense: z.any().optional(),
 });
+
+export function isPartnerAddressValid(address?: PartnerAddress | null): boolean {
+  if (!address) return false;
+  return Boolean(
+    address.type?.trim() &&
+    address.regionCode?.trim() &&
+    address.cityCode?.trim() &&
+    address.barangayCode?.trim() &&
+    address.mapLink?.trim()
+  );
+}
+
+export function isPartnerEmailValid(item?: PartnerEmail | null): boolean {
+  if (!item) return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return Boolean(item.email?.trim() && emailRegex.test(item.email.trim()) && item.description?.trim());
+}
+
+export function isPartnerContactValid(item?: PartnerContact | null): boolean {
+  if (!item) return false;
+  return Boolean(item.number?.trim() && item.description?.trim());
+}
+
+export function isPartnerDocumentsValid(
+  docs: {
+    secRegistration?: any;
+    birRegistration?: any;
+    dtiRegistration?: any;
+    philgepsRegistration?: any;
+    prcLicense?: any;
+    ptrLicense?: any;
+  },
+  variant: PartnerFormVariant
+): boolean {
+  if (variant === 'consultant') {
+    return Boolean(
+      docs.birRegistration &&
+      docs.dtiRegistration &&
+      docs.prcLicense &&
+      docs.ptrLicense
+    );
+  }
+  return Boolean(
+    docs.secRegistration &&
+    docs.birRegistration &&
+    docs.dtiRegistration
+  );
+}
+
+export function isPartnerSocialValid(links: {
+  facebook?: string | null;
+  instagram?: string | null;
+  websiteLink?: string | null;
+}): boolean {
+  return Boolean(
+    links.facebook?.trim() ||
+    links.instagram?.trim() ||
+    links.websiteLink?.trim()
+  );
+}

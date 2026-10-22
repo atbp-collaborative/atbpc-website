@@ -7,6 +7,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { PersonCircleAvatar } from '@/components/primitives/PersonCircleAvatar';
 import { Edit2, UserPlus, UserCheck, AlertCircle, Eye, EyeOff, Shield } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { useAdminAuth } from '@/hooks/admin/useAdminAuth';
@@ -90,21 +91,12 @@ export const RolesByRoleTable: React.FC<RolesByRoleTableProps> = ({
           : 'bg-black/5 border-black/10'
       }`}
     >
-      <div className="relative w-4 h-4 rounded-full overflow-hidden bg-space-sparkle/20 shrink-0">
-        {member.image ? (
-          <Image
-            src={member.image}
-            alt={member.name}
-            fill
-            className="object-cover"
-            sizes="16px"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-space-sparkle">
-            {member.name.charAt(0)}
-          </div>
-        )}
-      </div>
+      <PersonCircleAvatar
+        src={member.image}
+        name={member.name}
+        size="xs"
+        border={false}
+      />
 
       <span className="font-medium truncate max-w-[120px]">{member.name}</span>
 

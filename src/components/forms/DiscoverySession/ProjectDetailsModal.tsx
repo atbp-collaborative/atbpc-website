@@ -37,32 +37,35 @@ export const ProjectDetailsModal: React.FC<Props> = ({ isOpen, onClose, isDarkMo
             <SelectField
               name="projectCategory"
               label="Project Category"
-              placeholder="Select a category"
+              placeholder="[ Select Project Category ]"
               options={CATEGORY_OPTIONS}
               value={formData.projectCategory || ''}
               onChange={handleCategoryChange}
               isDarkMode={isDarkMode}
+              required
             />
 
             <SelectField
               name="projectTypology"
               label="Project Typology"
-              placeholder={formData.projectCategory ? "Select a typology" : "Select a category first"}
+              placeholder="[ Select Project Typology ]"
               options={currentTypologyOptions}
               value={formData.projectTypology || ''}
               onChange={(name, val) => handleChange('projectTypology', val)}
               isDarkMode={isDarkMode}
               disabled={!formData.projectCategory}
+              required
             />
 
             <SelectField
               name="projectType"
               label="Project Type"
-              placeholder="Select project type"
+              placeholder="[ Select Project Type ]"
               options={PROJECT_TYPE_OPTIONS}
               value={formData.projectType || ''}
               onChange={(name, val) => handleChange('projectType', val)}
               isDarkMode={isDarkMode}
+              required
             />
           </div>
         </div>
@@ -70,7 +73,7 @@ export const ProjectDetailsModal: React.FC<Props> = ({ isOpen, onClose, isDarkMo
         <div>
           <h3 className="font-sans text-caption font-bold mb-4 opacity-80">Project Site Address</h3>
           <FormFieldRenderer
-            config={{ type: 'address', name: 'address', label: 'Project Site Address', required: true }}
+            config={{ type: 'address', name: 'address', label: '', required: true }}
             value={formData.address}
             onChange={handleChange}
             isDarkMode={isDarkMode}

@@ -1,10 +1,11 @@
 import React from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Check } from 'lucide-react';
 
 interface MultiEntryButtonProps {
   label: string;
   fieldLabel?: string;
-  count: number;
+  count?: number;
+  showCheck?: boolean;
   onClick: () => void;
   isDarkMode: boolean;
 }
@@ -12,13 +13,17 @@ interface MultiEntryButtonProps {
 export const MultiEntryButton: React.FC<MultiEntryButtonProps> = ({
   label,
   fieldLabel,
-  count,
+  count = 0,
+  showCheck,
   onClick,
   isDarkMode
 }) => {
   const buttonClass = isDarkMode
     ? 'border-bright-gray/30 hover:bg-white/5 text-white'
     : 'border-vintage-charcoal/30 hover:bg-vintage-charcoal/5 text-vintage-charcoal';
+
+  const isAccomplished = showCheck !== undefined ? showCheck : count > 0;
+  const isMultiple = count > 1;
 
   return (
     <div className="flex flex-col gap-0.5 w-full min-w-0">
@@ -36,11 +41,18 @@ export const MultiEntryButton: React.FC<MultiEntryButtonProps> = ({
           <Plus size={16} className="shrink-0" />
           <span className="truncate">{label}</span>
         </span>
-        {count > 0 && (
-          <span className="text-micro font-medium bg-space-sparkle text-bright-gray px-2.5 py-0.5 rounded-full shrink-0 ml-2">
-            {count} Added
-          </span>
-        )}
+        {isAccomplished ? (
+          isMultiple ? (
+            <span className="flex items-center gap-0.5 text-emerald-500 font-bold text-caption leading-none shrink-0 ml-2">
+              <span>{count}</span>
+              <Check size={16} className="stroke-[2.5]" />
+            </span>
+          ) : (
+            <span className="flex items-center justify-center text-emerald-500 font-bold shrink-0 ml-2">
+              <Check size={18} className="stroke-[2.5]" />
+            </span>
+          )
+        ) : null}
       </button>
     </div>
   );

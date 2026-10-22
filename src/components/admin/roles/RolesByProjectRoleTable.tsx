@@ -7,6 +7,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { PersonCircleAvatar } from '@/components/primitives/PersonCircleAvatar';
 import { Edit2, Plus, AlertCircle, UserCheck } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { ProjectRole, Member } from '@/types';
@@ -63,21 +64,12 @@ export const RolesByProjectRoleTable: React.FC<RolesByProjectRoleTableProps> = (
           : 'bg-black/5 border-black/10 hover:border-space-sparkle hover:bg-space-sparkle/5'
       }`}
     >
-      <div className="relative w-4 h-4 rounded-full overflow-hidden shrink-0">
-        {member.image ? (
-          <Image
-            src={member.image}
-            alt={member.name}
-            fill
-            sizes="16px"
-            className="object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-space-sparkle/20 flex items-center justify-center">
-            <UserCheck size={10} className="text-space-sparkle" />
-          </div>
-        )}
-      </div>
+      <PersonCircleAvatar
+        src={member.image}
+        name={member.name}
+        size="xs"
+        border={false}
+      />
       <span className="font-medium truncate max-w-[120px]">{member.name}</span>
       {isPast && (
         <span className="text-[9px] font-mono opacity-60 uppercase tracking-tight">Past</span>

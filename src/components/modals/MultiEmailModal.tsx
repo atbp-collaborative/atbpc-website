@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Trash2, Mail } from 'lucide-react';
 import { Button } from '@/components/primitives/buttons/Button';
 import { MultiEntryButton } from '@/components/primitives/buttons/MultiEntryButton';
-import { PartnerEmail } from '@/lib/forms/partner.schema';
+import { PartnerEmail, isPartnerEmailValid } from '@/lib/forms/partner.schema';
 import { TextField } from '@/components/forms/form-fields';
 
 interface MultiEmailModalProps {
@@ -64,7 +64,7 @@ export const MultiEmailModal: React.FC<MultiEmailModalProps> = ({
     onClose();
   };
 
-  const isSaveDisabled = emails.some(e => !e.email || !e.description);
+  const isSaveDisabled = emails.length === 0 || emails.some(e => !isPartnerEmailValid(e));
 
   return (
     <AnimatePresence>

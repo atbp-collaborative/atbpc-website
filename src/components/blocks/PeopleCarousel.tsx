@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Member, MemberCategory } from '@/types';
 import { useTheme } from '@/context/ThemeContext';
 import { ROUTES, memberRoute, memberCategoryRoute } from '@/lib/navigation/routes';
-import { ImageWithFade } from '@/components/primitives/ImageWithFade';
+import { PersonPortrait } from '@/components/primitives/PersonPortrait';
 import { useCarouselScroll } from '@/hooks/useCarouselScroll';
 
 type FilterCategory = 'all' | MemberCategory;
@@ -120,7 +120,7 @@ export const PeopleCarousel: React.FC<PeopleCarouselProps> = ({ members, activeF
                 className="group shrink-0 w-full h-auto md:w-[39%] md:h-auto lg:w-auto lg:h-full"
               >
                 <div className="relative w-full h-full aspect-[1.5/1] md:aspect-[2/3] overflow-hidden">
-                  <ImageWithFade
+                  <PersonPortrait
                     src={member.image}
                     alt={member.name}
                     fill

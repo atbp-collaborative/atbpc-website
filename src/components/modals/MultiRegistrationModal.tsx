@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, FileText } from 'lucide-react';
 import { Button } from '@/components/primitives/buttons/Button';
 import { FormFieldRenderer } from '@/components/forms/form-fields';
-import { PartnerFormVariant } from '@/lib/forms/partner.schema';
+import { PartnerFormVariant, isPartnerDocumentsValid } from '@/lib/forms/partner.schema';
 
 interface BusinessRegistrations {
   secRegistration: File | null;
@@ -71,9 +71,19 @@ export const MultiRegistrationModal: React.FC<MultiRegistrationModalProps> = ({
     onClose();
   };
 
-  // We consider it saved even if empty (they might be optional or validated elsewhere), 
-  // but if you want to require them, we can add validation here. For now, it's optional.
-  const isSaveDisabled = false;
+  const isSaveDisabled = !isPartnerDocumentsValid(registrations, variant);
+
+  const modalTitle = variant === 'consultant'
+    ? 'Documents & Licenses'
+    : variant === 'builder'
+      ? 'Documents'
+      : 'Business Registrations';
+
+  const modalSubtitle = variant === 'consultant'
+    ? 'Upload BIR, DTI, PRC, & PTR Documents'
+    : 'Upload SEC, BIR, & DTI Documents';
+
+  const saveButtonLabel = variant === 'supplier' ? 'Save Registrations' : 'Save Documents';
 
   return (
     <AnimatePresence>
@@ -101,12 +111,10 @@ export const MultiRegistrationModal: React.FC<MultiRegistrationModalProps> = ({
               <div className="flex items-center gap-3">
                 <div>
                   <h2 className="text-h2 font-sans font-bold tracking-tight lowercase">
-                    {variant === 'consultant' ? 'Documents & Licenses' : 'Business Registrations'}
+                    {modalTitle}
                   </h2>
                   <p className="text-mini opacity-60 font-sans uppercase tracking-wider">
-                    {variant === 'consultant'
-                      ? 'Upload SEC, BIR, DTI, PhilGEPS, PRC, & PTR'
-                      : 'Upload SEC, BIR, DTI, & PhilGEPS Documents'}
+                    {modalSubtitle}
                   </p>
                 </div>
               </div>
@@ -118,19 +126,40 @@ export const MultiRegistrationModal: React.FC<MultiRegistrationModalProps> = ({
             <div className="p-6 sm:p-8 overflow-y-auto space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormFieldRenderer
-                  config={{ type: 'file', name: 'secRegistration', label: 'SEC Registration', badge: '!', typeHint: '(PDF, JPG, GIF, PNG)', variant: 'compact' }}
+                  config={{
+                    type: 'file',
+                    name: 'secRegistration',
+                    label: 'SEC Registration',
+                    badge: variant !== 'consultant' ? '!' : undefined,
+                    typeHint: '(PDF, JPG, GIF, PNG)',
+                    variant: 'compact'
+                  }}
                   value={registrations.secRegistration}
                   onChange={handleFieldChange}
                   isDarkMode={isDarkMode}
                 />
                 <FormFieldRenderer
-                  config={{ type: 'file', name: 'birRegistration', label: 'BIR Registration', badge: '!', typeHint: '(PDF, JPG, GIF, PNG)', variant: 'compact' }}
+                  config={{
+                    type: 'file',
+                    name: 'birRegistration',
+                    label: 'BIR Registration',
+                    badge: '!',
+                    typeHint: '(PDF, JPG, GIF, PNG)',
+                    variant: 'compact'
+                  }}
                   value={registrations.birRegistration}
                   onChange={handleFieldChange}
                   isDarkMode={isDarkMode}
                 />
                 <FormFieldRenderer
-                  config={{ type: 'file', name: 'dtiRegistration', label: 'DTI Registration', badge: '!', typeHint: '(PDF, JPG, GIF, PNG)', variant: 'compact' }}
+                  config={{
+                    type: 'file',
+                    name: 'dtiRegistration',
+                    label: 'DTI Registration',
+                    badge: '!',
+                    typeHint: '(PDF, JPG, GIF, PNG)',
+                    variant: 'compact'
+                  }}
                   value={registrations.dtiRegistration}
                   onChange={handleFieldChange}
                   isDarkMode={isDarkMode}
@@ -164,13 +193,27 @@ export const MultiRegistrationModal: React.FC<MultiRegistrationModalProps> = ({
                 {variant === 'consultant' && (
                   <>
                     <FormFieldRenderer
-                      config={{ type: 'file', name: 'prcLicense', label: 'PRC License', badge: '!', typeHint: '(PDF, JPG, GIF, PNG)', variant: 'compact' }}
+                      config={{
+                        type: 'file',
+                        name: 'prcLicense',
+                        label: 'PRC License',
+                        badge: '!',
+                        typeHint: '(PDF, JPG, GIF, PNG)',
+                        variant: 'compact'
+                      }}
                       value={registrations.prcLicense}
                       onChange={handleFieldChange}
                       isDarkMode={isDarkMode}
                     />
                     <FormFieldRenderer
-                      config={{ type: 'file', name: 'ptrLicense', label: 'PTR License', badge: '!', typeHint: '(PDF, JPG, GIF, PNG)', variant: 'compact' }}
+                      config={{
+                        type: 'file',
+                        name: 'ptrLicense',
+                        label: 'PTR License',
+                        badge: '!',
+                        typeHint: '(PDF, JPG, GIF, PNG)',
+                        variant: 'compact'
+                      }}
                       value={registrations.ptrLicense}
                       onChange={handleFieldChange}
                       isDarkMode={isDarkMode}
@@ -182,7 +225,7 @@ export const MultiRegistrationModal: React.FC<MultiRegistrationModalProps> = ({
 
             <div className={`p-4 px-6 border-t flex justify-end sticky bottom-0 z-20 backdrop-blur-md ${isDarkMode ? 'bg-vintage-charcoal/95 border-space-sparkle/20' : 'bg-white/95 border-space-sparkle/15'}`}>
               <Button
-                label="Save Registrations"
+                label={saveButtonLabel}
                 onClick={handleSave}
                 disabled={isSaveDisabled}
                 type={isDarkMode ? 'outline' : 'filled'}

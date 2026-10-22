@@ -135,8 +135,9 @@ export function useAdminProjects(initialProjects?: Project[], initialRoles?: Pro
     const res = await saveProjectAction(projectData);
     if (!res.success) {
       toast.error(`Database error: ${res.error}`);
-      return projectData;
+      return null;
     }
+    if (res.cleanupWarning) toast.warning(`Project saved, but image cleanup failed: ${res.cleanupWarning}`);
 
     const saved = res.data || projectData;
     setProjects((prev) => {
@@ -154,13 +155,13 @@ export function useAdminProjects(initialProjects?: Project[], initialRoles?: Pro
 
   const deleteProject = useCallback(async (id: string) => {
     const target = projects.find((p) => p.id === id);
-    setProjects((prev) => prev.filter((p) => p.id !== id));
-
     const res = await deleteProjectAction(id);
     if (!res.success) {
       toast.error(`Database error: ${res.error}`);
       return;
     }
+    setProjects((prev) => prev.filter((p) => p.id !== id));
+    if (res.cleanupWarning) toast.warning(`Project deleted, but image cleanup failed: ${res.cleanupWarning}`);
     toast.success(`Project "${target?.title || id}" removed from database`);
   }, [projects]);
 

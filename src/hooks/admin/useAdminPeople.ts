@@ -118,16 +118,15 @@ export function useAdminPeople(initialMembers?: Member[]) {
   }, [members, searchTerm, classificationFilter, visibilityFilter]);
 
   const saveMember = useCallback(async (memberData: Member) => {
-    // Keep local storage synchronized as backup
-    saveMemberStorage(memberData);
-
     const res = await savePersonAction(memberData);
     if (!res.success) {
       toast.error(`Database error: ${res.error}`);
-      return memberData;
+      return null;
     }
+    if (res.cleanupWarning) toast.warning(`Person saved, but image cleanup failed: ${res.cleanupWarning}`);
 
     const saved = res.data || memberData;
+    saveMemberStorage(saved);
     setMembers((prev) => {
       const idx = prev.findIndex((m) => m.id === saved.id);
       if (idx >= 0) {
@@ -143,14 +142,14 @@ export function useAdminPeople(initialMembers?: Member[]) {
 
   const deleteMember = useCallback(async (id: string) => {
     const target = members.find((m) => m.id === id);
-    deleteMemberStorage(id);
-    setMembers((prev) => prev.filter((m) => m.id !== id));
-
     const res = await deletePersonAction(id);
     if (!res.success) {
       toast.error(`Database error: ${res.error}`);
       return;
     }
+    deleteMemberStorage(id);
+    setMembers((prev) => prev.filter((m) => m.id !== id));
+    if (res.cleanupWarning) toast.warning(`Person deleted, but image cleanup failed: ${res.cleanupWarning}`);
     toast.success(`Member "${target?.name || id}" removed from database`);
   }, [members]);
 

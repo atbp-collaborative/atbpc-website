@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900" width="100%" height="100%">
+  <defs>
+    <linearGradient id="portrait-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#262729" />
+      <stop offset="50%" stop-color="#1E1F21" />
+      <stop offset="100%" stop-color="#171819" />
+    </linearGradient>
+    <linearGradient id="silhouette-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4F5256" />
+      <stop offset="60%" stop-color="#3D3F42" />
+      <stop offset="100%" stop-color="#2D2F31" />
+    </linearGradient>
+    <linearGradient id="accent-glow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#634746" stop-opacity="0.25" />
+      <stop offset="50%" stop-color="#466263" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#634746" stop-opacity="0.25" />
+    </linearGradient>
+    <radialGradient id="ambient-light" cx="50%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#4A4C50" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#171819" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="600" height="900" fill="url(#portrait-bg)" />
+  <rect width="600" height="900" fill="url(#ambient-light)" />
+
+  <!-- Subtle Architectural Drafting Gridlines -->
+  <g stroke="#ffffff" stroke-opacity="0.04" stroke-width="1">
+    <line x1="60" y1="0" x2="60" y2="900" />
+    <line x1="180" y1="0" x2="180" y2="900" />
+    <line x1="300" y1="0" x2="300" y2="900" stroke-dasharray="4 8" />
+    <line x1="420" y1="0" x2="420" y2="900" />
+    <line x1="540" y1="0" x2="540" y2="900" />
+
+    <line x1="0" y1="150" x2="600" y2="150" />
+    <line x1="0" y1="300" x2="600" y2="300" stroke-dasharray="4 8" />
+    <line x1="0" y1="450" x2="600" y2="450" />
+    <line x1="0" y1="600" x2="600" y2="600" stroke-dasharray="4 8" />
+    <line x1="0" y1="750" x2="600" y2="750" />
+  </g>
+
+  <!-- Elegant Architectural Corner Crosshairs -->
+  <g stroke="#ffffff" stroke-opacity="0.12" stroke-width="1">
+    <path d="M 40 50 L 60 50 M 50 40 L 50 60" />
+    <path d="M 540 50 L 560 50 M 550 40 L 550 60" />
+    <path d="M 40 850 L 60 850 M 50 840 L 50 860" />
+    <path d="M 540 850 L 560 850 M 550 840 L 550 860" />
+  </g>
+
+  <!-- Subtle Halo / Elevation Arc -->
+  <circle cx="300" cy="330" r="170" fill="none" stroke="url(#accent-glow)" stroke-width="2" stroke-dasharray="6 12" stroke-opacity="0.6" />
+  <circle cx="300" cy="330" r="140" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.04" />
+
+  <!-- Minimalist Portrait Silhouette -->
+  <g fill="url(#silhouette-grad)">
+    <!-- Head -->
+    <path d="M 300 210 C 248 210, 218 250, 218 312 C 218 375, 252 425, 300 425 C 348 425, 382 375, 382 312 C 382 250, 352 210, 300 210 Z" />
+
+    <!-- Neck & Collar Line -->
+    <path d="M 276 418 L 276 470 C 276 478, 260 488, 230 495 L 370 495 C 340 488, 324 478, 324 470 L 324 418 Z" fill="#383A3D" opacity="0.9" />
+
+    <!-- Shoulders & Torso -->
+    <path d="M 230 495 C 170 515, 110 565, 80 635 C 65 670, 55 720, 50 800 L 550 800 C 545 720, 535 670, 520 635 C 490 565, 430 515, 370 495 Z" />
+    
+    <!-- Torso Base Extension to bottom of frame -->
+    <path d="M 50 800 L 50 900 L 550 900 L 550 800 Z" />
+  </g>
+
+  <!-- Gentle Highlights on Head and Shoulders for Depth -->
+  <ellipse cx="300" cy="270" rx="45" ry="35" fill="#ffffff" fill-opacity="0.04" />
+  <path d="M 170 550 C 230 520, 370 520, 430 550" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="2" />
+
+  <!-- Subtle Studio Monogram / Icon at Chest -->
+  <g transform="translate(300, 680)" opacity="0.25">
+    <circle cx="0" cy="0" r="28" fill="none" stroke="#ffffff" stroke-width="1.5" />
+    <path d="M -8 8 L 0 -8 L 8 8 Z" fill="none" stroke="#ffffff" stroke-width="1.5" />
+    <line x1="-12" y1="4" x2="12" y2="4" stroke="#ffffff" stroke-width="1" />
+  </g>
+</svg>
