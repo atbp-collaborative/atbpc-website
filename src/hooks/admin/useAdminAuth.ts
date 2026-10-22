@@ -26,6 +26,8 @@ export function useAdminAuth() {
   const [isLoading, setIsLoading] = useState(true);
   const [has2FA, setHas2FA] = useState<boolean>(true);
   const [is2FASetupOpen, setIs2FASetupOpen] = useState(false);
+  const [is2FAChallengeOpen, setIs2FAChallengeOpen] = useState(false);
+  const [totpFactorId, setTotpFactorId] = useState<string>('');
 
   // Initialize Auth State
   const loadAuthState = useCallback(async () => {
@@ -103,14 +105,24 @@ export function useAdminAuth() {
         });
       }
 
-      // Check registered 2FA TOTP factors
+      // Check registered 2FA TOTP factors and assurance level
       try {
         const { data: factors } = await supabase.auth.mfa.listFactors();
-        const hasVerifiedTotp = Boolean(
-          factors?.totp?.some((f) => f.status === 'verified')
-        );
+        const verifiedTotp = factors?.totp?.find((f) => f.status === 'verified');
+        const hasVerifiedTotp = Boolean(verifiedTotp);
         setHas2FA(hasVerifiedTotp);
-        if (!hasVerifiedTotp) {
+
+        // Check assurance level: if AAL2 is required but not achieved, user is not fully authenticated
+        const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aalData && aalData.nextLevel === 'aal2' && aalData.currentLevel !== 'aal2') {
+          // Incomplete session: sign out to clean cookie state so user logs in cleanly with email + password
+          await supabase.auth.signOut();
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!verifiedTotp) {
           setIs2FASetupOpen(true);
         }
       } catch {
@@ -190,13 +202,20 @@ export function useAdminAuth() {
 
       // Check if 2FA is enrolled
       const { data: factors } = await supabase.auth.mfa.listFactors();
-      const hasVerifiedTotp = Boolean(
-        factors?.totp?.some((f) => f.status === 'verified')
-      );
+      const verifiedTotp = factors?.totp?.find((f) => f.status === 'verified');
 
-      if (!hasVerifiedTotp) {
+      if (!verifiedTotp) {
         // First-time 2FA enrollment required
         setIs2FASetupOpen(true);
+        setIsLoading(false);
+        return true;
+      }
+
+      // Check assurance level (AAL2 challenge interception)
+      const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aalData && aalData.nextLevel === 'aal2' && aalData.currentLevel !== 'aal2') {
+        setTotpFactorId(verifiedTotp.id);
+        setIs2FAChallengeOpen(true);
         setIsLoading(false);
         return true;
       }
@@ -208,6 +227,26 @@ export function useAdminAuth() {
     },
     [isGatePassActive, router, loadAuthState]
   );
+
+  // Complete 2FA Challenge Handler
+  const complete2FAChallenge = useCallback(async () => {
+    setIs2FAChallengeOpen(false);
+    setTotpFactorId('');
+    toast.success('Successfully authenticated.');
+    await loadAuthState();
+    router.push('/admin/dashboard');
+  }, [loadAuthState, router]);
+
+  // Cancel 2FA Challenge Handler (Signs out of incomplete AAL1 session)
+  const cancel2FAChallenge = useCallback(async () => {
+    setIs2FAChallengeOpen(false);
+    setTotpFactorId('');
+    if (!isGatePassActive) {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    }
+    setUser(null);
+  }, [isGatePassActive]);
 
   // Logout
   const logout = useCallback(async () => {
@@ -235,6 +274,11 @@ export function useAdminAuth() {
     isPasskeySetupOpen: is2FASetupOpen,
     setIs2FASetupOpen,
     setIsPasskeySetupOpen: setIs2FASetupOpen,
+    is2FAChallengeOpen,
+    setIs2FAChallengeOpen,
+    totpFactorId,
+    complete2FAChallenge,
+    cancel2FAChallenge,
     loginWithCredentials,
     logout,
     setSimulatedRole,

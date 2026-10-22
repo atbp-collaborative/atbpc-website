@@ -199,7 +199,8 @@ export function isPartnerAddressValid(address?: PartnerAddress | null): boolean 
     address.type?.trim() &&
     address.regionCode?.trim() &&
     address.cityCode?.trim() &&
-    address.barangayCode?.trim()
+    address.barangayCode?.trim() &&
+    address.mapLink?.trim()
   );
 }
 
