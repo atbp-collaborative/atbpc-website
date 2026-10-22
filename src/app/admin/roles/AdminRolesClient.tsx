@@ -82,24 +82,32 @@ export function AdminRolesClient({ initialData }: AdminRolesClientProps) {
   // Modal states: Deletion confirmation
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
-  // Category counts
+  // Category counts (dynamically reflects the currently selected career track)
   const categoryCounts = useMemo(() => {
-    return {
-      all: roles.length,
-      designers: roles.filter((r) => r.category === 'designers').length,
-      managers: roles.filter((r) => r.category === 'managers').length,
-      builders: roles.filter((r) => r.category === 'builders').length,
-    };
-  }, [roles]);
+    const rolesInTrack = trackFilter === 'all'
+      ? roles
+      : roles.filter((r) => r.track === trackFilter);
 
-  // Track counts
-  const trackCounts = useMemo(() => {
     return {
-      all: roles.length,
-      professionals: roles.filter((r) => r.track === 'professionals').length,
-      internship: roles.filter((r) => r.track === 'internship').length,
+      all: rolesInTrack.length,
+      designers: rolesInTrack.filter((r) => r.category === 'designers').length,
+      managers: rolesInTrack.filter((r) => r.category === 'managers').length,
+      builders: rolesInTrack.filter((r) => r.category === 'builders').length,
     };
-  }, [roles]);
+  }, [roles, trackFilter]);
+
+  // Track counts (dynamically reflects the currently selected role category)
+  const trackCounts = useMemo(() => {
+    const rolesInCategory = categoryFilter === 'all'
+      ? roles
+      : roles.filter((r) => r.category === categoryFilter);
+
+    return {
+      all: rolesInCategory.length,
+      professionals: rolesInCategory.filter((r) => r.track === 'professionals').length,
+      internship: rolesInCategory.filter((r) => r.track === 'internship').length,
+    };
+  }, [roles, categoryFilter]);
 
   // Role Form Handlers
   const handleOpenCreateRole = () => {
